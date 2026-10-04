@@ -1,0 +1,32 @@
+/*!
+ * future-css -- layer order
+ *
+ * This file exists to be imported FIRST and on its own, so the cascade layer
+ * order is established before any layer's contents arrive. Consumers who load
+ * pieces separately must import this first:
+ *
+ *   import "future-css/layers";
+ *   import "future-css/tokens";
+ *   import "future-css/base";
+ *
+ * Layer order determines precedence regardless of source order, specificity, or
+ * `!important` inside a lower layer. The sequence below is the whole cascade
+ * strategy of the system:
+ *
+ *   reset      zeroes out what browsers get wrong. Zero specificity.
+ *   tokens     the variables. Everything downstream reads from these.
+ *   base       element defaults. Zero specificity, so never fights a class.
+ *   layout     structural primitives.
+ *   components individual components.
+ *   utilities  the escape hatch; beats components on equal specificity.
+ *   overrides  a reserved final layer for consumer-level escape hatches.
+ *
+ * The two properties that matter most:
+ *
+ *   1. `base` at zero specificity means a component class always wins over an
+ *      element rule, with no `!important` and no specificity war.
+ *   2. `utilities` last means an author can always override a component with a
+ *      single class, which is what makes the system debuggable in production.
+ */
+
+@layer fc.reset, fc.tokens, fc.base, fc.layout, fc.components, fc.utilities, fc.overrides;

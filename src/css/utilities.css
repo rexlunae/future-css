@@ -1,0 +1,147 @@
+/*!
+ * future-css -- utilities layer
+ *
+ * Utilities are the escape hatch, deliberately kept small. The governing policy
+ * is that a utility earns its place only when the alternative is a component
+ * variation or a one-off inline style, and it must be impossible to express
+ * with a component. Every utility here solves a problem that genuinely has no
+ * component-shaped answer.
+ *
+ * Utilities sit in the last cascade layer, so they beat component styles on
+ * equal specificity. That is the point: it makes the escape hatch reliable
+ * without `!important`.
+ *
+ * Naming: .fc-u-<property>-<value>. Predictable names beat clever ones -- a
+ * developer who knows the convention can guess the utility without looking it
+ * up.
+ */
+
+@layer fc.utilities {
+  /*
+   * Visually hidden but available to assistive technology.
+   *
+   * This is the canonical accessible-hiding pattern and the reason it lives
+   * here: it is used by nearly every component for skip links and icon labels.
+   *
+   * The clip-path/clip-rect form is used rather than the older
+   * `top: -9999px` trick because a negative-offset element can create a
+   * scrollable overflow region, causing the page to scroll when it should not.
+   *
+   * `!important` here is intentional and is the ONLY permitted use in the
+   * system: it must survive an author's own styles, since the entire point is
+   * to hide something the author cannot see.
+   */
+  .fc-u-visually-hidden:not(:focus):not(:active) {
+    position: absolute;
+    inline-size: var(--fc-space-px);
+    block-size: var(--fc-space-px);
+    padding: 0;
+    margin: calc(-1 * var(--fc-space-px));
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    /* Keeps the hidden element focusable-by-script (e.g. a skip link target). */
+    border: 0;
+  }
+
+  /*
+   * The visible-on-focus variant, used by skip links: hidden until focused by
+   * the keyboard, then pinned to the top of the viewport. Logical inset so it
+   * anchors to the correct edge in RTL.
+   */
+  .fc-u-visually-hidden:focus-visible {
+    position: fixed;
+    inset-block-start: var(--fc-space-2);
+    inset-inline-start: var(--fc-space-2);
+    z-index: var(--fc-z-toast);
+    inline-size: auto;
+    block-size: auto;
+    padding: var(--fc-space-2) var(--fc-space-4);
+    margin: 0;
+    overflow: visible;
+    clip-path: none;
+    background-color: var(--fc-color-bg-raised);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+    border-radius: var(--fc-radius-md);
+    box-shadow: var(--fc-shadow-raised);
+  }
+
+  /* Spacing utilities. Logical, so they mirror correctly in RTL. */
+  .fc-u-p-0 { padding: var(--fc-space-0); }
+  .fc-u-p-2 { padding: var(--fc-space-2); }
+  .fc-u-p-4 { padding: var(--fc-space-4); }
+  .fc-u-p-6 { padding: var(--fc-space-6); }
+
+  .fc-u-px-4 {
+    padding-inline: var(--fc-space-4);
+  }
+
+  .fc-u-py-2 {
+    padding-block: var(--fc-space-2);
+  }
+
+  .fc-u-m-0 { margin: var(--fc-space-0); }
+  .fc-u-mt-4 {
+    margin-block-start: var(--fc-space-4);
+  }
+
+  .fc-u-mb-4 {
+    margin-block-end: var(--fc-space-4);
+  }
+
+  /* Text alignment, expressed with start/end so it follows text direction. */
+  .fc-u-text-start { text-align: start; }
+  .fc-u-text-center { text-align: center; }
+  .fc-u-text-end { text-align: end; }
+
+  /* Colour utilities, restricted to tokens -- never a literal colour. */
+  .fc-u-text-default { color: var(--fc-color-text-default); }
+  .fc-u-text-muted { color: var(--fc-color-text-muted); }
+  .fc-u-text-accent { color: var(--fc-color-accent-text); }
+  .fc-u-text-danger { color: var(--fc-color-danger-text); }
+
+  .fc-u-bg-canvas { background-color: var(--fc-color-bg-canvas); }
+  .fc-u-bg-surface { background-color: var(--fc-color-bg-surface); }
+  .fc-u-bg-subtle { background-color: var(--fc-color-bg-subtle); }
+
+  /*
+   * Tabular numerals. Distinct from the base layer's [data-numeric] attribute:
+   * this is the utility form for ad-hoc application. Both exist because
+   * tabular figures are genuinely needed for numeric columns and are wrong for
+   * running prose, where proportional digits read better.
+   */
+  .fc-u-tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Full-bleed escape from a container's padding. Logical, direction-safe. */
+  .fc-u-full-bleed {
+    inline-size: 100vw;
+    margin-inline: calc(50% - 50vw);
+    padding-inline: 0;
+  }
+
+  /* Hide from all rendering, including the accessibility tree. */
+  .fc-u-hidden {
+    display: none !important;
+  }
+
+  /*
+   * Preserve whitespace. Needed for translated strings that rely on significant
+   * spaces (Arabic, Japanese) or for preformatted content in prose.
+   */
+  .fc-u-prewrap {
+    white-space: pre-wrap;
+  }
+
+  /* Scroll behaviour. The smooth variant is opt-in so reduced motion is safe. */
+  .fc-u-scroll-smooth {
+    scroll-behavior: smooth;
+  }
+
+  /* Elevation. */
+  .fc-u-shadow-raised {
+    box-shadow: var(--fc-shadow-raised);
+  }
+}

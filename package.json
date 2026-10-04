@@ -1,0 +1,50 @@
+{
+  "name": "future-css",
+  "version": "0.0.0",
+  "description": "A styling system for multi-language, multi-platform systems",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "style": "./dist/future-css.css",
+      "default": "./dist/index.js"
+    },
+    "./layers": "./dist/layers.css",
+    "./reset": "./dist/reset.css",
+    "./tokens": "./dist/tokens.css",
+    "./base": "./dist/base.css",
+    "./layout": "./dist/layout.css",
+    "./components/*": "./dist/components/*.css",
+    "./utilities": "./dist/utilities.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node src/build/build.ts",
+    "build:tokens": "node src/build/compile-tokens.ts",
+    "check": "npm run build && npm run lint && npm run test",
+    "lint": "node tools/lint-css.mjs",
+    "test": "node --test \"tests/**/*.test.ts\"",
+    "clean": "node -e \"import('node:fs').then(fs=>fs.rmSync('dist',{recursive:true,force:true}))\""
+  },
+  "keywords": [
+    "css",
+    "design-system",
+    "design-tokens",
+    "dark-mode",
+    "rtl",
+    "i18n",
+    "accessibility"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

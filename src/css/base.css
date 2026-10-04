@@ -1,0 +1,286 @@
+/*!
+ * future-css -- base layer
+ *
+ * Element-level defaults, all zero-specificity via :where(). This layer is what
+ * makes semantic HTML look finished before a single class is written: an <h1> is
+ * a heading, a <table> has structure, a <fieldset> groups its controls.
+ *
+ * The guiding principle: a document using only semantic HTML with no classes at
+ * all should already be legible and usable. Classes enhance; they do not rescue.
+ */
+
+@layer fc.base {
+  html {
+    /*
+     * Never set a fixed px font-size here: it would override the browser's
+     * minimum/default font size setting that many users raise deliberately.
+     * Everything else is sized in rem, so it follows this value.
+     */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+
+    /* Smooth scrolling is opt-in via a utility class, not the default:
+     * honouring prefers-reduced-motion matters more than the polish. */
+    scroll-behavior: auto;
+
+    /* Declares that both schemes are supported, which is what makes form
+     * controls, scrollbars and the UA default canvas follow the OS setting. */
+    color-scheme: light dark;
+  }
+
+  body {
+    /* Canvas tokens set the page surface, which is what makes dark mode reach
+     * the areas no component touches (overscroll, empty space). */
+    background-color: var(--fc-color-bg-canvas);
+    color: var(--fc-color-text-default);
+
+    font-family: var(--fc-font-family-sans);
+    font-size: var(--fc-font-size-md);
+    line-height: var(--fc-line-height-normal);
+    font-weight: var(--fc-font-weight-regular);
+
+    font-kerning: normal;
+    text-rendering: optimizeLegibility;
+
+    /* WebKit-only: dark text on a dark canvas looks smeared without it. */
+    -webkit-font-smoothing: antialiased;
+
+    /*
+     * Line length. A measure of roughly 65-75 characters is comfortable for
+     * sustained reading; without a max-width, prose is unreadable on a wide
+     * monitor. Applied here rather than to <p> so it does not constrain
+     * full-bleed layouts.
+     */
+    max-inline-size: var(--fc-size-content-max);
+    margin-inline: auto;
+    padding-inline: var(--fc-space-4);
+  }
+
+  /*
+   * Headings. Size, weight and space all come from the same scale. Note the
+   * logical margin longhands: margin-block-end behaves identically in LTR and
+   * RTL and, unlike margin-top, does not flip when page direction changes.
+   */
+  :where(h1, h2, h3, h4, h5, h6) {
+    font-weight: var(--fc-font-weight-semibold);
+    line-height: var(--fc-line-height-tight);
+    /* Evens out ragged headline wrapping. Ignored where unsupported. */
+    text-wrap: balance;
+  }
+
+  :where(h1) {
+    font-size: var(--fc-font-size-4xl);
+    margin-block-end: var(--fc-space-4);
+  }
+
+  :where(h2) {
+    font-size: var(--fc-font-size-3xl);
+    margin-block-end: var(--fc-space-3);
+  }
+
+  :where(h3) {
+    font-size: var(--fc-font-size-2xl);
+    margin-block-end: var(--fc-space-3);
+  }
+
+  :where(h4) {
+    font-size: var(--fc-font-size-xl);
+    margin-block-end: var(--fc-space-2);
+  }
+
+  :where(h5) {
+    font-size: var(--fc-font-size-lg);
+    margin-block-end: var(--fc-space-2);
+  }
+
+  :where(h6) {
+    /*
+     * h6 is not made smaller than body text; it is distinguished by weight and
+     * colour instead. Shrinking it produces illegible headings, and relying on
+     * letter-spacing alone would misbehave in scripts that have no such
+     * tradition (Arabic, CJK).
+     */
+    font-size: var(--fc-font-size-md);
+    font-weight: var(--fc-font-weight-semibold);
+    color: var(--fc-color-text-muted);
+  }
+
+  /*
+   * Body text gets `pretty`, which lets the browser adjust line breaks to
+   * avoid orphans. Unlike `balance`, this is specifically for running prose.
+   */
+  :where(p, li) {
+    text-wrap: pretty;
+  }
+
+  /*
+   * Prose rhythm: block elements inside a flow get spacing without wrapper
+   * divs. The general-sibling combinator is direction-agnostic.
+   */
+  :where(p, ul, ol, dl, blockquote, pre, table, figure) {
+    margin-block-end: var(--fc-space-4);
+  }
+
+  /*
+   * Links. Underlined by default and always. Removing underlines breaks WCAG
+   * 1.4.1 for anyone who cannot perceive the colour difference between link and
+   * body text: colour alone is not a sufficient affordance.
+   */
+  :where(a) {
+    color: var(--fc-color-accent-text);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: from-font;
+  }
+
+  :where(a:hover) {
+    text-decoration-thickness: var(--fc-border-width-thick);
+  }
+
+  /* Visited links are deliberately NOT recoloured. A visited-state hue that
+   * passes contrast on one background often fails on another, and the privacy
+   * value of a distinct visited colour is minor by comparison. */
+
+  /*
+   * Focus. One ring definition for every focusable element in the document,
+   * driven by :focus-visible so a mouse user never sees it but a keyboard user
+   * always does. `outline-offset` gives the ring breathing room.
+   */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring);
+    outline-offset: var(--fc-space-0-5);
+    /*
+     * The offset colour creates a gap between the component and the ring, so
+     * the ring stays distinguishable even when the component's own colour is
+     * close to the focus colour.
+     */
+    box-shadow: 0 0 0 var(--fc-space-0-5) var(--fc-color-focus-ring-offset);
+  }
+
+  /*
+   * Remove the ring only for non-keyboard focus. The lint step fails the build
+   * on `outline: none` anywhere that is not inside a `:not(:focus-visible)`
+   * selector, so this pattern cannot be used to silently delete focus styling.
+   */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Inline code. */
+  :where(code, kbd, samp, pre) {
+    font-family: var(--fc-font-family-mono);
+    /* Code is optically smaller at the same point size. */
+    font-size: 0.9375em;
+  }
+
+  :where(code):not(pre code) {
+    background-color: var(--fc-color-bg-subtle);
+    padding-inline: 0.25em;
+    border-radius: var(--fc-radius-sm);
+  }
+
+  /*
+   * Block quotes. `border-inline-start` is the logical form: it draws on the
+   * left in LTR and the right in RTL with no extra rule.
+   */
+  :where(blockquote) {
+    border-inline-start: var(--fc-border-width-thick) solid var(--fc-color-border-default);
+    padding-inline-start: var(--fc-space-4);
+    color: var(--fc-color-text-muted);
+    font-style: italic;
+  }
+
+  :where(hr) {
+    border: 0;
+    border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+    margin-block: var(--fc-space-6);
+  }
+
+  /*
+   * Tables. `border-collapse` is set on the table itself, since it does not
+   * inherit reliably in every engine. `text-align: start` keeps numeric columns
+   * aligned to the reading edge, which is what makes one table work in both LTR
+   * and RTL without a separate stylesheet.
+   */
+  :where(table) {
+    border-collapse: collapse;
+    inline-size: 100%;
+    max-inline-size: 100%;
+  }
+
+  :where(caption) {
+    color: var(--fc-color-text-muted);
+    text-align: start;
+    padding-block-end: var(--fc-space-2);
+  }
+
+  :where(th, td) {
+    padding: var(--fc-space-2) var(--fc-space-3);
+    text-align: start;
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    vertical-align: top;
+  }
+
+  :where(thead th) {
+    font-weight: var(--fc-font-weight-semibold);
+    color: var(--fc-color-text-muted);
+    border-block-end-color: var(--fc-color-border-default);
+  }
+
+  :where(tbody tr:last-child td) {
+    border-block-end: 0;
+  }
+
+  /*
+   * Form elements. Placeholders are given a real contrast ratio rather than the
+   * browser default, which is frequently far too faint to read.
+   */
+  :where(input, textarea, select) {
+    background-color: var(--fc-color-bg-surface);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-interactive);
+    border-radius: var(--fc-radius-md);
+    padding: var(--fc-space-2) var(--fc-space-3);
+    inline-size: 100%;
+  }
+
+  :where(textarea) {
+    /* Never lock the height: a fixed-height textarea is a common cause of
+     * content being silently unreachable. */
+    min-block-size: 6lh;
+    resize: vertical;
+  }
+
+  :where(::placeholder) {
+    color: var(--fc-color-text-subtle);
+    opacity: 1; /* Firefox lowers this by default. */
+  }
+
+  /*
+   * Invalid state, driven by :user-invalid rather than :invalid so the field is
+   * not flagged before the user has typed anything. Colour is never the only
+   * signal: the component layer also renders a message, and the field carries
+   * aria-invalid plus aria-describedby pointing at it.
+   */
+  :where(input, textarea, select):user-invalid {
+    border-color: var(--fc-color-danger-border);
+  }
+
+  :where(summary) {
+    cursor: pointer;
+    font-weight: var(--fc-font-weight-medium);
+  }
+
+  :where(abbr[title]) {
+    text-decoration: underline dotted;
+    cursor: help;
+  }
+
+  /*
+   * Selection. `Highlight`/`HighlightText` would follow the OS but are not
+   * universally supported; tokens keep the result consistent with the theme.
+   */
+  ::selection {
+    background-color: var(--fc-color-accent-bg-subtle);
+    color: var(--fc-color-accent-text);
+  }
+}

@@ -67,6 +67,17 @@ export interface ComposerOptions {
 const KIB = 1024;
 
 export class FutureCssComposer {
+  /**
+   * Aborts every listener this binding registered.
+   *
+   * Not optional housekeeping: the drag handlers live on `document`, which
+   * outlives the composer. Without teardown, a chat view that mounts and unmounts
+   * a composer keeps every detached root reachable and keeps invoking its obsolete
+   * handlers on each drop -- 200 live listeners after 100 open/close cycles.
+   */
+  private readonly controller = new AbortController();
+  private readonly signal = this.controller.signal;
+
   private readonly root: HTMLElement;
   private readonly input: HTMLTextAreaElement;
   private readonly send: HTMLButtonElement | null;
@@ -92,6 +103,15 @@ export class FutureCssComposer {
 
     this.wire();
     this.render();
+  }
+
+  /**
+   * Removes every listener this binding added.
+   *
+   * Call it when the composer leaves the DOM. Safe to call twice.
+   */
+  destroy(): void {
+    this.controller.abort();
   }
 
   /** The current draft text. */
@@ -179,30 +199,50 @@ export class FutureCssComposer {
   removeAttachment(index: number): void {
     if (index < 0 || index >= this.attachments.length) return;
     /*
-     * Move focus before the chip is destroyed.
+     * Focus is restored by *file*, not by index.
      *
-     * The button being removed is the element that has focus, so removing it
-     * strands focus on `<body>` -- which is invisible to a mouse user and means a
-     * keyboard user's next Tab starts from the top of the page. Moving to the
-     * neighbouring chip, or back to the input when none are left, keeps them
-     * where they were.
+     * Two things go wrong with the obvious approach. If focus was on the removed
+     * chip, removing it strands focus on `<body>` -- a keyboard user's next Tab
+     * then starts from the top of the page. And if focus was on some *other*
+     * chip, restoring to `removedIndex` moves it onto a different file, so the
+     * user's next press removes the wrong attachment.
+     *
+     * So: remember which file had focus, rebuild, then put focus back on that
+     * same file -- wherever it moved to. When the focused file was the one removed,
+     * focus goes to its neighbour instead, or to the input when none are left.
      */
-    const hadFocus = document.activeElement instanceof HTMLElement
-      && this.list?.contains(document.activeElement);
+    const focusedButton = this.removeButtons().includes(
+      document.activeElement as HTMLElement,
+    )
+      ? (document.activeElement as HTMLElement)
+      : null;
+    const focusedName = focusedButton
+      ? this.attachmentNameFor(focusedButton)
+      : null;
+
     this.setAttachments(this.attachments.filter((_, i) => i !== index));
-    if (hadFocus) this.restoreChipFocus(index);
+
+    if (focusedName === null) return; // focus was not on a chip; leave it alone
+    const buttons = this.removeButtons();
+    const sameFile = buttons.find((b) => this.attachmentNameFor(b) === focusedName);
+    if (sameFile) {
+      sameFile.focus();
+      return;
+    }
+    // The focused chip was the one removed: prefer the next chip, then the
+    // previous one, then fall back to the input.
+    (buttons[index] ?? buttons[index - 1] ?? this.input).focus();
   }
 
-  /** Focuses the chip that took the removed one's place, or the input. */
-  private restoreChipFocus(removedIndex: number): void {
-    const buttons = this.list
-      ? Array.from(
-          this.list.querySelectorAll<HTMLElement>(".fc-composer__attachment-remove"),
-        )
+  private removeButtons(): HTMLElement[] {
+    return this.list
+      ? Array.from(this.list.querySelectorAll<HTMLElement>(".fc-composer__attachment-remove"))
       : [];
-    // Prefer the next chip, then the previous one, then the input.
-    const next = buttons[removedIndex] ?? buttons[removedIndex - 1] ?? this.input;
-    next.focus();
+  }
+
+  /** The file name a remove button belongs to, read from its accessible name. */
+  private attachmentNameFor(button: HTMLElement): string {
+    return (button.getAttribute("aria-label") ?? "").replace(/^Remove\s+/, "");
   }
 
   /**
@@ -314,7 +354,7 @@ export class FutureCssComposer {
       if (this.syncing) return;
       this.autosize();
       this.render();
-    });
+    }, { signal: this.signal });
 
     this.input.addEventListener("keydown", (event) => {
       /*
@@ -337,7 +377,7 @@ export class FutureCssComposer {
     this.send?.addEventListener("click", () => {
       if (this.isRunning) this.options.onStop?.();
       else this.submit();
-    });
+    }, { signal: this.signal });
 
     this.wireDropTarget();
   }
@@ -364,12 +404,12 @@ export class FutureCssComposer {
     this.root.addEventListener("dragenter", (event) => {
       stop(event);
       this.root.dataset.fcDragging = "true";
-    });
+    }, { signal: this.signal });
 
     this.root.addEventListener("dragover", (event) => {
       stop(event);
       this.root.dataset.fcDragging = "true";
-    });
+    }, { signal: this.signal });
 
     // A drag that ends anywhere else -- dropped on another target, cancelled with
     // Escape -- must clear the cue. Without this the composer stays highlighted
@@ -383,14 +423,14 @@ export class FutureCssComposer {
       // `relatedTarget` null means the pointer actually left the root.
       if (event.relatedTarget) return;
       delete this.root.dataset.fcDragging;
-    });
+    }, { signal: this.signal });
 
     this.root.addEventListener("drop", (event) => {
       stop(event);
       delete this.root.dataset.fcDragging;
       const files = Array.from(event.dataTransfer?.files ?? []);
       if (files.length) this.addAttachments(files);
-    });
+    }, { signal: this.signal });
   }
 }
 

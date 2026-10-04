@@ -1631,4 +1631,63 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.ok(after[2] == null, "and when the drag ends without a drop");
   });
 
+
+  it("keeps focus on the same file when a different chip is removed", async () => {
+    // Restoring focus to the removed *index* moves it onto a different file, so
+    // the user's next press removes the wrong attachment.
+    await loadBindings();
+    await resetComposer();
+    const result = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      comp.addAttachments([
+        new File(['a'], 'a.ts'),
+        new File(['b'], 'b.ts'),
+        new File(['c'], 'c.ts'),
+      ]);
+      const buttons = () => [...document.querySelectorAll('.fc-composer__attachment-remove')];
+      // Focus the LAST chip, then remove the FIRST.
+      buttons()[2].focus();
+      comp.removeAttachment(0);
+      const active = document.activeElement.getAttribute('aria-label');
+      return [active, buttons().map((b) => b.getAttribute('aria-label'))];
+    `);
+    assert.equal(result[0], "Remove c.ts",
+      "focus must stay on the file the user was on, not move to the removed index");
+    assert.deepEqual(result[1], ["Remove b.ts", "Remove c.ts"]);
+  });
+
+  it("stops listening after destroy", async () => {
+    // The drag handlers live on `document`, which outlives the composer. Without
+    // teardown, a view that mounts and unmounts keeps every detached root alive
+    // and keeps invoking its obsolete handlers on each drop.
+    await loadBindings();
+    await resetComposer();
+    const result = await evaluate(`
+      const probe = [];
+      const original = document.addEventListener.bind(document);
+      let added = 0;
+      document.addEventListener = (...args) => { added += 1; return original(...args); };
+
+      const host = document.createElement('div');
+      host.id = 'detached-composer';
+      host.className = 'fc-composer';
+      host.innerHTML =
+        '<textarea class="fc-composer__input"></textarea>' +
+        '<ul class="fc-composer__attachments"></ul>' +
+        '<button class="fc-composer__send"></button>';
+      document.body.append(host);
+      const c = new C.FutureCssComposer({ root: '#detached-composer' });
+      const whileMounted = added;
+      c.destroy();
+      host.remove();
+      document.addEventListener = original;
+
+      // After destroy the listeners are gone, so a later drop reaches nobody.
+      document.dispatchEvent(new DragEvent('dragend', { bubbles: true }));
+      return [whileMounted > 0, c.text === ''];
+    `);
+    assert.equal(result[0], true, "the composer must register listeners while mounted");
+    assert.equal(result[1], true);
+  });
+
 });

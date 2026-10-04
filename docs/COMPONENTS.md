@@ -675,7 +675,39 @@ Each chip's remove button is labelled `Remove <filename>`. Four buttons all read
 "Remove" tell a screen-reader user nothing about which attachment is going away. An
 attachment that could not be read is shown with its reason rather than silently
 dropped, since dropping it would leave the user sending a request that is missing
-what they added.
+what they added — `addFailedAttachment` is how that state is reached.
+
+**The original `File` is retained.** An `Attachment` carries `file`, so
+`onSubmit` receives something a consumer can actually upload, hash, or inline.
+Reducing it to `{name, size, type}` looks like it works and silently delivers
+nothing: the chip stays on screen until submit, so the loss has no visible moment.
+The binding is a pass-through, not a gate — reading the bytes is the consumer's
+business.
+
+```ts
+composer.onSubmit((text, files) => {
+  const form = new FormData();
+  for (const a of files) if (a.file) form.append("files[]", a.file);
+  post({ text, form });
+});
+```
+
+### Focus on removal
+
+Removing a chip destroys the button that had focus, which would strand focus on
+`<body>`. Focus is restored **by file name**, not by index: if the removed chip was
+focused, focus moves to its neighbour or back to the input; if a *different* chip
+was focused, focus stays on that same file. Restoring by index would silently move
+a keyboard user onto a different attachment, so their next press removes the wrong
+one.
+
+### Teardown
+
+`destroy()` aborts every listener the binding registered. The drag handlers live on
+`document`, which outlives the composer, so a view that mounts and unmounts a
+composer repeatedly would otherwise keep every detached root reachable and keep
+invoking its obsolete handlers on each drop. Call `destroy()` when the composer
+leaves the DOM.
 
 ---
 

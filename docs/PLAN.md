@@ -26,10 +26,10 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 ### Working now
 
 ```
-npm run build        165 tokens (90 theme-aware) + 16-file bundle, 143 KB
+npm run build        165 tokens (90 theme-aware) + 17-file bundle, 153 KB
                      7 Rust crates, 7 .wasm files in 6 modules (over budget — see Phase A)
-npm run lint         15 rules, 0 violations across 16 files
-npm test             278 tests passing (incl. WASM/JS parity + bundle integrity)
+npm run lint         15 rules, 0 violations across 17 files
+npm test             293 tests passing (incl. WASM/JS parity + bundle integrity)
 cargo test           96 tests passing
 ```
 

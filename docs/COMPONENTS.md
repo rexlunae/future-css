@@ -619,6 +619,66 @@ generator in `demo/demo.js` sets it; any consumer must do the same.
 
 ---
 
+## Chat composer (implemented)
+
+The input surface beneath a chat thread: text entry, attachments, and a send/stop
+control.
+
+```html
+<div class="fc-composer" data-fc-state="idle">
+  <label class="fc-u-visually-hidden" for="composer-input">Message</label>
+  <textarea class="fc-composer__input" id="composer-input" rows="2"></textarea>
+  <ul class="fc-composer__attachments"></ul>
+  <button class="fc-btn fc-btn--primary fc-composer__send" data-fc-state="idle">Send</button>
+  <p class="fc-composer__status" role="status"></p>
+</div>
+```
+
+### Why a `<textarea>` and not contenteditable
+
+The editor component uses `contenteditable`, so this looks inconsistent. It is
+not. An **IME-composed character inserted into a contenteditable region fails
+silently**, and composing input is routine in CJK and other composing scripts. A
+textarea also gives Enter-to-send, Shift+Enter, and native undo without
+re-implementing any of it. `terminal.css` documents the same failure for the same
+reason.
+
+### Enter must not send during IME composition
+
+```js
+const composing = event.isComposing || event.keyCode === 229;
+if (event.key !== "Enter" || composing) return;
+```
+
+Sending mid-composition commits a half-composed character and closes the candidate
+window. This is the most common bug in any composer and it only reproduces with an
+IME, so it is tested with both signals.
+
+### One send control, two meanings
+
+`data-fc-state` on the root flips the control between Send and Stop. The button
+element is **never replaced** — replacing it moves focus, and a control that
+appears mid-run is the one a keyboard user is not looking at. While running the
+input is `readOnly`, not `disabled`: a disabled field leaves the tab order, so
+tabbing past would not reveal that there is anything there.
+
+### Stopping is not sending
+
+Abort keeps the draft. The user cancelled a run, not composed a message, and
+clearing the text would discard work they may want to resend. The same reasoning
+means the draft clears only *after* `onSubmit` returns — if a consumer's handler
+throws, the text is still there.
+
+### Attachments
+
+Each chip's remove button is labelled `Remove <filename>`. Four buttons all reading
+"Remove" tell a screen-reader user nothing about which attachment is going away. An
+attachment that could not be read is shown with its reason rather than silently
+dropped, since dropping it would leave the user sending a request that is missing
+what they added.
+
+---
+
 ## Select / listbox (implemented)
 
 A value-selecting combobox with grouped options, substring filtering, and typeahead.

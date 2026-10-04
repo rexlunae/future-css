@@ -17,6 +17,7 @@ import { FutureCssWebview } from "/src/js/webview.js";
 import { highlight, renderHighlighted, languageNames } from "/src/js/highlight.js";
 import { diffLines, diffStats } from "/src/js/diff.js";
 import { FutureCssSelect } from "/src/js/select.js";
+import { FutureCssComposer } from "/src/js/composer.js";
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -611,3 +612,48 @@ $("#model-filter")?.addEventListener("input", (event) => {
   modelSelect.filter(event.target.value);
 });
 
+
+// ---------------------------------------------------------------------------
+// Chat composer
+//
+// The send control flips to Stop while a run is in flight, which is the thing
+// worth watching: the *same* element changes meaning rather than being replaced,
+// so focus never moves mid-run. Attach a file to see the chips, and note that
+// each remove button names its own file.
+// ---------------------------------------------------------------------------
+
+let composerRunning = false;
+
+const composer = new FutureCssComposer({
+  root: "#composer-root",
+  onSubmit: (text, attachments) => {
+    const names = attachments.map((a) => a.name);
+    status(
+      "#composer-status",
+      `Submitted ${text.length} chars${names.length ? ` with ${names.join(", ")}` : ""}`,
+    );
+    // The demo "runs" for a moment so the Stop state is reachable. A real app
+    // calls setRunning() from its stream's lifecycle, not on a timer.
+    composerRunning = true;
+    composer.setRunning(true);
+    setTimeout(() => {
+      composerRunning = false;
+      composer.setRunning(false);
+    }, 2500);
+  },
+  onStop: () => {
+    status("#composer-status", "Stopped. Your draft was kept.");
+    composerRunning = false;
+    composer.setRunning(false);
+  },
+  onAttachmentsChange: (files) => {
+    status("#composer-attachments-status", `${files.length} attached`);
+  },
+});
+
+$("#composer-attach")?.addEventListener("click", () => {
+  composer.addAttachments([
+    new File(["x".repeat(900)], "diff-viewer.ts", { type: "text/plain" }),
+    new File(["y".repeat(1200)], "schema.sql", { type: "text/plain" }),
+  ]);
+});

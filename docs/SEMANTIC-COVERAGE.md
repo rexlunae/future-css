@@ -717,12 +717,25 @@ the budget with a justification. Not to leave a number the build contradicts.
 Recorded rather than fixed silently, because `AGENTS.md` says documentation that drifts
 is worse than none.
 
-| Claim in `PLAN.md` | Actual |
+**All of these are now corrected in `PLAN.md` and `README.md`.** The table is kept as
+the record of what was wrong, not as a live list of outstanding defects — a stale claim
+in this file would be the same defect one layer down.
+
+| Was claimed | Now states |
 | --- | --- |
-| "119 tokens (44 theme-aware)" | **165 tokens, 90 theme-aware** |
-| "~55 KB" bundle | **132 KB** (`dist/future-css.css`) |
-| "92 tests passing" | **245 tests passing** |
-| "Ten CSS components are complete" | Correct — but form controls and overlays are still Phase 3 |
+| "119 tokens (44 theme-aware)" | 165 tokens, 90 theme-aware |
+| "~55 KB" bundle | 132 KB uncompressed, with the unenforced budget called out |
+| "92 tests passing" | 245 tests passing |
+| "68 tests" (Rust) | 75 tests passing |
+| "5 WASM modules" | 6 Rust crates, 4 WASM modules, with `fc-diff` named as unbound |
+| "Seven components are complete" (README) | Ten, plus the three JS modules named |
+
+### One gap the numbers do not show
+
+`fc-diff` is a Rust crate with 7 passing tests and **no `wasm_bindgen` layer**. It is
+absent from `CRATES` in `build-wasm.ts`, so it emits no `.wasm`. A crate count and a
+module count are different measurements: six crates produce four importable modules,
+and only four of the six are reachable from JavaScript today.
 
 ## Per-library verdicts
 

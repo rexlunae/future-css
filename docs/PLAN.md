@@ -40,6 +40,14 @@ section below. That budget has never been enforced — it is scheduled for Phase
 number above is stated as measured rather than as met. See
 [Semantic coverage](SEMANTIC-COVERAGE.md) §"Docs that disagree with the code".
 
+**Six crates, four WASM modules — and the gap is deliberate.** `fc-core` and
+`fc-model` both emit into the `fc-model` module, so five build entries produce four
+importable modules. The sixth crate, `fc-diff`, has **no `wasm_bindgen` layer at
+all**: it is pure Rust with 7 passing tests, exercised by `cargo test` and by the
+Rust/JS parity test, but it is absent from `CRATES` in `build-wasm.ts` and emits no
+`.wasm`. It is a library crate, not a module, and listing it among the WASM modules
+would claim coverage that does not exist. Adding its binding layer is Phase A work.
+
 Verified: contrast contract enforced in both schemes · all ramps validated · linter
 verified against both violations and legitimate patterns · WASM modules instantiate and
 **agree with the JS implementation on every offset pair**.

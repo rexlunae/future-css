@@ -19,6 +19,7 @@ members = [
   "crates/fc-context-menu",
   "crates/fc-grid",
   "crates/fc-diff",
+  "crates/fc-select",
 ]
 
 [workspace.package]

@@ -42,6 +42,7 @@ const BUDGET: Record<string, number> = {
   // should be the first to come in under. Measuring it is how the rest of the
   // workspace gets a number to aim at.
   fc_diff: 35_000,
+  fc_select: 35_000,
 };
 
 /** Cargo crate name -> the module name JS imports. */
@@ -54,6 +55,9 @@ const CRATES: ReadonlyArray<readonly [crate: string, module: string]> = [
   // Its own module, unlike fc-core/fc-model which share one. It links no js-sys,
   // so it does not inherit their 302 KB, and it needs no shared runtime state.
   ["fc-diff", "fc-diff"],
+  // Second primitives-only module. Together with fc-diff this gives Phase A a
+  // worked example rather than a theory.
+  ["fc-select", "fc-select"],
 ];
 
 interface SizeReport {

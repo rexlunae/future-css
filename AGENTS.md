@@ -271,17 +271,17 @@ docs/               Design documents; PLAN.md is the roadmap, WASM.md the WASM s
 
 ## Current state
 
-Pre-alpha. Foundations are built and enforced. Ten CSS components are
+Pre-alpha. Foundations are built and enforced. Eleven CSS components are
 complete: button, chat surface, tool call / step trace, rich text editor,
-context menu, data grid, embedded browser chrome, terminal, code block, and
-diff viewer. Four also ship a browser binding -- editor, menu, grid, and
+context menu, data grid, embedded browser chrome, terminal, code block, diff
+viewer, and the select/listbox. Four also ship a browser binding -- editor, menu, grid, and
 webview -- exercised by tests in a real headless Chrome. Syntax highlighting,
 Markdown, and line diffing ship as JS modules (`highlight`, `diff`,
 `markdown`); the diff has a Rust crate, the other two do not yet.
-Form controls and
-dialogs are not yet written. A select/listbox component is the next planned
-item; the chat composer that motivates it is queued behind it. The Rust/WASM
-layer has six crates with 75 passing tests and a working JS-only fallback,
+Form controls and dialogs are not yet written. The chat composer is the next
+planned item; it is built on the select/listbox, which shipped ahead of it for
+exactly that reason. The Rust/WASM
+layer has seven crates with 96 passing tests and a working JS-only fallback,
 but **every module is currently ~10x over its size budget** — see the WASM
 section above and Phase A in `docs/PLAN.md`. The rich text, context menu, and
 grid models exist in Rust and are covered by a JS parity test, but only the

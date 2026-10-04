@@ -276,3 +276,144 @@ describe("fc-diff and the JS diff agree", () => {
     });
   });
 });
+
+/**
+ * fc-select parity.
+ *
+ * The Rust model and the JS twin must agree on navigation, or a user gets a
+ * listbox that behaves differently depending on whether WASM loaded. Same rule
+ * as `fc-diff`: compare the actual outputs, never a summary.
+ *
+ * Disabled options are the case worth encoding. Omitting them from a binding is
+ * silent -- the call returns a plausible index and nothing looks wrong until
+ * someone tries to pick the option they were just moved onto -- so the flags
+ * cross the boundary explicitly and are asserted here.
+ */
+describe("fc-select and the JS model agree", () => {
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const wasmDir = join(repoRoot, "dist", "wasm", "fc-select", "web");
+  const selectBuilt = existsSync(join(wasmDir, "fc_select.js"));
+
+  type SelectModule = {
+    default: (input?: { module_or_path?: Uint8Array }) => Promise<void>;
+    selectOpen: (
+      values: string[], labels: string[], groups: string[],
+      disabled: number[], current: string,
+    ) => number;
+    selectIndexOf: (values: string[], value: string) => number;
+    selectLabelAt: (labels: string[], index: number) => string;
+    selectFilter: (labels: string[], values: string[], query: string) => Int32Array;
+    selectMove: (
+      values: string[], labels: string[], disabled: number[],
+      committed: string, delta: number,
+    ) => Int32Array;
+    selectTypeahead: (
+      values: string[], labels: string[], disabled: number[],
+      committed: string, query: string,
+    ) => Int32Array;
+  };
+
+  let mod: SelectModule;
+  before(async () => {
+    mod = (await import(join(wasmDir, "fc_select.js"))) as SelectModule;
+    await mod.default({ module_or_path: await readFile(join(wasmDir, "fc_select_bg.wasm")) });
+  });
+
+  // Grouped like a real provider list, with one unavailable entry.
+  const VALUES = ["opus-5", "sonnet-5", "gpt-5", "o3", "llama-4"];
+  const LABELS = ["Claude Opus 5", "Claude Sonnet 5", "GPT-5", "o3", "Llama 4 (local)"];
+  const GROUPS = ["Anthropic", "Anthropic", "OpenAI", "OpenAI", "Local"];
+  const DISABLED = [0, 0, 0, 0, 1];
+
+  describe("navigation", { skip: selectBuilt ? false : "run `npm run build:wasm` first" }, () => {
+    it("opens on the committed value rather than the first option", () => {
+      // Re-opening an unchanged control must not move the highlight, or the
+      // control appears to reset itself.
+      assert.equal(mod.selectOpen(VALUES, LABELS, GROUPS, DISABLED, "gpt-5"), 2);
+      assert.equal(mod.selectOpen(VALUES, LABELS, GROUPS, DISABLED, "opus-5"), 0);
+    });
+
+    it("falls back to the first option when the committed value has vanished", () => {
+      // A provider list can change under a control holding a stale value.
+      assert.equal(mod.selectOpen(VALUES, LABELS, GROUPS, DISABLED, "retired-model"), 0);
+    });
+
+    it("moves the highlight by one, skipping unavailable options", () => {
+      const [active] = Array.from(mod.selectMove(VALUES, LABELS, DISABLED, "gpt-5", 1));
+      assert.equal(active, 3, "gpt-5 -> o3");
+      // Wraps past the last, disabled option back to the first.
+      const [wrapped] = Array.from(mod.selectMove(VALUES, LABELS, DISABLED, "o3", 1));
+      assert.equal(wrapped, 0, "must skip the disabled Llama, not stop on it");
+    });
+
+    it("moves backwards, wrapping from the first option", () => {
+      const [active] = Array.from(mod.selectMove(VALUES, LABELS, DISABLED, "opus-5", -1));
+      assert.equal(active, 3, "stepping up past the disabled option lands on o3");
+    });
+
+    it("finds a value by its stable id, not its label", () => {
+      assert.equal(mod.selectIndexOf(VALUES, "o3"), 3);
+      assert.equal(mod.selectIndexOf(VALUES, "nope"), -1, "absent value is -1, not 0");
+    });
+  });
+
+  describe("filter", { skip: selectBuilt ? false : "run `npm run build:wasm` first" }, () => {
+    it("matches substrings case-insensitively, which a prefix match would miss", () => {
+      // The distinction that separates this from a menu's typeahead: "sonnet"
+      // occurs inside "Claude Sonnet 5" but does not start it.
+      assert.deepEqual(Array.from(mod.selectFilter(LABELS, VALUES, "sonnet")), [1]);
+      assert.deepEqual(Array.from(mod.selectFilter(LABELS, VALUES, "GPT")), [2]);
+      assert.deepEqual(Array.from(mod.selectFilter(LABELS, VALUES, "local")), [4],
+        "an unavailable option is still a real option and stays listed");
+    });
+
+    it("restores every option for an empty query", () => {
+      assert.equal(Array.from(mod.selectFilter(LABELS, VALUES, "")).length, LABELS.length);
+    });
+
+    it("returns nothing rather than every option for a query that matches nothing", () => {
+      assert.deepEqual(Array.from(mod.selectFilter(LABELS, VALUES, "zzz")), []);
+    });
+  });
+
+  describe("typeahead", { skip: selectBuilt ? false : "run `npm run build:wasm` first" }, () => {
+    it("never selects an unavailable option", () => {
+      // "L" only prefixes "Llama 4 (local)", which is disabled. Selecting it
+      // would move the user onto an option they cannot choose.
+      const [active, matched] = Array.from(
+        mod.selectTypeahead(VALUES, LABELS, DISABLED, "", "L"),
+      );
+      assert.equal(matched, 0, "must report no match");
+      assert.equal(active, 0, "highlight stays where it was");
+    });
+
+    it("reports no match for a prefix that is absent", () => {
+      const [, matched] = Array.from(
+        mod.selectTypeahead(VALUES, LABELS, DISABLED, "", "Z"),
+      );
+      assert.equal(matched, 0, "a failed search must not report success");
+    });
+
+    it("finds a real prefix", () => {
+      const [active, matched] = Array.from(
+        mod.selectTypeahead(VALUES, LABELS, DISABLED, "", "C"),
+      );
+      assert.equal(matched, 1);
+      assert.equal(LABELS[active], "Claude Sonnet 5");
+    });
+  });
+
+  describe("degenerate input", { skip: selectBuilt ? false : "run `npm run build:wasm` first" }, () => {
+    it("survives an empty option list without trapping", () => {
+      assert.equal(mod.selectOpen([], [], [], [], ""), -1);
+      assert.deepEqual(Array.from(mod.selectMove([], [], [], "", 1)), [-1, -1]);
+      assert.deepEqual(Array.from(mod.selectTypeahead([], [], [], "", "a")), [-1, 0]);
+      assert.deepEqual(Array.from(mod.selectFilter([], [], "x")), []);
+    });
+
+    it("returns an empty label rather than trapping out of range", () => {
+      assert.equal(mod.selectLabelAt(LABELS, 99), "");
+      assert.equal(mod.selectLabelAt(LABELS, -1), "");
+    });
+  });
+});

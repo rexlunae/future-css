@@ -16,6 +16,7 @@ import { FutureCssGrid } from "/src/js/grid.js";
 import { FutureCssWebview } from "/src/js/webview.js";
 import { highlight, renderHighlighted, languageNames } from "/src/js/highlight.js";
 import { diffLines, diffStats } from "/src/js/diff.js";
+import { FutureCssSelect } from "/src/js/select.js";
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -581,3 +582,32 @@ $("#diff-swap")?.addEventListener("click", () => {
   $("#diff-swap").textContent = scrolling ? "Use wrapping" : "Use scrolling";
   paintDiff();
 });
+// ---------------------------------------------------------------------------
+// Select / listbox
+//
+// Wired to the real binding and driven by the same Rust model the package
+// exports, so this is the component rather than a lookalike. The point of the
+// section is the keyboard contract: try arrows, typeahead ("cl" for Claude),
+// Escape (which restores), and Tab (which commits and leaves).
+// ---------------------------------------------------------------------------
+
+const modelSelect = new FutureCssSelect({
+  invoker: "#model-select",
+  list: "#model-list",
+  onChange: (value, option) => {
+    status("#model-select-status", `${option.label} (${value})`);
+  },
+});
+
+const effortSelect = new FutureCssSelect({
+  invoker: "#effort-select",
+  list: "#effort-list",
+  onChange: (value, option) => {
+    status("#effort-select-status", `${option.label} — ${option.group ?? "no group"}`);
+  },
+});
+
+$("#model-filter")?.addEventListener("input", (event) => {
+  modelSelect.filter(event.target.value);
+});
+

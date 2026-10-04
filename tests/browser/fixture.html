@@ -96,6 +96,43 @@
     </div>
   </div>
 
+  <!-- Select / listbox. Options live in the markup so the component works with
+       no script at all; the binding reads them and enhances. The unavailable
+       entry is deliberate: skipping it is a behaviour that is easy to get wrong
+       and invisible until someone tries to select it. -->
+  <div class="fc-select-field">
+    <label class="fc-u-visually-hidden" for="select-invoker">Model</label>
+    <button type="button" class="fc-select" id="select-invoker" data-fc-value="gpt-5"
+            data-fc-placeholder="Select a model">
+      <span class="fc-select__value">GPT-5</span>
+      <span class="fc-select__chevron" aria-hidden="true">\u25be</span>
+    </button>
+    <div class="fc-select__list" id="select-list" role="listbox" aria-label="Model">
+      <div class="fc-select__group-label" role="presentation">Anthropic</div>
+      <div class="fc-select__option" role="option" data-fc-value="opus-5">
+        <span class="fc-select__option-check" aria-hidden="true"></span>
+        <span class="fc-select__option-label">Claude Opus 5</span>
+      </div>
+      <div class="fc-select__option" role="option" data-fc-value="sonnet-5">
+        <span class="fc-select__option-check" aria-hidden="true"></span>
+        <span class="fc-select__option-label">Claude Sonnet 5</span>
+      </div>
+      <div class="fc-select__group-label" role="presentation">OpenAI</div>
+      <div class="fc-select__option" role="option" data-fc-value="gpt-5">
+        <span class="fc-select__option-check" aria-hidden="true">\u2713</span>
+        <span class="fc-select__option-label">GPT-5</span>
+      </div>
+      <div class="fc-select__option" role="option" data-fc-value="o3">
+        <span class="fc-select__option-check" aria-hidden="true"></span>
+        <span class="fc-select__option-label">o3</span>
+      </div>
+      <div class="fc-select__option" role="option" data-fc-value="llama-4" aria-disabled="true">
+        <span class="fc-select__option-check" aria-hidden="true"></span>
+        <span class="fc-select__option-label">Llama 4 (local)</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 </body>
 </html>

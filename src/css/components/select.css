@@ -1,0 +1,353 @@
+/*!
+ * future-css -- select / listbox
+ *
+ * A value-selecting combobox and its option list.
+ *
+ * WHY THIS IS A COMPONENT, AND NOT THE NATIVE <select>
+ * ==============================================
+ *
+ * `docs/COMPONENTS.md` previously said a custom listbox was "not a component".
+ * That position has been reversed: an application that needs models grouped by
+ * provider, filtered as you type, with typeahead over a few hundred entries
+ * cannot be served by `<select>`, and fighting the platform to get partway there
+ * is worse than owning the whole thing.
+ *
+ * That makes this the most accessibility-sensitive component in the system,
+ * because it reimplements part of the accessibility tree. Two consequences shape
+ * every rule below:
+ *
+ *   1. **Focus stays on the invoker.** The highlighted option is conveyed with
+ *      `aria-activedescendant`, never by moving DOM focus. A combobox that moves
+ *      focus into its list cannot be tabbed back to and does not read as a
+ *      combobox at all.
+ *   2. **State is carried in ARIA, never by colour alone.** Selection is
+ *      `aria-selected`, availability is `aria-disabled`, and the highlight is
+ *      drawn as a surface *and* a border -- so it survives forced-colors mode
+ *      and a greyscale printer.
+ *
+ * The value is also exposed as `data-fc-value` on the invoker, per the DOM
+ * contract in AGENTS.md: a machine reads the selection without parsing the
+ * visible label, and the label is free to change (a model renamed upstream)
+ * without the data contract following it.
+ */
+
+@layer fc.components {
+  /* ---- Invoker ------------------------------------------------------------ */
+
+  /*
+   * A `<button role="combobox">`, not a `<div>`.
+   *
+   * That single choice buys form participation, Space/Enter activation, the
+   * platform's focus ring, and correct forced-colors rendering. A div would need
+   * `role`, `tabindex`, and both key handlers by hand and would still miss the
+   * rest.
+   */
+  .fc-select {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fc-space-2);
+
+    inline-size: 100%;
+    min-block-size: var(--fc-size-target-min);
+    padding-block: var(--fc-space-1-5);
+    padding-inline: var(--fc-space-3);
+
+    font-family: var(--fc-font-family-sans);
+    font-size: var(--fc-font-size-sm);
+    line-height: var(--fc-line-height-snug);
+    text-align: start;
+
+    color: var(--fc-color-text-default);
+    background-color: var(--fc-color-bg-surface);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+    border-radius: var(--fc-radius-sm);
+    cursor: pointer;
+  }
+
+  .fc-select:hover:not([aria-disabled="true"]) {
+    background-color: var(--fc-color-bg-raised);
+  }
+
+  /*
+   * `aria-disabled`, not `disabled`.
+   *
+   * A select with no options is a legitimate state the user should be able to
+   * reach and read -- otherwise they cannot discover *why* it is empty. `open()`
+   * on an empty list is a no-op, so the button stays operable and simply does
+   * nothing, which is the honest behaviour.
+   */
+  .fc-select[aria-disabled="true"] {
+    color: var(--fc-color-text-muted);
+    background-color: var(--fc-color-bg-subtle);
+    cursor: not-allowed;
+  }
+
+  .fc-select:focus-visible {
+    outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring);
+    outline-offset: var(--fc-space-0-5);
+  }
+
+  /*
+   * The open state is a border change as well as a background one: the list is
+   * anchored directly beneath, and on a page of identical surfaces a fill
+   * change alone is easy to miss.
+   */
+  .fc-select[aria-expanded="true"] {
+    border-color: var(--fc-color-accent-border);
+    background-color: var(--fc-color-bg-raised);
+  }
+
+  /* ---- Value and chevron --------------------------------------------------- */
+
+  /*
+   * `min-inline-size: 0` so a long label truncates instead of forcing the button
+   * wider than its container. Without it the flex item refuses to shrink below
+   * its content and the whole control overflows -- the classic flexbox trap.
+   */
+  .fc-select__value {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The placeholder is what an empty selection reads as, and it must not be
+     mistaken for a value. */
+  .fc-select__value[data-fc-placeholder="true"] {
+    color: var(--fc-color-text-muted);
+  }
+
+  /*
+   * The chevron is decorative: `aria-hidden` in the markup, because the value
+   * and `aria-expanded` already say which state this is in. Announcing a glyph
+   * adds nothing and, on a control read dozens of times a day, is noise.
+   */
+  .fc-select__chevron {
+    flex: none;
+    color: var(--fc-color-text-muted);
+    transition: transform var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-select[aria-expanded="true"] .fc-select__chevron {
+    transform: rotate(180deg);
+  }
+
+  /* ---- Option list --------------------------------------------------------- */
+
+  /*
+   * `position: fixed` and the Popover API, for the same reason `.fc-menu` does:
+   * the list must escape any `overflow: hidden` ancestor, and a listbox that
+   * scrolls with its container is unusable inside a scrolling panel.
+   *
+   * `position-anchor` is progressive enhancement -- where it is unsupported the
+   * binding falls back to measuring, and the rule below simply does not apply.
+   */
+  .fc-select__list {
+    /*
+     * `margin: 0` and `inset: auto` are load-bearing, not resets.
+     *
+     * A `popover` in the top layer gets `margin: auto` and `inset: 0` from the
+     * UA stylesheet, which centers the element and stretches it to fill the
+     * viewport. That silently defeats the coordinates the binding measures and
+     * sets: the list came out centred and inverted rather than under its
+     * invoker. `.fc-menu` has the same popover but is positioned by script at a
+     * point, so it never met this.
+     */
+    margin: 0;
+    inset: auto;
+    position: fixed;
+    z-index: var(--fc-z-dropdown);
+
+    display: flex;
+    flex-direction: column;
+    /* A long list scrolls rather than growing past the viewport. */
+    max-block-size: min(60vh, 24rem);
+    overflow-y: auto;
+    overscroll-behavior-block: contain;
+
+    min-inline-size: 12rem;
+    padding-block: var(--fc-space-1);
+    padding-inline: var(--fc-space-1);
+
+    background-color: var(--fc-color-bg-overlay);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+    border-radius: var(--fc-radius-md);
+    box-shadow: var(--fc-shadow-overlay);
+
+    font-size: var(--fc-font-size-sm);
+    line-height: var(--fc-line-height-snug);
+  }
+
+  /*
+   * Same open/closed contract as `.fc-menu`: the Popover API where available, a
+   * `data-fc-open` attribute the script toggles where it is not. A closed list
+   * must never be a flash of unpositioned options.
+   */
+  .fc-select__list:not(:popover-open):not([data-fc-open="true"]) {
+    display: none;
+  }
+
+  /* ---- Options ------------------------------------------------------------- */
+
+  /*
+   * `<div role="option">`, not `<button>`.
+   *
+   * A button inside a listbox is a nested interactive control: assistive tech
+   * announces it as a button *inside* a listbox option, and Tab would try to
+   * reach it. The listbox pattern deliberately uses non-focusable options and
+   * moves a single active descendant instead.
+   */
+  .fc-select__option {
+    display: flex;
+    align-items: baseline;
+    gap: var(--fc-space-2);
+
+    min-block-size: var(--fc-size-target-min);
+    padding-block: var(--fc-space-1-5);
+    padding-inline: var(--fc-space-2);
+
+    /* Selected options must stay legible when highlighted, and vice versa, so
+       selection is a mark rather than a fill. */
+    color: var(--fc-color-text-default);
+    border-radius: var(--fc-radius-sm);
+    border-inline-start: var(--fc-border-width-thick) solid transparent;
+    cursor: pointer;
+  }
+
+  /*
+   * The highlight is drawn from `aria-activedescendant`'s target, so it follows
+   * whatever the binding considers active -- there is no second source of truth
+   * that could disagree with the ARIA.
+   *
+   * Surface *and* a left border, deliberately. A fill alone disappears in
+   * forced-colors mode, where the OS replaces author backgrounds.
+   */
+  .fc-select__option[data-fc-active="true"] {
+    background-color: var(--fc-color-accent-bg-subtle);
+    border-inline-start-color: var(--fc-color-accent-border);
+  }
+
+  /*
+   * Selection is marked with a check glyph in a reserved slot rather than by
+   * tinting the row, so "selected" and "highlighted" never look like the same
+   * state -- which is exactly the confusion that makes a listbox feel broken
+   * when you arrow onto the option you already chose.
+   */
+  .fc-select__option[aria-selected="true"] {
+    font-weight: var(--fc-font-weight-semibold);
+  }
+
+  .fc-select__option-check {
+    flex: none;
+    inline-size: 1ch;
+    color: var(--fc-color-accent-text);
+  }
+
+  /*
+   * An unavailable option is dimmed but never hidden: the user must be able to
+   * see that it exists and that it is the reason they cannot select it.
+   */
+  .fc-select__option[aria-disabled="true"] {
+    color: var(--fc-color-text-muted);
+    cursor: not-allowed;
+  }
+
+  /*
+   * The active descendant may be an unavailable option while arrowing past it --
+   * it must still be readable, so the disabled colour wins over the highlight.
+   */
+  .fc-select__option[aria-disabled="true"][data-fc-active="true"] {
+    background-color: transparent;
+    border-inline-start-color: transparent;
+  }
+
+  /* ---- Groups -------------------------------------------------------------- */
+
+  /*
+   * A group heading is `role="presentation"` in the markup and carries the
+   * accessible name for its `role="group"` wrapper. Visual only.
+   */
+  .fc-select__group-label {
+    padding-block: var(--fc-space-2) var(--fc-space-1);
+    padding-inline: var(--fc-space-2);
+
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-xs);
+    font-weight: var(--fc-font-weight-semibold);
+    /* Uppercase groups read as headings but break camelCase model ids. */
+    text-transform: none;
+  }
+
+  /* ---- Empty state --------------------------------------------------------- */
+
+  /*
+   * An empty list says so rather than presenting a blank box, which reads as a
+   * broken control.
+   */
+  .fc-select__empty {
+    padding-block: var(--fc-space-2);
+    padding-inline: var(--fc-space-2);
+
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-sm);
+  }
+
+  /* ---- Forced colors ------------------------------------------------------- */
+
+  /*
+   * Under forced colors the OS replaces backgrounds, so the highlight tint is
+   * lost. The left border survives, and `aria-selected` remains in the tree, so
+   * the state is still conveyed -- but only because it was never carried by the
+   * tint alone.
+   */
+  @media (forced-colors: active) {
+    .fc-select,
+    .fc-select__list {
+      background-color: Canvas;
+      color: CanvasText;
+      border-color: CanvasText;
+    }
+
+    .fc-select[aria-expanded="true"] {
+      border-color: Highlight;
+    }
+
+    .fc-select__option[data-fc-active="true"] {
+      background-color: Highlight;
+      color: HighlightText;
+      /* The border is a second cue here, and CanvasText keeps it visible against
+         the Highlight fill the OS substituted. */
+      border-inline-start-color: CanvasText;
+    }
+
+    .fc-select__option[aria-disabled="true"] {
+      color: GrayText;
+    }
+
+    .fc-select__option[aria-disabled="true"][data-fc-active="true"] {
+      background-color: Canvas;
+      color: GrayText;
+      border-inline-start-color: Canvas;
+    }
+
+    .fc-select__group-label,
+    .fc-select__empty {
+      color: GrayText;
+    }
+  }
+
+  /* ---- Reduced motion ------------------------------------------------------ */
+
+  /*
+   * The chevron rotation is the only motion. Stopping it outright rather than
+   * leaving a 0.01ms animation keeps the state change legible via the border
+   * change, which is not animated.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .fc-select__chevron {
+      transition: none;
+    }
+  }
+}

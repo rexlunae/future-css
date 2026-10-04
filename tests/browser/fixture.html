@@ -133,6 +133,32 @@
     </div>
   </div>
 
+  <!--
+    Composer. A real <textarea>, and that is the point: an IME-composed character
+    inserted into contenteditable fails silently, and composing input is routine
+    in CJK and other composing scripts. The unavailable-attachment chip is
+    deliberate too -- dropping a file that could not be read would leave the user
+    sending a request missing what they added.
+  -->
+  <div class="fc-composer" id="composer-root" data-fc-state="idle">
+    <label class="fc-u-visually-hidden" for="composer-input">Message</label>
+    <textarea class="fc-composer__input" id="composer-input" rows="2"
+              placeholder="Send a message&hellip; Enter to send, Shift+Enter for a new line"></textarea>
+
+    <ul class="fc-composer__attachments" id="composer-attachments"></ul>
+
+    <div class="fc-composer__row">
+      <div class="fc-composer__tools">
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm"
+                id="composer-attach" aria-label="Attach files">Attach</button>
+      </div>
+      <button type="button" class="fc-btn fc-btn--primary fc-composer__send"
+              id="composer-send" data-fc-state="idle" disabled>Send</button>
+    </div>
+
+    <p class="fc-composer__status" id="composer-status" role="status"></p>
+  </div>
+
 </div>
 </body>
 </html>

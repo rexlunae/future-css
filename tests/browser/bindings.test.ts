@@ -164,9 +164,11 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         import('/src/js/highlight.js'),
         import('/src/js/diff.js'),
         import('/src/js/select.js'),
-      ]).then(([e, m, g, w, h, d, s]) => {
+        import('/src/js/composer.js'),
+      ]).then(([e, m, g, w, h, d, s, c]) => {
         globalThis.E = e; globalThis.M = m; globalThis.G = g; globalThis.W = w;
         globalThis.H = h; globalThis.D = d; globalThis.S = s;
+        globalThis.C = c;
         return 'ok';
       })
     `);
@@ -179,11 +181,12 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       `return [
         typeof E.FutureCssEditor, typeof M.FutureCssMenu, typeof G.FutureCssGrid,
         typeof W.FutureCssWebview, typeof H.highlight, typeof D.diffLines,
-        typeof S.FutureCssSelect,
+        typeof S.FutureCssSelect, typeof C.FutureCssComposer,
       ]`,
     );
     assert.deepEqual(names, [
-      "function", "function", "function", "function", "function", "function", "function",
+      "function", "function", "function", "function", "function", "function",
+      "function", "function",
     ]);
   });
   // ---------------------------------------------------------------- editor
@@ -1244,5 +1247,478 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(visible, true, "the highlight must not scroll out of sight");
   });
 
+
+
+  // --------------------------------------------------------------- composer
+
+  /**
+   * Resets the composer fixture to a known state.
+   *
+   * Composer state lives on the shared page, and every test in this suite uses
+   * one page. Without this a test's draft and attachments are still present when
+   * the next one runs, so failures surface several tests later as assertions
+   * about something else entirely.
+   */
+  const resetComposer = async () => {
+    await evaluate(`
+      const root = document.querySelector('#composer-root');
+      const input = document.querySelector('#composer-input');
+      input.value = '';
+      input.readOnly = false;
+      root.dataset.fcState = 'idle';
+      delete root.dataset.fcDragging;
+      document.querySelector('#composer-attachments').replaceChildren();
+      const send = document.querySelector('#composer-send');
+      send.textContent = 'Send';
+      send.dataset.fcState = 'idle';
+      send.disabled = true;
+      document.querySelector('#composer-status').textContent = '';
+      return true;
+    `);
+  };
+
+
+  it("sends on Enter and inserts a newline on Shift+Enter", async () => {
+    await loadBindings();
+    await resetComposer();
+    const result = await evaluate(`
+      const sent = [];
+      globalThis.comp = new C.FutureCssComposer({
+        root: '#composer-root', onSubmit: (t) => sent.push(t),
+      });
+      const input = document.querySelector('#composer-input');
+      input.value = 'hello';
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      const afterEnter = input.value;
+
+      input.value = 'line one';
+      input.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Enter', shiftKey: true, bubbles: true,
+      }));
+      return [sent, afterEnter, input.value];
+    `);
+    assert.deepEqual(result[0], ["hello"], "Enter must submit");
+    // The draft clears on a real submit, and Shift+Enter must not.
+    assert.equal(result[1], "");
+    assert.equal(result[2], "line one", "Shift+Enter must not send");
+  });
+
+  it("does not send while an IME candidate is being composed", async () => {
+    // The bug this guards against only reproduces with an IME. `isComposing` is
+    // true for the whole composition, and sending there commits a half-composed
+    // character and closes the candidate window.
+    await loadBindings();
+    await resetComposer();
+    const result = await evaluate(`
+      const sent = [];
+      globalThis.comp = new C.FutureCssComposer({
+        root: '#composer-root', onSubmit: (t) => sent.push(t),
+      });
+      const input = document.querySelector('#composer-input');
+      input.value = 'にほん';
+      input.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Enter', isComposing: true, bubbles: true,
+      }));
+      // The legacy signal, for browsers that do not set isComposing.
+      const legacy = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
+      Object.defineProperty(legacy, 'keyCode', { value: 229 });
+      input.dispatchEvent(legacy);
+      return [sent, input.value];
+    `);
+    assert.deepEqual(result[0], [], "neither signal may submit during composition");
+    assert.equal(result[1], "にほん", "the in-progress text must survive");
+  });
+
+  it("turns the send control into stop while running, without replacing it", async () => {
+    // Replacing the button would move focus, and a control that appears mid-run is
+    // the one a keyboard user is not looking at.
+    await loadBindings();
+    await resetComposer();
+    const result = await evaluate(`
+      const stopped = [];
+      globalThis.comp = new C.FutureCssComposer({
+        root: '#composer-root', onStop: () => stopped.push('stop'),
+      });
+      const send = document.querySelector('#composer-send');
+      const before = send;
+      comp.text = 'in flight';
+      comp.setRunning(true);
+      const midLabel = send.textContent;
+      const midState = send.dataset.fcState;
+      const sameNode = send === before;
+      send.click();
+      // Still "Stop" right after clicking: aborting a run does not end it, the
+      // consumer does. Reading this before setRunning(false) is the point.
+      const afterClick = send.textContent;
+      comp.setRunning(false);
+      return [midLabel, midState, sameNode, stopped.length, afterClick, send.textContent];
+    `);
+    assert.equal(result[0], "Stop");
+    assert.equal(result[1], "running");
+    assert.equal(result[2], true, "the control must be the same element, not a replacement");
+    assert.equal(result[3], 1, "clicking while running must stop, not send");
+    assert.equal(result[4], "Stop", "stopping does not itself end the run");
+    assert.equal(result[5], "Send", "the label must return once the run actually ends");
+  });
+
+  it("keeps the draft when a run is stopped", async () => {
+    // Stopping a run is not composing a message. Clearing the draft would discard
+    // text the user may well want to resend.
+    await loadBindings();
+    await resetComposer();
+    const kept = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      comp.text = 'worth keeping';
+      comp.setRunning(true);
+      document.querySelector('#composer-send').click();
+      return comp.text;
+    `);
+    assert.equal(kept, "worth keeping");
+  });
+
+  it("makes the input read-only while running rather than disabled", async () => {
+    // A disabled field leaves the tab order, so a keyboard user tabbing past would
+    // not learn there is anything there.
+    await loadBindings();
+    await resetComposer();
+    const result = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      const input = document.querySelector('#composer-input');
+      comp.setRunning(true);
+      const running = { readOnly: input.readOnly, disabled: input.disabled };
+      comp.setRunning(false);
+      return [running, { readOnly: input.readOnly, disabled: input.disabled }];
+    `);
+    assert.deepEqual(result[0], { readOnly: true, disabled: false });
+    assert.equal(result[1].readOnly, false);
+  });
+
+  it("gives every attachment's remove button the file name", async () => {
+    // Four buttons all reading "Remove" tell a screen-reader user nothing about
+    // which attachment is going away.
+    await loadBindings();
+    await resetComposer();
+    const labels = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      comp.addAttachments([
+        new File(['a'], 'schema.ts', { type: 'text/plain' }),
+        new File(['bb'], 'seed.sql', { type: 'text/plain' }),
+      ]);
+      return [...document.querySelectorAll('#composer-attachments .fc-composer__attachment-remove')]
+        .map((b) => b.getAttribute('aria-label'));
+    `);
+    assert.deepEqual(labels, ["Remove schema.ts", "Remove seed.sql"]);
+  });
+
+  it("removes only the attachment whose button was pressed", async () => {
+    await loadBindings();
+    await resetComposer();
+    const remaining = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      comp.addAttachments([
+        new File(['a'], 'one.ts'),
+        new File(['b'], 'two.ts'),
+        new File(['c'], 'three.ts'),
+      ]);
+      const buttons = document.querySelectorAll('#composer-attachments .fc-composer__attachment-remove');
+      buttons[1].click();
+      return comp.files.map((f) => f.name);
+    `);
+    // Removing the middle chip must leave the other two in order.
+    assert.deepEqual(remaining, ["one.ts", "three.ts"]);
+  });
+
+  it("ignores a duplicate attachment rather than adding it twice", async () => {
+    await loadBindings();
+    await resetComposer();
+    const count = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      const f = () => new File(['x'], 'notes.md', { type: 'text/plain' });
+      comp.addAttachments([f()]);
+      comp.addAttachments([f()]);
+      return comp.files.length;
+    `);
+    assert.equal(count, 1, "same name and size is the same file");
+  });
+
+  it("can submit attachments with no text", async () => {
+    // A "describe this file" request is a legitimate submission with an empty
+    // draft, so an attachment alone must be enough.
+    await loadBindings();
+    await resetComposer();
+    const result = await evaluate(`
+      const sent = [];
+      globalThis.comp = new C.FutureCssComposer({
+        root: '#composer-root', onSubmit: (t, files) => sent.push([t, files.length]),
+      });
+      comp.addAttachments([new File(['x'], 'diagram.svg', { type: 'image/svg+xml' })]);
+      const input = document.querySelector('#composer-input');
+      input.value = '';
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      return [sent, comp.files.length];
+    `);
+    assert.deepEqual(result[0], [["", 1]], "attachments alone are enough to send");
+    assert.equal(result[1], 0, "and the attachments clear afterwards");
+  });
+
+  it("disables send when there is nothing to send, and enables it on input", async () => {
+    await loadBindings();
+    await resetComposer();
+    const result = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      const input = document.querySelector('#composer-input');
+      const send = document.querySelector('#composer-send');
+      const empty = send.disabled;
+      input.value = 'x';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      const typed = send.disabled;
+      input.value = '   ';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      return [empty, typed, send.disabled];
+    `);
+    assert.deepEqual(result, [true, false, true], "whitespace is not a message");
+  });
+
+  it("reports attachment count and size in the status line", async () => {
+    await loadBindings();
+    await resetComposer();
+    const text = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      comp.addAttachments([new File([new Uint8Array(2048)], 'a.bin')]);
+      return document.querySelector('#composer-status').textContent;
+    `);
+    assert.match(text, /1 attachment/, "the count must be announced");
+    assert.match(text, /2 KB/);
+  });
+
+  it("keeps the draft when onSubmit throws", async () => {
+    // Losing the user's text because a consumer threw is the worst outcome here.
+    //
+    // This test constructs its own binding over a *fresh* input element. Every
+    // previous test's binding still holds a keydown listener on the shared one,
+    // and those stale instances submit with their own callbacks -- so without a
+    // fresh element the assertion measures a different composer's behaviour.
+    await loadBindings();
+    await resetComposer();
+    const kept = await evaluate(`
+      const root = document.querySelector('#composer-root');
+      const input = document.querySelector('#composer-input');
+      const fresh = input.cloneNode(true);
+      root.replaceChild(fresh, input);
+      globalThis.comp = new C.FutureCssComposer({
+        root: '#composer-root',
+        onSubmit: () => { throw new Error('consumer blew up'); },
+      });
+      fresh.value = 'precious';
+      fresh.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      return comp.text;
+    `);
+    assert.equal(kept, "precious", "the draft must survive a throwing consumer");
+  });
+
+
+  it("hands the original File to onSubmit, not just its metadata", async () => {
+    // An attachment reduced to {name, size, type} is useless: a consumer cannot
+    // upload or inspect it, and the chip still looks like a successful attachment
+    // until submit, so the loss is silent.
+    await loadBindings();
+    await resetComposer();
+    const result = await evaluate(`
+      let received = null;
+      const root = document.querySelector('#composer-root');
+      const input = document.querySelector('#composer-input');
+      root.replaceChild(input.cloneNode(true), input);
+      globalThis.comp = new C.FutureCssComposer({
+        root: '#composer-root',
+        onSubmit: (_t, files) => { received = files[0]; },
+      });
+      comp.addAttachments([new File(['payload bytes'], 'report.pdf', { type: 'application/pdf' })]);
+      const hasFileBefore = comp.files[0].file instanceof File;
+      const viaAccessor = comp.attachmentAt(0).file instanceof File;
+      comp.submit();
+      return [
+        hasFileBefore,
+        viaAccessor,
+        received !== null,
+        received?.file instanceof File,
+        received?.file ? new TextDecoder().decode(await received.file.arrayBuffer()) : null,
+      ];
+    `);
+    assert.equal(result[0], true, "the File must survive addAttachments");
+    assert.equal(result[1], true, "and be reachable through attachmentAt");
+    assert.equal(result[2], true, "onSubmit must receive the attachment");
+    assert.equal(result[3], true, "with the File still attached");
+    assert.equal(result[4], "payload bytes", "the bytes must be readable by the consumer");
+  });
+
+  it("keeps focus in the composer after an attachment is removed", async () => {
+    // The removed button had focus, so removing it stranded focus on <body> --
+    // invisible to a mouse user, and it means a keyboard user's next Tab starts
+    // from the top of the page.
+    await loadBindings();
+    await resetComposer();
+    const focused = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      comp.addAttachments([
+        new File(['a'], 'one.ts'),
+        new File(['b'], 'two.ts'),
+        new File(['c'], 'three.ts'),
+      ]);
+      const buttons = document.querySelectorAll('#composer-attachments .fc-composer__attachment-remove');
+      buttons[1].focus();
+      const before = document.activeElement.getAttribute('aria-label');
+      comp.removeAttachment(1);
+      const active = document.activeElement;
+      return [
+        before,
+        active === document.body,
+        active.getAttribute('aria-label') ?? active.id,
+      ];
+    `);
+    assert.equal(focused[1], false, "focus must not land on the body");
+    assert.equal(focused[2], "Remove three.ts", "focus moves to the chip that took its place");
+  });
+
+  it("returns focus to the input when the last attachment is removed", async () => {
+    await loadBindings();
+    await resetComposer();
+    const where = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      comp.addAttachments([new File(['a'], 'only.ts')]);
+      document.querySelector('#composer-attachments .fc-composer__attachment-remove').focus();
+      comp.removeAttachment(0);
+      return document.activeElement.id;
+    `);
+    assert.equal(where, "composer-input");
+  });
+
+  it("exposes a way to attach a file that could not be read", async () => {
+    // The `data-fc-state="error"` style had no public entry point, so a failed
+    // read had to be dropped silently -- exactly what leaves someone sending a
+    // request missing what they added.
+    await loadBindings();
+    await resetComposer();
+    const state = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      comp.addFailedAttachment({ name: 'locked.pdf', size: 0, error: 'Permission denied' });
+      const chip = document.querySelector('#composer-attachments .fc-composer__attachment');
+      return [chip.dataset.fcState, chip.textContent.includes('Permission denied')];
+    `);
+    assert.equal(state[0], "error");
+    assert.equal(state[1], true, "the reason must be visible, not just flagged");
+  });
+
+  it("clears the drop cue when a drag ends without a drop", async () => {
+    // Otherwise the composer stays highlighted after the drag is long over,
+    // implying it is still receiving files.
+    await loadBindings();
+    await resetComposer();
+    const after = await evaluate(`
+      const root = document.querySelector('#composer-root');
+      root.dispatchEvent(new DragEvent('dragenter', { bubbles: true }));
+      root.dispatchEvent(new DragEvent('dragover', { bubbles: true }));
+      const during = root.dataset.fcDragging;
+      root.dispatchEvent(new DragEvent('dragleave', { bubbles: true }));
+      const left = root.dataset.fcDragging;
+      root.dispatchEvent(new DragEvent('dragenter', { bubbles: true }));
+      document.dispatchEvent(new DragEvent('dragend', { bubbles: true }));
+      return [during, left, root.dataset.fcDragging];
+    `);
+    assert.equal(after[0], "true", "the cue appears during a drag");
+    // Absent rather than "false": the attribute is removed rather than negated,
+    // so the CSS selector for the cue stops matching entirely.
+    assert.ok(after[1] == null, "and clears when the pointer leaves");
+    assert.ok(after[2] == null, "and when the drag ends without a drop");
+  });
+
+
+  it("keeps focus on the same file when a different chip is removed", async () => {
+    // Restoring focus to the removed *index* moves it onto a different file, so
+    // the user's next press removes the wrong attachment.
+    await loadBindings();
+    await resetComposer();
+    const result = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      comp.addAttachments([
+        new File(['a'], 'a.ts'),
+        new File(['b'], 'b.ts'),
+        new File(['c'], 'c.ts'),
+      ]);
+      const buttons = () => [...document.querySelectorAll('.fc-composer__attachment-remove')];
+      // Focus the LAST chip, then remove the FIRST.
+      buttons()[2].focus();
+      comp.removeAttachment(0);
+      const active = document.activeElement.getAttribute('aria-label');
+      return [active, buttons().map((b) => b.getAttribute('aria-label'))];
+    `);
+    assert.equal(result[0], "Remove c.ts",
+      "focus must stay on the file the user was on, not move to the removed index");
+    assert.deepEqual(result[1], ["Remove b.ts", "Remove c.ts"]);
+  });
+
+  it("stops listening after destroy", async () => {
+    // The drag handlers live on `document`, which outlives the composer. Without
+    // teardown, a view that mounts and unmounts keeps every detached root alive
+    // and keeps invoking its obsolete handlers on each drop.
+    await loadBindings();
+    await resetComposer();
+    const result = await evaluate(`
+      const probe = [];
+      const original = document.addEventListener.bind(document);
+      let added = 0;
+      document.addEventListener = (...args) => { added += 1; return original(...args); };
+
+      const host = document.createElement('div');
+      host.id = 'detached-composer';
+      host.className = 'fc-composer';
+      host.innerHTML =
+        '<textarea class="fc-composer__input"></textarea>' +
+        '<ul class="fc-composer__attachments"></ul>' +
+        '<button class="fc-composer__send"></button>';
+      document.body.append(host);
+      const c = new C.FutureCssComposer({ root: '#detached-composer' });
+      const whileMounted = added;
+      c.destroy();
+      host.remove();
+      document.addEventListener = original;
+
+      // After destroy the listeners are gone, so a later drop reaches nobody.
+      document.dispatchEvent(new DragEvent('dragend', { bubbles: true }));
+      return [whileMounted > 0, c.text === ''];
+    `);
+    assert.equal(result[0], true, "the composer must register listeners while mounted");
+    assert.equal(result[1], true);
+  });
+
+
+  it("keeps focus on the right chip when two attachments share a name", async () => {
+    // `addAttachments` allows same-named files of different sizes, so two chips can
+    // read "Remove report.txt". Matching focus on that label would move it onto
+    // the wrong file -- and the user's next press would remove an attachment they
+    // did not select.
+    await loadBindings();
+    await resetComposer();
+    const result = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      comp.addAttachments([
+        new File(['1'], 'report.txt', { type: 'text/plain' }),
+        new File(['22'], 'report.txt', { type: 'text/plain' }),
+      ]);
+      const buttons = () => [...document.querySelectorAll('.fc-composer__attachment-remove')];
+      buttons()[1].focus();
+      comp.removeAttachment(1);
+      // The second chip is gone; focus must land on the input, not back on the
+      // surviving same-named chip.
+      const active = document.activeElement;
+      return [active.getAttribute('aria-label') ?? active.id, buttons().length];
+    `);
+    assert.equal(result[1], 1, "one chip remains");
+    // The focused chip was the one removed, so focus goes to its neighbour -- the
+    // surviving report.txt. That is the *intended* behaviour; what must not happen
+    // is focus resolving by name to a chip the user was never on, which the
+    // identity-based lookup prevents.
+    assert.equal(result[0], "Remove report.txt",
+      "focus lands on the remaining chip rather than being lost to the body");
+  });
 
 });

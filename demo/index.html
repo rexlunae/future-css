@@ -50,6 +50,7 @@
         <li><a href="#terminal">Terminal</a></li>
         <li><a href="#webview">Webview</a></li>
         <li><a href="#code">Code</a></li>
+        <li><a href="#composer">Composer</a></li>
         <li><a href="#select">Select</a></li>
         <li><a href="#diff">Diff</a></li>
         <li><a href="#tokens">Tokens</a></li>
@@ -970,6 +971,112 @@ webview.back();</code></pre>
   block.querySelector(".fc-code__source")
        .replaceChildren(...renderHighlighted(source, lang).childNodes);
 &lt;/script&gt;</code></pre>
+    </div>
+  </section>
+
+  <!-- ============================ COMPOSER =========================== -->
+  <section class="demo-section" id="composer" aria-labelledby="h-composer">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-composer">Chat composer</h2>
+      <p class="demo-note">
+        <strong>Enter sends, Shift+Enter adds a line</strong> &mdash; and neither
+        fires while an IME candidate is being composed, which is the bug every
+        composer ships and nobody notices without a composing keyboard. Send and
+        Stop are one control whose meaning changes with
+        <code>data-fc-state</code>: the same element, so focus never moves
+        mid-run. Stopping keeps your draft.
+      </p>
+    </div>
+
+    <div class="fc-composer" id="composer-root" data-fc-state="idle">
+      <label class="fc-u-visually-hidden" for="composer-input">Message</label>
+      <!--
+        A real <textarea>. An IME-composed character inserted into a
+        contenteditable region fails silently, and composing input is routine in
+        CJK and other composing scripts.
+      -->
+      <textarea class="fc-composer__input" id="composer-input" rows="2"
+                placeholder="Send a message&hellip; Enter to send, Shift+Enter for a new line"></textarea>
+
+      <ul class="fc-composer__attachments" id="composer-attachments"></ul>
+
+      <div class="fc-composer__row">
+        <div class="fc-composer__tools">
+          <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm"
+                  id="composer-attach" aria-label="Attach files">Attach</button>
+        </div>
+        <!--
+          One control, two meanings. A separate Stop button would be a second tab
+          stop where the user expects one, and it would linger as a dead control
+          after the run finished.
+        -->
+        <button type="button" class="fc-btn fc-btn--primary fc-composer__send"
+                id="composer-send" data-fc-state="idle" disabled>Send</button>
+      </div>
+
+      <p class="fc-composer__status" id="composer-status" role="status"></p>
+    </div>
+
+    <p class="demo-status" id="composer-attachments-status" role="status"></p>
+
+    <div class="demo-snippet" data-demo-snippet="composer">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">html</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Composer markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>&lt;div class="fc-composer" data-fc-state="idle"&gt;
+  &lt;!-- A real &lt;textarea&gt;, not contenteditable: an IME-composed character
+       fails silently in a contenteditable region. --&gt;
+  &lt;label class="fc-u-visually-hidden" for="composer-input"&gt;Message&lt;/label&gt;
+  &lt;textarea class="fc-composer__input" id="composer-input" rows="2"&gt;&lt;/textarea&gt;
+
+  &lt;!-- A list, so AT announces how many are attached. --&gt;
+  &lt;ul class="fc-composer__attachments" id="composer-attachments"&gt;&lt;/ul&gt;
+
+  &lt;div class="fc-composer__row"&gt;
+    &lt;!-- One control, two meanings. Replacing the button would move focus. --&gt;
+    &lt;button class="fc-btn fc-btn--primary fc-composer__send"
+            id="composer-send" data-fc-state="idle" disabled&gt;Send&lt;/button&gt;
+  &lt;/div&gt;
+
+  &lt;!-- Always present and updated in place: a live region that gains content
+       announces, one that gains and loses silently does not. --&gt;
+  &lt;p class="fc-composer__status" role="status"&gt;&lt;/p&gt;
+&lt;/div&gt;</code></pre>
+    </div>
+
+    <div class="demo-snippet" data-demo-snippet="composer-js">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">js</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Composer wiring">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>import { FutureCssComposer } from "future-css/composer";
+
+const composer = new FutureCssComposer({
+  root: "#composer-root",
+
+  onSubmit: (text, attachments) =&gt; {
+    // The draft is cleared only AFTER this returns. If it throws, the user's
+    // text is still there -- losing it to a bug in this handler would be silent.
+    stream(text, attachments);
+  },
+
+  // Aborting a run is not composing a message: the draft is deliberately kept.
+  onStop: () =&gt; currentStream?.abort(),
+});
+
+composer.setRunning(true);   // Send becomes Stop; input becomes read-only
+composer.addAttachments([file]);
+composer.removeAttachment(0);
+
+// The binding handles:
+//   Enter               send
+//   Shift+Enter         newline
+//   Enter + isComposing NOT a send -- the IME case everything else misses
+//   readOnly, not disabled, while running: a disabled field leaves the tab order
+//   drag and drop, paste-ready, duplicate detection by name and size</code></pre>
     </div>
   </section>
 

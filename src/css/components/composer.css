@@ -1,0 +1,318 @@
+/*!
+ * future-css -- chat composer
+ *
+ * The input surface beneath a chat thread: text entry, attachments, and a
+ * send/stop control.
+ *
+ * # The decisions that shaped this
+ *
+ * **A `<textarea>`, not `contenteditable`.** The editor component uses
+ * contenteditable, so this looks inconsistent -- and it should, because the
+ * requirements are different. A composer needs IME composition to work, and an
+ * IME-composed character inserted into a contenteditable region fails silently.
+ * That is not hypothetical: it is routine in CJK and other composing scripts, and
+ * it is the same failure `terminal.css` documents for its own input. A textarea
+ * also gives Enter-to-send, Shift+Enter-for-newline, and native undo for free.
+ *
+ * **One send control, not two.** Send and Stop swap meaning on the same button as
+ * `data-fc-state` changes. Two separate buttons mean two tab stops where the user
+ * expects one, and a "Stop" button that lingers after the run finishes is a dead
+ * control sitting next to a live one. The binding owns which click does what.
+ *
+ * **Attachments are a list, not a blob.** Each one is a removable chip with its
+ * own accessible name. "Remove" repeated four times tells a screen-reader user
+ * nothing about which attachment is going away, so every chip names its file.
+ */
+
+@layer fc.components {
+  /* ---- Shell --------------------------------------------------------------- */
+
+  /*
+   * Pinned beneath the thread. The `border-block-start` rather than a full border
+   * is what makes it read as attached to the thread above rather than floating.
+   */
+  .fc-composer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-2);
+
+    padding-block: var(--fc-space-3);
+    padding-inline: var(--fc-space-4);
+
+    background-color: var(--fc-color-bg-surface);
+    color: var(--fc-color-text-default);
+    border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  }
+
+  /* ---- Text entry ---------------------------------------------------------- */
+
+  /*
+   * A real `<textarea>` with `resize: none`. The browser's resize grip is a
+   * second, unlabelled way to resize the control, and it lets the user make the
+   * input taller than the layout can accommodate. The binding grows the field
+   * from its content instead, up to a ceiling.
+   */
+  .fc-composer__input {
+    display: block;
+    inline-size: 100%;
+    resize: none;
+
+    min-block-size: 2.5lh;
+    /* The ceiling. The binding measures and clamps, but this is the fallback when
+       scripting is absent: without it a textarea defaults to a single row and the
+       placeholder is clipped. */
+    max-block-size: 12lh;
+
+    padding-block: var(--fc-space-2);
+    padding-inline: var(--fc-space-3);
+
+    font-family: var(--fc-font-family-sans);
+    font-size: var(--fc-font-size-sm);
+    line-height: var(--fc-line-height-normal);
+    color: var(--fc-color-text-default);
+    background-color: var(--fc-color-bg-surface);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+    border-radius: var(--fc-radius-md);
+    /* Grows with its content, up to max-block-size, then scrolls. */
+    field-sizing: content;
+    overflow-y: auto;
+  }
+
+  .fc-composer__input::placeholder {
+    color: var(--fc-color-text-muted);
+  }
+
+  .fc-composer__input:focus-visible {
+    outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring);
+    outline-offset: var(--fc-space-0-5);
+  }
+
+  /*
+   * Disabled while a run is in flight and the composer is not accepting input.
+   *
+   * `readOnly` rather than `disabled` in the markup: a disabled control leaves the
+   * tab order, so a keyboard user tabbing past the composer would not learn that
+   * there is anything there. Read-only keeps it focusable and readable.
+   */
+  .fc-composer__input[readonly] {
+    background-color: var(--fc-color-bg-subtle);
+    color: var(--fc-color-text-muted);
+  }
+
+  /* ---- Row: attachments, actions ------------------------------------------- */
+
+  .fc-composer__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fc-space-3);
+    flex-wrap: wrap;
+  }
+
+  .fc-composer__tools {
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-2);
+    flex-wrap: wrap;
+  }
+
+  /* ---- Attachments --------------------------------------------------------- */
+
+  /*
+   * A list, so a screen reader announces how many are attached. `role="list"`
+   * with plain `<li>` children rather than buttons-in-a-div: the chips are not
+   * themselves interactive, only their remove buttons are.
+   */
+  .fc-composer__attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fc-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fc-composer__attachment {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-1);
+    padding-block: var(--fc-space-1);
+    padding-inline: var(--fc-space-2);
+
+    background-color: var(--fc-color-bg-subtle);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-full);
+    font-size: var(--fc-font-size-xs);
+  }
+
+  /*
+   * The file name is truncated rather than allowed to wrap the chip, so a long
+   * path cannot make the row grow without bound. `title` carries the full value.
+   */
+  .fc-composer__attachment-name {
+    min-inline-size: 0;
+    max-inline-size: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /*
+   * The remove button. `aria-label` names the file it removes -- "Remove" four
+   * times tells a screen-reader user nothing about which attachment is going away.
+   */
+  .fc-composer__attachment-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--fc-space-4);
+    block-size: var(--fc-space-4);
+    padding: 0;
+
+    font-family: var(--fc-font-family-sans);
+    font-size: var(--fc-font-size-xs);
+    line-height: 1;
+    color: var(--fc-color-text-muted);
+    background-color: transparent;
+    border: 0;
+    border-radius: var(--fc-radius-full);
+    cursor: pointer;
+  }
+
+  .fc-composer__attachment-remove:hover {
+    background-color: var(--fc-color-danger-bg);
+    color: var(--fc-color-danger-text);
+  }
+
+  .fc-composer__attachment-remove:focus-visible {
+    outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring);
+    outline-offset: var(--fc-space-0-5);
+  }
+
+  /*
+   * An attachment that could not be read is shown, not silently dropped. Hiding
+   * it would leave the user sending a request that is missing what they added.
+   */
+  .fc-composer__attachment[data-fc-state="error"] {
+    border-color: var(--fc-color-danger-border);
+    color: var(--fc-color-danger-text);
+  }
+
+  /* ---- Send / stop --------------------------------------------------------- */
+
+  /*
+   * One control whose meaning changes with `data-fc-state`. The button is always
+   * present: swapping it for a different element would move focus, and a control
+   * that appears mid-run is exactly the one a keyboard user is not looking at.
+   */
+  .fc-composer__send {
+    min-inline-size: var(--fc-size-target-min);
+    min-block-size: var(--fc-size-target-min);
+  }
+
+  /*
+   * Stop is a destructive action and is styled as one. While a run is in flight
+   * the fill goes away, because "stop" is an interruption rather than a
+   * confirmation, and a filled accent button invites a click that aborts work.
+   */
+  /*
+   * `danger-bg-subtle`, not the solid `danger-bg`.
+   *
+   * The only *declared* danger pairing is `danger-text` on `danger-bg-subtle`;
+   * pairing dark danger text with a solid danger fill puts two neighbouring ramp
+   * steps together and the label stops being readable. Stop is the only control
+   * for aborting a run, so it has to meet the 4.5:1 minimum in both schemes --
+   * which means using the combination the contrast contract actually validates
+   * rather than the one that looks more emphatic.
+   */
+  .fc-composer__send[data-fc-state="running"] {
+    background-color: var(--fc-color-danger-bg-subtle);
+    color: var(--fc-color-danger-text);
+    border-color: var(--fc-color-danger-border);
+    font-weight: var(--fc-font-weight-semibold);
+  }
+
+  .fc-composer__send[data-fc-state="running"]:hover {
+    background-color: var(--fc-color-danger-bg-subtle);
+    border-color: var(--fc-color-danger-border);
+  }
+
+  /* An empty composer cannot be sent. Disabled rather than inert: it stays
+     focusable so the reason is discoverable. */
+  .fc-composer__send:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ---- Status -------------------------------------------------------------- */
+
+  /*
+   * Token and attachment counts. Always present in the DOM and updated in place
+   * rather than added and removed, because a live region that gains content
+   * announces -- one that gains and loses silently does not.
+   */
+  .fc-composer__status {
+    margin: 0;
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-xs);
+  }
+
+  /* ---- Drag and drop ------------------------------------------------------- */
+
+  /*
+   * A drop target needs to say so. The border and tint are the only cue, and they
+   * must not depend on colour alone -- the status line names what is happening.
+   */
+  .fc-composer[data-fc-dragging="true"] {
+    background-color: var(--fc-color-bg-raised);
+    border-block-start-color: var(--fc-color-accent-border);
+  }
+
+  /* ---- Forced colors ------------------------------------------------------- */
+
+  /*
+   * The disabled input, the error chip, and the drop cue are all carried by
+   * background there, which the OS discards. Each is restated with a system colour
+   * or a border so the states remain distinguishable.
+   */
+  @media (forced-colors: active) {
+    .fc-composer {
+      background-color: Canvas;
+      color: CanvasText;
+      border-block-start-color: CanvasText;
+    }
+
+    .fc-composer__input {
+      background-color: Canvas;
+      color: CanvasText;
+      border-color: CanvasText;
+    }
+
+    .fc-composer__input[readonly] {
+      color: GrayText;
+    }
+
+    .fc-composer__attachment {
+      background-color: Canvas;
+      color: CanvasText;
+      border-color: CanvasText;
+    }
+
+    .fc-composer__attachment[data-fc-state="error"] {
+      border-color: LinkText;
+      color: LinkText;
+    }
+
+    .fc-composer__send[data-fc-state="running"] {
+      background-color: Canvas;
+      color: CanvasText;
+      border-color: Highlight;
+    }
+
+    .fc-composer[data-fc-dragging="true"] {
+      background-color: Canvas;
+      border-block-start-color: Highlight;
+    }
+  }
+}

@@ -61,8 +61,8 @@ Primer's diff family is thinner than ours because it has no contrast contract at
 to it. That now rests on a verified claim rather than an assumed one.
 
 **Version drift.** Recorded as of the read date, at each project's default branch.
-`@primer/primitives` 11.10.0; Tailwind docs v4.3; Radix Colors v3.0.0; Material Web in
-maintenance mode. These projects ship faster than this document is revised.
+`@primer/primitives` 11.10.0; Radix Colors v3.0.0; Material Web in maintenance mode;
+Open Props v1.7.23. These projects ship faster than this document is revised.
 
 **Rank.** "Top ten" is ordered by influence on the design-token conversation, not by
 npm downloads. That is a judgement and a different one is defensible. The selection is
@@ -77,24 +77,32 @@ argued in [The set](#the-set) so the judgement can be disagreed with explicitly.
 | 1 | **Primer Primitives** (GitHub) | The most complete real-world token taxonomy in production, and the only one shipping diff and highlight token families |
 | 2 | **Radix Colors** | The purest "scale step means use" position — no token layer below the primitive at all |
 | 3 | **Material Design 3** (via Material Web) | The only system doing seed-derived dynamic colour |
-| 4 | **Tailwind CSS v4** | Theme variables are the most widely-consumed token contract on the web, though the framework is not semantic-CSS |
-| 5 | **IBM Carbon** | The broadest component-token implementation, and the only one shipping explicit AI and chat token groups |
-| 6 | **Microsoft Fluent 2** | The sharpest two-tier primitive/alias split, with high-contrast as a first-class scheme |
-| 7 | **Adobe Spectrum CSS** | Medium/large scale axes and a strict global/component token split |
-| 8 | **Shopify Polaris** | The clearest small-system token set — a floor rather than a ceiling |
-| 9 | **Pico CSS** | The strongest pure "semantic HTML is enough" position, and a classless mode we have no equivalent of |
-| 10 | **Bulma** | The original Sass-variable-to-CSS-variable semantic framework; the reference point for the pre-token era |
+| 4 | **IBM Carbon** | The broadest component-token implementation, and the only one shipping explicit AI and chat token groups |
+| 5 | **Microsoft Fluent 2** | The sharpest two-tier primitive/alias split, with high-contrast as a first-class scheme |
+| 6 | **Adobe Spectrum CSS** | Medium/large scale axes and a strict global/component token split |
+| 7 | **Shopify Polaris** | The clearest small-system token set — a floor rather than a ceiling |
+| 8 | **Pico CSS** | The strongest pure "semantic HTML is enough" position, and a classless mode we have no equivalent of |
+| 9 | **Bulma** | The reference point for the pre-token era: Sass variables compiled to CSS custom properties, with `--bulma-scheme-*` as a derived semantic tier |
+| 10 | **Open Props** | The largest pure CSS-variable library, and the only one with a `--motionOK` custom-media convention |
 
-Read alongside these, not scored: **Open Props** (largest pure CSS-variable library,
-500+ props, and the only one with a `--motionOK` custom-media convention), **GOV.UK
-Design System** (functional colour via a Sass *function*, which forbids hand-copying
-hex, and the only serious tints-and-shades alternative to a numeric ramp), and **Tokens
-Studio** (the de facto token pipeline, and the reason multi-theme token *sets* are a
-category at all).
+Read alongside these, not scored: **GOV.UK Design System** (functional colour via a
+Sass *function*, which forbids hand-copying hex, and the only serious tints-and-shades
+alternative to a numeric ramp) and **Tokens Studio** (the de facto token pipeline, and
+the reason multi-theme token *sets* are a category at all).
 
-Semantic UI was considered and excluded. It is the only library whose name matches the
-request, and it is unmaintained, jQuery-coupled, and ships no token layer. Including it
-would mean scoring a project on intent rather than implementation.
+Two exclusions are worth stating, because both were briefly in the set.
+
+**Tailwind CSS was removed.** It is a utility-first framework, not a semantic CSS
+suite. Its `@theme` directive is a real and widely-copied token contract, but it exists
+to generate utility classes from those tokens rather than to expose them as the styling
+API, so scoring it against "what semantic CSS means" would have compared a different kind
+of thing. Open Props took the vacated slot: it is likewise a pure variable library, but
+unlike Tailwind it publishes the variables *as* the interface, with no class layer
+sitting on top.
+
+**Semantic UI** is the only library whose name matches the request, and it is
+unmaintained, jQuery-coupled, and ships no token layer. Including it would mean scoring
+a project on intent rather than implementation.
 
 ---
 
@@ -197,11 +205,11 @@ trusted.
 
 A raw, meaning-free scale that components must never reference directly.
 
-| Subfeature | Us | Radix | Primer | M3 | Tailwind | Carbon | Fluent 2 | Spectrum | Polaris | Pico | Bulma |
+| Subfeature | Us | Radix | Primer | M3 | Carbon | Fluent 2 | Spectrum | Polaris | Pico | Bulma | Open Props |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Numeric steps | 14 | 12 | `base/scale/*` | `ref/*` | oklch ramps | `$gray-10..100` | palette steps | palette steps | ramp | 1-3 tones | derived |
-| Ramp count | 6 | ~30 | many | ~20 | oklch | 14 | 14 ramps | ~20 | several | 1 | 8 |
-| Gamut at output | sRGB hex from oklch source | P3 + sRGB | sRGB | P3 | oklch | sRGB | sRGB | sRGB | sRGB | sRGB | sRGB |
+| Numeric steps | 14 | 12 | `base/scale/*` | `ref/*` | `$gray-10..100` | palette steps | palette steps | ramp | 1-3 tones | derived | 1-12 |
+| Ramp count | 6 | ~30 | many | ~20 | 14 | 14 ramps | ~20 | several | 1 | 8 | ~30 hues |
+| Gamut at output | sRGB hex from oklch source | P3 + sRGB | sRGB | P3 | sRGB | sRGB | sRGB | sRGB | sRGB | sRGB | sRGB + HSL |
 | Ramp integrity tests | **yes** | docs only | no | no | no | no | no | no | no | no | no |
 
 The last row is the real difference. Six ramps (neutral, accent, success, warning,
@@ -373,13 +381,18 @@ hidden.
 The hover/active/selected/disabled family, treated separately from status because these
 are *states of one surface* rather than parallel families.
 
-| Subfeature | Us | Radix | Carbon | Primer | Tailwind |
+| Subfeature | Us | Radix | Carbon | Primer | Bulma |
 | --- | --- | --- | --- | --- | --- |
 | Rest | via surface ladder | step 3 | `$background` | `-rest` | base colour |
-| Hover | `accent-bg-hover`, `bg-muted` | step 4 | `$background-hover` | `-hover` | `hover:` |
-| Active | `accent-bg-active`, `bg-subtle` | step 5 | `$background-active` | `-active` | `active:` |
-| **Selected** | **no token** | step 5 | `$background-selected` | `-selected` | `aria-selected` |
-| **Disabled** | **opacity only** | — | `$background-disabled` | `bgColor-disabled` | `disabled:` |
+| Hover | `accent-bg-hover`, `bg-muted` | step 4 | `$background-hover` | `-hover` | `is-hovered` |
+| Active | `accent-bg-active`, `bg-subtle` | step 5 | `$background-active` | `-active` | `is-active` |
+| **Selected** | **no token** | step 5 | `$background-selected` | `-selected` | `is-selected` |
+| **Disabled** | **opacity only** | — | `$background-disabled` | `bgColor-disabled` | `--bulma-button-disabled-*` |
+
+Bulma is the clearest counter-example to our disabled handling: it ships four
+`--bulma-button-disabled-*` tokens rather than compositing a single opacity, so its
+disabled state is inspectable as colour even though the documented value is still an
+opacity.
 
 Radix encodes the whole ramp as *scale steps 3, 4, 5*, which is the cleanest statement of
 the idea in the set: hover is literally "one step further from the background."
@@ -424,13 +437,13 @@ already the correct seam — but the tooling to exploit it does not exist.
 ### 13. Scheme — Shipped
 
 `light-dark()` for the values, `color-scheme` for the toggle, `[data-fc-theme]` for
-consumer override. No JavaScript, no duplicated stylesheet, one declaration switches 91
+consumer override. No JavaScript, no duplicated stylesheet, one declaration switches 90
 tokens.
 
 **This is better than most of the set.** Radix requires a `.dark` class on `<body>` or a
 parent and ships separate `*-dark.css` files. Spectrum needs `.theme-dark`. Primer needs
 `[data-color-mode]` plus `[data-light-theme]`. Carbon ships four separate theme tiers.
-Tailwind needs a `dark:` variant plus either a media query or a custom variant.
+Bulma needs a `theme-dark` class or the `prefers-color-scheme` mixin.
 `light-dark()` collapses all of that into the value itself, which is the correct level
 for the concern.
 
@@ -524,8 +537,9 @@ right call — the correct behaviour is to collapse to zero rather than swap val
 ### 20-22. Syntax, ANSI and diff roles — Shipped
 
 **The token families most of the field omits.** Of the ten libraries, Primer ships diff
-(`diffBlob`) and a minimal highlight token; Radix, Pico and Bulma ship none; the others
-carry syntax colours only inside their own editor components.
+(`diffBlob`) and a minimal highlight token; Radix, Pico, Bulma and Open Props ship none,
+and Open Props is notable there because with no component layer at all it had every
+opportunity to. The rest carry syntax colours only inside their own editor components.
 
 | Family | Our tokens | Contrast pairs | Isolated namespace | Primer equivalent |
 | --- | --- | --- | --- | --- |
@@ -712,20 +726,26 @@ is worse than none.
 
 One line each: what each library does that we do not, and whether we would take it.
 
+In the order of the scored set in [§2](#the-set). The two unscored references are listed
+separately underneath.
+
 | Library | Its advantage over us | Would we adopt it? |
 | --- | --- | --- |
-| **Primer** | Component tokens; ANSI/syntax/diff families; numeric surface depth; type composites | The token families we already have; the rest is the gap list above |
-| **Material 3** | Seed-derived dynamic colour; type composites; elevation as a numbered scale | Dynamic colour: no — it cannot be contrast-checked at build time, which is the point here |
+| **Primer** | Component tokens; numeric surface depth; type composites | The diff/highlight families we already have; the rest is the gap list above |
 | **Radix Colors** | P3 output; high-contrast scales; scale-step-as-semantics with zero indirection | HC scales: yes. Step-as-semantics: no — it trades verifiability for brevity |
-| **Tailwind v4** | `@theme` as the generation contract; container queries | Namespace discipline: already lint-enforced. Container queries: open question 3 |
+| **Material 3** | Seed-derived dynamic colour; type composites; elevation as a numbered scale | Dynamic colour: no — it cannot be contrast-checked at build time, which is the point here |
 | **IBM Carbon** | Component tokens; `$ai-*`/`$chat-*` families; explicit `$layer-01..05` depth | Layer depth and chat tokens: yes, both cheap. We ship chat *components* and no chat *tokens* |
 | **Fluent 2** | Two-tier primitive/alias split stated most clearly; HC as a first-class theme | HC theme: yes. The naming discipline we already have |
 | **Spectrum CSS** | Medium/large scale axes for density without new tokens | Density is open question 4; scale axes are the candidate answer |
 | **Shopify Polaris** | Small comprehensible set with per-token `description` metadata | Per-token descriptions: cheap, worth having in `tokens.json` |
-| **Chakra UI v3** | Named `conditions` as an extensible styling API | Interesting, but our cascade layers solve precedence without a JS-side API |
 | **Pico CSS** | A real class-less switch; measure as a first-class concern | Class-less: worth an option. Measure: already shipped |
-| *Open Props* | 500+ props, PropPack granularity, `--motionOK` convention | Granular import already exists per layer. `--motionOK`: a nice idea, not a token |
-| *GOV.UK* | Functional colour as a *function*, forbidding hex copying | The prohibition is exactly our `no-color-literals` rule |
+| **Bulma** | `--bulma-scheme-*` derived tier; explicit per-state tokens including `--bulma-button-disabled-*`; a full spacing/typography helper set | Disabled-as-tokens: yes, that is gap 5. The rest: we have the equivalent at a different altitude |
+| **Open Props** | 500+ props, PropPack granularity, `--motionOK` custom media, UX-named durations | Granular import already exists per layer. `--motionOK`: a good convention for §8.5 |
+
+**Unscored, read while mapping:** GOV.UK — functional colour as a *function*, which
+forbids hand-copying hex; the prohibition is exactly our `no-color-literals` rule, and
+its tints-and-shades palette is a real alternative to numeric ramps. Tokens Studio — the
+de facto pipeline, and the reason multi-theme token *sets* are a category at all.
 
 ## Maintaining this document
 

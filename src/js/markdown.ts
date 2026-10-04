@@ -92,8 +92,23 @@ export interface MarkdownBlock {
  * carries them alongside the plain text.
  */
 export function parseLinkTarget(source: string): string | null {
-  const match = /^\[[^\]\n]*\]\(([^)\n]*)\)/.exec(source);
-  return match ? (match[1] ?? null) : null;
+  /*
+   * An optional title may follow the destination, and it must not be swallowed.
+   *
+   * `([^)\n]*)` runs to the first `)`, so `[d](https://x.dev "Title")` returned
+   * `https://x.dev "Title"` -- the title silently became part of the URL, which
+   * produces a broken link rather than an obviously-wrong one.
+   *
+   * The titled form is matched *first*, deliberately. A bare pattern also
+   * matches a titled link (it just stops early), so trying the general case first
+   * would capture the title anyway. Anchoring the bare case to end-of-string is
+   * what makes the two unambiguous.
+   */
+  const titled = /^\[[^\]\n]*\]\(\s*<?([^)\s>]*)>?(?:\s+"[^"]*")?\s*\)/.exec(source);
+  if (titled) return titled[1] ?? null;
+
+  const bare = /^\[[^\]\n]*\]\(([^)\n]*)\)\s*$/.exec(source);
+  return bare ? (bare[1] ?? null) : null;
 }
 
 /** Escape every character that would otherwise be read as markup. */

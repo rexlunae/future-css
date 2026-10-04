@@ -23,6 +23,7 @@ import { fileURLToPath } from "node:url";
 
 import { oklchToHex } from "../tokens/color-utils.ts";
 import { checkContrast, semanticColors, semanticColorNames } from "../tokens/semantic/color.ts";
+import { ansiColorNames, ansiColors, checkAnsiContrast } from "../tokens/semantic/terminal.ts";
 import {
   borderRadius,
   borderWidth,
@@ -94,6 +95,25 @@ for (const name of semanticColorNames) {
     value: `light-dark(${lightHex}, ${darkHex})`,
     light: lightHex,
     dark: darkHex,
+  });
+}
+
+// ---- ANSI terminal palette ---------------------------------------------
+// Separate namespace (fc-color-ansi-*) because these are hue-fixed by protocol
+// rather than meaning-based, and because a terminal has its own background that
+// deliberately ignores the app theme.
+for (const name of ansiColorNames) {
+  const { light, dark } = ansiColors[name];
+  // The `term-` prefix is not cosmetic. The ANSI set defines `bg`, `fg` and
+  // `bg-raised`, all of which the app palette also defines; the unique-name guard
+  // caught the collision rather than letting one silently overwrite the other.
+  // A terminal background is genuinely a different thing from the app canvas, so
+  // they must not share a name.
+  tokens.push({
+    name: `${PREFIX}-term-${name}`,
+    value: `light-dark(${oklchToHex(light)}, ${oklchToHex(dark)})`,
+    light: oklchToHex(light),
+    dark: oklchToHex(dark),
   });
 }
 
@@ -201,7 +221,13 @@ ${renderTokenBlock()}
 async function main(): Promise<void> {
   assertUniqueNames(tokens);
 
-  const failures = checkContrast();
+  // Both contracts in one gate. The ANSI palette is the least accessible surface
+  // in the system -- dense small text, its own background, hue-fixed slots -- so
+  // it gets the same treatment as the app palette rather than an exemption.
+  const failures = [
+    ...checkContrast(),
+    ...checkAnsiContrast(),
+  ];
   if (failures.length > 0) {
     console.error("Contrast contract violated:\n");
     for (const { pair, scheme, ratio } of failures) {

@@ -316,6 +316,74 @@ transform with no logical equivalent. See
 
 ---
 
+## Terminal (implemented)
+
+A terminal emulator surface: output grid, input line, and status bar.
+
+**Scope: the presentation layer.** Escape-sequence parsing, PTY management, and
+scrollback belong to a terminal engine. This owns what is visible — grid geometry,
+the ANSI palette, cursor states, and the accessibility contract.
+
+### The ANSI palette
+
+This is the **only** place in the system where tokens are named by hue rather than
+by purpose, and the reason is structural: `\e[31m` means red, and a build log's
+red error means nothing rendered blue. A purpose-based name cannot express "the
+color at SGR 1", because the whole point is that it stays red whatever the theme is.
+
+A terminal also has **its own background, dark in both color schemes**. An
+application that follows the OS into a light theme must not produce a light
+terminal — every terminal theme ever written keeps it dark.
+
+Both properties are enforced by `src/tokens/semantic/terminal.ts`: 19 contrast
+pairings, checked at build time in both schemes.
+
+### Markup
+
+```html
+<div class="fc-terminal" data-fc-state="connected">
+  <!-- A log, not a live region with assertive updates: a fast-running command
+       would make a screen reader unusable. -->
+  <div class="fc-terminal__output" role="log" aria-live="polite" aria-label="Terminal output">
+    <span class="fc-terminal__line"><span class="fc-term-ansi-green fc-terminal__bold">$</span> npm run build</span>
+    <span class="fc-terminal__line"><span class="fc-term-ansi-cyan">warn</span> deprecated</span>
+    <span class="fc-terminal__line fc-term-ansi-red">error command not found</span>
+    <span class="fc-terminal__line fc-terminal__dim">⠋ Building…</span>
+  </div>
+
+  <div class="fc-terminal__input-row">
+    <span class="fc-terminal__prompt" aria-hidden="true">user@host:~/proj$</span>
+    <!-- A real input: caret, selection, clipboard and IME all work natively. -->
+    <input class="fc-terminal__input" type="text" aria-label="Terminal input">
+  </div>
+
+  <div class="fc-terminal__status">
+    <span>utf-8</span><span>main</span>
+    <!-- "exit 127" carries the state as text, so it survives greyscale -->
+    <span class="fc-terminal__status-end fc-terminal__exit" data-fc-state="error">exit 127</span>
+  </div>
+</div>
+```
+
+### Accessibility notes
+
+- **`role="log"`, not `aria-live="assertive"`.** A fast command would otherwise
+  make a screen reader unusable.
+- **The input is a real `<input>`.** Faking it with a `contenteditable` div breaks
+  IME composition for every CJK user.
+- **Exit status is labeled, not just colored.** A red `127` is a color-only signal.
+- **Programming ligatures are disabled.** `!=` rendered as one glyph breaks column
+  counting.
+
+### A bug this component found
+
+`white-space: pre` on the *output container* looks correct and is not: every
+newline and indent in the markup between line elements renders as a blank output
+line. A 10-line document occupied 598px instead of 180px and scrolled for no
+reason. `pre` belongs on the line, where whitespace is meaningful, and nowhere else.
+
+---
+
 ## Planned components
 
 Ordered by dependency and by how often they appear. Full specifications are written as

@@ -258,6 +258,8 @@ Delivered (CSS complete, browser bindings not yet):
   invalid states
 - [x] **Embedded browser chrome** -- tab strip, address bar with secure indicator,
   navigation with the RTL back-arrow flip, overlay states
+- [x] **Terminal** -- output grid, ANSI palette, cursor, input line, status bar. The
+  only hue-named tokens in the system, with their own 19-pairing contrast contract.
 
 Remaining, in priority order:
 

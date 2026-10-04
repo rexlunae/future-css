@@ -44,6 +44,12 @@ describe("bundle", { skip: hasBundle ? false : "run `npm run build` first" }, ()
       "--fc-color-focus-ring",
       "--fc-space-4",
       "--fc-size-target-min",
+      // The ANSI palette uses its own namespace: a terminal background is not
+      // the app canvas, and the duplicate-name guard rejects sharing a name.
+      "--fc-term-bg",
+      "--fc-term-fg",
+      "--fc-term-ansi-red",
+      "--fc-term-cursor",
     ]) {
       assert.match(
         css,
@@ -98,6 +104,7 @@ describe("bundle", { skip: hasBundle ? false : "run `npm run build` first" }, ()
       "fc-menu",
       "fc-grid",
       "fc-webview",
+      "fc-terminal",
     ];
     for (const block of blocks) {
       assert.match(

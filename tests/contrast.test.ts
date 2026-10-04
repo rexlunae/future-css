@@ -12,6 +12,12 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { checkContrast, contrastPairs } from "../src/tokens/semantic/color.ts";
+import {
+  ansiColorNames,
+  ansiColors,
+  ansiContrastPairs,
+  checkAnsiContrast,
+} from "../src/tokens/semantic/terminal.ts";
 import { contrastRatio, oklchToHex } from "../src/tokens/color-utils.ts";
 import { ramps } from "../src/tokens/palette.ts";
 
@@ -98,5 +104,69 @@ describe("palette ramps", () => {
       const hues = new Set(Object.values(ramp).map((c) => c.h));
       assert.equal(hues.size, 1, `ramp ${name} contains multiple hues: ${[...hues].join(", ")}`);
     }
+  });
+});
+describe("ANSI terminal palette", () => {
+  it("meets every contrast minimum in both schemes", () => {
+    // The first hand-written ANSI palette failed 16 of these. Terminals are the
+    // least accessible surface in the system -- dense small text on their own
+    // background -- so they get the same contract as the app palette.
+    const failures = checkAnsiContrast();
+    const report = failures
+      .map(
+        (f) => `[${f.scheme}] ${f.pair.usage}: ${f.ratio.toFixed(2)}:1, needs ${f.pair.min}:1`,
+      )
+      .join("\n");
+    assert.equal(failures.length, 0, `ANSI contrast failures:\n${report}`);
+  });
+
+  it("declares a contrast pair for every text slot", () => {
+    const covered = new Set(ansiContrastPairs.map((p) => p.fg));
+    for (const slot of ansiColorNames) {
+      // `cursor` and the backgrounds are components, not text; everything else
+      // must appear in the contract.
+      if (slot === "bg" || slot === "bg-raised" || slot === "cursor") continue;
+      assert.ok(covered.has(slot), `ANSI slot ${slot} has no declared contrast pair`);
+    }
+  });
+
+  it("defines all sixteen SGR slots plus the base roles", () => {
+    const normal = ansiColorNames.filter((n) => /^ansi-(?!bright)/.test(n));
+    const bright = ansiColorNames.filter((n) => /^ansi-bright-/.test(n));
+    assert.equal(normal.length, 8, "SGR 30-37 are eight slots");
+    assert.equal(bright.length, 8, "SGR 90-97 are eight slots");
+    for (const role of ["bg", "fg", "fg-dim", "cursor"]) {
+      assert.ok(ansiColorNames.includes(role as never), `missing role ${role}`);
+    }
+  });
+
+  it("keeps every bright slot visibly brighter than its normal counterpart", () => {
+    // If a bright slot is not brighter, the terminal's "dim" convention inverts:
+    // `ls`-style listings use bright for emphasis and it would recede instead.
+    for (const base of ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"]) {
+      const normal = ansiColors[`ansi-${base}` as keyof typeof ansiColors]!;
+      const bright = ansiColors[`ansi-bright-${base}` as keyof typeof ansiColors]!;
+      assert.ok(
+        bright.light.l > normal.light.l,
+        `bright ${base} (${bright.light.l}) should be lighter than normal (${normal.light.l})`,
+      );
+    }
+  });
+
+  it("keeps the terminal background dark in both schemes", () => {
+    // A terminal that follows the OS into a light theme is a usability
+    // regression: every terminal theme ever written keeps it dark, and the ANSI
+    // hues are chosen against a dark ground.
+    const bg = ansiColors.bg!;
+    assert.ok(bg.light.l < 0.25, `light-scheme terminal bg should be dark, got ${bg.light.l}`);
+    assert.ok(bg.dark.l < 0.25, `dark-scheme terminal bg should be dark, got ${bg.dark.l}`);
+  });
+
+  it("makes the cursor legible against the background it sits on", () => {
+    // The cursor is drawn *on* the background rather than beside text, so it has
+    // to differ from it. A near-background cursor is invisible in practice even
+    // when the ratio technically passes.
+    const ratio = contrastRatio(ansiColors.cursor!.light, ansiColors.bg!.light);
+    assert.ok(ratio >= 3, `cursor must be visible on the background, got ${ratio.toFixed(2)}:1`);
   });
 });

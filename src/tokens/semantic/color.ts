@@ -164,14 +164,36 @@ export const contrastPairs: readonly ContrastPair[] = [
   { usage: "Muted text on a sunken surface", fg: "text-muted", bg: "bg-sunken", min: 4.5 },
 ];
 
-/** Evaluate the contract. Returns failures only, keeping CI output short. */
+/**
+ * A `{ light, dark }` token map of the shape `checkContrast` needs.
+ *
+ * Exported as a type so other palettes -- notably the terminal's ANSI set, which
+ * must satisfy the same guarantees -- can be checked by the same function rather
+ * than reimplementing the loop and risking the two drifting apart.
+ */
+export type SchemeColors = Record<string, { light: Oklch; dark: Oklch }>;
+
+/** Build the per-scheme lookup tables `checkContrast` resolves against. */
+export function schemeSets(
+  colors: SchemeColors,
+): { light: Record<string, Oklch>; dark: Record<string, Oklch> } {
+  const names = Object.keys(colors);
+  return {
+    light: Object.fromEntries(names.map((n) => [n, colors[n]!.light])),
+    dark: Object.fromEntries(names.map((n) => [n, colors[n]!.dark])),
+  };
+}
+
+/** Evaluate a contract. Returns failures only, keeping CI output short. */
 export function checkContrast(
   pairs: readonly ContrastPair[] = contrastPairs,
+  colors: SchemeColors = semanticColors,
 ): { pair: ContrastPair; scheme: "light" | "dark"; ratio: number }[] {
+  const sets = schemeSets(colors);
   const failures: { pair: ContrastPair; scheme: "light" | "dark"; ratio: number }[] = [];
   for (const pair of pairs) {
     for (const scheme of ["light", "dark"] as const) {
-      const set = scheme === "light" ? lightSet : darkSet;
+      const set = sets[scheme];
       const fg = set[pair.fg];
       const bg = set[pair.bg];
       if (!fg || !bg) {

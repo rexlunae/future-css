@@ -17,7 +17,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | 1. Token system | Complete | Palette, semantic layer, contrast contract, compiler |
 | 2. Core CSS | In progress | Reset, base, layout, utilities, button, chat, tool-call, editor, menu, grid, webview |
 | 3. Component set | Not started | Form controls, overlays, navigation |
-| A. WASM foundations | Started | Rust workspace, 5 crates, accelerator abstraction |
+| A. WASM foundations | Started | Rust workspace, 6 crates, accelerator abstraction |
 | B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
 | 4. Verification | Not started | Visual regression, browser matrix, docs site |
 | 5. Platform expansion | Not started | Email build, print, native tokens |
@@ -208,8 +208,10 @@ a trade anyone accepts.
 
 Delivered:
 
-- Rust workspace with five crates, each compiling to its own module.
-- 68 unit tests covering the algorithms.
+- Rust workspace with six crates, each a `cdylib`. `fc-core` links into the `fc-model`
+  module rather than shipping on its own, which is why six crates produce four `.wasm`
+  files. `fc-diff` is built as a Rust library only and has no WASM module yet.
+- 75 unit tests covering the algorithms.
 - A JS accelerator abstraction with a pure-JS fallback, so the modules are optional.
 - **A measured size report in the build output**, because the dominant cost is invisible
   in source and only obvious in the numbers.

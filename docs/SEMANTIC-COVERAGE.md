@@ -229,7 +229,7 @@ close by emitting an `oklch()` fallback alongside the hex pair.
 The meaning layer. Components read these and never a primitive.
 
 - **Us:** 42 semantic colour tokens, `<role>-<variant>[-<state>]`, per-scheme values.
-  91 of 165 emitted tokens are `light-dark()` pairs.
+  Counting unique names, 90 of the 165 emitted tokens are `light-dark()` pairs.
 - **Enforced** by `no-color-literals` plus the documented rule that a component
   referencing a primitive is a bug.
 - **Radix** has no semantic layer at all. Its position is that a scale *step* is the
@@ -719,7 +719,7 @@ is worse than none.
 | --- | --- |
 | "119 tokens (44 theme-aware)" | **165 tokens, 90 theme-aware** |
 | "~55 KB" bundle | **132 KB** (`dist/future-css.css`) |
-| "92 tests passing" | **232 tests passing** |
+| "92 tests passing" | **245 tests passing** |
 | "Ten CSS components are complete" | Correct — but form controls and overlays are still Phase 3 |
 
 ## Per-library verdicts
@@ -740,7 +740,7 @@ separately underneath.
 | **Shopify Polaris** | Small comprehensible set with per-token `description` metadata | Per-token descriptions: cheap, worth having in `tokens.json` |
 | **Pico CSS** | A real class-less switch; measure as a first-class concern | Class-less: worth an option. Measure: already shipped |
 | **Bulma** | `--bulma-scheme-*` derived tier; explicit per-state tokens including `--bulma-button-disabled-*`; a full spacing/typography helper set | Disabled-as-tokens: yes, that is gap 5. The rest: we have the equivalent at a different altitude |
-| **Open Props** | 500+ props, PropPack granularity, `--motionOK` custom media, UX-named durations | Granular import already exists per layer. `--motionOK`: a good convention for §8.5 |
+| **Open Props** | 500+ props, PropPack granularity, `--motionOK` custom media, UX-named durations | Granular import already exists per layer. `--motionOK`, and durations named by use (`--duration-quick-1` for hover, `--duration-moderate-2` for a modal), are a better vocabulary than `fast`/`normal`/`slow` and would close the transition-recipe item under gap 5 |
 
 **Unscored, read while mapping:** GOV.UK — functional colour as a *function*, which
 forbids hand-copying hex; the prohibition is exactly our `no-color-literals` rule, and

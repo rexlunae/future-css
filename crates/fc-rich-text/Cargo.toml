@@ -1,0 +1,31 @@
+# fc-rich-text -- inline formatting model for contenteditable editors.
+#
+# Links fc-model (text buffers) and fc-core (errors), and nothing else. A
+# consumer using only the context menu pays for none of this.
+#
+# Scope note: this crate owns the *formatting model* -- what marks exist, how they
+# nest, and how to apply and remove them against a selection. It does not own
+# rendering, which is contenteditable's job in the DOM. Keeping the two apart is
+# what allows the same model to drive a contenteditable surface today and a
+# canvas-rendered surface later.
+
+[package]
+name = "fc-rich-text"
+description = "Inline formatting model for future-css rich text editing"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+fc-core = { path = "../fc-core" }
+fc-model = { path = "../fc-model" }
+wasm-bindgen = { workspace = true }
+js-sys = { workspace = true }
+serde = { workspace = true }
+serde-wasm-bindgen = { workspace = true }

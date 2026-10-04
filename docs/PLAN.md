@@ -3,8 +3,9 @@
 Phased roadmap with exit criteria. Each phase ends with a gate that can be checked, not a
 judgment call.
 
-**Current status: Phase 2 in progress.** Phases 0 and 1 are complete; Phase 2 has the
-foundation built and the components remaining.
+**Current status: Phase 2 in progress, Phase A (WASM size) started.** Phases 0 and 1 are
+complete; Phase 2 has the foundation built and the components remaining. The Rust/WASM
+layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 
 ---
 
@@ -16,6 +17,8 @@ foundation built and the components remaining.
 | 1. Token system | Complete | Palette, semantic layer, contrast contract, compiler |
 | 2. Core CSS | In progress | Reset, base, layout, utilities, button, chat, tool-call |
 | 3. Component set | Not started | Form controls, overlays, navigation |
+| A. WASM foundations | Started | Rust workspace, 5 crates, accelerator abstraction |
+| B. Complex components | Not started | Rich text, context menu, grid, embedded browser |
 | 4. Verification | Not started | Visual regression, browser matrix, docs site |
 | 5. Platform expansion | Not started | Email build, print, native tokens |
 | 6. Release | Not started | Publishing, versioning, governance |
@@ -23,13 +26,16 @@ foundation built and the components remaining.
 ### Working now
 
 ```
-npm run build     119 tokens (44 theme-aware) + 8-file bundle, ~55 KB
-npm run lint      14 rules, 0 violations
-npm run test      58 tests passing
+npm run build        119 tokens (44 theme-aware) + 8-file bundle, ~55 KB
+                     5 WASM modules (over budget — see Phase A)
+npm run lint         14 rules, 0 violations
+npm test             86 tests passing (incl. WASM/JS parity)
+cargo test           68 tests passing
 ```
 
-Verified: contrast contract enforced in both schemes, all ramps validated, linter verified
-against both violations and legitimate patterns.
+Verified: contrast contract enforced in both schemes · all ramps validated · linter
+verified against both violations and legitimate patterns · WASM modules instantiate and
+**agree with the JS implementation on every offset pair**.
 
 ---
 
@@ -184,6 +190,90 @@ The components needed for a real application, prioritized by frequency of use.
 
 **Risk.** Overlays are where accessibility goes wrong most often. Budget extra time here
 rather than treating dialogs as a quick win.
+
+---
+
+## Phase A -- WASM size reduction (started)
+
+**Goal.** Get each WASM module from ~350-420 KB to its ~30-45 KB budget. Everything else
+in the WASM plan depends on this, because a 400 KB download to open a context menu is not
+a trade anyone accepts.
+
+Delivered:
+
+- Rust workspace with five crates, each compiling to its own module.
+- 68 unit tests covering the algorithms.
+- A JS accelerator abstraction with a pure-JS fallback, so the modules are optional.
+- **A measured size report in the build output**, because the dominant cost is invisible
+  in source and only obvious in the numbers.
+
+The problem, measured rather than guessed:
+
+| | Bytes |
+| --- | ---: |
+| Empty module | 27,707 |
+| **+ one `js_sys::Array::new()`** | **329,588** |
+| Actual `fc-context-menu` | 424,164 |
+
+`js-sys` costs ~302 KB the moment it is linked, regardless of which API is called, and
+LTO cannot remove it because wasm-bindgen's glue enumerates the WebIDL surface rather
+than tree-shaking to the used subset.
+
+Remaining:
+
+- Replace `js_sys::Array` / `Vec<JsValue>` returns with flat primitives: numbers, strings,
+  and typed arrays. A range crosses as four numbers, not an object.
+- Drop `serde-wasm-bindgen` in favour of hand-written `to_js` for the few shapes crossing
+  the boundary. Serde's machinery is not free, and it is only paying for itself if the
+  boundary grows.
+- Re-measure, and turn the budgets into a build failure once they are met.
+
+Exit criteria: **every module within budget**, and the parity tests still passing. The
+parity suite is the safety net for this entire phase, because rewriting the boundary is
+exactly where a silent behavior change would hide.
+
+Risks:
+
+- *Primitives-only is less ergonomic in Rust.* Mitigation: keep the ergonomic Rust API
+  internally and do the conversion in one place per crate.
+- *A hand-written marshalling layer is more code to get wrong.* Mitigation: the parity
+  test compares every offset pair against the JS implementation, so a divergence is a test
+  failure rather than a user's corrupted document.
+
+---
+
+## Phase B -- Complex components (not started)
+
+**Goal.** The components that need real behavior: rich text, context menus, Office-like
+surfaces, and embedded browsers.
+
+The hard part is not the styling — it is that these components are where a design system
+usually stops being accessible. Each is specified as CSS plus a documented DOM contract,
+with WASM strictly optional:
+
+1. **Rich text entry.** Mark/span model is built. Remaining: a `contenteditable` binding,
+   undo/redo, and clipboard. The JS path must be a plain `<textarea>` with a working
+   toolbar.
+2. **Context menu.** Model and keyboard traversal are built. Remaining: positioning
+   (browser-side by decision), focus trapping, and the Popover API integration.
+3. **Office-like grid.** Cell, range, and selection model is built. Remaining:
+   virtualization, keyboard navigation, and `aria-rowcount`/`aria-colcount` for large
+   documents — which is where screen-reader support for grids actually gets decided.
+4. **Embedded browser.** A styled frame with navigation and permission UI. **The browsing
+   itself is an `<iframe>`** — reimplementing a browser engine is not a design-system
+   problem, and the honest scope is the chrome around it.
+
+Exit criteria: every component has a JS-only path that is fully usable and accessible; the
+WASM path is a performance option; and both are covered by the same behavior tests.
+
+Risks:
+
+- *`contenteditable` is a minefield.* Mitigation: prefer `beforeinput` over deprecated
+  `execCommand`, and treat the browser's editing behavior as the baseline to conform to
+  rather than fight.
+- *Virtualized grids are hostile to assistive technology.* Mitigation: `aria-rowcount` and
+  a focus model that keeps the active cell reachable, tested with a screen reader rather
+  than assumed.
 
 ---
 

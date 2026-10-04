@@ -4,3 +4,8 @@ dist/
 .DS_Store
 .cache/
 coverage/
+
+# Rust / WASM build output. Cargo.lock is intentionally NOT ignored: these
+# crates are built and published, and pinning the dependency graph is what
+# makes a given commit reproduce the same .wasm bytes.
+target/

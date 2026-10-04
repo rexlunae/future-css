@@ -22,18 +22,23 @@
     "./layout": "./dist/layout.css",
     "./components/*": "./dist/components/*.css",
     "./utilities": "./dist/utilities.css",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./js": "./src/js/accelerator.ts"
   },
   "files": [
-    "dist"
+    "dist",
+    "src/js"
   ],
   "scripts": {
-    "build": "node src/build/build.ts",
+    "build": "npm run build:css && npm run build:wasm",
     "build:tokens": "node src/build/compile-tokens.ts",
-    "check": "npm run build && npm run lint && npm run test",
+    "check": "npm run build && npm run lint && npm run test && npm run test:rust",
     "lint": "node tools/lint-css.mjs",
     "test": "node --test \"tests/**/*.test.ts\"",
-    "clean": "node -e \"import('node:fs').then(fs=>fs.rmSync('dist',{recursive:true,force:true}))\""
+    "clean": "node -e \"import('node:fs').then(fs=>fs.rmSync('dist',{recursive:true,force:true}))\"",
+    "build:wasm": "node src/build/build-wasm.ts",
+    "test:rust": "cargo test",
+    "build:css": "node src/build/build.ts"
   },
   "keywords": [
     "css",

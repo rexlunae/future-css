@@ -15,10 +15,10 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | --- | --- | --- |
 | 0. Foundations | Complete | Repo, toolchain, decisions |
 | 1. Token system | Complete | Palette, semantic layer, contrast contract, compiler |
-| 2. Core CSS | In progress | Reset, base, layout, utilities, button, chat, tool-call |
+| 2. Core CSS | In progress | Reset, base, layout, utilities, button, chat, tool-call, editor, menu, grid, webview |
 | 3. Component set | Not started | Form controls, overlays, navigation |
 | A. WASM foundations | Started | Rust workspace, 5 crates, accelerator abstraction |
-| B. Complex components | Not started | Rich text, context menu, grid, embedded browser |
+| B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
 | 4. Verification | Not started | Visual regression, browser matrix, docs site |
 | 5. Platform expansion | Not started | Email build, print, native tokens |
 | 6. Release | Not started | Publishing, versioning, governance |
@@ -29,7 +29,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 npm run build        119 tokens (44 theme-aware) + 8-file bundle, ~55 KB
                      5 WASM modules (over budget — see Phase A)
 npm run lint         14 rules, 0 violations
-npm test             86 tests passing (incl. WASM/JS parity)
+npm test             92 tests passing (incl. WASM/JS parity + bundle integrity)
 cargo test           68 tests passing
 ```
 
@@ -242,38 +242,61 @@ Risks:
 
 ---
 
-## Phase B -- Complex components (not started)
+## Phase B -- Complex components (in progress)
 
-**Goal.** The components that need real behavior: rich text, context menus, Office-like
-surfaces, and embedded browsers.
+**Goal.** Working UI elements for complex surfaces. The priority is the *element* --
+chrome, layout, states, accessibility -- not a feature-complete application.
 
-The hard part is not the styling — it is that these components are where a design system
-usually stops being accessible. Each is specified as CSS plus a documented DOM contract,
-with WASM strictly optional:
+Delivered (CSS complete, browser bindings not yet):
 
-1. **Rich text entry.** Mark/span model is built. Remaining: a `contenteditable` binding,
-   undo/redo, and clipboard. The JS path must be a plain `<textarea>` with a working
-   toolbar.
-2. **Context menu.** Model and keyboard traversal are built. Remaining: positioning
-   (browser-side by decision), focus trapping, and the Popover API integration.
-3. **Office-like grid.** Cell, range, and selection model is built. Remaining:
-   virtualization, keyboard navigation, and `aria-rowcount`/`aria-colcount` for large
-   documents — which is where screen-reader support for grids actually gets decided.
-4. **Embedded browser.** A styled frame with navigation and permission UI. **The browsing
-   itself is an `<iframe>`** — reimplementing a browser engine is not a design-system
-   problem, and the honest scope is the chrome around it.
+- [x] **Rich text editor** -- toolbar with roving tabindex, `aria-pressed` state,
+  `.fc-prose` document styles usable standalone, all states, forced-colors block
+- [x] **Context menu** -- items, groups, separators, checkbox items, submenu
+  affordance, danger variant, forced-colors block
+- [x] **Data grid** -- sticky row and column headers with a correct corner z-index,
+  numeric alignment with tabular figures, selection vs. active cell, dirty and
+  invalid states
+- [x] **Embedded browser chrome** -- tab strip, address bar with secure indicator,
+  navigation with the RTL back-arrow flip, overlay states
 
-Exit criteria: every component has a JS-only path that is fully usable and accessible; the
-WASM path is a performance option; and both are covered by the same behavior tests.
+Remaining, in priority order:
+
+1. **JS bindings.** `contenteditable` wiring for the editor; menu positioning and focus
+   management; grid keyboard navigation and virtualization. All CSS, no behavior yet.
+2. **Form field.** Still the highest-value missing component, and the one with the most
+   accessibility surface.
+3. **Dialog.** Prefer native `<dialog>`; document the manual trap only where it is
+   unavailable.
+
+Exit criteria: every component has a JS-only path that is fully usable and accessible;
+the WASM path is a performance option; and both are covered by the same behavior tests.
 
 Risks:
 
 - *`contenteditable` is a minefield.* Mitigation: prefer `beforeinput` over deprecated
   `execCommand`, and treat the browser's editing behavior as the baseline to conform to
   rather than fight.
-- *Virtualized grids are hostile to assistive technology.* Mitigation: `aria-rowcount` and
-  a focus model that keeps the active cell reachable, tested with a screen reader rather
-  than assumed.
+- *Virtualized grids are hostile to assistive technology.* Mitigation: `aria-rowcount`
+  and a focus model that keeps the active cell reachable, tested with a screen reader
+  rather than assumed.
+
+### A bug this phase found
+
+The bundle never contained the token layer. `tokens.css` is generated rather than
+authored in `src/css`, so it was not in `BUNDLE_ORDER`, and every
+`var(--fc-color-*)` reference resolved to nothing. The stylesheet rendered completely
+unstyled -- and nothing failed, because an unresolved custom property is valid CSS.
+
+Every existing test passed: the linter reads sources, the token tests read `tokens.css`,
+and the contrast contract validated values that were never in the bundle at all. Only
+rendering the artifact in a browser found it. `tests/bundle.test.ts` now asserts the
+token *definitions* are present, and `build.ts` throws if they are not.
+
+The follow-on bug was in the fix: the banner-stripping regex matched `/*! ... */`
+non-greedily, but the banner contains `src/tokens/**/*.ts`, whose `**/` closes the
+pattern early. That left a literal `*.ts` in the bundle and broke parsing of the entire
+token layer again -- so the stripper now scans for the terminator instead of trusting a
+pattern to a file whose contents can contain anything.
 
 ---
 

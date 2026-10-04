@@ -19,12 +19,15 @@ an opaque blob — it is readable CSS you can debug in devtools.
 
 ## Status
 
-**Pre-alpha.** The foundations are built, tested, and enforced: the token pipeline, the
-cascade architecture, the reset and base layers, the layout primitives, the linter, and
-the accessibility contract. Three components are complete — button, chat surface, and
-tool call / step trace. Form controls, overlays, and navigation are planned but not yet
-written. See [the development plan](docs/PLAN.md) for what is done, what is next, and
-what is deliberately out of scope for now.
+**Pre-alpha.** Foundations are built and enforced: the token pipeline, the cascade
+architecture, the reset and base layers, the layout primitives, the linter, the
+accessibility contract, and an optional Rust/WASM layer.
+
+Seven components are complete: button, chat surface, tool call / step trace, rich text
+editor, context menu, data grid, and embedded browser chrome. Form controls, dialogs, and
+navigation are planned but not yet written, and the complex components are CSS only so
+far -- their browser bindings come next. See [the development plan](docs/PLAN.md) for
+what is done, what is next, and what is deliberately out of scope.
 
 ---
 

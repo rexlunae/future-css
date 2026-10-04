@@ -236,8 +236,10 @@ docs/               Design documents; PLAN.md is the roadmap, WASM.md the WASM s
 
 ## Current state
 
-Pre-alpha. Foundations are built and enforced. Three CSS components are
-complete: button, chat surface, and tool call / step trace. The Rust/WASM
+Pre-alpha. Foundations are built and enforced. Seven CSS components are
+complete: button, chat surface, tool call / step trace, rich text editor,
+context menu, data grid, and embedded browser chrome. Form controls and
+dialogs are not yet written. The Rust/WASM
 layer has five crates with 68 passing tests and a working JS-only fallback,
 but **every module is currently ~10x over its size budget** — see the WASM
 section above and Phase A in `docs/PLAN.md`. Rich text, context menu, and grid

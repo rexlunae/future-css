@@ -46,6 +46,10 @@ const BUNDLE_ORDER: ReadonlyArray<readonly [source: string, publishedAs: string]
   ["components/button.css", "components/button.css"],
   ["components/chat.css", "components/chat.css"],
   ["components/tool-call.css", "components/tool-call.css"],
+  ["components/editor.css", "components/editor.css"],
+  ["components/menu.css", "components/menu.css"],
+  ["components/grid.css", "components/grid.css"],
+  ["components/webview.css", "components/webview.css"],
   ["utilities.css", "utilities.css"],
 ];
 
@@ -57,11 +61,33 @@ const BANNER = `/*!
  * This file is generated; edit the sources in src/ instead.
  */`;
 
+/**
+ * Removes a single leading `/*! ... *\/` banner comment, if present.
+ *
+ * Anchored and complete-comment-only by construction: it will not span across a
+ * following comment, which is what broke the bundle once already.
+ */
+function stripLeadingBanner(css: string): string {
+  // Scan to the closing delimiter rather than using a regex.
+  //
+  // A regex cannot be trusted here: the banner legitimately contains path
+  // globs like "src/tokens/**\/*.ts", and the "**\/" inside it closes a
+  // `/*! ... *\/` pattern early. That truncated the banner, left a stray "*.ts",
+  // and broke parsing of the entire @layer block -- so the tokens silently
+  // vanished and every var() reference resolved to nothing, with no error. An
+  // indexOf for the true terminator cannot be fooled by the content.
+  if (!css.startsWith("/*!")) return css;
+  const end = css.indexOf("*/");
+  if (end === -1) return css;
+  return css.slice(end + 2).replace(/^\s+/, "");
+}
+
 async function readSource(relative: string): Promise<string> {
   return readFile(resolve(srcCss, relative), "utf8");
 }
 
 async function buildBundle(): Promise<void> {
+  await mkdir(outDir, { recursive: true });
   const parts: string[] = [BANNER, ""];
 
   for (const [source] of BUNDLE_ORDER) {
@@ -71,8 +97,41 @@ async function buildBundle(): Promise<void> {
     parts.push(css.trim(), "");
   }
 
-  await mkdir(outDir, { recursive: true });
-  await writeFile(resolve(outDir, "future-css.css"), `${parts.join("\n")}\n`, "utf8");
+  // The generated token layer, inlined.
+  //
+  // tokens.css is produced by compile-tokens.ts rather than authored in src/css,
+  // so it is NOT in BUNDLE_ORDER and was silently missing from the bundle. Every
+  // `var(--fc-color-*)` reference in the other layers therefore resolved to
+  // nothing, and the bundle rendered unstyled -- with no error anywhere, because
+  // an unresolved custom property is valid CSS. tests/bundle.test.ts now asserts
+  // the definitions are present so this cannot regress.
+  const generatedTokens = await readFile(resolve(outDir, "tokens.css"), "utf8");
+  // Strip the generated banner: the bundle already carries one.
+  //
+  // The pattern must be anchored to a WHOLE comment at the very start of the
+  // file. An earlier non-greedy `/^\/*![\s\S]*?\*\//` matched across the two
+  // comment blocks tokens.css emits (the `/*!` banner and the `Source:` line),
+  // leaving a stray `*.ts` at the top of the inlined section. That broke parsing
+  // of the whole @layer block, so the tokens silently vanished and every
+  // var(--fc-color-*) resolved to nothing -- with no error, because an unresolved
+  // custom property is valid CSS.
+  parts.push(stripLeadingBanner(generatedTokens).trim(), "");
+
+  const bundle = parts.join("\n") + "\n";
+
+  // Cheap but decisive: a bundle whose token *definitions* are missing still
+  // contains token *references*, so counting occurrences of a name is not enough.
+  // Assert the definition form (`--name:`) is present.
+  for (const required of ["--fc-color-bg-canvas:", "--fc-color-text-default:"]) {
+    if (!bundle.includes(required)) {
+      throw new Error(
+        `build: bundle is missing the token definition "${required}". ` +
+          `Every var() reference would resolve to nothing.`,
+      );
+    }
+  }
+
+  await writeFile(resolve(outDir, "future-css.css"), bundle, "utf8");
 }
 
 async function buildIndividualFiles(): Promise<void> {

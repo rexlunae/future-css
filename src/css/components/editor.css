@@ -1,0 +1,344 @@
+/*!
+ * future-css -- rich text editor
+ *
+ * A formatting toolbar over a contenteditable region, plus the document styles
+ * the editor produces.
+ *
+ * Design constraints that shaped this:
+ *
+ *   - **The toolbar is real buttons in a real toolbar.** `<div role="toolbar">`
+ *     with click handlers re-implements what `<button>` and `role` already give.
+ *     Every item is focusable and announces its pressed state.
+ *   - **State is carried by `aria-pressed`, not a class.** The button's
+ *     appearance and its announced state then cannot disagree, which is the
+ *     usual failure when two class names are kept in sync by hand.
+ *   - **The editor degrades to a plain textarea.** Without JavaScript the
+ *     editing region is still a textarea: content is visible, editable, and
+ *     keyboard-accessible.
+ *   - **Document styles are separate from editor chrome.** `.fc-prose` styles
+ *     what a user produces; `.fc-editor*` styles the editing surface. They work
+ *     independently -- a document rendered from the model uses `.fc-prose` with
+ *     no editor at all.
+ */
+
+@layer fc.components {
+  /* ---- Surface ----------------------------------------------------------- */
+
+  .fc-editor {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+    background-color: var(--fc-color-bg-surface);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+    border-radius: var(--fc-radius-md);
+  }
+
+  /*
+   * Focus-within lifts the whole surface, signalling "you are editing here"
+   * without competing with the caret's own focus ring.
+   */
+  .fc-editor:focus-within {
+    border-color: var(--fc-color-accent-border);
+    box-shadow: 0 0 0 var(--fc-space-0-5) var(--fc-color-focus-ring-offset);
+  }
+
+  /* ---- Toolbar ----------------------------------------------------------- */
+
+  /*
+   * `role="toolbar"` with roving tabindex: one item is tabbable and the arrows
+   * move within. Without that, a screen-reader user tabs through every button
+   * in the toolbar on every visit.
+   */
+  .fc-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fc-space-1);
+    padding: var(--fc-space-2);
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    background-color: var(--fc-color-bg-subtle);
+    /* Wraps rather than scrolling, so it stays usable on a phone. */
+    min-inline-size: 0;
+  }
+
+  .fc-toolbar__item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fc-space-1-5);
+
+    /* 24px minimum: WCAG 2.2 target size. */
+    min-inline-size: var(--fc-size-target-min);
+    min-block-size: var(--fc-size-target-min);
+    padding-inline: var(--fc-space-2);
+
+    background-color: transparent;
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid transparent;
+    border-radius: var(--fc-radius-sm);
+
+    font-family: inherit;
+    font-size: var(--fc-font-size-sm);
+    font-weight: var(--fc-font-weight-medium);
+    line-height: 1;
+    cursor: pointer;
+
+    transition:
+      background-color var(--fc-duration-fast) var(--fc-easing-standard),
+      border-color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-toolbar__item:hover {
+    background-color: var(--fc-color-bg-muted);
+  }
+
+  .fc-toolbar__item:active {
+    background-color: var(--fc-color-bg-subtle);
+  }
+
+  /*
+   * The pressed state, driven by `[aria-pressed]` so the visual and the
+   * announced state are one thing. A separate `.is-active` class would let them
+   * drift, and a button that looks active but announces "not pressed" is worse
+   * than one that never looks active.
+   */
+  .fc-toolbar__item[aria-pressed="true"] {
+    background-color: var(--fc-color-accent-bg-subtle);
+    color: var(--fc-color-accent-text);
+    border-color: var(--fc-color-accent-border);
+  }
+
+  .fc-toolbar__item:disabled {
+    color: var(--fc-color-text-subtle);
+    cursor: not-allowed;
+  }
+
+  /*
+   * The visible label. Hidden from sight but exposed to assistive technology, so
+   * a "B" button is announced as "Bold" rather than as the letter B -- which is
+   * meaningless to a screen-reader user and to anyone who has lost the ability to
+   * associate a glyph with a formatting name.
+   */
+  .fc-toolbar__label {
+    font-family: var(--fc-font-family-sans);
+  }
+
+  /* Icon-only items stay square so the hit area matches the glyph. */
+  .fc-toolbar__item--icon {
+    padding-inline: var(--fc-space-1-5);
+  }
+
+  /* A visual separator between groups; hidden from the accessibility tree. */
+  .fc-toolbar__divider {
+    inline-size: var(--fc-border-width-thin);
+    align-self: stretch;
+    margin-inline: var(--fc-space-1);
+    background-color: var(--fc-color-border-default);
+  }
+
+  /* ---- Editing region ---------------------------------------------------- */
+
+  /*
+   * `min-block-size` rather than a fixed height: a fixed-height editor traps the
+   * user in a small box and forces a nested scroll region, which is a well-known
+   * keyboard trap.
+   */
+  .fc-editor__content {
+    padding: var(--fc-space-3);
+    min-block-size: 8lh;
+    /* Grows with content up to this point, then scrolls internally. */
+    max-block-size: 60vh;
+    overflow-y: auto;
+    /* Room for the focus ring inside the scroll container. */
+    padding-inline: var(--fc-space-4);
+
+    color: var(--fc-color-text-default);
+    font-family: inherit;
+    font-size: var(--fc-font-size-md);
+    line-height: var(--fc-line-height-normal);
+  }
+
+  /*
+   * Placeholder styling. `data-placeholder` on the region rather than a
+   * `content:` string, so the real hint text lives in the markup.
+   */
+  .fc-editor__content:empty::before {
+    content: attr(data-placeholder);
+    color: var(--fc-color-text-subtle);
+    /* A placeholder is a hint, not a label, so it must not intercept clicks. */
+    pointer-events: none;
+  }
+
+  /*
+   * A read-only editor is a preview. It must not look editable, because the
+   * absence of a caret would otherwise be the only signal.
+   */
+  .fc-editor__content[readonly],
+  .fc-editor__content[aria-readonly="true"] {
+    background-color: var(--fc-color-bg-subtle);
+  }
+
+  /* ---- Document styles --------------------------------------------------- */
+
+  /*
+   * .fc-prose -- styles for editor content.
+   *
+   * Usable standalone for rendering a document the model produced, with no editor
+   * present. That is why it shares the file with the editor rather than being
+   * duplicated: one definition of "what bold looks like" for both the editing and
+   * the reading case.
+   */
+  .fc-prose {
+    color: var(--fc-color-text-default);
+    line-height: var(--fc-line-height-normal);
+  }
+
+  /* Spacing between blocks comes from the children, not wrapper margins. */
+  .fc-prose > * + * {
+    margin-block-start: var(--fc-space-3);
+  }
+
+  .fc-prose :is(h1, h2, h3, h4, h5, h6) {
+    font-weight: var(--fc-font-weight-semibold);
+    line-height: var(--fc-line-height-tight);
+    margin-block: var(--fc-space-4) var(--fc-space-2);
+    text-wrap: balance;
+  }
+
+  .fc-prose h1 { font-size: var(--fc-font-size-3xl); }
+  .fc-prose h2 { font-size: var(--fc-font-size-2xl); }
+  .fc-prose h3 { font-size: var(--fc-font-size-xl); }
+
+  /*
+   * Inline marks: the *rendering* of a mark. The editor applies them to the
+   * document; this only decides how they look.
+   */
+  .fc-prose :is(strong, b) {
+    font-weight: var(--fc-font-weight-bold);
+  }
+
+  .fc-prose :is(em, i) {
+    font-style: italic;
+  }
+
+  /*
+   * Underline gets its own offset so it stays legible over a link's own
+   * underline rather than merging into a single line.
+   */
+  .fc-prose u,
+  .fc-prose ins {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .fc-prose s,
+  .fc-prose del {
+    text-decoration: line-through;
+  }
+
+  /* Inline code, distinguished from a code *block* by size and padding. */
+  .fc-prose :is(code):not(pre code) {
+    font-family: var(--fc-font-family-mono);
+    font-size: 0.9375em;
+    padding-inline: 0.25em;
+    padding-block: 0.125em;
+    background-color: var(--fc-color-bg-subtle);
+    border-radius: var(--fc-radius-sm);
+  }
+
+  /*
+   * Code blocks.
+   *
+   * `overflow-x: auto` rather than wrapping: wrapping code destroys the
+   * indentation that carries meaning in most languages. A horizontal scrollbar
+   * inside a container is a real cost, but a mangled program is worse.
+   */
+  .fc-prose pre {
+    font-family: var(--fc-font-family-mono);
+    font-size: var(--fc-font-size-sm);
+    line-height: var(--fc-line-height-normal);
+    padding: var(--fc-space-3);
+    overflow-x: auto;
+    background-color: var(--fc-color-bg-sunken);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-sm);
+    /* 2 is the near-universal convention, and mismatched indentation in a
+       listing is disorienting. */
+    tab-size: 2;
+  }
+
+  .fc-prose blockquote {
+    margin-inline: 0;
+    padding-inline-start: var(--fc-space-3);
+    border-inline-start: var(--fc-border-width-thick) solid var(--fc-color-border-default);
+    color: var(--fc-color-text-muted);
+  }
+
+  /*
+   * The reset zeroes list padding via :where(); restore it inside prose so a
+   * nested list still reads as nested.
+   */
+  .fc-prose ul,
+  .fc-prose ol {
+    padding-inline-start: var(--fc-space-5);
+  }
+
+  .fc-prose li + li {
+    margin-block-start: var(--fc-space-1);
+  }
+
+  .fc-prose :is(a) {
+    color: var(--fc-color-accent-text);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .fc-prose hr {
+    border: 0;
+    border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+    margin-block: var(--fc-space-4);
+  }
+
+  /* ---- State -------------------------------------------------------------- */
+
+  /*
+   * A failed save must not discard what the user wrote, so the content stays in
+   * place and only the border changes.
+   */
+  .fc-editor[data-fc-state="error"] {
+    border-color: var(--fc-color-danger-border);
+  }
+
+  .fc-editor[data-fc-state="saving"] .fc-editor__content {
+    /* Kept subtle: dimming far enough to notice would take the text below the
+       contrast minimum, and the state is announced separately anyway. */
+    opacity: 0.9;
+  }
+
+  /*
+   * Forced colors.
+   *
+   * The toolbar's group background and the pressed tint are both discarded, so
+   * the pressed state needs a border to stay distinguishable -- otherwise a
+   * screen-reader user hears "pressed" while a sighted user in high contrast sees
+   * nothing at all.
+   */
+  @media (forced-colors: active) {
+    .fc-toolbar {
+      background-color: Canvas;
+      border-block-end-color: CanvasText;
+    }
+
+    .fc-toolbar__item[aria-pressed="true"] {
+      background-color: Highlight;
+      color: HighlightText;
+      border-color: Highlight;
+    }
+
+    .fc-prose pre {
+      background-color: Canvas;
+      border-color: CanvasText;
+    }
+  }
+}

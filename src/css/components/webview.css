@@ -1,0 +1,272 @@
+/*!
+ * future-css -- embedded browser chrome
+ *
+ * The *chrome* around an embedded browsing context: a tab strip, an address bar,
+ * navigation controls, and the frame hosting the content.
+ *
+ * **Scope, stated plainly.** The browsing itself is an `<iframe>`. This is not a
+ * browser engine, and building one inside a component library is not a sensible
+ * use of effort -- the platform already provides the browsing context, its
+ * process isolation, and its network stack. What a design system can usefully
+ * provide is the accessible, themeable, direction-correct UI around it, plus the
+ * security affordances that make embedding safe to offer.
+ */
+
+@layer fc.components {
+  /* ---- Frame -------------------------------------------------------------- */
+
+  /*
+   * `min-block-size: 0` on the frame is what actually lets it shrink; without it
+   * a flex child refuses to shrink below its content and the layout overflows.
+   */
+  .fc-webview {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+    /* A definite height is required for a flex column with a growing child; the
+       consumer sets it. */
+    block-size: 100%;
+    overflow: hidden;
+
+    background-color: var(--fc-color-bg-surface);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+    border-radius: var(--fc-radius-md);
+  }
+
+  .fc-webview__frame {
+    flex: 1;
+    /* The single most important line in this file. */
+    min-block-size: 0;
+    inline-size: 100%;
+    /* The iframe has its own default border, which would double up here. */
+    border: 0;
+    background-color: var(--fc-color-bg-canvas);
+  }
+
+  /* ---- Tab strip ---------------------------------------------------------- */
+
+  .fc-webview__tabs {
+    display: flex;
+    align-items: stretch;
+    gap: var(--fc-space-1);
+    padding: var(--fc-space-1);
+    background-color: var(--fc-color-bg-subtle);
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    overflow-x: auto;
+    /* So a dragged tab settles rather than stopping arbitrarily. */
+    scroll-snap-type: inline proximity;
+  }
+
+  /*
+   * A `<button role="tab">`, per the ARIA tabs pattern. `aria-selected` drives the
+   * active styling so the visible tab and the announced tab cannot disagree.
+   */
+  .fc-webview__tab {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-2);
+    min-inline-size: 0;
+    max-inline-size: 14rem;
+    padding-inline: var(--fc-space-2);
+    padding-block: var(--fc-space-1-5);
+    scroll-snap-align: start;
+
+    background-color: transparent;
+    color: var(--fc-color-text-muted);
+    border: var(--fc-border-width-thin) solid transparent;
+    border-radius: var(--fc-radius-sm);
+
+    font-family: inherit;
+    font-size: var(--fc-font-size-sm);
+    cursor: pointer;
+  }
+
+  .fc-webview__tab:hover {
+    background-color: var(--fc-color-bg-muted);
+    color: var(--fc-color-text-default);
+  }
+
+  .fc-webview__tab[aria-selected="true"] {
+    background-color: var(--fc-color-bg-surface);
+    color: var(--fc-color-text-default);
+    border-color: var(--fc-color-border-default);
+    font-weight: var(--fc-font-weight-semibold);
+  }
+
+  .fc-webview__tab-label {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ---- Toolbar ------------------------------------------------------------ */
+
+  .fc-webview__toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-1);
+    padding: var(--fc-space-1) var(--fc-space-2);
+    background-color: var(--fc-color-bg-surface);
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    min-inline-size: 0;
+  }
+
+  .fc-webview__nav {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--fc-size-target-min);
+    block-size: var(--fc-size-target-min);
+    flex-shrink: 0;
+    background-color: transparent;
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid transparent;
+    border-radius: var(--fc-radius-sm);
+    cursor: pointer;
+  }
+
+  .fc-webview__nav:hover:not(:disabled) {
+    background-color: var(--fc-color-bg-muted);
+  }
+
+  /*
+   * There is no history to go back to at the start of a session, and the button
+   * must be genuinely disabled rather than inert-looking: one that looks live
+   * invites the user to keep pressing it.
+   */
+  .fc-webview__nav:disabled {
+    color: var(--fc-color-text-subtle);
+    cursor: not-allowed;
+  }
+
+  /*
+   * Direction-sensitive glyphs.
+   *
+   * A back arrow is one of the few genuinely physical affordances in a UI: it
+   * points the way the browser will travel, which is *backwards* in reading order.
+   * So it flips with direction, while a reload arrow -- which is rotational -- must
+   * not.
+   */
+  :dir(rtl) .fc-webview__nav--back {
+    transform: scaleX(-1);
+  }
+
+  /*
+   * The address bar. Grows to fill and shrinks rather than forcing the toolbar to
+   * overflow -- the address is usually the longest string in the bar.
+   */
+  .fc-webview__address {
+    flex: 1;
+    min-inline-size: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-2);
+    padding-inline: var(--fc-space-2);
+    block-size: 2rem;
+    background-color: var(--fc-color-bg-subtle);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-full);
+  }
+
+  .fc-webview__address-input {
+    flex: 1;
+    min-inline-size: 0;
+    background: transparent;
+    border: 0;
+    color: var(--fc-color-text-default);
+    /* Monospace: a URL is easier to read and verify when the characters are
+       aligned, and a homoglyph in a hostname is a real phishing vector. */
+    font-family: var(--fc-font-family-mono);
+    font-size: var(--fc-font-size-xs);
+    /*
+     * No `outline: none`. The address field is a real input, and the base layer's
+     * focus ring is exactly right here; removing it (from a later layer, which
+     * outranks base) would leave the toolbar's most important control with no
+     * visible keyboard focus.
+     */
+  }
+
+  /*
+   * The secure/not-secure indicator.
+   *
+   * A glyph plus text, not colour alone. The indicator exists to convey trust to
+   * someone who cannot rely on the colour, and a green padlock conveys nothing to a
+   * screen-reader user.
+   */
+  .fc-webview__secure {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-1);
+    flex-shrink: 0;
+    font-size: var(--fc-font-size-2xs);
+    color: var(--fc-color-text-muted);
+  }
+
+  /*
+   * An insecure connection uses the warning family and changes the glyph, so it is
+   * distinguishable by shape and by text rather than by hue.
+   */
+  .fc-webview__secure[data-fc-state="insecure"] {
+    color: var(--fc-color-warning-text);
+  }
+
+  /* ---- States ------------------------------------------------------------- */
+
+  /*
+   * Loading and error states overlay the frame.
+   *
+   * A sibling of the iframe, not a child: an element positioned over the frame
+   * would not cover a cross-origin document, and content inside the frame cannot
+   * be reliably overlaid from the parent.
+   */
+  .fc-webview__overlay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fc-space-2);
+    padding: var(--fc-space-4);
+    text-align: center;
+    background-color: var(--fc-color-bg-canvas);
+    color: var(--fc-color-text-muted);
+  }
+
+  .fc-webview__overlay[hidden] {
+    display: none;
+  }
+
+  .fc-webview__error {
+    color: var(--fc-color-danger-text);
+    background-color: var(--fc-color-danger-bg-subtle);
+    border: var(--fc-border-width-thin) solid var(--fc-color-danger-border);
+    border-radius: var(--fc-radius-md);
+    padding: var(--fc-space-3);
+    max-inline-size: 28rem;
+  }
+
+  @media (forced-colors: active) {
+    .fc-webview {
+      background-color: Canvas;
+      border-color: CanvasText;
+    }
+
+    .fc-webview__tabs,
+    .fc-webview__toolbar {
+      background-color: Canvas;
+      border-block-end-color: CanvasText;
+    }
+
+    .fc-webview__tab[aria-selected="true"] {
+      background-color: Canvas;
+      color: CanvasText;
+      border-color: CanvasText;
+    }
+
+    .fc-webview__address {
+      background-color: Canvas;
+      border-color: CanvasText;
+    }
+  }
+}

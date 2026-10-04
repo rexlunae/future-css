@@ -132,7 +132,7 @@ function assertUniqueNames(list: readonly EmittedToken[]): void {
 
 const GENERATED_HEADER = `/*!
  * future-css design tokens -- GENERATED FILE, DO NOT EDIT.
- * Source: src/tokens/**/*.ts
+ * Source: src/tokens (see README)
  * Regenerate: npm run build:tokens
  */`;
 

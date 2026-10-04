@@ -1128,6 +1128,76 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(result[1], true, "must stay inside the viewport when flipped");
   });
 
+  it("commits the option the user clicked, not the previously highlighted one", async () => {
+    // Writing `data-fc-value` in the click handler and closing afterwards made
+    // the click a no-op: `closeList` commits the model's active index and wrote
+    // the old value straight back, so onChange reported the wrong option.
+    await loadBindings();
+    await resetSelect();
+    const result = await evaluate(`
+      const changes = [];
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+        onChange: (v) => changes.push(v),
+      });
+      sel.openList();
+      const target = [...document.querySelectorAll('#select-list [role="option"]')]
+        .find((o) => o.dataset.fcValue === 'sonnet-5');
+      target.click();
+      return [document.querySelector('#select-invoker').dataset.fcValue, changes];
+    `);
+    assert.equal(result[0], "sonnet-5", "the clicked option must be the committed one");
+    assert.deepEqual(result[1], ["sonnet-5"], "onChange must report the clicked value");
+  });
+
+  it("does not let arrows or Enter reach an option the filter has hidden", async () => {
+    // Filtering only changed the rendered list; navigation still walked every
+    // option, so Enter could commit something the user could not see.
+    await loadBindings();
+    await resetSelect();
+    const result = await evaluate(`
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      sel.openList();
+      sel.filter('sonnet');
+      const invoker = document.querySelector('#select-invoker');
+      const rendered = [...document.querySelectorAll('#select-list [role="option"]')]
+        .map((o) => o.dataset.fcValue);
+      const id = invoker.getAttribute('aria-activedescendant');
+      const active = id ? document.getElementById(id)?.dataset.fcValue : null;
+      return [rendered, active];
+    `);
+    assert.deepEqual(result[0], ["sonnet-5"], "only the match is rendered");
+    assert.equal(result[1], "sonnet-5",
+      "the highlight must move to something still visible, or be cleared");
+  });
+
+  it("End reaches the last selectable option rather than an arbitrary offset", async () => {
+    // Home and End were implemented as a huge delta. `1e9 % 5 === 0`, so End
+    // silently did nothing on a five-option list.
+    await loadBindings();
+    await resetSelect();
+    const result = await evaluate(`
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      sel.openList();
+      const invoker = document.querySelector('#select-invoker');
+      const read = () => {
+        const id = invoker.getAttribute('aria-activedescendant');
+        return document.getElementById(id)?.dataset.fcValue;
+      };
+      invoker.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+      const last = read();
+      invoker.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+      return [last, read()];
+    `);
+    // The last entry is disabled, so End must land on the last *selectable* one.
+    assert.equal(result[0], "o3", "End must skip the disabled final option");
+    assert.equal(result[1], "opus-5", "Home must reach the first option");
+  });
+
   it("caps the list height to the space available, not just a CSS ceiling", async () => {
     // The stylesheet's `max-block-size: min(60vh, 24rem)` is a ceiling for a
     // centered list, not a guarantee. Near the bottom of the viewport there is

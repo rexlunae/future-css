@@ -64,17 +64,40 @@ export interface SelectOptions {
  */
 class SelectModel {
   private readonly options: readonly SelectOption[];
+  /** Indices surviving the current filter. */
+  private visible: number[];
   private active = -1;
   private committed = "";
   private buffer = "";
 
   constructor(options: readonly SelectOption[]) {
     this.options = options;
+    this.visible = options.map((_, i) => i);
   }
 
-  /** Indices surviving the current query. */
-  visible(): number[] {
-    return this.options.map((_, i) => i);
+  /**
+   * Indices surviving the current query.
+   *
+   * Held *inside* the model rather than only in the renderer, because navigation
+   * has to obey the same filter the user can see. Keeping the filter in the view
+   * alone let arrows walk options that were hidden, and Enter commit one of them.
+   */
+  visibleIndices(): number[] {
+    return this.visible;
+  }
+
+  /** First selectable visible option. */
+  firstSelectableVisible(): number {
+    return this.visible.find((i) => !this.options[i]?.disabled) ?? -1;
+  }
+
+  /** Last selectable visible option. */
+  lastSelectableVisible(): number {
+    for (let p = this.visible.length - 1; p >= 0; p -= 1) {
+      const i = this.visible[p]!;
+      if (!this.options[i]?.disabled) return i;
+    }
+    return -1;
   }
 
   /** Index of `value`, or -1. */
@@ -101,8 +124,11 @@ class SelectModel {
   /** Opens, highlighting `value` when it is still present. */
   open(value: string | undefined): void {
     this.committed = value ?? "";
+    // Preserve the committed value even when the current filter hides it, so
+    // Escape can still restore it; only the *highlight* falls back to something
+    // visible.
     const found = value ? this.indexOf(value) : -1;
-    this.active = found >= 0 ? found : this.firstSelectable();
+    this.active = found >= 0 && this.visible.includes(found) ? found : this.firstSelectableVisible();
     this.buffer = "";
   }
 
@@ -120,14 +146,18 @@ class SelectModel {
 
   /** Steps by `delta`, wrapping, skipping unavailable options. */
   move(delta: number): void {
-    const len = this.options.length;
+    const len = this.visible.length;
     if (len === 0) return;
-    // Bounded by the list length so an all-disabled list terminates.
+    // Step through *visible* positions, so arrows cannot land on an option the
+    // filter has hidden. Bounded by the visible count so an all-disabled list
+    // terminates rather than looping.
+    const fromPos = this.active < 0 ? (delta > 0 ? -1 : 0) : this.visible.indexOf(this.active);
+    const start = fromPos < 0 ? (delta > 0 ? -1 : 0) : fromPos;
     for (let step = 1; step <= len; step += 1) {
-      const from = this.active < 0 ? (delta > 0 ? -1 : 0) : this.active;
-      const next = (((from + delta * step) % len) + len) % len;
-      if (!this.options[next]?.disabled) {
-        this.active = next;
+      const pos = (((start + delta * step) % len) + len) % len;
+      const index = this.visible[pos]!;
+      if (!this.options[index]?.disabled) {
+        this.active = index;
         return;
       }
     }
@@ -135,6 +165,18 @@ class SelectModel {
 
   private firstSelectable(): number {
     return this.options.findIndex((o) => !o.disabled);
+  }
+
+  /** Highlights the first selectable *visible* option. */
+  focusFirst(): void {
+    const index = this.firstSelectableVisible();
+    if (index >= 0) this.active = index;
+  }
+
+  /** Highlights the last selectable *visible* option. */
+  focusLast(): void {
+    const index = this.lastSelectableVisible();
+    if (index >= 0) this.active = index;
   }
 
   /** Appends `query` to the typeahead buffer and moves to the next match. */
@@ -146,9 +188,17 @@ class SelectModel {
     this.buffer = repeating ? query : this.buffer + query;
 
     const needle = this.buffer.toLowerCase();
-    const start = this.active + 1;
-    for (let step = 0; step < this.options.length; step += 1) {
-      const index = (start + step) % this.options.length;
+    const len = this.visible.length;
+    if (len === 0) {
+      this.buffer = "";
+      return false;
+    }
+    // Positions in `visible`, not raw option indices: with a filter active those
+    // index different things, which silently skipped matches.
+    const activePos = this.active < 0 ? -1 : this.visible.indexOf(this.active);
+    const start = activePos < 0 ? 0 : activePos + 1;
+    for (let step = 0; step < len; step += 1) {
+      const index = this.visible[(start + step) % len]!;
       const option = this.options[index]!;
       // Never select an unavailable option: a search landing on one is a dead
       // end the user cannot escape by typing.
@@ -166,18 +216,38 @@ class SelectModel {
   /** Case-insensitive substring match on label or value. */
   filter(query: string): number[] {
     const needle = query.trim().toLowerCase();
-    if (!needle) return this.visible();
-    return this.options
-      .map((o, i) => ({ o, i }))
-      .filter(
-        ({ o }) =>
-          o.label.toLowerCase().includes(needle) || o.value.toLowerCase().includes(needle),
-      )
-      .map(({ i }) => i);
+    this.visible = !needle
+      ? this.options.map((_, i) => i)
+      : this.options
+          .map((o, i) => ({ o, i }))
+          .filter(
+            ({ o }) =>
+              o.label.toLowerCase().includes(needle) ||
+              o.value.toLowerCase().includes(needle),
+          )
+          .map(({ i }) => i);
+
+    // Reconcile the highlight to something still visible. Leaving it on a hidden
+    // option would let Enter commit something the user cannot see.
+    if (!this.visible.includes(this.active)) {
+      this.active = this.firstSelectableVisible();
+    }
+    return this.visible;
   }
 
   get activeIndex(): number {
     return this.active;
+  }
+
+  /**
+   * Moves the highlight to `index` without changing the committed value.
+   *
+   * Used by the pointer path: a click picks an option directly, and the close
+   * that follows must commit *that* option rather than whatever was highlighted
+   * when the list opened.
+   */
+  setActive(index: number): void {
+    if (index >= 0 && index < this.options.length) this.active = index;
   }
 }
 
@@ -217,7 +287,7 @@ export class FutureCssSelect {
     if (this.list?.id) this.invoker.setAttribute("aria-controls", this.list.id);
 
     this.model = new SelectModel(this.items);
-    this.visible = this.model.visible();
+    this.visible = this.model.visibleIndices();
 
     this.wire();
   }
@@ -277,7 +347,10 @@ export class FutureCssSelect {
     }
     this.invoker.removeAttribute("aria-disabled");
     this.open = true;
-    this.visible = this.model.visible();
+    // Ask the model for its current visible set rather than recomputing one: a
+    // filter applied before opening used to be discarded, so the list showed every
+    // option while the user still expected the filtered set.
+    this.visible = this.model.visibleIndices();
     this.model.open(this.value || undefined);
     this.invoker.setAttribute("aria-expanded", "true");
     this.showList();
@@ -343,6 +416,8 @@ export class FutureCssSelect {
 
   /** Filters the list to options whose label or value contains `query`. */
   filter(query: string): void {
+    // The model owns the filter so arrows and typeahead obey it too. Letting the
+    // view filter independently let Enter commit an option that was hidden.
     this.visible = this.model.filter(query);
     this.render();
   }
@@ -474,6 +549,10 @@ export class FutureCssSelect {
       el.className = "fc-select__option";
       el.setAttribute("role", "option");
       el.dataset.fcValue = option.value;
+      // The option's index into the full list, so a click can move the model to
+      // it. Reading it from `data-fc-value` would work too, but a lookup by value
+      // is ambiguous if two options ever share one.
+      el.dataset.fcIndex = String(index);
       el.id = `${this.list.id || "fc-select"}-opt-${index}`;
       // Selection is ARIA, not a class: `aria-selected` is what is announced, and
       // a stale class would say something a screen reader never heard.
@@ -568,7 +647,8 @@ export class FutureCssSelect {
       if (!this.open) return;
       const target = e.target as Node;
       if (this.list.contains(target) || this.invoker.contains(target)) return;
-      this.closeList(false);
+      // Commit false (dismissed, not chosen) and no focus restore.
+      this.closeList(false, false);
     });
 
     this.list.addEventListener("click", (e) => {
@@ -576,7 +656,15 @@ export class FutureCssSelect {
       if (!el || el.getAttribute("aria-disabled") === "true") return;
       const value = el.dataset.fcValue;
       if (value) {
-        this.invoker.dataset.fcValue = value;
+        /*
+         * Move the model's highlight to the clicked option, then close.
+         *
+         * Writing `data-fc-value` first and closing after was wrong in two ways:
+         * `closeList` commits the model's *active index*, so it wrote the
+         * previously-highlighted value straight back over the clicked one, and
+         * `onChange` reported the old value. The click became a no-op.
+         */
+        this.model.setActive(Number(el.dataset.fcIndex ?? -1));
         this.closeList(true);
       }
     });
@@ -606,14 +694,16 @@ export class FutureCssSelect {
       case "Home":
         if (!this.open) return;
         e.preventDefault();
-        this.model.open(this.value || undefined);
-        this.model.move(-1e9);
+        // Explicit first/last, not a large delta. `1e9 % 5 === 0`, so a delta
+        // lands on an arbitrary offset -- End silently did nothing on a
+        // five-option list.
+        this.model.focusFirst();
         this.render();
         return;
       case "End":
         if (!this.open) return;
         e.preventDefault();
-        this.model.move(1e9);
+        this.model.focusLast();
         this.render();
         return;
       case "Enter":
@@ -665,13 +755,20 @@ function resolve(target: HTMLElement | string, what: string): HTMLElement {
   return el;
 }
 
-/** The group heading an option sits under, found by walking its siblings. */
+/**
+ * The group heading an option sits under.
+ *
+ * Walks back past *every* earlier option rather than stopping at the first one.
+ * Stopping early meant only the first option of each group got its heading, so
+ * filtering to the second one produced a list with no heading at all and an
+ * `onChange` payload with no group. A heading applies to every option until the
+ * next heading, so the scan has to agree with that.
+ */
 function groupLabelFor(option: HTMLElement): string | undefined {
   for (let el = option.previousElementSibling; el; el = el.previousElementSibling) {
     if (el.classList.contains("fc-select__group-label")) {
       return el.textContent?.trim() || undefined;
     }
-    if (el.matches(OPTION_SELECTOR)) return undefined;
   }
   return undefined;
 }

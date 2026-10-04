@@ -660,6 +660,14 @@ in effect. Escape also deliberately does not fire `onChange`.
 **Unavailable options are stepped over and never selected.** Typeahead that lands
 on a disabled option is a dead end the user cannot escape by typing.
 
+**Filtering constrains navigation, not just rendering.** If the filter lives only in
+the view, arrows walk hidden options and `Enter` commits one the user cannot see.
+The model holds the filtered set, so the list and the keyboard always agree.
+
+**Focus is restored on keyboard closes only.** `Escape`, `Enter`, and `Tab` bring
+focus back to the invoker. An *outside pointer* close does not — the user clicked
+somewhere else, and yanking focus back would lose that click's target.
+
 ### `data-fc-value`
 
 The selected value lives on the invoker as a data attribute, per the DOM contract.
@@ -677,11 +685,19 @@ tree, and this is the most accessibility-sensitive component in the system.
 
 ### WASM
 
-`fc-select` owns the navigation *model* in Rust — which option is active, how
+`fc-select` implements the navigation *model* — which option is active, how
 typeahead accumulates, which options survive a filter — behind a primitives-only
-boundary (flat `Int32Array`s, no `js-sys`). It never touches the DOM. WASM is
-optional; without it the identical model runs in JS and `tests/wasm.test.ts`
-asserts the two agree.
+boundary (flat `Int32Array`s, no `js-sys`), landing at 69.5 KB against 414.2 KB
+for `fc-context-menu`.
+
+**The binding does not yet call it.** `FutureCssSelect` uses the JS model; the WASM
+module is exercised only by `tests/wasm.test.ts`, which proves the two agree but
+proves nothing about the binding using the fast path. The current WASM entry points
+are also stateless — `selectMove` and `selectTypeahead` rebuild the model from the
+committed value on each call — so consecutive arrows would not accumulate even if
+it were wired. Both are prerequisites for the switch, not cosmetic changes to it.
+
+WASM is never required: the component is complete and correct on the JS path.
 
 ---
 

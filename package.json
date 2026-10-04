@@ -27,6 +27,7 @@
     "./editor": "./src/js/editor.ts",
     "./selection": "./src/js/selection.ts",
     "./menu": "./src/js/menu.ts",
+    "./select": "./src/js/select.ts",
     "./grid": "./src/js/grid.ts",
     "./webview": "./src/js/webview.ts",
     "./highlight": "./src/js/highlight.ts",
@@ -73,6 +74,7 @@
     "./selection": "Selection queries backing the editor's toolbar state.",
     "./highlight": "Syntax highlighting for JS/TS, JSON, CSS, Rust, HTML, and Markdown. Returns contiguous, non-overlapping spans that preserve the source text exactly.",
     "./diff": "Line diff (Myers), stats, and line splitting. Reconstructs both inputs exactly; suitable for git-style summaries.",
-    "./markdown": "Markdown parse and serialize for the documented, round-trippable subset."
+    "./markdown": "Markdown parse and serialize for the documented, round-trippable subset.",
+    "./select": "Select / listbox behavior: roving highlight, typeahead, filtering, and focus retention. Requires no WASM or Rust toolchain."
   }
 }

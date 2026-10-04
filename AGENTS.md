@@ -260,7 +260,7 @@ src/css/            Layered CSS. index.css declares layer order
 src/js/             Component bindings (editor, menu, grid, webview) plus the
                     WASM accelerator. WASM is optional; JS always works.
 src/build/          Token compiler, CSS bundler, WASM orchestrator
-crates/            Rust crates; six crates produce four .wasm modules
+crates/            Rust crates; six produce five .wasm files in four modules
 tools/lint-css.mjs  Architecture linter
 tests/              Contract, linter, accelerator, and WASM/JS parity tests
 tests/browser/      Binding tests in headless Chrome. Skipped if no browser.

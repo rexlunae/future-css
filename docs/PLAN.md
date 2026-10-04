@@ -27,7 +27,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 
 ```
 npm run build        165 tokens (90 theme-aware) + 15-file bundle, 132 KB
-                     6 Rust crates, 4 WASM modules (over budget — see Phase A)
+                     6 Rust crates, 5 .wasm files in 4 modules (over budget — see Phase A)
 npm run lint         15 rules, 0 violations across 15 files
 npm test             245 tests passing (incl. WASM/JS parity + bundle integrity)
 cargo test           75 tests passing
@@ -216,9 +216,11 @@ a trade anyone accepts.
 
 Delivered:
 
-- Rust workspace with six crates, each a `cdylib`. `fc-core` links into the `fc-model`
-  module rather than shipping on its own, which is why six crates produce four `.wasm`
-  files. `fc-diff` is built as a Rust library only and has no WASM module yet.
+- Rust workspace with six crates, each a `cdylib`. `fc-core` is emitted into the
+  `fc-model` module directory rather than getting one of its own, and `fc-diff` has
+  no `wasm_bindgen` layer at all. So six crates produce **five** `.wasm` files
+  across **four** importable modules, and only four of the six crates are reachable
+  from JavaScript today.
 - 75 unit tests covering the algorithms.
 - A JS accelerator abstraction with a pure-JS fallback, so the modules are optional.
 - **A measured size report in the build output**, because the dominant cost is invisible
@@ -280,8 +282,10 @@ Delivered (CSS complete, browser bindings not yet):
 
 Remaining, in priority order:
 
-1. **JS bindings.** `contenteditable` wiring for the editor; menu positioning and focus
-   management; grid keyboard navigation and virtualization. All CSS, no behavior yet.
+1. **JS bindings.** Editor, menu, grid, and webview bindings are written and covered by
+   browser tests (`tests/browser/`). Terminal, chat, tool-call, code, and diff have CSS
+   only -- their behavior is either trivial or delegated to the pure-JS modules beside
+   them (`highlight`, `diff`, `markdown`).
 2. **Form field.** Still the highest-value missing component, and the one with the most
    accessibility surface.
 3. **Dialog.** Prefer native `<dialog>`; document the manual trap only where it is

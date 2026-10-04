@@ -727,15 +727,16 @@ in this file would be the same defect one layer down.
 | "~55 KB" bundle | 132 KB uncompressed, with the unenforced budget called out |
 | "92 tests passing" | 245 tests passing |
 | "68 tests" (Rust) | 75 tests passing |
-| "5 WASM modules" | 6 Rust crates, 4 WASM modules, with `fc-diff` named as unbound |
+| "5 WASM modules" | 6 crates → 5 `.wasm` files in 4 importable modules, with `fc-diff` named as unbound |
 | "Seven components are complete" (README) | Ten, plus the three JS modules named |
 
 ### One gap the numbers do not show
 
 `fc-diff` is a Rust crate with 7 passing tests and **no `wasm_bindgen` layer**. It is
-absent from `CRATES` in `build-wasm.ts`, so it emits no `.wasm`. A crate count and a
-module count are different measurements: six crates produce four importable modules,
-and only four of the six are reachable from JavaScript today.
+absent from `CRATES` in `build-wasm.ts`, so it emits no `.wasm`. Crates, emitted
+`.wasm` files, and importable modules are three different measurements: six crates
+produce five `.wasm` files across four importable modules, and only four of the six
+crates are reachable from JavaScript today.
 
 ## Per-library verdicts
 

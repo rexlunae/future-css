@@ -705,7 +705,7 @@ is worse than none.
 | --- | --- |
 | "119 tokens (44 theme-aware)" | **165 tokens, 90 theme-aware** |
 | "~55 KB" bundle | **132 KB** (`dist/future-css.css`) |
-| "92 tests passing" | **231 tests passing** |
+| "92 tests passing" | **232 tests passing** |
 | "Ten CSS components are complete" | Correct — but form controls and overlays are still Phase 3 |
 
 ## Per-library verdicts

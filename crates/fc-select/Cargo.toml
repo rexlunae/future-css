@@ -1,0 +1,31 @@
+# fc-select -- option-list model for the select/listbox component.
+#
+# The keyboard and focus model for a value-selecting listbox. Deliberately NOT a
+# menu: a menu acts on a command, a select changes a value, and the difference is
+# load-bearing (see `committed` in src/lib.rs).
+#
+# Free of `js-sys` and `serde-wasm-bindgen` for the same reason `fc-diff` is:
+# linking either costs ~302 KB immediately, which is most of why every other
+# module in the workspace sits ~10x over budget. Everything crosses as flat
+# primitives, so this should land near 55 KB and be a second working example of
+# the pattern rather than a unique one.
+#
+# It also depends on nothing, including `fc-core`: an unused dependency is
+# stripped by LTO but still constrains what the crate is allowed to do later, and
+# `fc-core` links `js-sys`.
+
+[package]
+name = "fc-select"
+description = "Option-list model and typeahead for the future-css select component"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = { workspace = true }

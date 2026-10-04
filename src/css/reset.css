@@ -1,0 +1,146 @@
+/*!
+ * future-css -- reset layer
+ *
+ * Opinionated but narrow. It removes browser defaults that are actively harmful
+ * in a multi-language, multi-platform system, and leaves alone everything that
+ * users may have configured deliberately.
+ *
+ * Everything here is wrapped in :where() so it contributes ZERO specificity.
+ * That means a single class selector in any later layer always wins, no matter
+ * how the source is ordered. This is what makes the reset safe to ship
+ * unconditionally.
+ */
+
+@layer fc.reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  /*
+   * Margin removal. Default margins are physical and asymmetric in ways that do
+   * not survive translation, and they are the single largest source of
+   * "why is there a gap here" bugs. Vertical rhythm comes from --fc-space-*
+   * tokens applied deliberately, or from the flow classes in the layout layer.
+   */
+  :where(html, body, h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd, ul, ol, pre) {
+    margin-block: 0;
+  }
+
+  /*
+   * Unset lists. `list-style: none` strips the marker, which is a real
+   * accessibility regression for anyone who relies on a list to convey
+   * structure, so we only remove it when the author has opted in via a class.
+   */
+  :where(ul, ol)[role="list"] {
+    list-style: none;
+    padding-inline: 0;
+  }
+
+  /*
+   * Media defaults. `display: block` fixes the legacy inline-image baseline gap,
+   * and max-inline-size prevents a full-bleed image from forcing horizontal
+   * scroll on narrow viewports.
+   */
+  :where(img, picture, video, canvas, svg) {
+    display: block;
+    max-inline-size: 100%;
+    height: auto;
+  }
+
+  /*
+   * Form elements. Controls do not inherit typography by default, which makes
+   * a text input visibly smaller than surrounding text -- a frequent and
+   * avoidable accessibility complaint.
+   */
+  :where(input, button, textarea, select) {
+    font: inherit;
+    color: inherit;
+    letter-spacing: inherit;
+    margin: 0;
+  }
+
+  /*
+   * Buttons do not inherit text alignment or cursor, and Safari renders a
+   * button's letter-spacing differently from body copy.
+   */
+  :where(button) {
+    text-align: inherit;
+    cursor: pointer;
+  }
+
+  /*
+   * Explicit opt-out of the pointer cursor for controls where a pointer cursor
+   * misrepresents the interaction (e.g. a disabled control, or a button that is
+   * a link in disguise).
+   */
+  :where(button)[disabled],
+  :where([aria-disabled="true"]) {
+    cursor: not-allowed;
+  }
+
+  /*
+   * Remove the default fieldset/popover affordances while keeping the grouping
+   * semantics that assistive technology depends on.
+   */
+  :where(fieldset) {
+    border: 0;
+    padding: 0;
+    min-inline-size: 0;
+  }
+
+  :where([hidden]) {
+    display: none !important;
+  }
+
+  /*
+   * Autofill styling. Chrome/Safari inject their own background and a yellow
+   * text, which breaks dark mode and the surface tokens. `-internal-autofill-*`
+   * are vendor pseudo-elements and must be prefixed individually -- there is no
+   * groupable `::-webkit-autofill` alias that works in all engines.
+   */
+  :where(input):autofill {
+    /* Delay the transition so the injected style paints and is then overridden. */
+    transition: background-color 9999s ease-out 0s;
+  }
+
+  :where(input):-webkit-autofill,
+  :where(input):-webkit-autofill:hover,
+  :where(input):-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--fc-color-text-default);
+    box-shadow: 0 0 0 1000px var(--fc-color-bg-surface) inset;
+  }
+
+  /*
+   * Tabular data. Numbers in tables must align on the decimal, in both
+   * LTR and RTL (where the digit run itself mirrors).
+   */
+  :where([data-numeric]) {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /*
+   * Respect the user's language-specific line breaking. CJK text has no spaces,
+   * and long URLs and German compounds need to be allowed to break rather than
+   * overflowing their container.
+   */
+  :where(p, li, dd, dt) {
+    overflow-wrap: break-word;
+  }
+
+  /*
+   * Reduced motion. Components are expected to consult this block; it is
+   * declared here so the media query is guaranteed to exist in the bundle even
+   * before any animated component ships.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    :where(*, *::before, *::after) {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

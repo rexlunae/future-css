@@ -1,0 +1,315 @@
+/*!
+ * future-css -- chat surface
+ *
+ * A general-purpose framework component, for applications that present a
+ * conversational or turn-based interface. It is not an agent-specific toolkit:
+ * the same components serve a human-to-human support desk, a guided wizard, and
+ * an agent transcript.
+ *
+ * It is, however, where the framework's dual-audience contract (see
+ * PRINCIPLES.md) is under the most pressure, because chat content arrives
+ * partially: tokens stream in, tool calls run for minutes, states change while
+ * someone is reading, and long values are truncated for display.
+ *
+ * DUAL-AUDIENCE CONTRACT
+ * ======================
+ * Every fact a machine consumer might need is present in the DOM as a
+ * `data-fc-*` attribute, not only as visible text or a CSS class:
+ *
+ *   data-fc-kind        what this node is (thread, message, part, tool-call)
+ *   data-fc-id          stable unique id, mirroring the runtime id
+ *   data-fc-seq         monotonic integer; ordering without reading text
+ *   data-fc-role        message author (user, assistant, system, tool)
+ *   data-fc-state       lifecycle (pending, streaming, running, complete,
+ *                       aborted, error, denied)
+ *   data-fc-ts          ISO-8601 or epoch-ms timestamp
+ *   data-fc-truncated   "true" when visible text has been elided
+ *
+ * These attributes are for automation and instrumentation. They are additive:
+ * a human using a screen reader is served by the ARIA layer and the visible
+ * text, and the styling below never depends on the attributes being read.
+ *
+ * Two rules keep the attributes trustworthy:
+ *
+ *   1. Visible text and machine state must never diverge. Both render from one
+ *      source of truth, so a consumer reading `data-fc-state="error"` is never
+ *      misled by a stale success label in the visible header.
+ *
+ *   2. Truncation is always declared. When text is clipped for display the full
+ *      value remains available and `data-fc-truncated="true"` is set, so a
+ *      consumer can distinguish "this is the whole text" from "this is a
+ *      summary of more".
+ */
+
+@layer fc.components {
+  /*
+   * .fc-chat -- the thread container.
+   *
+   * `role="log"` and `aria-live` are applied by the consuming markup rather
+   * than here: a live region on the thread itself would announce every streamed
+   * token. See the streaming notes in ACCESSIBILITY.md.
+   */
+  .fc-chat {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-4);
+    block-size: 100%;
+    min-block-size: 0;
+    /* Keeps a long thread scrollable while the composer stays pinned. */
+    overflow-y: auto;
+    overscroll-behavior-block: contain;
+    /* Room for the focus ring of the first and last children. */
+    padding-block: var(--fc-space-4);
+    padding-inline: var(--fc-space-4);
+  }
+
+  /* Groups consecutive messages from one author. */
+  .fc-chat__group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-2);
+  }
+
+  /*
+   * .fc-msg -- a single message.
+   *
+   * The author is conveyed by `data-fc-role`, not by a positional icon, so an
+   * agent (and a screen reader) can identify the author without inferring it
+   * from position or color.
+   */
+  .fc-msg {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-2);
+    max-inline-size: var(--fc-size-measure, 65ch);
+    min-inline-size: 0;
+  }
+
+  /*
+   * Alignment by role. `align-self: flex-end` resolves against the inline axis,
+   * so a user message sits on the inline-end edge in both LTR and RTL with no
+   * direction-specific override.
+   */
+  .fc-msg[data-fc-role="user"] {
+    align-self: flex-end;
+    align-items: flex-end;
+  }
+
+  .fc-msg[data-fc-role="assistant"],
+  .fc-msg[data-fc-role="system"] {
+    align-self: flex-start;
+  }
+
+  /*
+   * Role accent on the inline-start edge, so the marker moves to the correct
+   * side automatically when the document direction flips.
+   */
+  .fc-msg[data-fc-role="assistant"] {
+    border-inline-start: var(--fc-border-width-thick) solid var(--fc-color-border-default);
+    padding-inline-start: var(--fc-space-3);
+  }
+
+  .fc-msg[data-fc-role="user"] {
+    background-color: var(--fc-color-bg-subtle);
+    border-radius: var(--fc-radius-lg);
+    padding: var(--fc-space-3);
+  }
+
+  /*
+   * System and tool messages are chrome rather than conversation, so they are
+   * visually recessive -- but never hidden. An agent debugging a run needs to
+   * see exactly what the system reported.
+   */
+  .fc-msg[data-fc-role="system"],
+  .fc-msg[data-fc-role="tool"] {
+    font-size: var(--fc-font-size-sm);
+    color: var(--fc-color-text-muted);
+  }
+
+  /* ---- Message parts ---------------------------------------------------- */
+
+  /*
+   * .fc-msg__part -- one renderable unit of a message (text block, code block,
+   * tool call, artifact). Parts are addressable individually so an agent can
+   * reason about structure instead of re-parsing prose.
+   */
+  .fc-msg__part {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-2);
+    min-inline-size: 0;
+  }
+
+  /* Header line: author label, timestamp, state. */
+  .fc-msg__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fc-space-2);
+    font-size: var(--fc-font-size-xs);
+    color: var(--fc-color-text-muted);
+  }
+
+  .fc-msg__author {
+    font-weight: var(--fc-font-weight-semibold);
+    color: var(--fc-color-text-default);
+  }
+
+  /*
+   * Timestamps are machine-readable via data-fc-ts; the visible form is
+   * abbreviated so a dense thread stays scannable.
+   */
+  .fc-msg__time {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /*
+   * .fc-msg__body -- the text content.
+   *
+   * `white-space: pre-wrap` is essential for generated content: models emit
+   * paragraphs, indented lists, and code that must not be reflowed or collapsed.
+   * `overflow-wrap: anywhere` then lets a long unbroken token (a URL, a base64
+   * fragment) break instead of forcing the container to overflow.
+   */
+  .fc-msg__body {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    /* Generated text must never inherit a stray author style. */
+    font: inherit;
+    color: var(--fc-color-text-default);
+    min-inline-size: 0;
+  }
+
+  /*
+   * Streaming state: a caret is drawn at the end of the text while tokens are
+   * still arriving, so a reader can tell "still writing" from "finished".
+   *
+   * The blink is disabled by the reset layer under prefers-reduced-motion; the
+   * solid caret remains, so the affordance survives without the animation.
+   */
+  .fc-msg[data-fc-state="streaming"] .fc-msg__body::after {
+    content: "";
+    display: inline-block;
+    inline-size: 0.5em;
+    block-size: 1em;
+    margin-inline-start: 0.125em;
+    background-color: var(--fc-color-accent-text);
+    vertical-align: text-bottom;
+    animation: fc-caret 1s steps(2, jump-none) infinite;
+  }
+
+  @keyframes fc-caret {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  /*
+   * A pending message has no content yet. Reserving space with a skeleton
+   * prevents layout shift when the first token lands -- a real problem in chat,
+   * where every message would otherwise shove the viewport.
+   */
+  .fc-msg[data-fc-state="pending"] .fc-msg__body {
+    min-block-size: 1lh;
+    /* Reserve roughly two lines so a one-line reply does not shift the page. */
+    min-inline-size: 12rem;
+    inline-size: 40%;
+    background-color: var(--fc-color-bg-subtle);
+    border-radius: var(--fc-radius-sm);
+    animation: fc-pulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes fc-pulse {
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /*
+   * Reduced motion.
+   *
+   * The reset layer's blanket rule would drive these animations to 0.01ms while
+   * leaving them `infinite`, turning a slow blink into a rapid flicker -- worse
+   * than no animation at all. Both are therefore stopped outright here, and each
+   * keeps a static affordance so no information is lost: the caret stays solid,
+   * and the pending skeleton keeps its tint.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .fc-msg[data-fc-state="streaming"] .fc-msg__body::after {
+      animation: none;
+    }
+
+    .fc-msg[data-fc-state="pending"] .fc-msg__body {
+      animation: none;
+    }
+  }
+
+  /*
+   * Truncated content. The clamp is a visual affordance for humans; the
+   * machine-readable truth is `data-fc-truncated="true"`, with the full value
+   * kept reachable, so a consumer is never misled into thinking it has the
+   * whole text.
+   */
+  .fc-msg[data-fc-truncated="true"] .fc-msg__body {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 12;
+    line-clamp: 12;
+    overflow: hidden;
+  }
+
+  /* An errored or aborted message stays in place with its state visible. */
+  .fc-msg[data-fc-state="error"] {
+    border-inline-start-color: var(--fc-color-danger-border);
+  }
+
+  .fc-msg[data-fc-state="aborted"] {
+    border-inline-start-color: var(--fc-color-warning-border);
+  }
+
+  /*
+   * Forced colors.
+   *
+   * Three affordances in this component are carried by background color, which the
+   * OS discards here: the role distinction between user/assistant messages, the
+   * pending skeleton, and the streaming caret. Each is restated with a system
+   * color or a border so the thread stays readable as a thread rather than
+   * collapsing into undifferentiated grey boxes.
+   */
+  @media (forced-colors: active) {
+    .fc-chat {
+      background-color: Canvas;
+    }
+
+    .fc-msg {
+      border: var(--fc-border-width-thin) solid CanvasText;
+    }
+
+    /*
+     * Role is also carried by data-fc-role and by an author label in the markup,
+     * so colour here is reinforcement rather than the sole signal -- which is
+     * what lets it be replaced without losing information.
+     */
+    .fc-msg[data-fc-role="user"] {
+      border-color: Highlight;
+    }
+
+    .fc-msg[data-fc-role="assistant"] {
+      border-color: CanvasText;
+    }
+
+    .fc-msg[data-fc-state="pending"] .fc-msg__body {
+      background-color: GrayText;
+      /* The skeleton pulse is an animation; without motion it is a solid block,
+       * which still reserves the space and so still prevents layout shift. */
+    }
+
+    .fc-msg[data-fc-state="streaming"] .fc-msg__body::after {
+      background-color: Highlight;
+    }
+
+    .fc-msg[data-fc-state="error"] {
+      border-color: LinkText;
+    }
+  }
+}

@@ -1,0 +1,359 @@
+/*!
+ * future-css -- tool call / step trace
+ *
+ * A general-purpose component for rendering a recorded or in-progress operation:
+ * an API request, a database query, a file operation, a build step, a device
+ * command. Agent runtimes are one consumer of it; so is any application that
+ * needs to show the user what a system is doing on their behalf.
+ *
+ * It is the most information-dense component in the system, and the clearest
+ * test of the dual-audience contract (PRINCIPLES.md):
+ *
+ *   - Every field is individually addressable via data attributes: name,
+ *     arguments, result, duration, state, and error.
+ *   - `data-fc-state` drives appearance. There is no "success class" that can
+ *     fall out of sync, because the state attribute is the single source of
+ *     truth for both the styles and the DOM contract.
+ *   - Arguments and results may be truncated for display, and truncation is
+ *     declared, so a full value is never silently lost.
+ *   - Duration is rendered as a number rather than a spinner, because "how long
+ *     did that take" must be answerable without extra work.
+ *
+ * Colour is never the only signal: each state also carries a text label and a
+ * glyph, so the state survives greyscale, forced-colors mode, and any future
+ * monochrome rendering.
+ */
+
+@layer fc.components {
+  /*
+   * .fc-tool -- the container for a single tool invocation.
+   *
+   * Not a <button>: it may be a disclosure region, a static record, or a
+   * clickable summary. Interactive behaviour belongs to the <summary> or
+   * <button> inside it, which keeps the container's role honest.
+   */
+  .fc-tool {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-2);
+    min-inline-size: 0;
+
+    background-color: var(--fc-color-bg-surface);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-md);
+    padding: var(--fc-space-3);
+
+    font-family: var(--fc-font-family-mono);
+    font-size: var(--fc-font-size-xs);
+    color: var(--fc-color-text-default);
+  }
+
+  /*
+   * A running tool call gets an inline-start accent bar and a subtle tint, so
+   * an active operation is findable at a glance in a long trace.
+   */
+  .fc-tool[data-fc-state="running"] {
+    border-inline-start: var(--fc-border-width-thick) solid var(--fc-color-accent-border);
+    background-color: var(--fc-color-accent-bg-subtle);
+  }
+
+  .fc-tool[data-fc-state="complete"] {
+    border-inline-start: var(--fc-border-width-thick) solid var(--fc-color-success-border);
+  }
+
+  .fc-tool[data-fc-state="error"] {
+    border-inline-start: var(--fc-border-width-thick) solid var(--fc-color-danger-border);
+    background-color: var(--fc-color-danger-bg-subtle);
+  }
+
+  /*
+   * `denied` is a distinct state from `error`: a rejected permission is a
+   * correct, expected outcome and must not read as a failure to the agent.
+   */
+  .fc-tool[data-fc-state="denied"] {
+    border-inline-start: var(--fc-border-width-thick) solid var(--fc-color-warning-border);
+    background-color: var(--fc-color-warning-bg-subtle);
+  }
+
+  /*
+   * `aborted` means the run was cancelled partway. It is visually distinct from
+   * `denied` so an agent can tell "I stopped this" from "policy stopped this".
+   */
+  .fc-tool[data-fc-state="aborted"] {
+    border-inline-start: var(--fc-border-width-thick) solid var(--fc-color-border-strong);
+  }
+
+  /* ---- Header row -------------------------------------------------------- */
+
+  .fc-tool__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fc-space-2);
+    min-inline-size: 0;
+  }
+
+  /* The tool name, as the visual anchor of the row. */
+  .fc-tool__name {
+    font-weight: var(--fc-font-weight-semibold);
+    color: var(--fc-color-text-default);
+    min-inline-size: 0;
+  }
+
+  /*
+   * The state badge. Carries the state in text as well as colour -- the glyph
+   * and the label both encode it, so it survives greyscale and forced colors.
+   */
+  .fc-tool__state {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-1);
+    padding-inline: var(--fc-space-2);
+    padding-block: var(--fc-space-0-5);
+    border-radius: var(--fc-radius-full);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+    background-color: var(--fc-color-bg-subtle);
+    color: var(--fc-color-text-default);
+    font-family: var(--fc-font-family-sans);
+    font-size: var(--fc-font-size-2xs);
+    /* Never letter-spaced: it hurts legibility at this size. */
+    letter-spacing: normal;
+  }
+
+  .fc-tool[data-fc-state="running"] .fc-tool__state {
+    border-color: var(--fc-color-accent-border);
+    color: var(--fc-color-accent-text);
+    background-color: var(--fc-color-accent-bg-subtle);
+  }
+
+  .fc-tool[data-fc-state="complete"] .fc-tool__state {
+    border-color: var(--fc-color-success-border);
+    color: var(--fc-color-success-text);
+    background-color: var(--fc-color-success-bg-subtle);
+  }
+
+  .fc-tool[data-fc-state="error"] .fc-tool__state {
+    border-color: var(--fc-color-danger-border);
+    color: var(--fc-color-danger-text);
+    background-color: var(--fc-color-danger-bg-subtle);
+  }
+
+  .fc-tool[data-fc-state="denied"] .fc-tool__state {
+    border-color: var(--fc-color-warning-border);
+    color: var(--fc-color-warning-text);
+    background-color: var(--fc-color-warning-bg-subtle);
+  }
+
+  /*
+   * Duration. Tabular numerals so a column of timings lines up and can be
+   * compared at a glance; this is exactly the case where proportional digits
+   * are wrong.
+   */
+  .fc-tool__duration {
+    margin-inline-start: auto;
+    font-variant-numeric: tabular-nums;
+    color: var(--fc-color-text-muted);
+  }
+
+  /* ---- Arguments and results --------------------------------------------- */
+
+  /*
+   * Label for a payload section. Visually small, but these labels are the
+   * primary way a consumer learns the shape of the call, so they are real text
+   * rather than a synthesized `content:` string.
+   */
+  .fc-tool__label {
+    color: var(--fc-color-text-muted);
+    font-family: var(--fc-font-family-sans);
+    font-size: var(--fc-font-size-2xs);
+  }
+
+  /*
+   * .fc-tool__payload -- a preformatted argument or result value.
+   *
+   * `pre-wrap` plus `overflow-wrap: anywhere` means a long JSON blob or a
+   * minified payload wraps rather than forcing the card to scroll sideways,
+   * which would otherwise make the call unusable on a phone.
+   */
+  .fc-tool__payload {
+    margin: 0;
+    padding: var(--fc-space-2);
+    background-color: var(--fc-color-bg-sunken);
+    border-radius: var(--fc-radius-sm);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    color: var(--fc-color-text-default);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    max-block-size: 20rem;
+    overflow-y: auto;
+    font-family: var(--fc-font-family-mono);
+    font-size: var(--fc-font-size-xs);
+  }
+
+  /*
+   * A long payload is clipped, and the clip is declared. When the caller knows
+   * the value is partial, `data-fc-truncated="true"` must be present on the
+   * .fc-tool element; this rule only performs the visual clipping.
+   */
+  .fc-tool__payload[data-fc-truncated="true"] {
+    max-block-size: 8rem;
+    /* Fade the clip edge so a cut-off line reads as "continues below". */
+    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+  }
+
+  /* An error message gets the danger treatment but keeps full contrast. */
+  .fc-tool__error {
+    padding: var(--fc-space-2);
+    border-radius: var(--fc-radius-sm);
+    background-color: var(--fc-color-danger-bg-subtle);
+    color: var(--fc-color-danger-text);
+    border: var(--fc-border-width-thin) solid var(--fc-color-danger-border);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  /* ---- Progress ---------------------------------------------------------- */
+
+  /*
+   * A progress track for a call that can report its own progress. The consumer
+   * sets `style="--fc-tool-progress: 42%"` from real data; the styling below
+   * only presents it.
+   */
+  .fc-tool__progress {
+    block-size: var(--fc-border-width-thick);
+    border-radius: var(--fc-radius-full);
+    background-color: var(--fc-color-bg-muted);
+    overflow: hidden;
+  }
+
+  .fc-tool__progress-bar {
+    block-size: 100%;
+    inline-size: var(--fc-tool-progress, 0%);
+    background-color: var(--fc-color-accent-bg);
+    transition: inline-size var(--fc-duration-normal) var(--fc-easing-standard);
+  }
+
+  /*
+   * Unknown progress: a sliding indeterminate sweep. Reduced motion disables the
+   * animation via the reset layer, and the track stays visible -- so the
+   * component still communicates "working, extent unknown" without movement.
+   */
+  .fc-tool[data-fc-state="running"] .fc-tool__progress-bar {
+    inline-size: 40%;
+    animation: fc-indeterminate 1.4s ease-in-out infinite;
+  }
+
+  @keyframes fc-indeterminate {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(250%);
+    }
+  }
+
+  /*
+   * RTL sweep.
+   *
+   * `translateX` is a *physical* transform: +X is always rightward, with no logical
+   * equivalent, so logical properties cannot make it direction-aware. This is one
+   * of the small number of places the system genuinely needs an explicit direction
+   * branch -- see the "What is genuinely direction-sensitive" section in
+   * INTERNATIONALIZATION.md.
+   *
+   * Without this, the indeterminate bar sweeps out of the left edge in an RTL
+   * interface, which reads as a progress indicator running backwards.
+   */
+  :dir(rtl) .fc-tool[data-fc-state="running"] .fc-tool__progress-bar {
+    animation-name: fc-indeterminate-rtl;
+  }
+
+  @keyframes fc-indeterminate-rtl {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(-250%);
+    }
+  }
+
+  /*
+   * Reduced motion.
+   *
+   * An indeterminate sweep is exactly the kind of large, repeated motion that
+   * vestibular conditions make unpleasant, so it is removed entirely rather than
+   * slowed. The track itself stays visible, so the component still communicates
+   * "working, extent unknown" through a static affordance -- which is why the
+   * stopping rule below targets the bar and not the track.
+   *
+   * A determinate bar (`--fc-tool-progress`) animates its inline-size from a real
+   * measured value to a new one. That is a small, non-looping movement tied to
+   * real progress, so it is kept: the reset layer's blanket rule shortens it
+   * rather than freezing it, and a user who needs it fully static can override.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .fc-tool[data-fc-state="running"] .fc-tool__progress-bar {
+      animation: none;
+      /* Sit at the leading edge rather than mid-sweep, which would read as a
+       * progress bar stuck at 40% instead of an indeterminate state. */
+      inline-size: 100%;
+      opacity: var(--fc-opacity-hover-overlay);
+    }
+  }
+
+  /*
+   * Reduced motion.
+   *
+   * The reset layer stops the sweep, which would leave the bar frozen at a static
+   * 40% -- and a fixed-width bar reads as determinate, i.e. "40% complete". That
+   * is worse than no indicator at all: it states something false.
+   *
+   * So the bar is instead drawn full-width with a striped fill that carries no
+   * positional meaning. It still says "working, extent unknown" without moving,
+   * and without implying a percentage.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .fc-tool[data-fc-state="running"] .fc-tool__progress-bar {
+      inline-size: 100%;
+      animation: none;
+      /* Repeating-linear-gradient survives reduced motion because nothing
+       * animates it; it is a static texture, not motion. */
+      background-image: repeating-linear-gradient(
+        135deg,
+        var(--fc-color-accent-bg) 0 0.5rem,
+        transparent 0.5rem 1rem
+      );
+    }
+  }
+
+  /*
+   * Forced colors.
+   *
+   * The OS discards background-color and box-shadow here, so the two affordances
+   * this component relies on would both vanish: the state tint that distinguishes
+   * running from error, and the progress track. Both are replaced with system
+   * colors so the component remains readable rather than becoming an unlabelled
+   * grey box -- "not a blank rectangle" per the accessibility contract.
+   */
+  @media (forced-colors: active) {
+    .fc-tool {
+      border-color: CanvasText;
+    }
+
+    .fc-tool__progress-track {
+      background-color: Canvas;
+      border: var(--fc-border-width-thin) solid CanvasText;
+      /* A border survives forced-colors where a background difference does not. */
+    }
+
+    .fc-tool__progress-bar {
+      background-color: Highlight;
+    }
+
+    /* State is conveyed by the text label as well as colour, so the system
+     * colors only need to keep the components distinguishable, not decorative. */
+    .fc-tool[data-fc-state="error"] {
+      border-color: LinkText;
+    }
+  }
+}

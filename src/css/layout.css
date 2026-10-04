@@ -1,0 +1,213 @@
+/*!
+ * future-css -- layout layer
+ *
+ * A deliberately tiny set of layout primitives, chosen so the common structural
+ * problems are solved once, correctly, in every writing direction.
+ *
+ * Constraints that shaped this layer:
+ *   - Direction-agnostic. Every primitive uses logical properties or
+ *     direction-agnostic mechanisms (grid auto-placement, flex flow). Nothing
+ *     here needs an [dir="rtl"] override, because there is nothing physical
+ *     left to override.
+ *   - Intrinsic sizing. Primitives size to their content and grow with
+ *     translated strings, so a German compound noun never silently overflows.
+ *   - No specificity wars. Single class selectors, so any later layer wins.
+ *
+ * These are primitives, not a grid framework. They cover what appears in nearly
+ * every interface; genuinely bespoke layout is left to the author.
+ */
+
+@layer fc.layout {
+  /*
+   * .fc-stack -- the most-used primitive. Uniform spacing between children on
+   * the block axis by default. Gap rather than margins, so there is no margin
+   * collapse to reason about and no stray space at the container's edges.
+   */
+  .fc-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-stack-gap, var(--fc-space-4));
+  }
+
+  .fc-stack--inline {
+    /*
+     * Auto-flow wraps, so a translated label that is twice as long wraps to a
+     * second row rather than overflowing its container.
+     */
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: var(--fc-stack-align, center);
+  }
+
+  /* Spacing steps reference tokens rather than arbitrary numbers. */
+  .fc-stack--0 { --fc-stack-gap: var(--fc-space-0); }
+  .fc-stack--1 { --fc-stack-gap: var(--fc-space-1); }
+  .fc-stack--2 { --fc-stack-gap: var(--fc-space-2); }
+  .fc-stack--3 { --fc-stack-gap: var(--fc-space-3); }
+  .fc-stack--4 { --fc-stack-gap: var(--fc-space-4); }
+  .fc-stack--6 { --fc-stack-gap: var(--fc-space-6); }
+  .fc-stack--8 { --fc-stack-gap: var(--fc-space-8); }
+
+  /*
+   * .fc-cluster -- a group of items that stay together when there is room and
+   * wrap when there is not. Flexbox row + wrap is inherently direction-aware:
+   * the first item sits on the right in RTL with no extra rule.
+   */
+  .fc-cluster {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fc-cluster-gap, var(--fc-space-3));
+    align-items: var(--fc-cluster-align, center);
+    justify-content: var(--fc-cluster-justify, flex-start);
+  }
+
+  .fc-cluster--0 { --fc-cluster-gap: var(--fc-space-0); }
+  .fc-cluster--1 { --fc-cluster-gap: var(--fc-space-1); }
+  .fc-cluster--2 { --fc-cluster-gap: var(--fc-space-2); }
+  .fc-cluster--3 { --fc-cluster-gap: var(--fc-space-3); }
+  .fc-cluster--4 { --fc-cluster-gap: var(--fc-space-4); }
+  .fc-cluster--6 { --fc-cluster-gap: var(--fc-space-6); }
+
+  .fc-cluster--center { --fc-cluster-justify: center; }
+  .fc-cluster--between { --fc-cluster-justify: space-between; }
+  .fc-cluster--end { --fc-cluster-justify: flex-end; }
+  .fc-cluster--top { --fc-cluster-align: flex-start; }
+  .fc-cluster--stretch { --fc-cluster-align: stretch; }
+
+  /*
+   * .fc-sidebar -- the classic two-column layout that collapses to one column
+   * when space runs out.
+   *
+   * The basis is expressed in rem rather than px so it scales with the user's
+   * font size: someone reading at 24px gets the collapse earlier, which is
+   * what they want.
+   */
+  .fc-sidebar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fc-space-4);
+  }
+
+  .fc-sidebar > * {
+    /* flex-basis rather than flex-grow alone, so the basis is content-driven
+     * until there is genuinely spare room. */
+    flex-grow: 1;
+    flex-basis: var(--fc-sidebar-basis, 20rem);
+  }
+
+  /* The main child claims the remainder, keeping the sidebar narrow. */
+  .fc-sidebar > :is(.fc-sidebar__main, [data-fc-main]) {
+    flex-basis: 0;
+    flex-grow: 999;
+  }
+
+  /*
+   * min-inline-size: 0 is the fix for the classic flexbox overflow bug. A flex
+   * item's default min-width:auto refuses to shrink below its content, so one
+   * unbreakable string (a URL, a German compound) forces the entire page to
+   * scroll sideways.
+   */
+  .fc-sidebar > *,
+  .fc-cluster > *,
+  .fc-stack > * {
+    min-inline-size: 0;
+  }
+
+  /*
+   * .fc-grid -- an auto-fitting responsive grid. No media queries and no
+   * breakpoint classes: the column count follows the available inline size.
+   * auto-fit + minmax is what makes this identical in LTR and RTL and at any
+   * container width.
+   */
+  .fc-grid {
+    display: grid;
+    gap: var(--fc-grid-gap, var(--fc-space-4));
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(min(var(--fc-grid-min, 16rem), 100%), 1fr)
+    );
+  }
+
+  .fc-grid--0 { --fc-grid-gap: var(--fc-space-0); }
+  .fc-grid--2 { --fc-grid-gap: var(--fc-space-2); }
+  .fc-grid--4 { --fc-grid-gap: var(--fc-space-4); }
+  .fc-grid--6 { --fc-grid-gap: var(--fc-space-6); }
+
+  .fc-grid--dense { --fc-grid-min: 12rem; }
+  .fc-grid--wide { --fc-grid-min: 24rem; }
+
+  /*
+   * .fc-container -- centres content and enforces a maximum measure.
+   * inline-size/margin-inline are the logical forms of width/auto margins, so
+   * the container centres correctly in RTL with no extra rule.
+   */
+  .fc-container {
+    inline-size: 100%;
+    max-inline-size: var(--fc-container-max, 80rem);
+    margin-inline: auto;
+    padding-inline: var(--fc-space-4);
+  }
+
+  .fc-container--narrow { --fc-container-max: 48rem; }
+  .fc-container--wide { --fc-container-max: 90rem; }
+
+  .fc-center {
+    display: grid;
+    place-items: center;
+    text-align: center;
+  }
+
+  /*
+   * .fc-truncate -- ellipsis on a single line.
+   * overflow:hidden is required for text-overflow to apply at all. Pair with a
+   * `title` attribute or tooltip in markup when the full value matters,
+   * because the truncated text is not otherwise exposed.
+   */
+  .fc-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-inline-size: 0;
+  }
+
+  /*
+   * .fc-clamp-2 / .fc-clamp-3 -- multi-line truncation. The -webkit-box display
+   * is the widely-supported implementation; `line-clamp` is the standard form.
+   * Where neither is supported the text simply shows in full, which is the
+   * correct failure mode: content stays reachable rather than disappearing.
+   */
+  .fc-clamp-2,
+  .fc-clamp-3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .fc-clamp-2 { -webkit-line-clamp: 2; line-clamp: 2; }
+  .fc-clamp-3 { -webkit-line-clamp: 3; line-clamp: 3; }
+
+  /*
+   * .fc-scroll-x -- horizontal scroll region for tab lists and chip groups.
+   * scroll-snap is used because when a keyboard user tabs into a scroll
+   * container, the focused item should not be left off-screen.
+   */
+  .fc-scroll-x {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: inline proximity;
+    overscroll-behavior-inline: contain;
+  }
+
+  .fc-scroll-x > * {
+    scroll-snap-align: start;
+  }
+
+  /* Hide the scrollbar without losing scrollability (chip rows). */
+  .fc-scroll-x--hide {
+    scrollbar-width: none;
+  }
+
+  .fc-scroll-x--hide::-webkit-scrollbar {
+    display: none;
+  }
+}

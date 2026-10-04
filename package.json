@@ -23,7 +23,13 @@
     "./components/*": "./dist/components/*.css",
     "./utilities": "./dist/utilities.css",
     "./package.json": "./package.json",
-    "./js": "./src/js/accelerator.ts"
+    "./js": "./src/js/accelerator.ts",
+    "./editor": "./src/js/editor.ts",
+    "./selection": "./src/js/selection.ts",
+    "./menu": "./src/js/menu.ts",
+    "./grid": "./src/js/grid.ts",
+    "./webview": "./src/js/webview.ts",
+    "./urls": "./src/js/urls.ts"
   },
   "files": [
     "dist",
@@ -34,11 +40,12 @@
     "build:tokens": "node src/build/compile-tokens.ts",
     "check": "npm run build && npm run lint && npm run test && npm run test:rust",
     "lint": "node tools/lint-css.mjs",
-    "test": "node --test \"tests/**/*.test.ts\"",
+    "test": "node --test \"tests/**/*.test.ts\" \"tests/browser/*.test.ts\"",
     "clean": "node -e \"import('node:fs').then(fs=>fs.rmSync('dist',{recursive:true,force:true}))\"",
     "build:wasm": "node src/build/build-wasm.ts",
     "test:rust": "cargo test",
-    "build:css": "node src/build/build.ts"
+    "build:css": "node src/build/build.ts",
+    "test:browser": "node --test \"tests/browser/*.test.ts\""
   },
   "keywords": [
     "css",
@@ -51,5 +58,13 @@
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "exportsDescriptions": {
+    "./editor": "Rich text editor behavior. Requires no WASM or Rust toolchain.",
+    "./menu": "Context menu behavior, roving focus, and focus restoration.",
+    "./grid": "Data grid navigation, range selection, and cell editing.",
+    "./webview": "Embedded-browser chrome: navigation, address bar, load states.",
+    "./urls": "URL safety helpers shared by the editor and webview.",
+    "./selection": "Selection queries backing the editor's toolbar state."
   }
 }

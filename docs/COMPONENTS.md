@@ -316,6 +316,88 @@ transform with no logical equivalent. See
 
 ---
 
+## Component bindings
+
+Every component ships with JavaScript behavior. The CSS is complete without it —
+an un-enhanced component is styled and usable but inert — so bindings are an
+enhancement, never a requirement.
+
+```
+import { FutureCssEditor } from 'future-css/editor';
+import { FutureCssMenu }  from 'future-css/menu';
+import { FutureCssGrid }  from 'future-css/grid';
+import { FutureCssWebview' } from 'future-css/webview';
+```
+
+**No Rust, no WASM, no build step.** The bindings are TypeScript run directly by
+the toolchain. The Rust layer owns the document *model*; the bindings own the DOM,
+because everything here needs to ask the browser something WASM cannot observe:
+where the selection is, what the browser considers a word, what the IME is
+composing.
+
+### Editor
+
+```js
+const editor = new FutureCssEditor({
+  root: '#editor',
+  onChange: (html) => save(html),
+  onSelectionChange: (active) => console.log(active.bold),
+});
+```
+
+Notable decisions:
+
+- **The toolbar reports the mark across the *whole* selection.** A selection that is
+  partly bold reads as "not bold", because a toolbar that lies about a partial
+  selection is worse than one that does not.
+- **Un-marking preserves the text.** `unwrap` moves children out before discarding
+  the wrapper. An editor that deletes content when a user clicks "remove bold"
+  loses their work.
+- **The input is a real textbox**, so caret, selection, clipboard and IME work
+  natively.
+- **Link URLs are validated against a scheme allowlist**, and an unsafe scheme is
+  refused with a reason rather than silently rewritten. `javascript:` in an
+  editor-authored link is stored XSS.
+
+### Menu
+
+Popover-based, with an attribute fallback. Focus restoration is the part that
+matters: the invoker is captured at construction and restored on close, *always*,
+including on Escape. A menu that does not restore focus strands keyboard users at
+the top of the document.
+
+`Tab` is deliberately not trapped — a menu is a single stop, and trapping it is the
+most common way menus become keyboard traps.
+
+### Grid
+
+Roving tabindex: **one** tab stop, arrows to move. A grid where every cell is a tab
+stop needs 9 presses of Tab to leave a 3×3, and is unusable at 10,000 cells.
+
+Selection follows spreadsheet convention: arrows collapse, Shift+Arrow extends,
+Ctrl+Space selects the row. `data-fc-rowcount` / `aria-rowcount` are written when
+the real size exceeds the rendered rows, so a virtualized grid can announce
+1,000,000 rows rather than 50.
+
+### Webview
+
+Chrome only. It does not intercept navigation or mediate requests — a webview that
+pretended to be a browser without being one would create a security boundary that
+does not exist.
+
+`load` means navigation *completed*, not that it succeeded: a 404 and a good page
+both fire it, so the error state is deliberately not derived from it.
+
+### Testing
+
+Bindings are tested in real headless Chrome (`npm run test:browser`), because the
+bugs that matter are DOM bugs — caret placement, selection geometry, focus
+restoration — and none are observable from a DOM-less test. The harness serves the
+actual TypeScript sources with types stripped, which is what proves there is no
+build step. It skips cleanly when no browser is present.
+
+---
+
 ## Terminal (implemented)
 
 A terminal emulator surface: output grid, input line, and status bar.

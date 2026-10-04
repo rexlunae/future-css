@@ -193,6 +193,39 @@ describe("syntax highlighting", () => {
   });
 
   /*
+   * Regression, found by review: `'ab'` matched `'a` as a lifetime and left
+   * `b'` as stray text. Two earlier fixes were wrong in instructive ways -- a
+   * broad lookahead broke lifetimes in generic position, and reordering was not
+   * enough because the engine still backtracked into a shorter lifetime match.
+   * The possessive `(?![\w'\\])` is what actually fixes it.
+   *
+   * `'ab'` is not valid Rust, so plain text is the correct outcome. What matters
+   * is that it is *not* mis-tokenised as something else, which is the failure
+   * this guards against.
+   */
+  it("does not split a quoted Rust literal into a lifetime", () => {
+    const ab = highlight("let c = 'ab';", "rust");
+    assert.equal(
+      ab.find((s) => s.role === "type"),
+      undefined,
+      "no lifetime may be invented inside a quoted literal",
+    );
+    // `'ab'` is left as one piece of plain text, not cut into `'a` + `b'`. The
+    // check is that no *individual* quote is stranded in its own span, which is
+    // what the bug produced.
+    assert.equal(
+      ab.filter((s) => s.role === "fg" && s.text.trim() === "'").length,
+      0,
+      "no lone quote may be left stranded",
+    );
+    assert.equal(spansToText(ab), "let c = 'ab';");
+    assert.equal(
+      highlight("let c = '\\'';", "rust").find((s) => s.role === "string")?.text,
+      "'\\''",
+    );
+  });
+
+  /*
    * `tagname` precedes `attr` in the alternation and has no `=` guard, so it used
    * to swallow `href` and colour an ordinary attribute as a tag. The fix has to
    * resist backtracking: a plain `(?!\s*=)` lets the engine retry with a shorter

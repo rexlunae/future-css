@@ -227,20 +227,27 @@ const rust = grammar(
     ["comment", "//[^\\n]*|/\\*[\\s\\S]*?\\*/"],
     ["string", "r?#*\"(?:[^\"\\\\]|\\\\.)*\"#*|\"(?:[^\"\\\\\\n]|\\\\.)*\""],
     /*
-     * Ordering is the disambiguation, and it is the whole mechanism.
+     * Ordering is not enough on its own, and the reason is worth recording.
      *
-     * `char` comes first deliberately. A complete quoted literal such as `'ab'`
-     * can never be a lifetime, so letting the engine try `char` first means a
-     * lifetime never gets the chance to match the *prefix* of one.
+     * With `char` listed first, `'ab'` still matched `'a` as a lifetime: the
+     * engine tries alternatives left to right, and when `char` matched at an
+     * index the alternation still backtracked into `lifetime` to find a match
+     * the overall pattern preferred.
      *
-     * Both previous orderings were wrong in a way only a test would catch:
-     * `lifetime` first made `'a` win over `'a'`, and putting `char` first alone
-     * was not enough either, because the `lifetime` lookahead could still
-     * backtrack into a shorter match once `char` declined -- leaving `b'` as
-     * stray text. `lifetime` also carries `(?!')` as a second line of defence.
+     * The fix is to make the lifetime possessive. `[A-Za-z_]\w*` cannot give
+     * characters back, and `(?![\w'\\])` rejects any match whose next character
+     * could extend it or close a quote. So a lifetime can only match where one
+     * really is, as in `fn f<'a>(...)`.
+     *
+     * `char` stays single-character on purpose, because that is what a Rust char
+     * literal is. Widening it to `+` was tried and rejected: it then swallowed
+     * `fn f<'a>(x: &'a str)` as one enormous "char", destroying every lifetime in
+     * the signature. A multi-character `'ab'` is a lifetime-less byte string and
+     * is not valid Rust, so leaving it as plain text is the correct outcome --
+     * and importantly it is *not* mis-tokenised as something else.
      */
     ["char", "'(?:[^'\\\\\\n]|\\\\.)'"],
-    ["lifetime", "'(?:static|_|[A-Za-z_]\\w*)(?!')"],
+    ["lifetime", "'(?:static|_|[A-Za-z_]\\w*)(?![\\w'\\\\])"],
     ["attribute", "#!?\\[[^\\]]*\\]"],
     ["number", "\\b(?:0[xX][\\da-fA-F_]+|0[bB][01_]+|0[oO][0-7_]+|\\d[\\d_]*(?:\\.\\d+)?(?:[iuf](?:8|16|32|64|128|size))?)\\b"],
     ["keyword", "\\b(?:macro_rules|struct|static|trait|union|where|while|unsafe|super|return|const|enum|extern|impl|async|await|break|continue|crate|false|fn|for|let|loop|match|mod|move|mut|pub|ref|self|Self|type|true|use|in|if|as|dyn)\\b"],

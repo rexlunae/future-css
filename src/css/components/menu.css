@@ -1,0 +1,239 @@
+/*!
+ * future-css -- context menu
+ *
+ * A popup menu for right-click and for application-triggered actions.
+ *
+ * **Positioning is JavaScript's job, by design.** The Rust/WASM layer owns the
+ * item model and keyboard traversal, but where the menu opens and whether it
+ * flips to stay on screen depend on layout the browser alone knows: scroll
+ * position, ancestor clipping, the visual viewport on mobile. Computing that in
+ * WASM would mean maintaining a second, always-stale copy of the browser's
+ * geometry. See docs/WASM.md.
+ *
+ * That split is why this file contains no offsets beyond a fixed anchor, and why
+ * the markup uses the Popover API where available.
+ */
+
+@layer fc.components {
+  /*
+   * `position: fixed` because a context menu is anchored to the viewport, not to
+   * any scrolling ancestor; an absolutely-positioned menu inside a scroll
+   * container scrolls away from its trigger.
+   */
+  .fc-menu {
+    position: fixed;
+    z-index: var(--fc-z-dropdown);
+
+    display: flex;
+    flex-direction: column;
+    /* A long menu scrolls rather than growing past the viewport. The positioning
+       script narrows this to the space actually available. */
+    max-block-size: min(60vh, 24rem);
+    overflow-y: auto;
+    overscroll-behavior-block: contain;
+
+    min-inline-size: 12rem;
+    padding-block: var(--fc-space-1);
+    padding-inline: var(--fc-space-1);
+
+    background-color: var(--fc-color-bg-overlay);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+    border-radius: var(--fc-radius-md);
+    /* The elevation separates the menu from the page beneath it; a border alone
+       is not enough on a light background. */
+    box-shadow: var(--fc-shadow-overlay);
+
+    font-size: var(--fc-font-size-sm);
+    line-height: var(--fc-line-height-snug);
+  }
+
+  /*
+   * Open and closed.
+   *
+   * The Popover API handles this via `[popover]` and `:popover-open`. Where it is
+   * unsupported the fallback is a `data-fc-open` attribute the script toggles --
+   * so a closed menu is never a flash of unpositioned content.
+   */
+  .fc-menu:not(:popover-open):not([data-fc-open="true"]) {
+    display: none;
+  }
+
+  /* ---- Items -------------------------------------------------------------- */
+
+  /*
+   * Menu items are `<button>`s, not `<div>`s. A non-button item would need
+   * `role="menuitem"`, `tabindex`, and Enter/Space handling by hand -- and would
+   * still miss form participation and correct forced-colors rendering.
+   */
+  .fc-menu__item {
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-2);
+    inline-size: 100%;
+
+    /* Compact by convention, but the hit area stays at the WCAG 24px minimum;
+       the visual padding is what shrinks, not the target. */
+    min-block-size: var(--fc-size-target-min);
+    padding-block: var(--fc-space-1-5);
+    padding-inline: var(--fc-space-2);
+
+    background-color: transparent;
+    color: var(--fc-color-text-default);
+    border: 0;
+    border-radius: var(--fc-radius-sm);
+
+    font-family: inherit;
+    font-size: inherit;
+    text-align: start;
+    cursor: pointer;
+
+    transition: background-color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-menu__item:hover:not(:disabled) {
+    background-color: var(--fc-color-accent-bg-subtle);
+    color: var(--fc-color-accent-text);
+  }
+
+  /*
+   * Disabled items are skipped by arrow navigation (that rule lives in the Rust
+   * model), so they never receive focus. Dimmed text plus a not-allowed cursor is
+   * the whole treatment -- a disabled item must not look interactive.
+   */
+  .fc-menu__item:disabled,
+  .fc-menu__item[aria-disabled="true"] {
+    color: var(--fc-color-text-subtle);
+    cursor: not-allowed;
+  }
+
+  /* Keyboard focus, using the shared ring from the base layer. */
+  .fc-menu__item:focus-visible {
+    outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring);
+    /* Pulled inward so the ring does not sit outside the menu's own edge and get
+       clipped by its overflow. */
+    outline-offset: calc(-1 * var(--fc-border-width-focus));
+  }
+
+  /* ---- Item parts --------------------------------------------------------- */
+
+  /* The label takes the remaining space so shortcuts align to the inline end. */
+  .fc-menu__label {
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  /*
+   * Shortcut text, e.g. "Cmd+S". Marked `aria-hidden` in the markup: it is
+   * useful to a sighted user and redundant to a screen-reader user, who is
+   * already inside a menu and would otherwise hear the key sequence twice.
+   */
+  .fc-menu__shortcut {
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-xs);
+    /* Tabular so a column of shortcuts lines up rather than jittering. */
+    font-variant-numeric: tabular-nums;
+    margin-inline-start: var(--fc-space-3);
+  }
+
+  /*
+   * The checkmark column for checkbox items. Reserved width so labels stay
+   * aligned whether or not anything is checked -- without it, checking one item
+   * would shift every label in the menu.
+   */
+  .fc-menu__check {
+    inline-size: 1em;
+    flex-shrink: 0;
+    text-align: center;
+    visibility: hidden;
+  }
+
+  .fc-menu__item[aria-checked="true"] .fc-menu__check {
+    visibility: visible;
+  }
+
+  /*
+   * Submenu affordance. The chevron points in the *reading* direction, so it
+   * needs an explicit flip -- a transform has no logical equivalent. One of the
+   * few places the system requires a direction branch.
+   */
+  .fc-menu__submenu-arrow {
+    margin-inline-start: var(--fc-space-3);
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+
+  :dir(rtl) .fc-menu__submenu-arrow {
+    transform: scaleX(-1);
+  }
+
+  /* ---- Groups ------------------------------------------------------------- */
+
+  /*
+   * A separator.
+   *
+   * `role="separator"` on a real element carries the grouping cue that tells a
+   * screen-reader user why unrelated items suddenly follow. An `aria-hidden`
+   * divider would be skipped, losing that cue.
+   */
+  .fc-menu__separator {
+    block-size: 0;
+    margin-block: var(--fc-space-1);
+    border: 0;
+    border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  }
+
+  /* A labelled group, e.g. "Text style". */
+  .fc-menu__group-label {
+    padding-block: var(--fc-space-1);
+    padding-inline: var(--fc-space-2);
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-2xs);
+    font-weight: var(--fc-font-weight-semibold);
+    /* Not letter-spaced: the string is already short and tracking hurts
+       legibility at this size. */
+    letter-spacing: normal;
+  }
+
+  /* ---- State -------------------------------------------------------------- */
+
+  /*
+   * Destructive items, marked by a leading rule as well as colour so the intent
+   * survives greyscale and forced colors. A delete that is only red is a delete a
+   * colour-blind user cannot identify.
+   */
+  .fc-menu__item--danger {
+    color: var(--fc-color-danger-text);
+    border-inline-start: var(--fc-border-width-thick) solid var(--fc-color-danger-border);
+    /* Inset by the rule width so the label lines up with the non-danger items. */
+    padding-inline-start: calc(var(--fc-space-2) - var(--fc-border-width-thick));
+  }
+
+  .fc-menu__item--danger:hover:not(:disabled) {
+    background-color: var(--fc-color-danger-bg-subtle);
+    color: var(--fc-color-danger-text);
+  }
+
+  @media (forced-colors: active) {
+    .fc-menu {
+      background-color: Canvas;
+      border-color: CanvasText;
+      /* box-shadow is suppressed in forced colors, so the edge is carried by the
+         border alone. */
+    }
+
+    .fc-menu__item:hover:not(:disabled) {
+      background-color: Highlight;
+      color: HighlightText;
+    }
+
+    .fc-menu__item--danger {
+      color: LinkText;
+      border-inline-start-color: LinkText;
+    }
+
+    .fc-menu__separator {
+      border-block-start-color: CanvasText;
+    }
+  }
+}

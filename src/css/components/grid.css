@@ -1,0 +1,243 @@
+/*!
+ * future-css -- data grid
+ *
+ * A spreadsheet-like surface: a scrollable body, sticky headers, and cells that
+ * follow the shared table semantics from the base layer.
+ *
+ * Scope, stated plainly: this is the *UI element* -- chrome, alignment, sticky
+ * headers, selection, focus. It is not a spreadsheet application. No formulas, no
+ * collaborative editing, no attempt to be an Office clone inside a component
+ * library. The cell and range model a real implementation needs already exists
+ * in `crates/fc-grid`; this file is its presentation.
+ *
+ * The accessibility problem here is real: a grid with `aria-rowcount="10000"`
+ * renders only ~40 rows. A screen reader must be told the true dimensions even
+ * though the DOM holds a window, or the content appears to end at row 40. That
+ * ARIA is not optional decoration.
+ */
+
+@layer fc.components {
+  .fc-grid {
+    display: grid;
+    /* `minmax(0, 1fr)` rather than `1fr`, so a wide cell shrinks instead of
+       forcing horizontal overflow on the container. */
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-rows: min-block-size;
+    /* No inline-size: the consumer's template decides, and a default would fight
+       it. */
+
+    overflow: auto;
+    /* Stops a scroll chaining to the page, which is disorienting inside a
+       full-viewport app shell. */
+    overscroll-behavior: contain;
+    overscroll-behavior-inline: contain;
+
+    background-color: var(--fc-color-bg-surface);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+    border-radius: var(--fc-radius-md);
+
+    font-size: var(--fc-font-size-sm);
+    line-height: var(--fc-line-height-snug);
+  }
+
+  /* ---- Headers ------------------------------------------------------------ */
+
+  /*
+   * Column and row headers are visually chrome but semantically name the data,
+   * which is why they carry a real scope rather than being presentation-only.
+   */
+  .fc-grid__col-header,
+  .fc-grid__row-header {
+    position: sticky;
+    z-index: var(--fc-z-raised);
+    display: flex;
+    align-items: center;
+    padding-inline: var(--fc-space-2);
+    padding-block: var(--fc-space-1-5);
+
+    background-color: var(--fc-color-bg-subtle);
+    color: var(--fc-color-text-muted);
+    font-weight: var(--fc-font-weight-semibold);
+    /* A header that wraps to two lines misaligns the row beneath it. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* The column header row sticks to the block-start edge while scrolling. */
+  .fc-grid__col-header {
+    inset-block-start: 0;
+  }
+
+  /* The row header column sticks to the inline-start edge. */
+  .fc-grid__row-header {
+    inset-inline-start: 0;
+    justify-content: flex-end;
+    /* Digits align on the decimal. */
+    font-variant-numeric: tabular-nums;
+  }
+
+  /*
+   * The corner cell, where both sticky edges meet. It needs a higher z-index than
+   * either single-axis header, or the column header scrolls over it while the row
+   * header vanishes beneath the column.
+   */
+  .fc-grid__corner {
+    position: sticky;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    z-index: var(--fc-z-sticky);
+    background-color: var(--fc-color-bg-muted);
+  }
+
+  /* ---- Cells -------------------------------------------------------------- */
+
+  .fc-grid__cell {
+    display: flex;
+    align-items: center;
+    padding-inline: var(--fc-space-2);
+    padding-block: var(--fc-space-1);
+
+    /* Clips rather than overflowing: a long value must not widen the column. */
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-inline-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  }
+
+  /*
+   * The editing cell.
+   *
+   * `min-block-size` comes from the grid track rather than a fixed height, so a
+   * wrapped value grows the row instead of being clipped mid-character.
+   */
+  .fc-grid__cell--editing {
+    /* Replaces the border that would otherwise show through the input. */
+    box-shadow: inset 0 0 0 var(--fc-border-width-thick) var(--fc-color-accent-border);
+    overflow: visible;
+    white-space: normal;
+  }
+
+  /* The input inside an editing cell. Sized to the cell, not the other way. */
+  .fc-grid__input {
+    inline-size: 100%;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+    color: inherit;
+    font: inherit;
+    /*
+     * No `outline: none` here.
+     *
+     * The base layer already gives inputs a focus ring through :where(), which is
+     * zero-specificity -- but this rule sits in the components layer, so an
+     * `outline: none` would outrank it and leave the cell with NO visible focus
+     * indicator at all. Suppressing the ring is only safe when something
+     * provably replaces it, and here the ring is already correct.
+     */
+    min-inline-size: 0;
+  }
+
+  /* ---- Selection ---------------------------------------------------------- */
+
+  /*
+   * A tinted fill plus an inset outline. The outline matters: at low alpha a fill
+   * alone is nearly invisible against a busy sheet, and selection is the single
+   * most important thing to perceive while editing.
+   */
+  .fc-grid__cell[aria-selected="true"] {
+    background-color: var(--fc-color-accent-bg-subtle);
+    color: var(--fc-color-accent-text);
+    box-shadow: inset 0 0 0 var(--fc-border-width-thick) var(--fc-color-accent-border);
+  }
+
+  /*
+   * The active cell within a selection.
+   *
+   * Distinct from the rest of the selection because it is where typing goes. Without
+   * the distinction, a user cannot tell which cell they are about to overwrite.
+   */
+  .fc-grid__cell[data-fc-active="true"] {
+    background-color: var(--fc-color-bg-surface);
+    color: var(--fc-color-text-default);
+    box-shadow: inset 0 0 0 var(--fc-border-width-focus) var(--fc-color-accent-bg);
+  }
+
+  /* ---- Alignment ---------------------------------------------------------- */
+
+  /*
+   * Numeric alignment: `end` rather than `right`, so it mirrors in RTL, with
+   * tabular figures. A column of numbers that does not line up on the decimal
+   * cannot be scanned, which is most of the value of looking at one.
+   */
+  .fc-grid__cell--numeric,
+  .fc-grid__col-header--numeric {
+    justify-content: flex-end;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- State -------------------------------------------------------------- */
+
+  /*
+   * Dirty cells, marked per the dual-audience contract.
+   *
+   * A corner tick rather than a fill, so it composes with selection and validation
+   * instead of competing with them for the same visual channel.
+   */
+  .fc-grid__cell[data-fc-dirty="true"] {
+    position: relative;
+  }
+
+  .fc-grid__cell[data-fc-dirty="true"]::after {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    /* A triangle from two borders, in the top-inline corner. */
+    inline-size: 0;
+    block-size: 0;
+    border-block-start: var(--fc-space-1-5) solid var(--fc-color-accent-border);
+    border-inline-end: var(--fc-space-1-5) solid transparent;
+  }
+
+  /* Validation state, paired with `aria-invalid` in the markup. */
+  .fc-grid__cell[aria-invalid="true"] {
+    box-shadow: inset 0 0 0 var(--fc-border-width-thick) var(--fc-color-danger-border);
+  }
+
+  /* Read-only cells are visibly inert. */
+  .fc-grid__cell[aria-readonly="true"] {
+    background-color: var(--fc-color-bg-subtle);
+    color: var(--fc-color-text-muted);
+  }
+
+  @media (forced-colors: active) {
+    .fc-grid {
+      background-color: Canvas;
+      border-color: CanvasText;
+    }
+
+    .fc-grid__cell {
+      border-block-end-color: CanvasText;
+      border-inline-end-color: CanvasText;
+    }
+
+    .fc-grid__col-header,
+    .fc-grid__row-header,
+    .fc-grid__corner {
+      background-color: Canvas;
+      color: CanvasText;
+    }
+
+    .fc-grid__cell[aria-selected="true"] {
+      /* Selection must survive, since a fill is discarded here. */
+      box-shadow: inset 0 0 0 var(--fc-border-width-focus) Highlight;
+    }
+  }
+}

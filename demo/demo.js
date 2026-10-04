@@ -531,9 +531,18 @@ function paintDiff() {
 
         const marker = document.createElement("span");
         marker.className = "fc-diff__marker";
+        // The glyph is decorative -- the row's accessible name carries the state.
+        // Without that name a screen reader announces "old line" and "new line"
+        // identically, since the visible sign and the numbers are both hidden.
         marker.setAttribute("aria-hidden", "true");
         marker.textContent =
           line.kind === "add" ? "+" : line.kind === "remove" ? "\u2212" : " ";
+        if (line.kind !== "equal") {
+          row.setAttribute(
+            "aria-label",
+            `${line.kind === "add" ? "Added" : "Removed"}: ${line.text}`,
+          );
+        }
 
         // Positional metadata, hidden from assistive tech: announcing "line 3"
         // before every line makes the content far harder to follow. A line absent

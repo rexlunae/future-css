@@ -25,6 +25,7 @@ import {
 import {
   escapeMarkdown,
   parseInline,
+  parseLinkTarget,
   parseMarkdown,
   serializeInline,
   serializeMarkdown,
@@ -143,6 +144,79 @@ describe("syntax highlighting", () => {
     assert.equal(resolveLanguage("  js  "), "javascript");
     assert.equal(resolveLanguage("nope"), undefined);
   });
+
+  /*
+   * Markdown's block forms are anchored with `^`. Without the `m` flag that
+   * anchor means "start of the document", so only the *first* heading, fence, or
+   * list marker in a multi-line document was highlighted. Since documents are
+   * nearly always longer than one line, this was the common case, not the edge.
+   */
+  it("highlights block constructs on every line of a Markdown document", () => {
+    const headings = highlight("# one\n## two\n\n### three", "markdown").filter(
+      (s) => s.role === "heading",
+    );
+    assert.equal(headings.length, 3, "each heading needs its own token");
+
+    const markers = highlight("- a\n- b\n* c", "markdown").filter(
+      (s) => s.role === "operator",
+    );
+    assert.equal(markers.length, 3, "each list marker needs its own token");
+
+    const fences = highlight("text\n```ts\nx\n```", "markdown").filter(
+      (s) => s.role === "string",
+    );
+    assert.equal(fences.length, 2, "an opening and a closing fence");
+  });
+
+  /*
+   * In Rust `'a` is a lifetime far more often than it is a character literal,
+   * so the lifetime pattern runs first. Without a negative lookahead it also
+   * ate the opening quote of `'a'`, leaving the closing quote as stray text.
+   */
+  it("tells a Rust lifetime apart from a character literal", () => {
+    const ch = highlight("let c = 'a';", "rust");
+    assert.equal(
+      ch.find((s) => s.text === "'a'")?.role,
+      "string",
+      "a char literal must not be tokenised as a lifetime",
+    );
+    assert.equal(ch.some((s) => s.text === "'"), false, "no stray quote left over");
+
+    // The disambiguation must not over-correct: this is the common lifetime case.
+    const life = highlight("fn f<'a>(x: &'a str) -> &'a str {}", "rust");
+    assert.equal(
+      life.filter((s) => s.role === "type").length,
+      3,
+      "all three lifetimes still tokenise as lifetimes",
+    );
+    assert.equal(spansToText(life), "fn f<'a>(x: &'a str) -> &'a str {}");
+  });
+
+  /*
+   * `tagname` precedes `attr` in the alternation and has no `=` guard, so it used
+   * to swallow `href` and colour an ordinary attribute as a tag. The fix has to
+   * resist backtracking: a plain `(?!\s*=)` lets the engine retry with a shorter
+   * name and split `href` into `hre` + `f`.
+   */
+  it("separates HTML tag names from attribute names", () => {
+    const tags = highlight('<a href="x">', "html");
+    assert.equal(tags.find((s) => s.text === "href")?.role, "attribute");
+    assert.equal(
+      tags.some((s) => s.text === "hre" || s.text === "f"),
+      false,
+      "the attribute must not be split by backtracking",
+    );
+    assert.equal(
+      highlight('<div data-fc-id="m-1" class="y">', "html")
+        .filter((s) => s.role === "attribute")
+        .map((s) => s.text)
+        .join(","),
+      "data-fc-id,class",
+    );
+    // A bare tag with no attributes must still be a tag.
+    assert.equal(highlight("<input>", "html").find((s) => s.role === "tag")?.text, "<input");
+    assert.equal(spansToText(tags), '<a href="x">');
+  });
 });
 
 describe("markdown", () => {
@@ -214,8 +288,81 @@ describe("markdown", () => {
     assert.equal(escapeMarkdown("a*b_c[d]"), "a\\*b\\_c\\[d\\]");
   });
 
+  /*
+   * `escapeMarkdown` writes backslashes that `parseInline` used to ignore, so an
+   * escape intended to protect a literal asterisk had the opposite effect: the
+   * backslashes were dropped and the word was marked italic. The escape is the
+   * one thing that must not be offered to the rule table.
+   */
+  it("treats an escaped character as literal, not as markup", () => {
+    const escaped = parseInline(escapeMarkdown("*word*"));
+    assert.equal(escaped.spans.length, 0, "escaped asterisks must not mark anything");
+    assert.equal(escaped.text, "*word*", "the escaped text survives, unescaped");
+
+    // The flip side: real marks must still be found.
+    assert.equal(parseInline("**bold**").spans[0]?.mark, "bold");
+    assert.equal(parseInline("*it*").spans[0]?.mark, "italic");
+    assert.equal(parseInline("~~s~~").spans[0]?.mark, "strike");
+    // An escaped code span must not become bold, and vice versa.
+    assert.equal(parseInline("\\*not italic\\*").spans.length, 0);
+    assert.equal(parseInline("`a **b**`").spans[0]?.mark, "code");
+    /*
+     * `\\` is an escape *for a backslash*, so it collapses to one. The
+     * assertion that it must be preserved verbatim is wrong: CommonMark treats
+     * `\\` as an escaped backslash, and keeping both would mean a literal
+     * backslash can never be written.
+     */
+    assert.equal(parseInline("a\\\\b").text, "a\\b", "an escaped backslash collapses");
+    // A backslash before an ordinary character is not an escape and stays put.
+    assert.equal(parseInline("a\\qb").text, "a\\qb", "\\q is not escapable");
+  });
+
+  it("round-trips a document containing every supported block", () => {
+    // The property the whole module exists for: an editor that reformats on save
+    // is how users stop trusting it. The serializer emits a canonical form, so
+    // the fixture is already in that form -- no trailing newline.
+    const doc = "# H\n\n- a\n- b\n\n> q\n\n```ts\nx\n```";
+    assert.equal(serializeMarkdown(parseMarkdown(doc)), doc);
+  });
+
   it("serializes nested inline marks", () => {
     assert.equal(serializeInline("x", ["bold", "italic"]), "***x***");
+  });
+
+  /*
+   * A closing fence is a bare marker line. Matching on `startsWith` instead
+   * meant a code line like "```example" -- a nested fence inside a shell
+   * snippet -- closed the block early, so its content was re-read as prose and
+   * the real closing fence opened a second block. The code was silently
+   * reclassified as prose.
+   */
+  it("closes a fence only on a bare marker line", () => {
+    const blocks = parseMarkdown("```ts\n```example\nx\n```\n");
+    assert.equal(blocks.length, 1, "one fenced block, not three");
+    assert.equal(blocks[0]?.kind, "code");
+    assert.equal(blocks[0]?.text, "```example\nx", "the nested marker is code");
+
+    assert.equal(
+      parseMarkdown("```sh\necho ```\n```\n")[0]?.text,
+      "echo ```",
+      "a backtick run inside code must not close the fence",
+    );
+  });
+
+  /*
+   * Documented boundary, asserted so it cannot regress silently: `parseInline`
+   * records that a range is a link but not where it points. `parseLinkTarget`
+   * is the escape hatch, and this test records that the limitation is known
+   * rather than discovered by a user losing a URL.
+   */
+  it("exposes link destinations separately, since spans drop them", () => {
+    assert.equal(parseLinkTarget("[docs](https://x.dev)"), "https://x.dev");
+    assert.equal(parseLinkTarget("no link here"), null);
+
+    const { spans, text } = parseInline("see [docs](https://x.dev) now");
+    assert.deepEqual(spans, [{ mark: "link", start: 4, end: 8 }]);
+    // The label survives; the destination is the documented lossy part.
+    assert.equal(text, "see docs now");
   });
 });
 
@@ -252,6 +399,15 @@ describe("diff", () => {
     // A trailing newline is a terminator, not an empty final line. Rendering it
     // as a row is the off-by-one that makes a diff report one line too many.
     assert.equal(splitLines("a\n").length, 1);
+  });
+
+  it("treats empty input as having no lines", () => {
+    // `"".split("\n")` is `[""]`, so an empty file used to diff as a removal --
+    // making "created a new file" render as "emptied an existing one".
+    assert.deepEqual(splitLines(""), []);
+    const fromEmpty = diffStats(diffLines("", "new"));
+    assert.equal(fromEmpty.added, 1);
+    assert.equal(fromEmpty.removed, 0, "an empty original must not report a removal");
   });
 
   it("normalizes CRLF without leaving a stray carriage return", () => {

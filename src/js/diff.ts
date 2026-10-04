@@ -41,6 +41,10 @@ export interface DiffLine {
 
 /** Split text into lines, without a phantom trailing empty line. */
 export function splitLines(text: string): string[] {
+  // An empty input has *no* lines, not one empty line. `''.split('\n')` returns
+  // `['']`, which made `diffLines('', 'new')` report a phantom removal alongside
+  // the real addition -- so an empty file looked like it had been emptied.
+  if (text === "") return [];
   // A trailing newline is a terminator, not an empty final line. Rendering it
   // as a row is the classic off-by-one that makes a diff report one line too many.
   return text.replace(/\r\n?/g, "\n").replace(/\n$/, "").split("\n");

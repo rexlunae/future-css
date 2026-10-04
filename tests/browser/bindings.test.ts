@@ -758,4 +758,47 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.notEqual(colors[0], colors[1], "added and removed rows must not share a background");
     assert.ok(!/rgba\(0, 0, 0, 0\)|transparent/.test(colors[0]));
   });
+
+  it("names each changed diff row for assistive technology", async () => {
+    // The +/- glyph and both line numbers are aria-hidden, so with no
+    // accessible name a removed line and an added line carrying the same text
+    // are announced identically. data-fc-diff is not announced.
+    await loadBindings();
+    const labelled = await evaluate(`
+      return [...document.querySelectorAll('#diff [data-fc-diff]')]
+        .map((row) => row.getAttribute('aria-label'))
+        .filter(Boolean);
+    `);
+    assert.ok(labelled.length > 0, "changed rows need accessible names");
+    assert.ok(labelled.every((l: string) => /^(Added|Removed): /.test(l)));
+  });
+
+  it("scrolls a long diff line inside the diff instead of widening the page", async () => {
+    // `--scroll` sets white-space: pre. Without a matching overflow-x on the
+    // container there is nowhere for the overflow to go, so the whole document
+    // scrolls sideways -- the exact 1.4.10 failure wrapping exists to avoid.
+    await loadBindings();
+    const result = await evaluate(`
+      const root = document.querySelector('#diff');
+      const line = document.createElement('div');
+      line.className = 'fc-diff__line';
+      line.textContent = 'x'.repeat(600);
+      root.appendChild(line);
+      root.classList.add('fc-diff--scroll');
+      await new Promise((r) => setTimeout(r, 150));
+
+      const de = document.documentElement;
+      const measured = {
+        overflowX: getComputedStyle(root).overflowX,
+        rootScrolls: root.scrollWidth > root.clientWidth,
+        pageOverflow: de.scrollWidth - de.clientWidth,
+      };
+      line.remove();
+      root.classList.remove('fc-diff--scroll');
+      return measured;
+    `);
+    assert.equal(result.overflowX, "auto", "scroll mode must provide the scroller");
+    assert.equal(result.rootScrolls, true, "the diff itself must scroll");
+    assert.equal(result.pageOverflow, 0, "the page must not widen to accommodate it");
+  });
 });

@@ -51,7 +51,29 @@ export type BlockKind =
 /** Inline marks, mirroring the `Mark` enum in fc-rich-text. */
 export type InlineMark = "bold" | "italic" | "code" | "link" | "strike";
 
-/** A parsed block. `text` is the Markdown source of the block's content. */
+/**
+ * A parsed block. `text` is the Markdown source of the block's content.
+ *
+ * `text` holds the *source*, inline markup included, rather than stripped plain
+ * text. That choice is what makes round-tripping lossless for every construct
+ * except the two named below: the serializer can re-emit exactly what the parser
+ * read, and the editor can re-render the same raw text it was given.
+ *
+ * # Known limitations, stated rather than discovered
+ *
+ * One thing does not survive a round trip, and it is documented here instead of
+ * being left to be found by a user losing data:
+ *
+ *   - **Inline links lose their destination.** `parseInline` records that a
+ *     range *is* a link but not where it points, so serializing emits the label
+ *     without a target. `parseInline` does not return destinations at all; use
+ *     `parseLinkTarget` if you need one.
+ *
+ * A continued list line *is* preserved as its own item -- `- one` plus an
+ * indented `continued` comes back as two items rather than one. That is a
+ * deliberate subset boundary: the alternative is storing continuation state per
+ * line, which is a full CommonMark parser rather than a round-trippable subset.
+ */
 export interface MarkdownBlock {
   kind: BlockKind;
   /** Heading level 1-6; undefined otherwise. */
@@ -60,6 +82,18 @@ export interface MarkdownBlock {
   lang?: string;
   /** Block content, with inline markup still unparsed. */
   text: string;
+}
+
+/**
+ * The destination of a Markdown link at the start of `source`, or `null`.
+ *
+ * Exists because `parseInline` cannot report destinations (see the limitation
+ * note above). A caller that needs to preserve link targets reads them here and
+ * carries them alongside the plain text.
+ */
+export function parseLinkTarget(source: string): string | null {
+  const match = /^\[[^\]\n]*\]\(([^)\n]*)\)/.exec(source);
+  return match ? (match[1] ?? null) : null;
 }
 
 /** Escape every character that would otherwise be read as markup. */
@@ -114,7 +148,24 @@ export function parseMarkdown(source: string): MarkdownBlock[] {
       const lang = fence[2];
       const body: string[] = [];
       i++;
-      while (i < lines.length && !lines[i].trimStart().startsWith(marker)) {
+      /*
+       * A closing fence is a *bare* run of the marker, optionally padded with
+       * whitespace and nothing else.
+       *
+       * `startsWith(marker)` was too loose: a code line like "```example" (a
+       * nested fence inside a shell snippet, or a re-indented block) closed the
+       * block early, so its content was re-parsed as prose and the real closing
+       * fence opened a second block. Requiring the line to be *only* the marker
+       * is what CommonMark specifies and is what stops content being swallowed.
+       *
+       * A closing fence must also be at least as long as the opening one, which
+       * is why the comparison is on length rather than equality.
+       */
+      const closes = (candidate: string): boolean => {
+        const trimmed = candidate.trim();
+        return trimmed.startsWith(marker) && trimmed.replace(/[`~]/g, "") === "";
+      };
+      while (i < lines.length && !closes(lines[i])) {
         body.push(lines[i]);
         i++;
       }
@@ -232,7 +283,16 @@ export function serializeMarkdown(blocks: readonly MarkdownBlock[]): string {
         break;
     }
   }
-  // A blank line between blocks, so they re-parse as distinct blocks.
+  /*
+   * A blank line between blocks, so they re-parse as distinct blocks.
+   *
+   * No trailing newline. `serializeMarkdown` emits a *canonical* form rather
+   * than reproducing the source byte-for-byte: `parse -> serialize -> parse` is
+   * the invariant that matters, and a file that already had trailing blank
+   * lines would otherwise round-trip to something visually identical but
+   * byte-different, which defeats the point of comparing the two. A caller that
+   * wants the POSIX trailing newline appends it.
+   */
   return out.join("\n\n");
 }
 
@@ -262,6 +322,24 @@ export function parseInline(source: string): {
 
   let rest = source;
   while (rest.length > 0) {
+    /*
+     * A backslash escapes the next character, so an escape must be consumed
+     * *before* any rule is offered a chance to match.
+     *
+     * Without this, `escapeMarkdown` writes a backslash that `parseInline` then
+     * ignores: `\*word\*` came back with the backslashes dropped and the word
+     * marked italic -- the escape protecting a literal asterisk had the opposite
+     * effect, converting plain text into formatting. The literal-escape is the
+     * one thing that must not participate in rule matching, so it is handled
+     * here as ordinary text with the backslash removed.
+     */
+    const escape = /^\\([\\`*_[\]~])/.exec(rest);
+    if (escape) {
+      text += escape[1] ?? "";
+      rest = rest.slice(escape[0].length);
+      continue;
+    }
+
     // Earliest match wins; ties go to the earlier rule in the table.
     let best: { mark: InlineMark; index: number; length: number; inner: string } | null = null;
     for (const [mark, re] of RULES) {
@@ -272,13 +350,30 @@ export function parseInline(source: string): {
     }
 
     if (!best) {
-      text += rest;
+      /*
+       * No rule matched, but the text may still contain escapes.
+       *
+       * Unescape here as well as in the "text before a match" branch above. The
+       * two look redundant and are not: this branch is reached when `rest` no
+       * longer *starts* with a backslash, which is exactly the state left after a
+       * leading escape was consumed -- `\*word\*` becomes `word\*` and then
+       * arrives here, where the trailing `\*` would otherwise be copied
+       * verbatim with its backslash still attached. That is the asymmetry that
+       * made `parseInline('\\*word\\*')` return `*word\*`.
+       */
+      text += rest.replace(/\\([\\`*_[\]~])/g, "$1");
       break;
     }
 
-    text += rest.slice(0, best.index);
+    /*
+     * Text before the match may itself contain escapes. Emitting it verbatim
+     * would leave the backslashes in the plain text, so unescape in place --
+     * but only up to the match, so a `\"` inside a link title is untouched.
+     */
+    const before = rest.slice(0, best.index).replace(/\\([\\`*_[\]~])/g, "$1");
+    text += before;
     const start = text.length;
-    text += best.inner;
+    text += best.inner.replace(/\\([\\`*_[\]~])/g, "$1");
     spans.push({ mark: best.mark, start, end: text.length });
     rest = rest.slice(best.index + best.length);
   }

@@ -93,9 +93,35 @@
     overflow-wrap: break-word;
   }
 
+  /*
+   * Scrolling mode has to provide the scroller. Switching rows to `white-space:
+   * pre` without one leaves nowhere for the overflow to go, so a long line
+   * widens the whole document instead of scrolling inside the diff -- which is
+   * the same 1.4.10 failure the wrapping default exists to avoid.
+   */
+  .fc-diff--scroll {
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+
   .fc-diff--scroll :where(.fc-diff__line) {
     white-space: pre;
     overflow-wrap: normal;
+  }
+
+  /*
+   * A grid row's width is its container's, so the row itself cannot scroll; the
+   * bar has to be as wide as its content for the scroller to have anything to
+   * scroll. `min-inline-size: max-content` is what makes this work without
+   * fixing a column width the consumer cannot override.
+   *
+   * `position: sticky` keeps the summary in view while scrolling sideways,
+   * which is the only reason the bar is worth pinning during a horizontal read.
+   */
+  .fc-diff--scroll :where(.fc-diff__bar) {
+    position: sticky;
+    inset-inline-start: 0;
+    min-inline-size: max-content;
   }
 
   /*

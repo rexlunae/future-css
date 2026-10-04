@@ -116,26 +116,65 @@
     grid-template-columns: auto 1fr;
   }
 
+  /*
+   * The gutter is a separate element rather than a column *inside* the source,
+   * which is what makes alignment break when a line wraps: the source uses
+   * `pre-wrap`, so one logical line can occupy several visual rows, and an
+   * independent gutter keeps allocating exactly one number per logical line.
+   * After the first wrap every subsequent number is off by a row.
+   *
+   * `align-content: start` plus a fixed line-height on the numbers is the whole
+   * fix that is available in CSS alone: the gutter cannot know how many visual
+   * rows each line took. Two honest options, and neither is free:
+   *
+   *   - Wrapping (the default) keeps 400% zoom accessible, which WCAG 1.4.10
+   *     requires, and accepts that a *wrapped* numbered block can misalign.
+   *   - `.fc-code--scroll` disables wrapping so one logical line is always one
+   *     visual row and the numbers are exact.
+   *
+   * The line-height must match `.fc-code__source` exactly or every number is
+   * off by a constant offset, so both read the same token.
+   */
   .fc-code__gutter {
-    padding: var(--fc-space-3) var(--fc-space-2);
+    padding-block: var(--fc-space-3);
+    padding-inline: var(--fc-space-2);
     border-inline-end: var(--fc-border-width-thin) solid var(--fc-code-border-default);
     background-color: var(--fc-code-bg-inset);
     color: var(--fc-code-fg);
     font-family: var(--fc-font-family-mono);
     font-size: var(--fc-font-size-sm);
+    line-height: var(--fc-line-height-snug);
     font-variant-numeric: tabular-nums;
     text-align: end;
     /* Numbers are their own blocks so they align as a column rather than
        running together into "1234". */
     user-select: none;
+    /* Track the source's top padding so the first number sits on the first
+       line rather than floating above it. */
+    align-content: start;
   }
 
   .fc-code__gutter > span {
     display: block;
+    /* Mirrors the source's `pre-wrap` line box. A gutter number is one logical
+       line, so it must occupy exactly one source line box. */
+    min-block-size: 1lh;
   }
 
   .fc-code--numbered :where(.fc-code__source) {
     padding-inline-start: var(--fc-space-4);
+  }
+
+  /*
+   * Scrolling makes the numbering exact, so say so rather than leaving the
+   * tradeoff to be discovered. Wrapped numbering is approximate by
+   * construction; unwrapped numbering is exact.
+   *
+   * `:where()` on the descendant contributes zero specificity, so this does not
+   * outrank a consumer's own `.fc-code__gutter > span` rule.
+   */
+  .fc-code--scroll :where(.fc-code__gutter > span) {
+    min-block-size: 1lh;
   }
 /* ---- Token colors ------------------------------------------------------ */
 

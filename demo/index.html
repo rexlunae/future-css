@@ -217,16 +217,24 @@
       <pre class="demo-snippet__pre"><code>import { FutureCssEditor } from "future-css/editor";
 
 const editor = new FutureCssEditor({
-  root: document.querySelector("#editor-root"),
+  root: "#editor-root",
 
-  // Fires on every selection change. The callback receives the marks across the
-  // *whole* selection, so a partly-bold range reports not-bold -- a toolbar that
-  // lies about a partial selection is worse than one that admits it.
-  onSelectionChange: (marks) =&gt; editor.syncToolbar(marks),
+  onChange: (html) =&gt; console.log(html),
 
-  // Reads the toolbar's data-fc-mark and applies it to the current range.
-  onMark: (mark) =&gt; editor.applyMark(mark),
-});</code></pre>
+  // Fires on every selection change. The payload is the state of each mark
+  // across the *whole* selection, so a partly-bold range reports not-bold --
+  // a toolbar that lies about a partial selection is worse than one that
+  // admits it. The binding keeps its own toolbar in sync from this; there is
+  // no public syncToolbar to call.
+  onSelectionChange: (active) =&gt; {
+    const marks = Object.entries(active).filter(([, on]) =&gt; on).map(([n]) =&gt; n);
+    console.log(marks);
+  },
+});
+
+// Marks are applied by calling the method, not by a callback. The toolbar
+// buttons in the markup carry data-fc-mark and the binding reads them.
+editor.applyMark("bold");</code></pre>
     </div>
 
     <div class="demo-snippet" data-demo-snippet="editor-markup">
@@ -844,12 +852,16 @@ const menu = new FutureCssMenu({
       </div>
       <pre class="demo-snippet__pre"><code>import { FutureCssWebview } from "future-css/webview";
 
-const webview = new FutureCssWebview({
-  root: document.querySelector("#webview-root"),
+import { FutureCssWebview } from "future-css/webview";
+import { isSafeUrl } from "future-css/urls";
 
-  // The binding refuses javascript:, data:, and file: before they reach the
-  // frame. Returning false from onNavigate aborts the navigation entirely.
-  onNavigate: (url) =&gt; isAllowed(url),
+const webview = new FutureCssWebview({
+  root: "#webview-root",
+
+  // The binding already refuses javascript:, data:, and file: before they
+  // reach the frame. `isSafeUrl` is exported so a consumer can apply the same
+  // rule to its own links -- it is the same check, not a re-implementation.
+  onNavigate: (url) =&gt; { void isSafeUrl(url); },
   onStateChange: (state) =&gt; { badge.dataset.fcState = state; },
 });
 
@@ -889,7 +901,7 @@ webview.back();</code></pre>
     an unnamed region.
   --&gt;
   &lt;iframe class="fc-webview__frame" title="Embedded page"
-          sandbox="allow-scripts allow-forms"
+          sandbox="allow-scripts allow-forms allow-popups"
           src="/demo/page.html"&gt;&lt;/iframe&gt;
 &lt;/div&gt;</code></pre>
     </div>

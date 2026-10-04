@@ -80,9 +80,10 @@ interface Grammar {
 function grammar(
   roles: Record<string, SyntaxRole>,
   parts: readonly (readonly [string, string])[],
+  flags = "gu",
 ): Grammar {
   const source = parts.map(([name, body]) => `(?<${name}>${body})`).join("|");
-  return { roles, pattern: new RegExp(source, "gu") };
+  return { roles, pattern: new RegExp(source, flags) };
 }
 
 const IDENT = "[A-Za-z_$][\\w$]*";
@@ -229,8 +230,18 @@ const rust = grammar(
      * `'a` is a lifetime in Rust, not the start of a character literal, and it
      * is far more common in real source. Listing it first is the difference
      * between readable output and a screenful of `char` tokens.
+     *
+     * The negative lookahead is load-bearing and deliberately narrow: a
+     * lifetime is never immediately followed by a closing quote, because that
+     * would mean we are actually looking at the opening quote of `'a'`. Without
+     * it, `let c = 'a';` matched `'a` as a lifetime and left the closing quote
+     * as stray plain text, so a char literal rendered as two wrong tokens.
+     *
+     * An earlier attempt excluded anything followed by punctuation instead,
+     * which was too broad: it broke `'a` in `fn f<'a>(...)`, the single most
+     * common lifetime position there is. Only the quote is disqualifying.
      */
-    ["lifetime", "'(?:static|_|[A-Za-z_]\\w*)"],
+    ["lifetime", "'(?:static|_|[A-Za-z_]\\w*)(?!')"],
     ["char", "'(?:[^'\\\\\\n]|\\\\.)'"],
     ["attribute", "#!?\\[[^\\]]*\\]"],
     ["number", "\\b(?:0[xX][\\da-fA-F_]+|0[bB][01_]+|0[oO][0-7_]+|\\d[\\d_]*(?:\\.\\d+)?(?:[iuf](?:8|16|32|64|128|size))?)\\b"],
@@ -259,7 +270,22 @@ const html = grammar(
     ["comment", "<!--[\\s\\S]*?-->|<!\\[CDATA\\[[\\s\\S]*?\\]\\]>"],
     ["doctype", "<!DOCTYPE[^>]*>"],
     ["tagopen", "</?"],
-    ["tagname", "[A-Za-z][\\w:-]*"],
+    /*
+     * Distinguishing a tag name from an attribute name.
+     *
+     * The obvious fix -- adding `(?!\s*=)` to `tagname` -- is wrong, and the
+     * failure is instructive. A negative lookahead lets the engine *backtrack*
+     * into a shorter match: in `<a href="x">`, `tagname` failed on `href`,
+     * then matched `hre`, and `attr` claimed the trailing `f`. The result was
+     * two wrong tokens where there should be one.
+     *
+     * The correct guard is possessive. `[A-Za-z][\w:-]*(?![\w:.-]|\s*=)` says
+     * "consume the whole run, and the character after it must not be another
+     * name character or an `=`". Because `[\w:.-]*` is greedy and cannot give
+     * characters back, there is nothing left for a shorter tagname match to
+     * find, so `href` is either taken whole by `attr` or not at all.
+     */
+    ["tagname", "[A-Za-z][\\w:-]*(?![\\w:.-]|\\s*=)"],
     ["attr", "[A-Za-z_:@][\\w:.-]*(?=\\s*=)"],
     ["string", "\"[^\"]*\"|'[^']*'"],
     ["operator", "="],
@@ -285,6 +311,15 @@ const markdown = grammar(
     listmarker: "operator",
   },
   [
+    /*
+     * The `m` flag, not just `g` and `u`.
+     *
+     * These block forms are anchored with `^`, and without `m` that anchor means
+     * "start of the whole document". A two-line document therefore highlighted
+     * its first heading and left the rest as plain text -- the most common case
+     * for a document, which is usually more than one line. `m` makes `^` mean
+     * "start of a line", which is what the pattern always meant.
+     */
     ["heading", "^#{1,6}[^\\n]*"],
     ["fence", "^(?:```|~~~)[^\\n]*"],
     // Inline code before emphasis: `` `code` `` contains `_` and `*` that must
@@ -296,6 +331,9 @@ const markdown = grammar(
     ["comment", "^\\s{4,}[^\\n]*"],
     ["listmarker", "^\\s*(?:[-*+]|\\d+\\.)\\s"],
   ],
+  // `m` so the `^`-anchored block forms match at every line start. Without it a
+  // multi-line document highlights only its first block construct.
+  "gmu",
 );
 /** Languages with a tokenizer, addressable by name. */
 export const languages = {

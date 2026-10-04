@@ -727,16 +727,16 @@ in this file would be the same defect one layer down.
 | "~55 KB" bundle | 132 KB uncompressed, with the unenforced budget called out |
 | "92 tests passing" | 245 tests passing |
 | "68 tests" (Rust) | 75 tests passing |
-| "5 WASM modules" | 6 crates → 5 `.wasm` files in 4 importable modules, with `fc-diff` named as unbound |
+| "5 WASM modules" | 6 crates → 6 `.wasm` files in 5 importable modules; `fc-diff` now bound |
 | "Seven components are complete" (README) | Ten, plus the three JS modules named |
 
-### One gap the numbers do not show
+### The number that matters most is the one still missing
 
-`fc-diff` is a Rust crate with 7 passing tests and **no `wasm_bindgen` layer**. It is
-absent from `CRATES` in `build-wasm.ts`, so it emits no `.wasm`. Crates, emitted
-`.wasm` files, and importable modules are three different measurements: six crates
-produce five `.wasm` files across four importable modules, and only four of the six
-crates are reachable from JavaScript today.
+`fc-diff` links no `js-sys` and lands at **56 KB**, against 414 KB for `fc-context-menu`
+— which runs the same class of algorithm. That 336 KB delta is not the algorithm; it is
+one dependency linked for a few `Vec<JsValue>` returns that flat typed arrays would
+serve. Five of six modules are still over budget, and `fc-diff` is the evidence that
+they do not have to be.
 
 ## Per-library verdicts
 

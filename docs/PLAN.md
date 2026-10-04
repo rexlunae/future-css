@@ -27,7 +27,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 
 ```
 npm run build        165 tokens (90 theme-aware) + 15-file bundle, 132 KB
-                     6 Rust crates, 5 .wasm files in 4 modules (over budget — see Phase A)
+                     6 Rust crates, 6 .wasm files in 5 modules (over budget — see Phase A)
 npm run lint         15 rules, 0 violations across 15 files
 npm test             245 tests passing (incl. WASM/JS parity + bundle integrity)
 cargo test           75 tests passing
@@ -40,13 +40,21 @@ section below. That budget has never been enforced — it is scheduled for Phase
 number above is stated as measured rather than as met. See
 [Semantic coverage](SEMANTIC-COVERAGE.md) §"Docs that disagree with the code".
 
-**Six crates, four WASM modules — and the gap is deliberate.** `fc-core` and
-`fc-model` both emit into the `fc-model` module, so five build entries produce four
-importable modules. The sixth crate, `fc-diff`, has **no `wasm_bindgen` layer at
-all**: it is pure Rust with 7 passing tests, exercised by `cargo test` and by the
-Rust/JS parity test, but it is absent from `CRATES` in `build-wasm.ts` and emits no
-`.wasm`. It is a library crate, not a module, and listing it among the WASM modules
-would claim coverage that does not exist. Adding its binding layer is Phase A work.
+**Six crates, six `.wasm` files, five importable modules.** `fc-core` and `fc-model`
+both emit into the `fc-model` module, so six build entries produce five modules that
+JavaScript can import. `fc-diff` is now among them, and it is the one that shows the
+workspace what it should be aiming for:
+
+```
+[OVER] fc-context-menu      414.2 KB   (budget  44 KB)
+[OVER] fc-grid              363.4 KB   (budget  44 KB)
+[OVER] fc-diff               56.2 KB   (budget  35 KB)   <- no js-sys
+```
+
+336 KB smaller than the next module for the same algorithm class. That gap is not the
+algorithm; it is `js-sys`, linked for a handful of `Vec<JsValue>` returns that could
+have been flat typed arrays. Phase A is mostly the work of making the other five look
+like `fc-diff`.
 
 Verified: contrast contract enforced in both schemes · all ramps validated · linter
 verified against both violations and legitimate patterns · WASM modules instantiate and

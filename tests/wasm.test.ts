@@ -15,15 +15,14 @@
  */
 
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, it } from "node:test";
+import { before, describe, it } from "node:test";
 
 import { JsAccelerator } from "../src/js/accelerator.ts";
-import { diffLines, diffStats, type DiffLine } from "../src/js/diff.ts";
+import { diffLines, diffStats } from "../src/js/diff.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(here, "..");
@@ -157,26 +156,68 @@ describe("WASM and JS agree", { skip: built ? false : "run `npm run build:wasm` 
 /**
  * fc-diff parity.
  *
- * `diffLines` now exists twice: Myers in JavaScript and Myers in Rust. A
- * divergence there is the worst bug this system can have, because a user gets
- * correct results on one path and wrong results on the other with no signal
- * telling them which they saw. Every offset pair and every line attribution is
- * compared, not a summary.
+ * `diffLines` exists twice: Myers in JavaScript and Myers in Rust. A divergence
+ * there is the worst bug this system can have, because a user gets correct
+ * results on one path and wrong results on the other with no signal telling them
+ * which they saw. Every line attribution and every count is compared, not a
+ * summary.
  *
- * The comparison runs through the crate's `parity` example rather than the .wasm
- * module, because the crate is not yet wired to JS. That is the point of it: the
- * algorithm is verified equal *before* anything depends on it being equal.
+ * These run against the compiled `.wasm` module, not the crate directly. The
+ * crate-level example was the right check while `fc-diff` had no binding layer;
+ * now that it emits a module, the boundary is part of what has to be correct, and
+ * testing only the Rust side would leave the encoding unverified -- which is
+ * where a sign convention or an off-by-one in the wire format would hide.
  */
 describe("fc-diff and the JS diff agree", () => {
   const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const wasmDir = join(repoRoot, "dist", "wasm", "fc-diff", "web");
+  const diffBuilt = existsSync(join(wasmDir, "fc_diff.js"));
 
-  const normalize = (lines: readonly DiffLine[]) =>
-    lines.map((l) => [l.kind, l.text, l.oldLine, l.newLine]);
+  type DiffModule = {
+    default: (input?: { module_or_path?: Uint8Array }) => Promise<void>;
+    diffKinds: (before: string, after: string) => Int32Array;
+    diffOldLines: (before: string, after: string) => Int32Array;
+    diffNewLines: (before: string, after: string) => Int32Array;
+    diffTextAt: (before: string, after: string, index: number) => string;
+    diffStats: (before: string, after: string) => Int32Array;
+    diffIdentical: (before: string, after: string) => boolean;
+    lineCount: (text: string) => number;
+  };
+
+  let mod: DiffModule;
+
+  const KIND = ["equal", "add", "remove"] as const;
+
+  before(async () => {
+    // The web build deliberately: the nodejs bindgen target emits broken
+    // CommonJS in the pinned CLI (0.2.118), which `docs/WASM.md` records.
+    mod = (await import(join(wasmDir, "fc_diff.js"))) as DiffModule;
+    await mod.default({ module_or_path: await readFile(join(wasmDir, "fc_diff_bg.wasm")) });
+  });
+
+  /**
+   * Decodes the wire format back into the JS shape. Written as the consumer
+   * would, so it fails if the encoding and the documented layout disagree.
+   */
+  const fromWasm = (before: string, after: string) => {
+    const kinds = Array.from(mod.diffKinds(before, after));
+    const old = Array.from(mod.diffOldLines(before, after));
+    const neu = Array.from(mod.diffNewLines(before, after));
+    return kinds.map((kind, i) => ({
+      kind: KIND[kind],
+      text: mod.diffTextAt(before, after, i),
+      // -1 means "no line on this side". It must never decode to a line 0,
+      // which would invent a line number that was never there.
+      oldLine: old[i] === -1 ? null : old[i],
+      newLine: neu[i] === -1 ? null : neu[i],
+    }));
+  };
 
   const cases: [string, string][] = [
     ["a\nb\nc", "a\nx\nc"],
     ["", "new"],
     ["gone", ""],
+    ["", ""],
     ["", " "],
     ["same", "same"],
     ["a\nb\nc\nd\ne\nf\ng\nh", "a\nb\nc\nX\nY\ne\nf\ng\nh"],
@@ -187,27 +228,51 @@ describe("fc-diff and the JS diff agree", () => {
     ["a\r\nb", "a\r\nc"],
     ["fn f() {}\nfn g() {}", "fn f() {}\nfn h() {}"],
     ["a\nb\nc\na\nb\nc", "c\nb\na"],
+    // Non-ASCII: text crosses as UTF-8 bytes and must come back identical.
+    ["héllo\nwörld", "héllo\nworld"],
+    ["😀 emoji line", "plain"],
   ];
 
-  for (const [before, after] of cases) {
-    it(`agree on ${JSON.stringify(before).slice(0, 24)} -> ${JSON.stringify(after).slice(0, 24)}`, () => {
-      const js = diffLines(before, after);
-      const jsStats = diffStats(js);
-      const raw = execFileSync(
-        "cargo",
-        ["run", "-q", "-p", "fc-diff", "--example", "parity", "--", before, after],
-        { cwd: repoRoot, encoding: "utf8" },
-      );
-      const rust = JSON.parse(raw);
+  describe("parity", { skip: diffBuilt ? false : "run `npm run build:wasm` first" }, () => {
+    for (const [before, after] of cases) {
+      it(`agree on ${JSON.stringify(before).slice(0, 22)} -> ${JSON.stringify(after).slice(0, 22)}`, () => {
+        const js = diffLines(before, after);
+        assert.deepEqual(
+          fromWasm(before, after).map((l) => [l.kind, l.text, l.oldLine, l.newLine]),
+          js.map((l) => [l.kind, l.text, l.oldLine, l.newLine]),
+          "every line kind, text, and 1-based number must match",
+        );
 
-      assert.deepEqual(
-        rust.lines.map((l: DiffLine) => [l.kind, l.text, l.oldLine, l.newLine]),
-        normalize(js),
-        "every line kind, text, and 1-based number must match",
-      );
-      assert.equal(rust.added, jsStats.added);
-      assert.equal(rust.removed, jsStats.removed);
-      assert.equal(rust.identical, jsStats.identical);
+        const jsStats = diffStats(js);
+        const [added, removed] = Array.from(mod.diffStats(before, after));
+        assert.equal(added, jsStats.added, "added count must match");
+        assert.equal(removed, jsStats.removed, "removed count must match");
+        assert.equal(mod.diffIdentical(before, after), jsStats.identical);
+      });
+    }
+  });
+
+  describe("wire format", { skip: diffBuilt ? false : "run `npm run build:wasm` first" }, () => {
+    it("uses -1, never 0, for a line absent on one side", () => {
+      // 0 would be a value no real 1-based line number takes, and would render
+      // as a line number for a line that never existed.
+      const old = Array.from(mod.diffOldLines("a", "a\nb"));
+      const neu = Array.from(mod.diffNewLines("a", "a\nb"));
+      assert.equal(old[1], -1, "an added line has no number in the original");
+      assert.equal(neu[1], 2);
+      assert.ok(![...old, ...neu].includes(0), "0 must never appear as a line number");
     });
-  }
+
+    it("returns empty rather than trapping for an out-of-range index", () => {
+      // A JS caller indexing past the end should see no text, not lose the module.
+      assert.equal(mod.diffTextAt("a\nb", "a\nx", 99), "");
+      assert.equal(mod.diffTextAt("", "", 0), "");
+    });
+
+    it("counts an empty document as having no lines", () => {
+      assert.equal(mod.lineCount(""), 0, "an empty document has no lines");
+      assert.equal(mod.lineCount("a\n"), 1, "a trailing newline is a terminator");
+      assert.equal(mod.diffKinds("", "new").length, 1);
+    });
+  });
 });

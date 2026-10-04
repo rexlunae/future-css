@@ -301,6 +301,106 @@ fn backtrack(trace: &[Vec<i32>], d: i32, offset: i32, end_x: i32, end_y: i32) ->
     steps
 }
 
+// ---------------------------------------------------------------------------
+// wasm-bindgen boundary
+// ---------------------------------------------------------------------------
+//
+// Primitives in, primitives out, and nothing else. This crate's Cargo.toml
+// states the rule it exists to demonstrate: `js-sys` adds ~302 KB the instant it
+// is linked and LTO cannot remove it, which is why every other module in the
+// workspace is ~10x over budget. `fc-diff` returns a flat `Float64Array`-free
+// shape instead -- three parallel primitive arrays and one length.
+//
+// A `Vec<JsValue>` of diff lines would be far more natural to write and is
+// exactly the thing that costs 302 KB. The layout is chosen so the whole result
+// crosses in three typed arrays:
+//
+//   kinds[i]  0 = equal, 1 = add, 2 = remove
+//   old[i]    1-based line number in the original, or -1 when the line is new
+//   new[i]    1-based line number in the revision, or -1 when the line is removed
+//   text_at   the line's own text, fetched by index only when the caller needs it
+//
+// -1 rather than 0 for "absent" is deliberate: line numbers are 1-based, so 0
+// would be a value no real line can take, and the JS side can compare against
+// `>= 1` without a null check.
+//
+// `text_at` is a method rather than a fourth array because the text is
+// variable-length and the only consumer is a renderer walking the rows. The
+// three numeric arrays are what a diff summary or a test needs, and those are
+// the paths that must not pay for strings.
+
+use wasm_bindgen::prelude::*;
+
+/// Wire encoding for `DiffKind`, kept next to the boundary that depends on it.
+const KIND_EQUAL: i32 = 0;
+const KIND_ADD: i32 = 1;
+const KIND_REMOVE: i32 = 2;
+
+/// Line count without materialising the text array.
+///
+/// Splitting is cheap and the count is what a caller needs to size the other
+/// three arrays, so this is the one call that does the work up front.
+#[wasm_bindgen(js_name = lineCount)]
+pub fn js_line_count(text: &str) -> usize {
+    split_lines(text).len()
+}
+
+/// The per-line kinds, as a flat `Int32Array` of length `lineCount`.
+#[wasm_bindgen(js_name = diffKinds)]
+pub fn js_diff_kinds(before: &str, after: &str) -> Vec<i32> {
+    diff_lines(before, after)
+        .iter()
+        .map(|l| match l.kind {
+            DiffKind::Equal => KIND_EQUAL,
+            DiffKind::Add => KIND_ADD,
+            DiffKind::Remove => KIND_REMOVE,
+        })
+        .collect()
+}
+
+/// 1-based line numbers in the original; -1 where the line is new.
+#[wasm_bindgen(js_name = diffOldLines)]
+pub fn js_diff_old_lines(before: &str, after: &str) -> Vec<i32> {
+    diff_lines(before, after)
+        .iter()
+        .map(|l| l.old_line.map_or(-1, |n| n as i32))
+        .collect()
+}
+
+/// 1-based line numbers in the revision; -1 where the line was removed.
+#[wasm_bindgen(js_name = diffNewLines)]
+pub fn js_diff_new_lines(before: &str, after: &str) -> Vec<i32> {
+    diff_lines(before, after)
+        .iter()
+        .map(|l| l.new_line.map_or(-1, |n| n as i32))
+        .collect()
+}
+
+/// The text of line `index`, or `""` when out of range.
+///
+/// Out-of-range returns empty rather than panicking: a JS caller indexing past
+/// the end should see no text, not take the whole module down with a trap.
+#[wasm_bindgen(js_name = diffTextAt)]
+pub fn js_diff_text_at(before: &str, after: &str, index: usize) -> String {
+    diff_lines(before, after)
+        .get(index)
+        .map(|l| l.text.clone())
+        .unwrap_or_default()
+}
+
+/// `[added, removed]` as a flat two-element array.
+#[wasm_bindgen(js_name = diffStats)]
+pub fn js_diff_stats(before: &str, after: &str) -> Vec<i32> {
+    let stats = diff_stats(&diff_lines(before, after));
+    vec![stats.added as i32, stats.removed as i32]
+}
+
+/// Whether the two inputs are identical after line splitting.
+#[wasm_bindgen(js_name = diffIdentical)]
+pub fn js_diff_identical(before: &str, after: &str) -> bool {
+    diff_stats(&diff_lines(before, after)).identical
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

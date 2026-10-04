@@ -38,6 +38,10 @@ const BUDGET: Record<string, number> = {
   fc_rich_text: 50_000,
   fc_context_menu: 45_000,
   fc_grid: 45_000,
+  // fc_diff is the module the budgets were set for: it links no js-sys, so it
+  // should be the first to come in under. Measuring it is how the rest of the
+  // workspace gets a number to aim at.
+  fc_diff: 35_000,
 };
 
 /** Cargo crate name -> the module name JS imports. */
@@ -47,6 +51,9 @@ const CRATES: ReadonlyArray<readonly [crate: string, module: string]> = [
   ["fc-rich-text", "fc-rich-text"],
   ["fc-context-menu", "fc-context-menu"],
   ["fc-grid", "fc-grid"],
+  // Its own module, unlike fc-core/fc-model which share one. It links no js-sys,
+  // so it does not inherit their 302 KB, and it needs no shared runtime state.
+  ["fc-diff", "fc-diff"],
 ];
 
 interface SizeReport {

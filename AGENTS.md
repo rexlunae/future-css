@@ -281,8 +281,7 @@ Markdown, and line diffing ship as JS modules (`highlight`, `diff`,
 Form controls and
 dialogs are not yet written. A select/listbox component is the next planned
 item; the chat composer that motivates it is queued behind it. The Rust/WASM
-layer has six crates with 75 passing tests and a working JS-only fallback
-(`fc-diff` is pure Rust and emits no `.wasm` yet),
+layer has six crates with 75 passing tests and a working JS-only fallback,
 but **every module is currently ~10x over its size budget** — see the WASM
 section above and Phase A in `docs/PLAN.md`. The rich text, context menu, and
 grid models exist in Rust and are covered by a JS parity test, but only the

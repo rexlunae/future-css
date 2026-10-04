@@ -619,6 +619,72 @@ generator in `demo/demo.js` sets it; any consumer must do the same.
 
 ---
 
+## Select / listbox (implemented)
+
+A value-selecting combobox with grouped options, substring filtering, and typeahead.
+
+```html
+<button type="button" class="fc-select" data-fc-value="opus-5">
+  <span class="fc-select__value">Claude Opus 5</span>
+  <span class="fc-select__chevron" aria-hidden="true">&#9662;</span>
+</button>
+<div class="fc-select__list" role="listbox" aria-label="Model">
+  <div class="fc-select__group-label" role="presentation">Anthropic</div>
+  <div class="fc-select__option" role="option" data-fc-value="opus-5">...</div>
+  <div class="fc-select__option" role="option" aria-disabled="true">...</div>
+</div>
+```
+
+### Keyboard contract
+
+| Key | Behaviour |
+| --- | --- |
+| `Enter` / `Space` | Open, or commit the highlighted option |
+| `ArrowUp` / `ArrowDown` | Move, **wrapping**, stepping over unavailable options |
+| `Home` / `End` | First / last **selectable** option |
+| typeahead | **Prefix** match, 600 ms window |
+| `Escape` | Close and **restore** the committed value |
+| `Tab` | Commit and leave — never trapped |
+
+### Three things that are easy to get wrong
+
+**Focus stays on the invoker.** The highlight is conveyed with
+`aria-activedescendant`; DOM focus never enters the list. This is the single most
+common way a custom listbox breaks, and it is why this cannot reuse the menu's
+roving-`tabindex` approach.
+
+**Escape restores, Enter commits.** A menu fires an action, so closing it has no
+state to restore. A select *holds a value*, so dismissing must put back what was
+in effect. Escape also deliberately does not fire `onChange`.
+
+**Unavailable options are stepped over and never selected.** Typeahead that lands
+on a disabled option is a dead end the user cannot escape by typing.
+
+### `data-fc-value`
+
+The selected value lives on the invoker as a data attribute, per the DOM contract.
+A machine reads the selection without parsing the visible label, so the label stays
+free to change — a model renamed upstream does not silently change what a consumer
+reads.
+
+### Why not a native `<select>`
+
+This position was reversed from an earlier revision of this document. A model
+listbox needs grouping and substring filtering, which `<select>` does not express;
+fighting the platform to get partway there is worse than owning it. The cost is
+real and worth stating: a custom listbox reimplements part of the accessibility
+tree, and this is the most accessibility-sensitive component in the system.
+
+### WASM
+
+`fc-select` owns the navigation *model* in Rust — which option is active, how
+typeahead accumulates, which options survive a filter — behind a primitives-only
+boundary (flat `Int32Array`s, no `js-sys`). It never touches the DOM. WASM is
+optional; without it the identical model runs in JS and `tests/wasm.test.ts`
+asserts the two agree.
+
+---
+
 ## Planned components
 
 Ordered by dependency and by how often they appear. Full specifications are written as

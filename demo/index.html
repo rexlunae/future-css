@@ -50,6 +50,7 @@
         <li><a href="#terminal">Terminal</a></li>
         <li><a href="#webview">Webview</a></li>
         <li><a href="#code">Code</a></li>
+        <li><a href="#select">Select</a></li>
         <li><a href="#diff">Diff</a></li>
         <li><a href="#tokens">Tokens</a></li>
       </ul>
@@ -969,6 +970,181 @@ webview.back();</code></pre>
   block.querySelector(".fc-code__source")
        .replaceChildren(...renderHighlighted(source, lang).childNodes);
 &lt;/script&gt;</code></pre>
+    </div>
+  </section>
+
+  <!-- ============================= SELECT ============================= -->
+  <section class="demo-section" id="select" aria-labelledby="h-select">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-select">Select</h2>
+      <p class="demo-note">
+        A real listbox, not a styled <code>&lt;select&gt;</code>: grouped options,
+        substring filtering, and typeahead over the label. Focus never leaves the
+        button &mdash; the highlighted option is pointed at with
+        <code>aria-activedescendant</code> &mdash; which is what keeps it reachable
+        with Tab. <strong>Escape restores</strong> the previous value;
+        <strong>Tab commits</strong> and leaves.
+      </p>
+    </div>
+
+    <div class="demo-panel">
+      <div class="demo-cluster">
+        <div class="demo-field">
+          <span>Model</span>
+          <button type="button" class="fc-select" id="model-select"
+                  data-fc-value="opus-5" data-fc-placeholder="Select a model">
+            <span class="fc-select__value">Claude Opus 5</span>
+            <span class="fc-select__chevron" aria-hidden="true">&#9662;</span>
+          </button>
+        </div>
+      </div>
+
+      <!--
+        A real form control, not a styled div. That single choice buys form
+        participation, Space/Enter activation, the platform focus ring, and
+        correct forced-colors rendering.
+      -->
+      <div class="fc-select__list" id="model-list" role="listbox" aria-label="Model">
+        <div class="fc-select__group-label" role="presentation">Anthropic</div>
+        <div class="fc-select__option" role="option" data-fc-value="opus-5">
+          <span class="fc-select__option-check" aria-hidden="true">&#10003;</span>
+          <span class="fc-select__option-label">Claude Opus 5</span>
+        </div>
+        <div class="fc-select__option" role="option" data-fc-value="sonnet-5">
+          <span class="fc-select__option-check" aria-hidden="true"></span>
+          <span class="fc-select__option-label">Claude Sonnet 5</span>
+        </div>
+        <div class="fc-select__group-label" role="presentation">OpenAI</div>
+        <div class="fc-select__option" role="option" data-fc-value="gpt-5">
+          <span class="fc-select__option-check" aria-hidden="true"></span>
+          <span class="fc-select__option-label">GPT-5</span>
+        </div>
+        <div class="fc-select__option" role="option" data-fc-value="o3">
+          <span class="fc-select__option-check" aria-hidden="true"></span>
+          <span class="fc-select__option-label">o3 (reasoning)</span>
+        </div>
+        <div class="fc-select__group-label" role="presentation">Local</div>
+        <!--
+          Unavailable, not hidden: the user must be able to see that it exists
+          and that this is why they cannot pick it. Arrows step over it.
+        -->
+        <div class="fc-select__option" role="option" data-fc-value="llama-4" aria-disabled="true">
+          <span class="fc-select__option-check" aria-hidden="true"></span>
+          <span class="fc-select__option-label">Llama 4 (needs 64 GB)</span>
+        </div>
+      </div>
+
+      <p class="demo-status" id="model-select-status" role="status">
+        Pick with the mouse, or focus and press Enter.
+      </p>
+
+      <hr class="demo-rule">
+
+      <div class="demo-cluster">
+        <label class="demo-field" for="model-filter">
+          <span>Filter</span>
+          <input class="fc-terminal__input" id="model-filter" type="search"
+                 placeholder="sonnet, gpt, llama&hellip;" autocomplete="off">
+        </label>
+      </div>
+      <p class="demo-hint">
+        Substring, not prefix &mdash; this is the operation that separates a model
+        listbox from a menu's typeahead. Type <code>sonnet</code>.
+      </p>
+
+      <hr class="demo-rule">
+
+      <div class="demo-cluster">
+        <div class="demo-field">
+          <span>Effort</span>
+          <button type="button" class="fc-select" id="effort-select"
+                  data-fc-value="medium" data-fc-placeholder="Select">
+            <span class="fc-select__value">Medium</span>
+            <span class="fc-select__chevron" aria-hidden="true">&#9662;</span>
+          </button>
+        </div>
+      </div>
+      <div class="fc-select__list" id="effort-list" role="listbox" aria-label="Reasoning effort">
+        <div class="fc-select__option" role="option" data-fc-value="low">
+          <span class="fc-select__option-check" aria-hidden="true">&#10003;</span>
+          <span class="fc-select__option-label">Low</span>
+        </div>
+        <div class="fc-select__option" role="option" data-fc-value="medium">
+          <span class="fc-select__option-check" aria-hidden="true"></span>
+          <span class="fc-select__option-label">Medium</span>
+        </div>
+        <div class="fc-select__option" role="option" data-fc-value="high">
+          <span class="fc-select__option-check" aria-hidden="true"></span>
+          <span class="fc-select__option-label">High</span>
+        </div>
+      </div>
+      <p class="demo-status" id="effort-select-status" role="status"></p>
+    </div>
+
+    <div class="demo-snippet" data-demo-snippet="select">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">html</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Select markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>&lt;!-- A &lt;button&gt;, not a div: that buys form participation,
+     Space/Enter activation, the platform focus ring, and correct
+     forced-colors rendering. --&gt;
+&lt;button type="button" class="fc-select" data-fc-value="opus-5"&gt;
+  &lt;span class="fc-select__value"&gt;Claude Opus 5&lt;/span&gt;
+  &lt;!-- The glyph is decorative; aria-expanded already says the state. --&gt;
+  &lt;span class="fc-select__chevron" aria-hidden="true"&gt;&amp;#9662;&lt;/span&gt;
+&lt;/button&gt;
+
+&lt;!-- data-fc-value is the machine-readable half of the DOM contract, so a
+     reader gets the selection without parsing the label. --&gt;
+&lt;div class="fc-select__list" id="model-list" role="listbox" aria-label="Model"&gt;
+  &lt;div class="fc-select__group-label" role="presentation"&gt;Anthropic&lt;/div&gt;
+  &lt;!-- role="option", not a button: a nested control inside a listbox is
+       announced as a button inside an option, and Tab would try to reach it. --&gt;
+  &lt;div class="fc-select__option" role="option" data-fc-value="opus-5"&gt;
+    &lt;span class="fc-select__option-check" aria-hidden="true"&gt;&amp;#10003;&lt;/span&gt;
+    &lt;span class="fc-select__option-label"&gt;Claude Opus 5&lt;/span&gt;
+  &lt;/div&gt;
+  &lt;!-- Unavailable, not hidden: the user can see it exists and why not. --&gt;
+  &lt;div class="fc-select__option" role="option" aria-disabled="true"&gt;
+    &lt;span class="fc-select__option-label"&gt;Llama 4 (needs 64 GB)&lt;/span&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+    </div>
+
+    <div class="demo-snippet" data-demo-snippet="select-js">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">js</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Select wiring">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>import { FutureCssSelect } from "future-css/select";
+
+const select = new FutureCssSelect({
+  invoker: "#model-select",
+  list:    "#model-list",
+
+  // Fires only on a real commit. Escape deliberately does NOT fire it:
+  // a consumer would persist a value the user declined to choose.
+  onChange: (value, option) =&gt; {
+    console.log(value, option.label);
+  },
+});
+
+// Substring search, which a prefix typeahead cannot do.
+select.filter("sonnet");
+
+// Keyboard contract, all in the binding:
+  //   Enter / Space   open, or commit the highlighted option
+  //   ArrowUp / Down  move, wrapping, stepping over unavailable options
+  //   Home / End      first / last selectable
+  //   typeahead       prefix match, 600 ms window
+  //   Escape          close AND restore the committed value
+  //   Tab             commit and leave -- never trapped
+  //
+  // DOM focus stays on the invoker throughout. The highlight is conveyed with
+  // aria-activedescendant, which is what keeps the control reachable by Tab.</code></pre>
     </div>
   </section>
 

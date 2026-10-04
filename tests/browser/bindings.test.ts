@@ -163,9 +163,10 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         import('/src/js/webview.js'),
         import('/src/js/highlight.js'),
         import('/src/js/diff.js'),
-      ]).then(([e, m, g, w, h, d]) => {
+        import('/src/js/select.js'),
+      ]).then(([e, m, g, w, h, d, s]) => {
         globalThis.E = e; globalThis.M = m; globalThis.G = g; globalThis.W = w;
-        globalThis.H = h; globalThis.D = d;
+        globalThis.H = h; globalThis.D = d; globalThis.S = s;
         return 'ok';
       })
     `);
@@ -178,10 +179,11 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       `return [
         typeof E.FutureCssEditor, typeof M.FutureCssMenu, typeof G.FutureCssGrid,
         typeof W.FutureCssWebview, typeof H.highlight, typeof D.diffLines,
+        typeof S.FutureCssSelect,
       ]`,
     );
     assert.deepEqual(names, [
-      "function", "function", "function", "function", "function", "function",
+      "function", "function", "function", "function", "function", "function", "function",
     ]);
   });
   // ---------------------------------------------------------------- editor
@@ -801,4 +803,376 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(result.rootScrolls, true, "the diff itself must scroll");
     assert.equal(result.pageOverflow, 0, "the page must not widen to accommodate it");
   });
+
+  // ------------------------------------------------------------------ select
+
+  /*
+   * Resets the select fixture to a known state.
+   *
+   * Every test in this suite shares one page, and a select carries committed
+   * state on the element itself. A test that calls `setValue` therefore changes
+   * what the next test opens on, and the failure surfaces several tests later as
+   * an unrelated-looking assertion. Explicit setup beats debugging that.
+   */
+  /*
+   * The pristine option markup, captured before any test can rewrite it.
+   *
+   * `render()` rebuilds the list from the options read at construction, so the
+   * original elements do not survive. Snapshotting them here is what lets the
+   * fixture be restored between tests rather than degrading one test at a time.
+   */
+  /**
+   * Captures the pristine option markup, once, before any render can replace it.
+   *
+   * `render()` rebuilds the list from the options read at construction, so the
+   * original elements do not survive. Without this snapshot the fixture degrades
+   * one test at a time, and each failure surfaces somewhere unrelated.
+   */
+  const snapshotSelectFixture = async () => {
+    await evaluate(`
+      if (window.__selectFixtureSnapshotted) return true;
+      const tpl = document.createElement('template');
+      tpl.innerHTML = document.querySelector('#select-list').innerHTML;
+      const pristine = [...tpl.content.children].map((el) => el.outerHTML);
+      window.__selectFixtureSnapshotted = true;
+      window.__selectFixtureRestore = () => {
+        const list = document.querySelector('#select-list');
+        list.innerHTML = pristine.join('');
+      };
+      return true;
+    `);
+  };
+
+  const resetSelect = async () => {
+    await evaluate(`
+      const invoker = document.querySelector('#select-invoker');
+      invoker.dataset.fcValue = 'gpt-5';
+      invoker.setAttribute('aria-expanded', 'false');
+      invoker.removeAttribute('aria-activedescendant');
+      invoker.querySelector('.fc-select__value').textContent = 'GPT-5';
+      // The list is rebuilt by render(), which destroys the option elements the
+      // binding read its options from. Restoring them keeps the fixture valid for
+      // every later test -- otherwise each one finds a list holding only whatever
+      // the previous test last rendered.
+      const list = document.querySelector('#select-list');
+      window.__selectFixtureRestore();
+      list.removeAttribute('data-fc-open');
+      return true;
+    `);
+  };
+
+
+  it("keeps DOM focus on the invoker while the list is open", async () => {
+    // The single most important property of a combobox listbox. `menu.ts` uses
+    // roving tabindex because a menu may move focus; a combobox must not, or it
+    // can no longer be reached with Tab and stops reading as a combobox. The
+    // highlighted option is conveyed by aria-activedescendant instead.
+    await loadBindings();
+    await snapshotSelectFixture();
+    await resetSelect();
+    const result = await evaluate(`
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      const invoker = document.querySelector('#select-invoker');
+      invoker.focus();
+      sel.openList();
+      const active = invoker.getAttribute('aria-activedescendant');
+      return {
+        focusStaysOnInvoker: document.activeElement === invoker,
+        expanded: invoker.getAttribute('aria-expanded'),
+        hasActiveDescendant: !!active,
+        targetIsAnOption: active
+          ? document.getElementById(active)?.getAttribute('role') === 'option'
+          : false,
+      };
+    `);
+    assert.equal(result.focusStaysOnInvoker, true, "focus must not enter the list");
+    assert.equal(result.expanded, "true");
+    assert.equal(result.hasActiveDescendant, true, "highlight must be conveyed by ARIA");
+    assert.equal(result.targetIsAnOption, true);
+  });
+
+  it("opens on the committed value rather than the first option", async () => {
+    await loadBindings();
+    await resetSelect();
+    const label = await evaluate(`
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      sel.openList();
+      const active = document.querySelector('#select-invoker').getAttribute('aria-activedescendant');
+      return document.getElementById(active)?.querySelector('.fc-select__option-label')?.textContent;
+    `);
+    // Re-opening an unchanged control must not move the highlight to the top, or
+    // the control appears to reset itself every time it is opened.
+    assert.equal(label, "GPT-5");
+  });
+
+  it("marks the committed option aria-selected, not by class", async () => {
+    await loadBindings();
+    await resetSelect();
+    const selected = await evaluate(`
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      sel.openList();
+      return [...document.querySelectorAll('#select-list [role="option"]')]
+        .filter((o) => o.getAttribute('aria-selected') === 'true')
+        .map((o) => o.dataset.fcValue);
+    `);
+    assert.deepEqual(selected, ["gpt-5"]);
+  });
+
+  it("steps over an unavailable option when arrowing", async () => {
+    // The unavailable entry is last, so arrowing down from o3 must wrap past it
+    // rather than stopping on it. A list that stalls on a disabled option reads
+    // as a broken control.
+    await loadBindings();
+    await resetSelect();
+    const active = await evaluate(`
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      sel.setValue('o3');
+      sel.openList();
+      const invoker = document.querySelector('#select-invoker');
+      invoker.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      const id = invoker.getAttribute('aria-activedescendant');
+      return document.getElementById(id)?.dataset.fcValue;
+    `);
+    assert.equal(active, "opus-5", "must skip the disabled Llama, not stop on it");
+  });
+
+  it("Escape restores the committed value instead of committing the highlight", async () => {
+    // The defining difference from a menu. A menu fires an action; a select holds
+    // a value, so dismissing the list must put back what was in effect.
+    await loadBindings();
+    await resetSelect();
+    const result = await evaluate(`
+      const changes = [];
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+        onChange: (v) => changes.push(v),
+      });
+      sel.openList();
+      const invoker = document.querySelector('#select-invoker');
+      invoker.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      const movedTo = invoker.getAttribute('aria-activedescendant');
+      invoker.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      return {
+        value: invoker.dataset.fcValue,
+        changes,
+        expanded: invoker.getAttribute('aria-expanded'),
+        actedDescendant: invoker.getAttribute('aria-activedescendant'),
+        movedTo: document.getElementById(movedTo)?.dataset.fcValue,
+      };
+    `);
+    assert.notEqual(result.movedTo, "gpt-5", "the highlight must actually have moved");
+    assert.equal(result.value, "gpt-5", "Escape must restore the committed value");
+    assert.deepEqual(result.changes, [], "Escape must not fire onChange");
+    assert.equal(result.expanded, "false");
+    assert.equal(result.actedDescendant, null, "a closed list has no active descendant");
+  });
+
+  it("Enter commits the highlighted option", async () => {
+    await loadBindings();
+    await resetSelect();
+    const result = await evaluate(`
+      const changes = [];
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+        onChange: (v) => changes.push(v),
+      });
+      sel.openList();
+      const invoker = document.querySelector('#select-invoker');
+      for (const key of ['ArrowUp', 'ArrowUp']) {
+        invoker.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+      }
+      invoker.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      return [invoker.dataset.fcValue, changes, invoker.getAttribute('aria-expanded')];
+    `);
+    // gpt-5 -> sonnet-5 -> opus-5. Two steps up, and the committed value, the
+    // change list, and the label must all agree on the same option.
+    assert.equal(result[0], "opus-5", "arrows moved up twice from gpt-5");
+    assert.deepEqual(result[1], ["opus-5"], "commit fires onChange exactly once");
+    assert.equal(result[2], "false", "and closes the list");
+  });
+
+  it("Tab commits and leaves, never trapping the keyboard", async () => {
+    await loadBindings();
+    await resetSelect();
+    const result = await evaluate(`
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      sel.openList();
+      const invoker = document.querySelector('#select-invoker');
+      invoker.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+      invoker.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+      return [invoker.dataset.fcValue, invoker.getAttribute('aria-expanded')];
+    `);
+    // Committing on Tab matches native select; trapping Tab would strand a
+    // keyboard user inside the listbox.
+    assert.equal(result[0], "sonnet-5", "one step up from gpt-5");
+    assert.equal(result[1], "false", "Tab must close the list, not trap");
+  });
+
+  it("does not open an empty list", async () => {
+    await loadBindings();
+    await resetSelect();
+    const result = await evaluate(`
+      const list = document.createElement('div');
+      list.id = 'empty-list';
+      list.className = 'fc-select__list';
+      list.setAttribute('role', 'listbox');
+      const invoker = document.createElement('button');
+      invoker.id = 'empty-invoker';
+      invoker.className = 'fc-select';
+      document.body.append(invoker, list);
+      globalThis.empty = new S.FutureCssSelect({
+        invoker: '#empty-invoker', list: '#empty-list',
+      });
+      empty.openList();
+      const out = [invoker.getAttribute('aria-expanded'), invoker.getAttribute('aria-disabled')];
+      invoker.remove(); list.remove();
+      return out;
+    `);
+    // An empty popup reads as a broken control; a select with nothing to choose
+    // from is a legitimate state and should be announced as unavailable.
+    assert.deepEqual(result, ["false", "true"]);
+  });
+
+  it("filters to substring matches, which a prefix search would miss", async () => {
+    await loadBindings();
+    await resetSelect();
+    const labels = await evaluate(`
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      sel.filter('sonnet');
+      return [...document.querySelectorAll('#select-list [role="option"]')]
+        .map((o) => o.dataset.fcValue);
+    `);
+    // "sonnet" occurs inside "Claude Sonnet 5" but does not start it. This is the
+    // operation that separates a model listbox from a menu's typeahead.
+    assert.deepEqual(labels, ["sonnet-5"]);
+  });
+
+  it("shows an empty state rather than a blank list when nothing matches", async () => {
+    await loadBindings();
+    await resetSelect();
+    const text = await evaluate(`
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      sel.filter('zzz');
+      const empty = document.querySelector('#select-list .fc-select__empty');
+      const out = empty ? empty.textContent : null;
+      sel.filter('');
+      return [out, document.querySelectorAll('#select-list [role="option"]').length];
+    `);
+    assert.equal(text[0], "No matches", "a blank box reads as a broken control");
+    assert.equal(text[1], 5, "clearing the filter restores every option");
+  });
+
+  it("exposes the value as data, not only as a visible label", async () => {
+    // The DOM contract: a machine reads the selection without parsing text, and
+    // the label is then free to change without the data contract following it.
+    await loadBindings();
+    await resetSelect();
+    const value = await evaluate(`
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      sel.setValue('opus-5');
+      return document.querySelector('#select-invoker').dataset.fcValue;
+    `);
+    assert.equal(value, "opus-5");
+  });
+
+  it("positions the list under the invoker and flips when there is no room", async () => {
+    await loadBindings();
+    await resetSelect();
+    const result = await evaluate(`
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      const invoker = document.querySelector('#select-invoker');
+      // Scroll it into view first. The fixture is a long page and this select sits
+      // below the fold, so without this the anchor's viewport coordinates are far
+      // outside the window and every measurement below is meaningless.
+      invoker.scrollIntoView({ block: 'center' });
+      const anchor = invoker.getBoundingClientRect();
+      sel.openList();
+      const placed = document.querySelector('#select-list').getBoundingClientRect();
+
+      // Now force the flip: an invoker near the bottom of the viewport has no
+      // room below, and the list must open upward rather than off-screen.
+      invoker.scrollIntoView({ block: 'end' });
+      invoker.style.position = 'fixed';
+      invoker.style.insetBlockEnd = '0px';
+      sel.closeList();
+      sel.openList();
+      const flipped = document.querySelector('#select-list').getBoundingClientRect();
+      const out = [
+        Math.abs(placed.left - anchor.left) < 2,
+        flipped.bottom <= window.innerHeight + 2,
+      ];
+      invoker.style.position = '';
+      invoker.style.insetBlockEnd = '';
+      sel.closeList();
+      return out;
+    `);
+    assert.equal(result[0], true, "must align to the invoker's inline edge");
+    assert.equal(result[1], true, "must stay inside the viewport when flipped");
+  });
+
+  it("caps the list height to the space available, not just a CSS ceiling", async () => {
+    // The stylesheet's `max-block-size: min(60vh, 24rem)` is a ceiling for a
+    // centered list, not a guarantee. Near the bottom of the viewport there is
+    // less than 60vh below the invoker, and the list ran off-screen by exactly
+    // the difference. The available space depends on where the invoker is, so it
+    // has to be measured.
+    await loadBindings();
+    await resetSelect();
+    const measured = await evaluate(`
+      const invoker = document.querySelector('#select-invoker');
+      invoker.scrollIntoView({ block: 'end' });
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      sel.openList();
+      const rect = document.querySelector('#select-list').getBoundingClientRect();
+      sel.closeList();
+      return { bottom: rect.bottom, top: rect.top, vh: window.innerHeight };
+    `);
+    assert.ok(
+      measured.bottom <= measured.vh + 1,
+      `list must fit the viewport: bottom ${measured.bottom} > ${measured.vh}`,
+    );
+  });
+
+  it("keeps the highlighted option scrolled into view in a long list", async () => {
+    await loadBindings();
+    await resetSelect();
+    const visible = await evaluate(`
+      globalThis.sel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      sel.openList();
+      const invoker = document.querySelector('#select-invoker');
+      for (let i = 0; i < 4; i++) {
+        invoker.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      }
+      const id = invoker.getAttribute('aria-activedescendant');
+      const rect = document.getElementById(id).getBoundingClientRect();
+      const listRect = document.querySelector('#select-list').getBoundingClientRect();
+      sel.closeList();
+      return rect.top >= listRect.top - 1 && rect.bottom <= listRect.bottom + 1;
+    `);
+    assert.equal(visible, true, "the highlight must not scroll out of sight");
+  });
+
+
 });

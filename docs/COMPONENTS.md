@@ -685,10 +685,16 @@ The binding is a pass-through, not a gate — reading the bytes is the consumer'
 business.
 
 ```ts
-composer.onSubmit((text, files) => {
-  const form = new FormData();
-  for (const a of files) if (a.file) form.append("files[]", a.file);
-  post({ text, form });
+// `onSubmit` is a constructor option, not an instance method -- calling
+// `composer.onSubmit(...)` registers nothing.
+const composer = new FutureCssComposer({
+  root: "#composer",
+  onSubmit: (text, files) => {
+    const form = new FormData();
+    for (const a of files) if (a.file) form.append("files[]", a.file);
+    form.append("text", text);
+    fetch("/api/turns", { method: "POST", body: form });
+  },
 });
 ```
 

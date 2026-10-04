@@ -260,7 +260,7 @@ src/css/            Layered CSS. index.css declares layer order
 src/js/             Component bindings (editor, menu, grid, webview) plus the
                     WASM accelerator. WASM is optional; JS always works.
 src/build/          Token compiler, CSS bundler, WASM orchestrator
-crates/            Rust crates; six crates produce four .wasm modules
+crates/            Rust crates; six produce five .wasm files in four modules
 tools/lint-css.mjs  Architecture linter
 tests/              Contract, linter, accelerator, and WASM/JS parity tests
 tests/browser/      Binding tests in headless Chrome. Skipped if no browser.
@@ -278,7 +278,8 @@ diff viewer. Syntax highlighting, Markdown, and line diffing ship as JS modules
 (`highlight`, `diff`, `markdown`) with no Rust path yet. Form controls and
 dialogs are not yet written. A select/listbox component is the next planned
 item; the chat composer that motivates it is queued behind it. The Rust/WASM
-layer has six crates with 75 passing tests and a working JS-only fallback,
+layer has six crates with 75 passing tests and a working JS-only fallback
+(`fc-diff` is pure Rust and emits no `.wasm` yet),
 but **every module is currently ~10x over its size budget** — see the WASM
 section above and Phase A in `docs/PLAN.md`. Rich text, context menu, and grid
 models exist in Rust; their browser bindings do not yet.

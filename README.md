@@ -23,11 +23,14 @@ an opaque blob — it is readable CSS you can debug in devtools.
 architecture, the reset and base layers, the layout primitives, the linter, the
 accessibility contract, and an optional Rust/WASM layer.
 
-Seven components are complete: button, chat surface, tool call / step trace, rich text
-editor, context menu, data grid, and embedded browser chrome. Form controls, dialogs, and
-navigation are planned but not yet written, and the complex components are CSS only so
-far -- their browser bindings come next. See [the development plan](docs/PLAN.md) for
-what is done, what is next, and what is deliberately out of scope.
+Ten components have their CSS: button, chat surface, tool call / step trace, rich text
+editor, context menu, data grid, embedded browser chrome, terminal, code block, and diff
+viewer. Four also have a browser binding — editor, menu, grid, and webview — covered by
+tests in a real headless Chrome; the rest are CSS plus the pure-JS modules beside them
+(syntax highlighting, Markdown, line diffing). Form controls, dialogs, and a
+select/listbox are planned but not yet written. See
+[the development plan](docs/PLAN.md) for what is done, what is next, and what is
+deliberately out of scope.
 
 ---
 

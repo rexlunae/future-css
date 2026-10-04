@@ -27,7 +27,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 
 ```
 npm run build        165 tokens (90 theme-aware) + 15-file bundle, 132 KB
-                     6 Rust crates, 4 WASM modules (over budget — see Phase A)
+                     6 Rust crates, 5 .wasm files in 4 modules (over budget — see Phase A)
 npm run lint         15 rules, 0 violations across 15 files
 npm test             245 tests passing (incl. WASM/JS parity + bundle integrity)
 cargo test           75 tests passing
@@ -39,6 +39,14 @@ their own boundary. It exceeds the < 60 KB uncompressed budget in the performanc
 section below. That budget has never been enforced — it is scheduled for Phase 4 — so the
 number above is stated as measured rather than as met. See
 [Semantic coverage](SEMANTIC-COVERAGE.md) §"Docs that disagree with the code".
+
+**Six crates, four WASM modules — and the gap is deliberate.** `fc-core` and
+`fc-model` both emit into the `fc-model` module, so five build entries produce four
+importable modules. The sixth crate, `fc-diff`, has **no `wasm_bindgen` layer at
+all**: it is pure Rust with 7 passing tests, exercised by `cargo test` and by the
+Rust/JS parity test, but it is absent from `CRATES` in `build-wasm.ts` and emits no
+`.wasm`. It is a library crate, not a module, and listing it among the WASM modules
+would claim coverage that does not exist. Adding its binding layer is Phase A work.
 
 Verified: contrast contract enforced in both schemes · all ramps validated · linter
 verified against both violations and legitimate patterns · WASM modules instantiate and
@@ -208,9 +216,11 @@ a trade anyone accepts.
 
 Delivered:
 
-- Rust workspace with six crates, each a `cdylib`. `fc-core` links into the `fc-model`
-  module rather than shipping on its own, which is why six crates produce four `.wasm`
-  files. `fc-diff` is built as a Rust library only and has no WASM module yet.
+- Rust workspace with six crates, each a `cdylib`. `fc-core` is emitted into the
+  `fc-model` module directory rather than getting one of its own, and `fc-diff` has
+  no `wasm_bindgen` layer at all. So six crates produce **five** `.wasm` files
+  across **four** importable modules, and only four of the six crates are reachable
+  from JavaScript today.
 - 75 unit tests covering the algorithms.
 - A JS accelerator abstraction with a pure-JS fallback, so the modules are optional.
 - **A measured size report in the build output**, because the dominant cost is invisible
@@ -272,8 +282,10 @@ Delivered (CSS complete, browser bindings not yet):
 
 Remaining, in priority order:
 
-1. **JS bindings.** `contenteditable` wiring for the editor; menu positioning and focus
-   management; grid keyboard navigation and virtualization. All CSS, no behavior yet.
+1. **JS bindings.** Editor, menu, grid, and webview bindings are written and covered by
+   browser tests (`tests/browser/`). Terminal, chat, tool-call, code, and diff have CSS
+   only -- their behavior is either trivial or delegated to the pure-JS modules beside
+   them (`highlight`, `diff`, `markdown`).
 2. **Form field.** Still the highest-value missing component, and the one with the most
    accessibility surface.
 3. **Dialog.** Prefer native `<dialog>`; document the manual trap only where it is

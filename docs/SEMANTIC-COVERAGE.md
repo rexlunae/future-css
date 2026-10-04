@@ -1,65 +1,102 @@
 # Semantic coverage
 
 Where `future-css` stands against the ten most widely-used semantic CSS and design-token
-libraries, feature by feature.
+libraries, feature by feature and subfeature by subfeature.
 
-This document exists because "we have design tokens" is not a checkable claim. It is a
-category of claim. The useful question is which *specific meanings* the system can
-express, and which it cannot. So each library below is decomposed into the meanings it
-encodes, meanings that turn out to be the same thing under different names are merged
-into one entry, and that entry is marked with our actual status.
+"We have design tokens" is not a checkable claim. It is a category of claim. The useful
+question is which *specific meanings* the system can express, and which it cannot. So
+each library below is decomposed into the meanings it encodes; meanings that turn out
+to be the same thing under different names are merged into one entry, and that entry
+is marked with our actual status.
+
+Every status here was checked against the working tree, not against another document's
+description of the working tree. Where a claim in `PLAN.md` or `COMPONENTS.md`
+disagrees with the code, that is recorded rather than smoothed over.
+
+---
 
 ## How to read a status
 
 | Status | Meaning |
 | --- | --- |
-| **Shipped** | Implemented, and something enforces it (linter rule, build-time check, or test) |
-| **Partial** | Implemented, but thinner than the field norm or missing subfeatures named here |
+| **Shipped** | Implemented, and something enforces it — a lint rule, a build-time check, or a test |
+| **Partial** | Implemented, but thinner than the field norm, or missing subfeatures named here |
 | **Absent** | Not implemented. No ambiguity |
 | **Divergent** | Deliberately different, with a recorded reason |
 
 **Divergent** is not a consolation prize. Several entries are places where this system
-made a defensible choice that most of the field has not, and saying so is more useful
-than pretending parity. Where a divergence costs something real, that is stated in the
-same row rather than buried.
+made a defensible choice the field has not, and saying so is more useful than implying
+parity. Where a divergence costs something real, that cost is stated in the same row
+rather than buried.
+
+---
 
 ## Method, and its limits
 
-Every library below was read from its own published documentation or its shipped CSS,
-not from memory. Where a library's documentation and its shipped artifact disagree, the
-artifact was treated as authoritative -- for Primer that meant reading the compiled
-functional theme rather than the prose, which is how the `ansi-*`, `prettylights-*` and
-`diffBlob-*` token families below were discovered. Those three families are the reason
-this document exists: they are token groups we implement, that Primer also implements,
-and that four of the other nine libraries do not expose at all.
+Each library was read from its own published documentation **or its own shipped source**,
+not from memory. For Primer that meant reading the token JSON under
+`primer/primitives/src/tokens/` rather than the prose, which is how `diffBlob` and
+`highlight` were found.
 
-Two limits are worth stating plainly.
+Three limits are worth stating plainly.
 
-**Version drift.** Each library is recorded as of the read date, at the version its
-docs reported. Tailwind's page was v4.3, Radix Colors v3.0.0, Material Web in
-maintenance mode. Several of these projects ship faster than this document is revised.
+**A correction worth recording.** An earlier draft of this document claimed Primer
+ships `ansi-*`, `prettylights-*`, and `diffBlob-*` families, and used that as its
+central argument. Checking the repository contradicts two thirds of it:
+
+- `src/tokens/component/diffBlob.json5` — **confirmed**. A full diff family:
+  `additionLine`, `additionWord`, `additionNum`, the `deletion*` mirrors, `empty*`,
+  `expander`.
+- `src/tokens/component/highlight.json5` — **confirmed**, but it holds a single
+  background token, not a syntax palette.
+- `ansi-*` and `prettylights-*` — **not found**. `src/tokens/` contains only `base/`,
+  `component/`, `fallback/`, `functional/`. `prettylights` was a `primer/css` variable
+  family and no longer appears in `src/support/`. The ANSI claim could not be
+  substantiated at all.
+
+So Primer ships **diff** and **highlight** domain tokens, not all three, and the
+"nobody else ships these" argument was weaker than it looked. The conclusion in entry 20
+survives, on narrower ground: no surveyed library ships a *checked* ANSI palette, and
+Primer's diff family is thinner than ours because it has no contrast contract attached
+to it. That now rests on a verified claim rather than an assumed one.
+
+**Version drift.** Recorded as of the read date, at each project's default branch.
+`@primer/primitives` 11.10.0; Tailwind docs v4.3; Radix Colors v3.0.0; Material Web in
+maintenance mode. These projects ship faster than this document is revised.
 
 **Rank.** "Top ten" is ordered by influence on the design-token conversation, not by
-npm downloads. That ordering is a judgement and a different one is defensible. The
-selection is argued in [The set](#the-set) so the judgement can be disagreed with
-explicitly rather than in the abstract.
+npm downloads. That is a judgement and a different one is defensible. The selection is
+argued in [The set](#the-set) so the judgement can be disagreed with explicitly.
+
+---
 
 ## The set
 
 | # | Library | Why it is here |
 | --- | --- | --- |
-| 1 | **Radix Colors** | The purest statement of "scale step means use". No token below the primitive layer at all |
-| 2 | **Primer Primitives** (GitHub) | The most complete real-world token taxonomy in production, including three that nothing else ships |
+| 1 | **Primer Primitives** (GitHub) | The most complete real-world token taxonomy in production, and the only one shipping diff and highlight token families |
+| 2 | **Radix Colors** | The purest "scale step means use" position — no token layer below the primitive at all |
 | 3 | **Material Design 3** (via Material Web) | The only system doing seed-derived dynamic colour |
-| 4 | **Tailwind CSS v4** | Theme variables are the most widely-consumed token contract on the web, even though the framework is not semantic-CSS |
+| 4 | **Tailwind CSS v4** | Theme variables are the most widely-consumed token contract on the web, though the framework is not semantic-CSS |
 | 5 | **IBM Carbon** | The broadest component-token implementation, and the only one shipping explicit AI and chat token groups |
 | 6 | **Microsoft Fluent 2** | The sharpest two-tier primitive/alias split, with high-contrast as a first-class scheme |
 | 7 | **Adobe Spectrum CSS** | Medium/large scale axes and a strict global/component token split |
-| 8 | **Shopify Polaris** | The clearest small-system token set, useful as a floor rather than a ceiling |
-| 9 | **Pico CSS** | The strongest pure "semantic HTML is enough" position, and a class-less mode we have no equivalent of |
+| 8 | **Shopify Polaris** | The clearest small-system token set — a floor rather than a ceiling |
+| 9 | **Pico CSS** | The strongest pure "semantic HTML is enough" position, and a classless mode we have no equivalent of |
 | 10 | **Bulma** | The original Sass-variable-to-CSS-variable semantic framework; the reference point for the pre-token era |
 
-Read alongside these, not scored: **Open Props** (the largest pure CSS-variable
+Read alongside these, not scored: **Open Props** (largest pure CSS-variable library,
+500+ props, and the only one with a `--motionOK` custom-media convention), **GOV.UK
+Design System** (functional colour via a Sass *function*, which forbids hand-copying
+hex, and the only serious tints-and-shades alternative to a numeric ramp), and **Tokens
+Studio** (the de facto token pipeline, and the reason multi-theme token *sets* are a
+category at all).
+
+Semantic UI was considered and excluded. It is the only library whose name matches the
+request, and it is unmaintained, jQuery-coupled, and ships no token layer. Including it
+would mean scoring a project on intent rather than implementation.
+
+---
 
 ## The canonical vocabulary
 
@@ -90,37 +127,65 @@ above.
 | 17 | **Target size** | Hit area, `size-min`, 24x24 minimum |
 | 18 | **Layer order** | z-index, `$zIndex`, `--zIndex-*`, elevation index, layer token |
 | 19 | **Reduced motion** | `--motionOK`, motion preference, motion-shrink |
-| 20 | **Syntax role** | `prettylights.syntax.*`, token type, highlight role |
+| 20 | **Syntax role** | `highlight.*`, token type, highlight role |
 | 21 | **ANSI role** | `ansi-*`, terminal colour, 16-colour palette |
 | 22 | **Diff role** | `diffBlob-*`, addition/deletion line, change background |
 | 23 | **Machine-readable state** | `data-*` state, state attribute, DOM contract |
 
+Four collisions in that table are worth naming explicitly, because getting them wrong is
+how a design system rots:
+
+- **Surface (4) and layer order (18) are unrelated** despite sharing the word "layer".
+  One is a background ramp, the other a stacking scale. Carbon uses `$layer-01` for the
+  first and `$zIndex` for the second; conflating them is common and wrong.
+- **Boundary ladder (6) and non-text boundary (7) are different contracts.** The first
+  is decorative separation. The second carries WCAG 1.4.11 at 3:1 against its adjacent
+  background. Merging them means either decorative borders that fail a contrast
+  requirement, or focusable controls whose outlines are decoration.
+- **Focus indicator (8) is two tokens, not one.** Ring colour and ring offset are
+  separate because a single-colour ring disappears on a same-coloured component.
+- **Status family (9) and brand accent (12) are not the same axis.** Accent is one
+  family with a full state ramp; status has four families. Primer's `bgColor-accent-muted`
+  and `bgColor-success-muted` are different tokens for the same reason.
+
+---
 
 ## Scorecard
 
 Counts by canonical name. "Shipped" counts only what is enforced, not merely present.
 
-| Canonical name | Status | Enforced by |
-| --- | --- | --- |
-| 1. Primitive ramp | Shipped | Ramp integrity tests: 14 steps, monotonic lightness, single hue, gamut |
-| 2. Semantic alias | Shipped | `no-color-literals` lint rule; components cannot reach a primitive |
-| 3. Component token | **Absent** | Nothing to enforce yet |
-| 4. Surface ladder | Shipped | 7 surfaces, each a declared contrast pair |
-| 5. Foreground ladder | Shipped | 21 contrast pairs, both schemes, build fails on violation |
-| 6. Boundary ladder | Shipped | `border-default/subtle/strong` |
-| 7. Non-text boundary | Shipped | `border-interactive`, declared at 3:1 |
-| 8. Focus indicator | Shipped | Ring + offset; `preserve-focus` lint rule |
-| 9. Status family | **Partial** | 4 families x 4 roles; **no hover/active per family** |
-| 10. Interactive state ramp | **Partial** | Accent only. No selected, no disabled tokens |
-| 11. Inverse surface | Shipped | `bg-inverse`, with its own foreground ramp |
-| 12. Brand accent | Shipped | 6 tokens: bg, bg-hover, bg-active, bg-subtle, text, border |
-| 13. Scheme | Shipped | `light-dark()` + `color-scheme`, no JS |
-| 14. High-contrast scheme | **Partial** | `forced-colors` blocks in all 10 components; **no HC token scheme** |
-| 15. Composite type style | **Absent** | Scales exist, no composed role tokens |
-| 16. Measurement | Shipped | `size-content-max` 75ch, `size-measure` 65ch |
-| 17. Target size | Shipped | `size-target-min` 1.5rem = WCAG 2.2 |
-| 18. Layer order | Shipped | 9 steps; `z-index-scale` lint rule rejects raw values |
-| 19. Reduced motion | Shipped | Global reset block; `reduced-motion` lint rule |
+| # | Canonical name | Status | Enforced by |
+| --- | --- | --- | --- |
+| 1 | Primitive ramp | **Shipped** | Ramp integrity tests: 14 steps, monotonic lightness, single hue, gamut |
+| 2 | Semantic alias | **Shipped** | `no-color-literals` lint rule; components cannot reach a primitive |
+| 3 | Component token | **Absent** | Nothing to enforce yet |
+| 4 | Surface ladder | **Shipped** | 8 surfaces, each a declared contrast pair |
+| 5 | Foreground ladder | **Shipped** | 21 contrast pairs, both schemes, build fails on violation |
+| 6 | Boundary ladder | **Shipped** | `border-default/subtle/strong` |
+| 7 | Non-text boundary | **Shipped** | `border-interactive`, declared at 3:1 |
+| 8 | Focus indicator | **Shipped** | Ring + offset; `preserve-focus` lint rule |
+| 9 | Status family | **Partial** | 4 families x 4 roles; **no hover/active per family** |
+| 10 | Interactive state ramp | **Partial** | Accent only. No selected token, no disabled colour |
+| 11 | Inverse surface | **Shipped** | `bg-inverse`, with its own foreground ramp |
+| 12 | Brand accent | **Shipped** | 6 tokens: bg, bg-hover, bg-active, bg-subtle, text, border |
+| 13 | Scheme | **Shipped** | `light-dark()` + `color-scheme`, no JS |
+| 14 | High-contrast scheme | **Partial** | `forced-colors` blocks in all 10 components; **no HC token scheme** |
+| 15 | Composite type style | **Absent** | Scales exist, no composed role tokens |
+| 16 | Measurement | **Shipped** | `size-content-max` 75ch, `size-measure` 65ch |
+| 17 | Target size | **Shipped** | `size-target-min` 1.5rem = WCAG 2.2 |
+| 18 | Layer order | **Shipped** | 9 steps; `z-index-scale` lint rule rejects raw values |
+| 19 | Reduced motion | **Shipped** | Global reset block; `reduced-motion` lint rule |
+| 20 | Syntax role | **Shipped** | 25 tokens, 17 roles; 6 declared contrast pairs |
+| 21 | ANSI role | **Shipped** | 21 tokens; 3 declared contrast pairs |
+| 22 | Diff role | **Shipped** | Added/removed as surface *and* foreground, not surface alone |
+| 23 | Machine-readable state | **Shipped** | 8 documented `data-fc-*` attributes, AGENTS.md contract |
+
+**Shipped: 17. Partial: 4. Absent: 2.**
+
+The two Absent rows are the substantive findings, and both are discussed in
+[Gaps](#gaps-that-are-actually-gaps).
+
+---
 
 ## Feature detail
 
@@ -128,126 +193,154 @@ Each canonical name, its subfeatures, and who ships it. "Us" refers to this repo
 the evidence column names the file or test, so any row can be checked rather than
 trusted.
 
-### 1. Primitive ramp -- Shipped
+### 1. Primitive ramp — Shipped
 
 A raw, meaning-free scale that components must never reference directly.
 
 | Subfeature | Us | Radix | Primer | M3 | Tailwind | Carbon | Fluent 2 | Spectrum | Polaris | Pico | Bulma |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Numeric steps | 14 | 12 | `base/scale/*` | `ref/*` | oklch ramps | `$gray-10..100` | `ColorPalette*` | palette steps | ramp | 1-3 tones | derived |
-| Gamut | sRGB hex out of oklch source | P3 + sRGB | sRGB | P3 | oklch | sRGB | sRGB | sRGB | sRGB | sRGB | sRGB |
-| Ramp integrity tests | yes | docs only | no | no | no | no | no | no | no | no | no |
+| Numeric steps | 14 | 12 | `base/scale/*` | `ref/*` | oklch ramps | `$gray-10..100` | palette steps | palette steps | ramp | 1-3 tones | derived |
+| Ramp count | 6 | ~30 | many | ~20 | oklch | 14 | 14 ramps | ~20 | several | 1 | 8 |
+| Gamut at output | sRGB hex from oklch source | P3 + sRGB | sRGB | P3 | oklch | sRGB | sRGB | sRGB | sRGB | sRGB | sRGB |
+| Ramp integrity tests | **yes** | docs only | no | no | no | no | no | no | no | no | no |
 
 The last row is the real difference. Six ramps (neutral, accent, success, warning,
 danger, info) x 14 steps, and a test that fails the build if a ramp is incomplete,
-non-monotonic in lightness, multi-hue, or out of gamut. Every library here *has* ramps;
-almost none *check* them.
+non-monotonic in lightness, multi-hue, or out of gamut. Every library here *has*
+ramps; almost none *check* them.
 
-**Divergence:** we author in OKLCH but emit hex. That loses wide-gamut fidelity on
-displays that support it. Radix and M3 ship P3. This is a deliberate trade for
-`contrastRatio` being computable from the shipped value -- the contract verifies what
-ships, not what was authored -- and it is the right trade for a system whose central
-claim is verifiability. It is still a real capability gap, and it is cheap to close by
-emitting `oklch()` alongside the hex pair.
+**Divergent:** we author in OKLCH but emit hex. That loses wide-gamut fidelity on
+displays that support it — Radix and M3 ship P3. This is a deliberate trade for
+`contrastRatio` being computable from the shipped value, so the contract verifies what
+ships rather than what was authored, and that is the right trade for a system whose
+central claim is verifiability. It is still a real capability gap, and it is cheap to
+close by emitting an `oklch()` fallback alongside the hex pair.
 
-### 2. Semantic alias -- Shipped
+### 2. Semantic alias — Shipped
 
 The meaning layer. Components read these and never a primitive.
 
 - **Us:** 42 semantic colour tokens, `<role>-<variant>[-<state>]`, per-scheme values.
-- **Enforced** by `no-color-literals` (30 colour functions) plus the documented rule
-  that a component referencing a primitive is a bug.
+  91 of 165 emitted tokens are `light-dark()` pairs.
+- **Enforced** by `no-color-literals` plus the documented rule that a component
+  referencing a primitive is a bug.
 - **Radix** has no semantic layer at all. Its position is that a scale *step* is the
   semantic unit: `--blue-4` for a component background, `--blue-11` for its text. Fewer
   indirections, and the burden moves to whoever picks the step.
 - **Carbon, Primer, Fluent 2, M3** all separate primitive from alias explicitly.
   Fluent's is the cleanest statement: "Global tokens are context-agnostic and store raw
   values. Alias tokens add semantic meaning."
-- **GOV.UK** enforces the boundary in a way nothing else does -- `govuk-functional-colour()`
-  is a function, and the docs say "do not copy the specific hex values."
+- **GOV.UK** enforces the boundary in a way nothing else does — `govuk-functional-colour()`
+  is a *function*, and the docs say "do not copy the specific hexadecimal values."
 
-### 3. Component token -- Absent
+### 3. Component token — Absent
 
-### 4. Surface ladder -- Shipped
+A token scoped to one component, overriding the semantic layer for that component only.
+
+- **Us:** none. No `--fc-button-*`, no per-component colour token exists.
+- **Primer** is the largest implementation in production, with 33 component token
+  files under `src/tokens/component/` including `button.json5`, `diffBlob.json5`,
+  `focus.json5`, `highlight.json5`, `overlay.json5`.
+- **Carbon** ships a documented component-token table per component, plus `$ai-*` and
+  `$chat-*` families.
+- **M3** has `md.comp.*`; **Spectrum** separates global and component tokens by
+  directory.
+
+**This is a deliberate omission, and the most debatable choice in the system.**
+`docs/ARCHITECTURE.md` gives the reason: per-layer distribution, so "an application that
+has built its own components does not need ours", plus zero-specificity reset and base
+layers so a component class always wins. A component token layer would undercut both —
+it moves decisions from the cascade into the token table.
+
+The cost is real and should be recorded rather than argued away. A consumer who wants
+"the primary button is blue, not accent" cannot express it in tokens today; they must
+author CSS in `fc.overrides`. For a system whose stated audience includes multi-brand
+product teams, that is a genuine limitation, and Primer's button token set is the
+concrete example of what is being traded away. It belongs on the roadmap as an explicit
+decision to revisit, not as a permanent principle.
+
+### 4. Surface ladder — Shipped
 
 Backgrounds, from page canvas to inverted overlay.
 
 | Subfeature | Us | Carbon | Primer | M3 | Radix | Spectrum |
 | --- | --- | --- | --- | --- | --- | --- |
-| Canvas / page | `bg-canvas` | `$background` | `canvas.default` | `surface` | step 1-2 | `$spectrum-gray-50` |
+| Canvas / page | `bg-canvas` | `$background` | `canvas.default` | `surface` | step 1-2 | gray-50 |
 | Content surface | `bg-surface` | `$layer-01` | `bgColor.default` | `surface-container-low` | step 3 | gray-100 |
 | Raised | `bg-raised` | `$layer-02` | `bgColor.emphasis` | `surface-container-high` | step 9 | gray-200 |
 | Overlay | `bg-overlay` | `$overlay` | `bgColor.overlay` | `surface-container-highest` | step 9 | gray-100 |
-| Sunken / inset | `bg-sunken` | `$layer-accent-01` inverse | -- | `surface-container-lowest` | -- | gray-100 |
-| Subtle | `bg-subtle` | `$layer` | `bgColor.muted` | `surface-container-low` | step 2 | gray-50 |
-| Muted (hover) | `bg-muted` | `$layer-02` | `bgColor.muted` | -- | step 3 | -- |
-| Inverse | `bg-inverse` | `$background-inverse` | `bgColor.inverse` | `inverseSurface` | -- | `$spectrum-gray-900` |
+| Sunken / inset | `bg-sunken` | inverse layer | — | `surface-container-lowest` | — | gray-100 |
+| Subtle | `bg-subtle` | `$layer-01` | `bgColor.muted` | `surface-container-low` | step 2 | gray-50 |
+| Muted (hover) | `bg-muted` | `$background-hover` | `bgColor.muted` | — | step 3 | — |
+| Inverse | `bg-inverse` | `$background-inverse` | `bgColor.inverse` | `inverseSurface` | — | gray-900 |
 
-Seven surfaces, each a declared contrast pair in both schemes. The distinction between
+Eight surfaces, each a declared contrast pair in both schemes. The distinction between
 `bg-raised` and `bg-overlay` is real and not redundant: raised is a card that sits above
 the canvas, overlay is a popover that must separate from *both* canvas and the raised
 surface beneath it.
 
-**Where we are thinner:** no **layer-01..05 numbered ladder**. Carbon's numbered tiers
+**Where we are thinner:** no numbered `layer-01..05` ladder. Carbon's numbered tiers
 and M3's `surface-container-*` depths let a consumer place a surface at "depth 3"
 without knowing which step that is. Our names describe role rather than depth, which
-reads better in a component but does not compose. A third-party component built against
-this system cannot ask for "one step above raised".
+reads better inside a component but does not compose — a third-party component built
+against this system cannot ask for "one step above raised."
 
-### 5. Foreground ladder -- Shipped
+### 5. Foreground ladder — Shipped
 
 | Subfeature | Us | Carbon | Primer | M3 |
 | --- | --- | --- | --- | --- |
 | Primary | `text-default` | `$text-01` | `fgColor.default` | `on-surface` |
 | Secondary | `text-muted` | `$text-02` | `fgColor.muted` | `on-surface-variant` |
-| Tertiary | `text-subtle` | `$text-03` | `fgColor.subtle` | -- |
+| Tertiary | `text-subtle` | `$text-03` | `fgColor.subtle` | — |
 | On solid fill | `text-on-accent` | `$text-04` | `fgColor-onEmphasis` | `on-primary` |
 | On inverse | `text-inverse` | `$text-inverse` | `fgColor-onInverse` | `inverse-on-surface` |
-| Inverse secondary | `text-inverse-muted` | -- | -- | -- |
+| Inverse secondary | `text-inverse-muted` | — | — | — |
 | Link | `accent-text` | `$link` | `fgColor-link` | `primary` |
 
-21 declared contrast pairs, verified in both schemes at build time; the compiler
-refuses to emit `tokens.css` if any pair fails its minimum.
+**Foreground on-solid** deserves its own row. It is the single most common dark-mode
+accessibility failure in this ecosystem: a solid accent fill whose foreground is
+hardcoded to white. Radix solves it by publishing per scale which of step 9 or step 10
+is designed for a dark foreground. Material solves it with `on-primary`. We solve it
+with a per-scheme token, which is the same idea under a name that says what it is for.
 
-`text-on-accent` is the token that catches the most common dark-mode failure, and its
-comment in `src/tokens/semantic/color.ts` says why: the light-mode accent fill is a
-deep blue needing white text, the dark-mode fill is a light blue needing near-black.
-Hard-coding white is the standard bug.
+`text-inverse-muted` exists because reuse measured 1.8:1. The foreground tuned for a
+*light* background collapses on a dark one, so inverted surfaces need their own ramp.
 
-`text-inverse-muted` is a token no other library in the set appears to ship, and it
-exists because of a measured failure: `text-muted` on a dark surface collapses to about
-1.8:1. An inverted surface needs its own foreground ramp, not a reuse.
+**Divergent:** the names. Primer and Carbon number these (`$text-01..05`); Fluent and
+Pico say primary/secondary/tertiary; Polaris says text/subtle/muted. Ours is
+`default`/`muted`/`subtle`, which matches no one in particular. It is internally
+consistent and legible, and switching would be a breaking change to public API, so this
+is recorded as a note rather than a proposal.
 
-### 6-7. Boundary ladder and non-text boundary -- Shipped
+### 6-7. Boundary ladder and non-text boundary — Shipped
 
-These are two contracts in one place because keeping them apart is the point.
+Two different contracts that one word usually hides.
 
-| Subfeature | Us | Carbon | Primer | M3 |
+| Role | Us | Declared at | Primer | Carbon |
 | --- | --- | --- | --- | --- |
-| Decorative subtle | `border-subtle` | `$border-subtle-01` | `borderColor.muted` | `outline-variant` |
-| Decorative default | `border-default` | `$border-subtle-01` | `borderColor.default` | `outline` |
-| Decorative strong | `border-strong` | `$border-strong-01` | -- | -- |
-| **Non-text (3:1)** | **`border-interactive`** | `$focus`, `$border-interactive` | `borderColor.default` on controls | `outline` |
+| Decorative separation | `border-subtle` | not contrast-checked | `borderColor.muted` | `$border-subtle-01` |
+| Default boundary | `border-default` | not contrast-checked | `borderColor.default` | `$border-strong-01` |
+| Emphasis | `border-strong` | not contrast-checked | `borderColor.emphasis` | `$border-strong-01` |
+| **Control boundary** | `border-interactive` | **3:1 (WCAG 1.4.11)** | `borderColor.default` on controls | `$focus` |
 
-`border-interactive` is declared in `contrastPairs` at `min: 3` against `bg-canvas` and
-is not used for decoration. Four of the ten libraries separate this; six do not, and
-inherit WCAG 1.4.11 failures on control boundaries.
+Only the last is a contrast requirement, and only the last is a declared pair. Keeping
+them apart is the point: a decorative border that fails 3:1 is fine, and a focusable
+control whose outline is decorative is not. Carbon collapses both into `$focus`, which
+makes one of the two inexpressible.
 
-### 8. Focus indicator -- Shipped
+### 8. Focus indicator — Shipped
 
-Two tokens, deliberately: `focus-ring` and `focus-ring-offset`. The offset creates a gap
-so the ring stays visible when the component colour is close to the focus colour -- a
-single-token system has to pick one and accept the failure in half the cases.
+Two tokens: `focus-ring` and `focus-ring-offset`. Both are contrast pairs against both
+`bg-canvas` and `bg-surface` at 3:1. The offset exists because a single-colour ring
+disappears against a component of the same colour, which is precisely what a primary
+button is. The `preserve-focus` lint rule rejects unscoped `outline: none`, and
+`base.css` scopes its reset to `:focus:not(:focus-visible)` so a mouse click does not
+leave a ring but a keyboard focus always does.
 
-`preserve-focus` is a lint rule: unscoped `outline: none` is rejected, and the only legal
-form is scoped to `:not(:focus-visible)`. The base layer applies
-`focus-visible` styling to `a, button, input, select, textarea, summary, [tabindex]`
-and neutralises it on `focus:not(:focus-visible)`.
+Fluent ships `$focus-inset` as a variant rather than an offset; Primer separates
+`outline.focus` from `borderColor.default`. Same three ideas, three arrangements.
 
-Fluent ships `focusStroke` and `focusStrokeOuter` -- the same two-token split, arrived at
-independently. That is a good sign for the pattern.
-
-### 9. Status family -- Partial
+### 9. Status family — Partial
 
 | Subfeature | accent | success | warning | danger | info |
 | --- | --- | --- | --- | --- | --- |
@@ -257,444 +350,308 @@ independently. That is a good sign for the pattern.
 | Border | yes | yes | yes | yes | yes |
 | **Hover / active** | **yes** | **no** | **no** | **no** | **no** |
 
-Four families x four roles, consistent in shape, and then inconsistent in one place:
-only accent has state variants. Every library in the set that ships status colour gives
-each family a hover and active step -- Carbon's `$support-success-02`/`-03`, Primer's
-`bgColor-success-emphasis` against `-muted`, Fluent's
-`StatusForegroundSuccess` family. A danger button with a status background currently
-cannot express hover without dropping to a token outside its own family.
+Four families x four roles, consistent in shape, then inconsistent in one place: only
+accent has state variants. Every library in the set that ships status colour gives each
+family a hover and active step — Carbon's `$support-success-02`/`-03`, Primer's
+`bgColor-success-emphasis` against `-muted`, Fluent's `StatusForegroundSuccess` family.
+A danger button with a status background currently cannot express hover without
+dropping to a token outside its own family.
 
-This is the cheapest Partial in the document to close: four tokens per family, sixteen
-in total, all already derivable from the existing ramps, all checkable by the existing
-contract. It should not be left as a known inconsistency.
+**This is the cheapest Partial in the document to close:** four tokens per family,
+sixteen in total, all already derivable from the existing ramps, all checkable by the
+existing contract. It should not be left as a known inconsistency.
 
+Note also that only the accent family's text is contrast-checked against every status
+surface. `warning-text` on `warning-bg` is *not* a declared pair, because warning's
+filled background is mid-lightness and the pairing failed during Phase 1. The
+components work around it by using `warning-bg-subtle` for surfaces and `warning-bg`
+only for fills with no text. That ceiling is real and is recorded here rather than
+hidden.
 
-A token scoped to one component, overriding the semantic layer for that component only.
+### 10. Interactive state ramp — Partial
 
-- **Us:** none. No `--fc-button-*`, no per-component colour token exists.
-- **Primer:** the largest implementation in production. The compiled functional theme
-  contains `--button-primary-bgColor-active`, `--button-primary-bgColor-hover`,
-  `--button-primary-bgColor-disabled`, `--control-checked-bgColor-*`,
-  `--controlKnob-bgColor-*`, `--counter-bgColor-*`, `--avatarStack-fade-bgColor-*`.
-- **Carbon** ships a documented component-token table per component.
-- **M3** has `md.comp.*`; **Spectrum** separates global and component tokens by
-  directory.
+The hover/active/selected/disabled family, treated separately from status because these
+are *states of one surface* rather than parallel families.
 
-**This is a deliberate omission, and it is the most debatable choice in the system.**
-`docs/ARCHITECTURE.md` gives the reason: per-layer distribution, so "an application that
-has built its own components does not need ours", plus zero-specificity reset and base
-layers so a component class always wins. A component token layer would undercut both --
-it moves decisions from the cascade into the token table.
+| Subfeature | Us | Radix | Carbon | Primer | Tailwind |
+| --- | --- | --- | --- | --- | --- |
+| Rest | via surface ladder | step 3 | `$background` | `-rest` | base colour |
+| Hover | `accent-bg-hover`, `bg-muted` | step 4 | `$background-hover` | `-hover` | `hover:` |
+| Active | `accent-bg-active`, `bg-subtle` | step 5 | `$background-active` | `-active` | `active:` |
+| **Selected** | **no token** | step 5 | `$background-selected` | `-selected` | `aria-selected` |
+| **Disabled** | **opacity only** | — | `$background-disabled` | `bgColor-disabled` | `disabled:` |
 
-The cost is real and should be recorded rather than argued away. A consumer who wants
-"the primary button is blue, not accent" currently cannot express it in tokens; they
-must author CSS in `fc.overrides`. For a system whose stated audience includes
-multi-brand product teams, that is a genuine limitation, and Primer's Button token set
-is the concrete example of what is being traded away. It belongs on the roadmap as an
-explicit decision to revisit, not as a permanent principle.
+Radix encodes the whole ramp as *scale steps 3, 4, 5*, which is the cleanest statement of
+the idea in the set: hover is literally "one step further from the background."
 
-| 20. Syntax role | Shipped | 25 tokens, 17 roles; 6 declared contrast pairs |
-| 21. ANSI role | Shipped | 21 tokens; 3 declared contrast pairs |
-| 22. Diff role | Shipped | Added/removed as surface *and* foreground, not surface alone |
-| 23. Machine-readable state | Shipped | 8 `data-fc-*` attributes, AGENTS.md contract |
+Two real gaps. **Selected** has no token at all — the data grid styles selection and the
+menu styles checkmarks, but both reach for a surface outside the vocabulary.
+**Disabled** is expressed as `--fc-opacity-disabled: 0.55` composited over whatever it
+sits on, which means a disabled element's contrast is not a declared pair and therefore
+not checked. Primer's `fgColor-disabled` and `bgColor-disabled` exist precisely so the
+disabled state is a colour, and therefore verifiable.
 
-**Shipped: 17. Partial: 4. Absent: 2.**
+The opacity approach is defensible for a control that must still show its disabled
+*identity* — a destructive button that stops looking destructive invites the user to keep
+trying. It is not defensible as the *only* mechanism, because "0.55 of anything" is
+below 3:1 against nothing in particular. A disabled control is exempt from WCAG contrast,
+so this is a legality question rather than an accessibility one; but it does mean the
+system cannot state what a disabled control looks like, only how transparent it is.
 
-The two Absent rows are the substantive findings, and both are discussed in
-[Gaps](#gaps-that-are-actually-gaps).
+### 11. Inverse surface — Shipped
 
-Four collisions in that table are worth naming explicitly, because getting them wrong is
-how a design system rots:
+`bg-inverse` plus its own two-token foreground ramp. Carbon, Primer and M3 all ship the
+surface; only GOV.UK treats the secondary-on-inverse case explicitly. Our
+`text-inverse-muted` exists because reuse measured 1.8:1.
 
-- **Surface (4) and layer order (18) are unrelated** despite sharing the word "layer".
-  One is a background ramp, the other is a stacking scale. Carbon uses `$layer-01` for
-  the first and `$zIndex` for the second; conflating them is common and wrong.
-- **Boundary ladder (6) and non-text boundary (7) are different contracts.** The first
-  is decorative separation. The second carries WCAG 1.4.11 at 3:1 against its
-  adjacent background. Merging them means either decorative borders that fail a
-  contrast requirement, or focusable controls whose outlines are decoration.
-- **Focus indicator (8) is two tokens, not one.** Ring colour and ring offset are
-  separate because a single-colour ring disappears on a same-coloured component.
-- **Status family (9) and brand accent (12) are not the same axis.** Accent is one
-  family with a full state ramp; status has four families. Primer's
-  `bgColor-accent-muted` and `bgColor-success-muted` are different tokens for the same
-  reason.
+### 12. Brand accent — Shipped
 
-library, 500+ props, and the only one with a `--motionOK` custom-media convention),
-**GOV.UK Design System** (functional colour via a Sass *function*, which forbids
-hand-copying hex, and the only serious tints-and-shades alternative to a numeric ramp),
-and **Tokens Studio** (the de facto token pipeline, and the reason multi-theme token
-*sets* are a category at all).
+Six tokens — the most completely specified single family in the system, and the one used
+by the widest surface area (link, primary button, focus ring, active nav).
 
-Semantic UI was considered and excluded. It is the only library here whose name matches
-the request, and it is unmaintained, jQuery-coupled, and ships no token layer. Including
-it would have meant scoring a project on intent rather than implementation.
+`accent-bg`, `accent-bg-hover`, `accent-bg-active`, `accent-bg-subtle`, `accent-text`,
+`accent-border`. Accent is `accent[600]` in light and `accent[400]` in dark, with the
+hover and active steps inverting direction in the dark scheme — hover goes *lighter*,
+not darker — because a dark scheme's accents sit at the other end of the ramp.
 
-# Semantic coverage
+**Multi-brand is not implemented.** Tokens Studio, Radix Themes, Fluent and Primer all
+support a consumer swapping the brand ramp and getting a coherent system. Here a
+consumer can remap the 42 semantic tokens by hand, but nothing generates a correct
+alternative brand. Tokens Studio calls this a "theme set," and it is the single most
+requested capability in the token-tooling world. We are close — the semantic layer is
+already the correct seam — but the tooling to exploit it does not exist.
 
-What the rest of the design-system world means by "semantic", mapped onto what this
-system means by it, feature by feature and subfeature by subfeature.
+### 13. Scheme — Shipped
 
-This document exists because "semantic CSS" is not one idea. Ten widely-used systems
-use the word for at least four different things, and most of them use it for a fifth
-thing that is not a CSS feature at all. Comparing them line by line produces noise.
-Comparing them through a shared vocabulary produces the gap list at the bottom of this
-file, which is the only part anyone actually acts on.
+`light-dark()` for the values, `color-scheme` for the toggle, `[data-fc-theme]` for
+consumer override. No JavaScript, no duplicated stylesheet, one declaration switches 91
+tokens.
 
-**Nothing here is aspirational.** Every status is checked against the working tree.
-Where a claim in another `docs/` file disagrees with the code, this document says so
-and names the file.
+**This is better than most of the set.** Radix requires a `.dark` class on `<body>` or a
+parent and ships separate `*-dark.css` files. Spectrum needs `.theme-dark`. Primer needs
+`[data-color-mode]` plus `[data-light-theme]`. Carbon ships four separate theme tiers.
+Tailwind needs a `dark:` variant plus either a media query or a custom variant.
+`light-dark()` collapses all of that into the value itself, which is the correct level
+for the concern.
 
----
+The cost of `light-dark()` is that it needs `color-scheme` set correctly, and that
+declaration must live in exactly one layer. `src/css/base.css` carries a long comment
+recording the bug: `color-scheme` was declared in `fc.base` as well as `fc.tokens`, base
+is ordered later at equal specificity, and the theme switcher silently did nothing —
+while still responding to clicks. The rule now lives in the tokens layer alone.
 
-## 1. Method
+### 14. High-contrast scheme — Partial
 
-- Ten libraries surveyed. Each one's token taxonomy was read from its own
-  documentation rather than from memory; the source URL is in the table.
-- Features that mean the same thing under different names were collapsed into
-  **one canonical name** (§3) before any status was assigned. Assigning a status
-  per library and then trying to merge produces a comparison nobody can read.
-- Status was assigned against `src/tokens/`, `src/css/`, `dist/tokens.css`, and the
-  test suite. Not against documentation. Where the two disagree, the disagreement
-  is itself the finding (§9).
-- Subfeatures are listed separately from main features because most gaps in this
-  ecosystem are subfeature gaps. A system with a spacing scale and no tracking scale
-  does not have "typography"; it has most of typography.
+| Subfeature | Us | Radix | Carbon | Fluent 2 | M3 | Primer |
+| --- | --- | --- | --- | --- | --- | --- |
+| `forced-colors` handling | **all 10 components** | yes | yes | yes | yes | yes |
+| HC token scheme | **no** | yes | `g100` | yes | contrast levels | yes |
+| Opt-in HC toggle | no | yes | yes | yes | yes | yes |
+| Colour-vision modes | no | no | no | no | no | yes |
 
-### Status legend
+Every one of our ten components has a `@media (forced-colors: active)` block, and the
+`forced-colors` lint rule makes omitting one a build failure. That is the *forced* half
+of high contrast — the OS overrides your palette — and we do it completely.
 
-| | Meaning |
-| --- | --- |
-| **Done** | Implemented, covered by a test or a lint rule, and documented. |
-| **Partial** | Works for the common case; the ceiling is documented rather than hidden. |
-| **Absent** | Not implemented. Not a claim about priority. |
-| **Declined** | Decided against on purpose, with a reason. Not a gap. |
+What we do not have is the *authored* half: a third set of token values that a consumer
+opts into. Primer ships six (`light-high-contrast`, `dark-high-contrast`, plus
+tritanopia and protanopia-deuteranopia variants — visible throughout `diffBlob.json5`),
+Carbon ships `g100`, M3 ships contrast levels, Radix ships high-contrast scales. These
+serve people whose contrast needs are not met by either of our two schemes.
 
----
+`prefers-contrast: more` is also unhandled. It is a separate mechanism from `forced-colors`
+and would need its own token tier. Note this is the same gap as the missing theme sets
+in entry 12, seen from a different angle: both want a third value per token.
 
-## 2. The ten libraries
+### 15. Composite type style — Absent
 
-| # | Library | Model | Tier vocabulary | Source |
+A named role that bundles size, weight, line height and tracking — `body-small`,
+`title-medium`, `md-typescale-headline-small`.
+
+- **Us:** scales only. `fontSize` (12 steps), `fontWeight` (4), `lineHeight` (5),
+  `fontFamily` (2). `base.css` composes roles per element — `h1` through `h6`, `p`,
+  `code` — but nothing is named or reusable outside that file.
+- **M3** has `md.typescale.*` as first-class tokens. **Fluent** has
+  `FontSize.*`/`FontWeight.*` groupings. **Primer** has `typography.*` under functional.
+  **Polaris** has `text-*` composite tokens. All four treat the role as the unit.
+
+**What it costs.** The system cannot express "this paragraph uses the *body-small*
+role." An application with a defined type ramp — most product teams have one, and design
+review enforces it — cannot adopt ours without re-deriving the mapping. Combined with the
+missing component tokens (entry 3), this is the second place where the "everything is a
+scale, nothing is a role" position makes the system easy to extend and hard to adopt.
+
+Honest summary: the same principle that makes our tokens auditable makes them
+insufficient for a product team with a type ramp and a brand system. That is a
+legitimate trade for a foundation library, but `docs/COMPONENTS.md` should state it as a
+limitation rather than leaving a consumer to discover it.
+
+The related subfeature is a **tracking scale**. There is no `letterSpacing` token group at
+all. `base.css` applies `letter-spacing: -0.01em` to `h5`/`h6` with a comment explaining
+that letter-spacing alone misbehaves in scripts without word spacing — the right instinct,
+expressed as a literal instead of as a token.
+
+### 16-17. Measurement and target size — Shipped
+
+`size-content-max: 75ch`, `size-measure: 65ch`, `size-target-min: 1.5rem`,
+`size-target-comfortable: 2.5rem`. Applied in `base.css` to `body` (so it constrains
+prose without constraining full-bleed layouts) and to interactive components.
+
+GOV.UK and Pico both treat measure as a first-class concern with a named token; most
+others do not. WCAG 2.2's 24x24 target minimum is matched exactly.
+
+### 18. Layer order — Shipped
+
+Nine steps: `0`, `base`, `raised`, `sticky`, `dropdown`, `overlay`, `modal`, `popover`,
+`toast`. The `z-index-scale` lint rule rejects any raw `z-index` value, so `z-index: 9999`
+cannot enter the codebase. Carbon, Primer and Fluent all ship equivalent closed scales.
+
+Distinct from the surface ladder in entry 4, and deliberately so — see the collisions
+list above.
+
+### 19. Reduced motion — Shipped
+
+A global `prefers-reduced-motion` block in the reset layer sets
+`animation-duration`/`transition-duration` to `0.01ms` and `scroll-behavior` to `auto`,
+plus the `reduced-motion` lint rule. The comment explains why the block exists even
+before any animated component ships: so the media query is guaranteed present in the
+bundle. Six components add their own handling.
+
+Open Props ships `--motionOK` as a custom media query; everything else uses the standard
+preference. No library in the set treats "reduced motion" as a *token*, which is the
+right call — the correct behaviour is to collapse to zero rather than swap values.
+
+### 20-22. Syntax, ANSI and diff roles — Shipped
+
+**The token families most of the field omits.** Of the ten libraries, Primer ships diff
+(`diffBlob`) and a minimal highlight token; Radix, Pico and Bulma ship none; the others
+carry syntax colours only inside their own editor components.
+
+| Family | Our tokens | Contrast pairs | Isolated namespace | Primer equivalent |
 | --- | --- | --- | --- | --- |
-| 1 | **Primer Primitives** (GitHub) | Semantic-first, accessibility-literal | `base` → `functional` → `component` | [primer.style](https://primer.style/primitives) |
-| 2 | **Material Design 3** (Material Web) | Token-first, scheme-driven | `ref.*` → `sys.*` → `comp.*` | [github.com/material-components/material-web](https://github.com/material-components/material-web) |
-| 3 | **Radix Colors** | Scale-first | 12 unnamed-by-role steps | [radix-ui.com/colors](https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale) |
-| 4 | **IBM Carbon** | Semantic-first, AI-augmented | `core` → `component` → `ai` | [carbondesignsystem.com/elements/color/tokens](https://carbondesignsystem.com/elements/color/tokens/) |
-| 5 | **Microsoft Fluent 2** | Two-layer | `global` → `alias` | [fluent2.microsoft.design/design-tokens](https://fluent2.microsoft.design/design-tokens) |
-| 6 | **Adobe Spectrum CSS** | Component-first | `global` → `component` | [github.com/adobe/spectrum-css](https://github.com/adobe/spectrum-css) |
-| 7 | **Shopify Polaris** | Flat groups | group → component, `--p-` prefix | [github.com/Shopify/polaris](https://github.com/Shopify/polaris) |
-| 8 | **Tailwind CSS v4** | Utility-API-first | one `theme` namespace, no tiers | [tailwindcss.com/docs/theme](https://tailwindcss.com/docs/theme) |
-| 9 | **Chakra UI v3** | Condition-first | `semantic` tokens + named `conditions` | [chakra-ui.com](https://chakra-ui.com/docs/theming/customization/conditions) |
-| 10 | **Pico CSS** | Element-first, classless | one flat `--pico-*` namespace | [picocss.com/docs](https://picocss.com/docs) |
+| Syntax (`--fc-code-*`) | 25 | 6 | yes | `highlight.*` (bg only) |
+| ANSI (`--fc-term-*`) | 21 | 3 | yes | none found |
+| Diff (within `fc-code-*`) | 4 | via syntax | yes | `diffBlob.*` |
 
-Three more were read while mapping and are cited where they are the clearest
-example of a single subfeature, because they are unusually explicit about it:
+Three design decisions here are worth recording, because each was forced by a measured
+failure rather than chosen up front.
 
-- **GOV.UK Design System** — the strictest functional-colour vocabulary of any
-  mature system, and the only one that forbids consumers from touching hex values
-  outright. [design-system.service.gov.uk/styles/colour](https://design-system.service.gov.uk/styles/colour/)
-- **Open Props** — a CSS-variable library with no component layer at all, useful as
-  the lower bound of what "semantic" costs and delivers. [open-props.style](https://open-props.style/)
-- **Bulma** — Sass-first, the last major framework where semantic classes are the
-  primary API surface rather than an escape hatch. [bulma.io](https://bulma.io/)
+**Isolated namespaces.** The ANSI palette defines `bg`, `fg` and `bg-raised`; the app
+palette defines the same three names with different meanings. A terminal background is
+genuinely not the app canvas — a terminal emulates another program and must stay dark —
+so they cannot share a name. Syntax colours carry *syntactic* meaning rather than brand
+meaning and must not be remapped by a brand theme. The `fc-term-*` and `fc-code-*`
+prefixes exist because of this, and `compile-tokens.ts` carries a comment recording that
+the unique-name guard caught the collision rather than letting one silently overwrite
+the other.
 
-### The four meanings of "semantic" in these ten
+**A contrast contract per palette, not one contract.** `syntax.ts` and `terminal.ts` each
+declare their own pairs against their own backgrounds and are verified by the same
+`checkContrast` function, exported as a type precisely so the loop is not reimplemented
+and cannot drift. A code surface is dense, small, and read for long stretches; a colour
+that does not carry its meaning is a bug you cannot see.
 
-Before the vocabulary table, it is worth being precise about the disagreement,
-because it is the reason a naive feature comparison fails.
+**Solved, not chosen.** The syntax values were found by binary search — for each role's
+hue and chroma, the lightness whose contrast against the code background is just above
+4.5:1, then rounded away from the background so the shipped 2dp value cannot land under.
+Hand-picking produced roles at 4.44:1, invisible failures that only the contract caught.
 
-1. **Semantic tokens** — Primer, Material, Carbon, Fluent, Spectrum, Polaris,
-   Chakra. Tokens named by *role* (`bg-surface`, `$background`, `surface-container`)
-   rather than by value (`gray-100`, `Neutral3`).
-2. **Semantic classes** — Pico, Bulma, and historically Semantic UI. Class names
-   named by *meaning* (`<nav>`, `.button`) rather than by appearance
-   (`.btn-gray`, `.mt-4`). Primer's product layer and ours sit here too, but treat
-   it as one technique among several rather than the thesis.
-3. **Semantic HTML** — Pico's classless mode, Primer's accessibility posture,
-   ours. Styling `<button>` is "semantic" in that the markup carries meaning CSS
-   can respond to without inventing classes.
-4. **Machine-readable semantics** — Radix `data-state`, Chakra conditions,
-   Reakit, and ours. The DOM exposes state as attributes so that styling and
-   automation read the same source.
+Two bugs the contract caught are recorded in `syntax.ts` and are the argument for having
+one at all. The code block's boundary was pointed at the *inset* surface, so a white
+block on a near-white page measured 1.04:1 — invisible, and caught only because it was a
+declared pair. And the added and removed diff backgrounds were originally identical
+values, so a changed row rendered exactly like an unchanged one in dark mode; both passed
+contrast, because two identical backgrounds contrast identically. The contract verifies
+legibility, not distinctness, so that gap had to be closed by hand and is now called out
+in the source.
 
-The first three are styling concerns. The fourth is an interface contract, and it
-is the one where this system is furthest ahead of every library surveyed.
+### 23. Machine-readable state — Shipped
+
+The one category where this system is ahead of every library surveyed, and the only one
+that is not a CSS feature at all.
+
+- **8 documented attributes** in the `AGENTS.md` contract: `data-fc-kind`, `-id`, `-seq`,
+  `-role`, `-state`, `-ts`, `-truncated`, plus `data-fc-theme` for the scheme override.
+  22 distinct `data-fc-*` attributes appear in the codebase overall.
+- **A closed state enum**: `pending`, `queued`, `streaming`, `running`, `complete`,
+  `aborted`, `denied`, `error`. Not a free-form string.
+- **61 uses of `data-fc-state`** across the chat, tool-call and grid components.
+- **Additive**: styling never *depends* on these attributes, so the component degrades
+  correctly with no consumer attached.
+- **Truncation is always declared** — `data-fc-truncated="true"` with the full value
+  kept reachable.
+
+Radix exposes `data-state` and Chakra exposes named conditions, but both exist so the
+library's own CSS can react. None documents state as a contract for *external*
+automation. This system's stated audience includes machine consumers, and that claim is
+only credible because the attributes are a published interface rather than an
+implementation detail.
+
+The rule that keeps it honest: **never derive appearance from a class that can fall out
+of sync with the state attribute.** Six of the ten components style from
+`data-fc-state`, and the `tool-call` component carries a comment recording that its state
+glyph was chosen so the state survives greyscale, forced-colors mode, and any future
+colour scheme — i.e. so state is never carried by colour alone.
 
 ---
 
-## 3. Canonical vocabulary
+## Structure and behaviour
 
-One name per concept. The right-hand column lists what the other nine call the same
-thing, so a search of any of their documentation lands here.
+Not part of the 23-name vocabulary, because none of the ten libraries treat these as
+tokens — but they are the other half of "semantic" and belong in the same comparison.
 
-These are role-equivalences, not literal value equivalences. Where a library's
-choice is genuinely *different* rather than differently-named, the coverage table
-in §4 says so instead of quietly scoring it as a match.
-
-### 3.1 Token architecture
-
-| Canonical | Also called | Ours |
-| --- | --- | --- |
-| **Primitive** | base, global, ref, raw, palette | `src/tokens/palette.ts` — 6 OKLCH ramps × 14 steps |
-| **Semantic** | functional, alias, sys, role | `src/tokens/semantic/` — 42 color tokens + domain palettes |
-| **Component** | comp, component token, override | *no such tier* — see §7.1 |
-
-### 3.2 Surface roles
-
-| Canonical | Also called | Ours |
-| --- | --- | --- |
-| **Canvas** | app background, `$background`, `surface`, page | `bg-canvas` |
-| **Surface** | layer, container, card, `$layer-01` | `bg-surface` |
-| **Raised** | raised, elevated, `$layer-02` | `bg-raised` |
-| **Overlay** | popover, modal, dialog, flyout | `bg-overlay` |
-| **Sunken** | inset, well, gutter, trough | `bg-sunken` |
-| **Subtle** | quiet, secondary fill, `$layer-01` | `bg-subtle` |
-| **Muted** | hover fill, state fill, `$background-hover` | `bg-muted` |
-| **Inverse** | inverted, `$background-inverse`, high-contrast fill | `bg-inverse` |
-
-`Subtle` and `Muted` are the pair most systems blur together. They are listed
-separately here because they answer different questions: `Subtle` is a resting
-appearance, `Muted` is what an interaction leaves behind. Carbon keeps both
-(`$layer-01` vs `$background-hover`) and so do we.
-
-### 3.3 Foreground roles
-
-| Canonical | Also called | Ours |
-| --- | --- | --- |
-| **Foreground primary** | `$text-01`, `fg-default`, `text`, on-surface | `text-default` |
-| **Foreground secondary** | `$text-02`, `fg-muted`, `text-secondary` | `text-muted` |
-| **Foreground tertiary** | `$text-03`, placeholder, `text-tertiary`, `fg-subtle` | `text-subtle` |
-| **Foreground inverse** | `$text-inverse`, on-inverse | `text-inverse` |
-| **Foreground inverse secondary** | `$text-inverse-secondary`, `text-inverse-muted` | `text-inverse-muted` |
-| **Foreground on-solid** | `on-primary`, `$text-on-color`, step 9/10 foreground | `text-on-accent` |
-
-The first three are near-universally numbered (`-01`/`-02`/`-03` in Primer and
-Carbon, `primary`/`secondary`/`tertiary` in Fluent and Pico, `text`/`subtle`/`muted`
-in Polaris). We use `default`/`muted`/`subtle`, which is the one naming in the set
-that is shared by nobody else. See §9.1.
-
-**Foreground on-solid** deserves its own entry. It is the single most common
-dark-mode accessibility failure in this ecosystem: a solid accent fill whose
-foreground is hardcoded to white. Radix solves it by publishing, per scale, which
-of step 9 or step 10 is designed for a dark foreground. Material solves it with
-`on-primary`. We solve it with a per-scheme token, which is the same idea under a
-name that says what it is for.
-
-### 3.4 Stroke and focus roles
-
-| Canonical | Also called | Ours |
-| --- | --- | --- |
-| **Stroke default** | `$border-subtle-01`, `border-default`, divider | `border-default` |
-| **Stroke subtle** | `$border-subtle-01`, hairline, separator | `border-subtle` |
-| **Stroke strong** | `$border-strong-01`, `stroke-strong` | `border-strong` |
-| **Control boundary** | `$focus` (Carbon), `border-control`, `outline` | `border-interactive` |
-| **Focus ring** | `outline-focus`, `$focus-outline`, focus ring | `focus-ring` |
-| **Focus offset** | `$focus-inset`, ring offset, halo | `focus-ring-offset` |
-
-The last three are kept apart on purpose. Several systems collapse "the boundary
-that satisfies WCAG 1.4.11" and "the indicator shown on keyboard focus" into one
-token. Primer separates `border.default` from `outline.focus`; Fluent separates
-`StrokeControl` from `StrokeFocus`. They are different requirements with different
-consequences, and merging them makes one of the two impossible to express.
-
-### 3.5 Accent and status roles
-
-| Canonical | Also called | Ours |
-| --- | --- | --- |
-| **Accent fill** | `$background-brand`, brand-bg, primary | `accent-bg` |
-| **Accent fill hover** | `$background-brand-hover` | `accent-bg-hover` |
-| **Accent fill active** | `$background-brand-active` | `accent-bg-active` |
-| **Accent subtle fill** | `$background-brand-hover`, subtle | `accent-bg-subtle` |
-| **Accent text** | `$link`, link-fg, brand text | `accent-text` |
-| **Accent stroke** | `$focus`, brand border | `accent-border` |
-| **Success / Warning / Danger / Info** | positive, caution, error/critical, informative | same names — universal |
-
-The status vocabulary is the one place the ecosystem is already unanimous, and the
-only naming we inherited without having to choose.
-
-### 3.6 Scale vocabulary
-
-Every canonical name from §3, with status. This is the table to argue with.
-
-### 4.1 Token architecture and colour
-
-| Feature | Subfeature | Status | Where |
+| Area | Subfeature | Status | Where |
 | --- | --- | --- | --- |
-| **Primitive** | OKLCH ramps | **Done** | `palette.ts`, 6 ramps × 14 steps |
-| | Completeness, monotonic lightness, hue, gamut | **Done** | `tests/contrast.test.ts` |
-| **Semantic** | Surface roles (8) | **Done** | 8 `bg-*` tokens |
-| | Foreground roles (6) | **Done** | 6 `text-*` tokens |
-| | Stroke roles (4) | **Done** | `border-subtle/default/strong/interactive` |
-| | Accent roles (6) | **Done** | `accent-*` incl. hover + active |
-| | Status families ×4 | **Done** | `success-`, `warning-`, `danger-`, `info-` |
-| | Per-scheme value on every token | **Done** | 91 of 165 tokens are `light-dark()` |
-| | Contrast contract enforced at build | **Done** | 21 pairs × 2 schemes, `checkContrast` |
-| | Hex lockdown (GOV.UK-style) | **Done** | `no-color-literals` lint rule |
-| **Component tier** | per-component overrides | **Absent** | deliberate — §7.1 |
-| | Theme-set / multi-brand mechanism | **Partial** | remap `--fc-color-*` by hand |
-| | Seed-based / dynamic colour | **Absent** | Material You equivalent; unplanned |
-| **Domain palettes** | Syntax highlighting (25 tokens) | **Done** | `semantic/syntax.ts`, 6 pairs |
-| | Terminal ANSI (21 tokens) | **Done** | `semantic/terminal.ts`, 3 pairs |
-| | Diff add / remove | **Done** | `syntax.ts` bg + fg |
-| | Data-viz categorical ramp | **Absent** | none of the ten ship one either |
-| **Scheme** | Light / dark | **Done** | `light-dark()`, `color-scheme` |
-| | Explicit override attribute | **Done** | `[data-fc-theme]` |
-| | High-contrast token tier | **Absent** | §7.6 |
-| | `prefers-contrast` | **Absent** | §8.7 |
+| **Cascade layers** | Declared order, 7 layers | Shipped | `index.css`, published as `layers.css` |
+| | Zero-specificity reset + base | Shipped | `:where()` throughout, enforced by lint |
+| | Consumer override layer | Shipped | `fc.overrides`, declared and empty |
+| | Per-layer distribution | Shipped | 12 published files |
+| **Reset** | Margins, `box-sizing`, media defaults | Shipped | `reset.css` |
+| | `[hidden]`, `[role=list]`, `autofill` | Shipped | `reset.css` |
+| | Tabular figures via `[data-numeric]` | Shipped | `reset.css` |
+| **Base** | Headings, body, lists, tables, forms | Shipped | `base.css`, ~30 element rules |
+| | Links, focus-visible, `::selection` | Shipped | `base.css` |
+| | Usable classless baseline | Shipped | zero classes renders legibly |
+| **Layout** | stack, cluster, sidebar | Shipped | `layout.css`, 10 primitives |
+| | Intrinsic grid, container, center | Shipped | `grid-auto`, `container`, `center` |
+| | Truncate, line-clamp | Shipped | `truncate`, `clamp-2/3` |
+| | Scroll region | Shipped | `scroll-x` |
+| | RTL by construction | Shipped | logical properties only |
+| | `min-inline-size: 0` overflow fix | Shipped | applied to all 3 primitives |
+| **Components** | 10 shipped | Shipped | button, chat, tool-call, editor, menu, grid, webview, terminal, code, diff |
+| | Form controls | Absent | Phase 3; select is next |
+| | Overlays (dialog, tooltip, toast) | Absent | Phase 3 |
+| | Navigation (tabs, breadcrumb) | Absent | Phase 3 |
+| **Accessibility** | Keyboard, focus-visible, skip link | Shipped | base + `.fc-u-visually-hidden` |
+| | forced-colors per component | Shipped | 14 blocks across 10 files |
+| | Contrast verified in both schemes | Shipped | 30 declared pairs total |
+| | Target size | Shipped | token + button/grid |
+| | `prefers-reduced-motion` | Shipped | reset + 6 components |
+| | Live-region politeness | Absent | needs a toast component |
+| | APCA alongside WCAG | Absent | open question 2, `PLAN.md` |
+| **Behaviour** | JS bindings | Shipped | `src/js/`, 8 modules |
+| | Optional WASM accelerator | Shipped | 5 crates, WASM/JS parity tested |
+| | highlight / diff / markdown | Shipped | 6 languages, Myers, round-trip |
 
-### 4.2 Non-colour scales
+Three of these deserve a note because they are places the field is *behind*, and being
+ahead of a gap is not the same as being ahead of a well-served area.
 
-| Feature | Subfeature | Status | Where |
-| --- | --- | --- | --- |
-| **Spacing** | rem-based scale | **Done** | 17 steps, 4px base |
-| **Type** | size scale | **Done** | 12 steps |
-| | composite type styles | **Absent** | §8.2 |
-| | tracking scale | **Absent** | §8.2 |
-| | family roles | **Partial** | 2 (sans, mono); Material has 6 |
-| | `text-wrap: balance` on headings | **Done** | `base.css` |
-| | line height, weight | **Done** | 5 + 4 steps |
-| | measure / content max | **Done** | `75ch`, `65ch` |
-| | locale-sensitive type rules | **Done** | `INTERNATIONALIZATION.md` |
-| **Shape** | radius scale | **Done** | 6 steps |
-| | stroke scale | **Done** | 4 steps |
-| **Elevation** | shadow scale | **Partial** | 2 steps; others ship 6+ — §9.3 |
-| | z-index scale | **Done** | 9 named steps, linted closed |
-| | opacity scale | **Done** | 4 steps incl. scrim |
-| **Sizing** | target size | **Done** | `min`, `comfortable` |
-| | control size scale | **Absent** | §8.3 |
-| | density modes | **Absent** | open question 4, `PLAN.md` |
-| **Breakpoints** | breakpoint scale | **Absent** | §8.4 — deliberate |
-| | container queries | **Absent** | open question 3, `PLAN.md` |
-| **Motion** | duration scale | **Done** | 4 steps |
-| | easing set | **Done** | 4 curves, enter/exit paired |
-| | transition recipe token | **Absent** | §8.5 |
-| | spring / expressive motion | **Absent** | Material Expressive equivalent |
-| | reduced motion | **Done** | reset block + 6 components |
+**Zero runtime dependencies.** No framework, no preprocessor, no transpiler; Node runs
+the TypeScript directly. Only reachable because tokens are compiled from TypeScript
+rather than Sass — a Sass pipeline would make the dependency-free property impossible
+to keep.
 
-### 4.3 Structure, semantics, accessibility
+**Enforced RTL.** 30 physical longhands are rejected by the `logical-properties` lint
+rule, so there is no `[dir="rtl"]` block anywhere in the codebase. There is nothing to
+override because nothing physical was written. Pico ships an RTL stylesheet, Primer ships
+direction overrides, Bulma ships an RTL mixin. All three are maintaining a second
+stylesheet for a problem this system does not have.
 
-| Feature | Subfeature | Status | Where |
-| --- | --- | --- | --- |
-| **Layers** | declared order, 7 layers | **Done** | `index.css` |
-| | zero-specificity reset + base | **Done** | `:where()` throughout, linted |
-| | consumer override layer | **Done** | `fc.overrides`, empty by default |
-| | per-layer distribution | **Done** | 12 published files |
-| **Reset** | margins, `box-sizing`, media defaults | **Done** | `reset.css` |
-| | `[hidden]`, `[role=list]`, `autofill` | **Done** | `reset.css` |
-| | tabular figures via `[data-numeric]` | **Done** | `reset.css` |
-| **Base** | headings, body, lists, tables, forms | **Done** | `base.css`, ~30 rules |
-| | links, focus-visible, `::selection` | **Done** | `base.css` |
-| | usable classless baseline | **Done** | zero classes renders legibly |
-| **Layout** | stack, cluster, sidebar | **Done** | `layout.css` |
-| | intrinsic grid, container, center | **Done** | `grid-auto`, `container`, `center` |
-| | truncate, line-clamp | **Done** | `truncate`, `clamp-2/3` |
-| | scroll region | **Done** | `scroll-x` |
-| | RTL by construction | **Done** | logical properties only |
-| | `min-inline-size: 0` overflow fix | **Done** | applied to all 3 primitives |
-| **Components** | 10 shipped | **Done** | button, chat, tool-call, editor, menu, grid, webview, terminal, code, diff |
-| | form controls | **Absent** | Phase 3; select is next |
-| | overlays | **Absent** | Phase 3 |
-| | navigation | **Absent** | Phase 3 |
-| **Accessibility** | keyboard, focus-visible, skip link | **Done** | base + `.fc-u-visually-hidden` |
-| | forced-colors per component | **Done** | 14 blocks across 10 files |
-| | target size | **Done** | token + button/grid |
-| | contrast verified in both schemes | **Done** | 30 pairs total |
-| | `prefers-reduced-motion` | **Done** | reset + 6 components |
-| | live-region politeness | **Absent** | needs a toast component |
-| | APCA alongside WCAG | **Absent** | open question 2, `PLAN.md` |
-| **DOM contract** | `data-fc-state` machine-readable | **Done** | 61 uses, 8 valid values |
-| | `kind/id/seq/role/ts/truncated` | **Done** | all six declared, all used |
-| | additive, never styling-dependent | **Done** | documented in `AGENTS.md` |
-| **Behaviour** | JS bindings | **Done** | `src/js/`, 8 modules |
-| | optional WASM accelerator | **Done** | 5 crates, parity tested |
-| | highlight / diff / markdown | **Done** | 6 languages, Myers, round-trip |
+**Demonstrable, not aspirational.** `demo/` serves the real TypeScript sources with
+Node's `stripTypeScriptTypes`, so "no build step" is checkable rather than claimed. The
+same discipline produced three regression tests, because a demo is a test: the
+`.fc-grid` name collision between the layout primitive and the data grid, the
+`grid-auto-columns` implicit-track mistake, and the `color-scheme` layer-order bug were
+each invisible to unit tests and obvious the moment real components rendered.
 
 ---
-
-| --- | --- | --- |
-| **Stroke default** | `$border-subtle-01`, `border-default`, divider | `border-default` |
-| **Stroke subtle** | `$border-subtle-01`, hairline, separator | `border-subtle` |
-| **Stroke strong** | `$border-strong-01`, `stroke-strong` | `border-strong` |
-| **Control boundary** | `$focus` (Carbon), `border-control`, `outline` | `border-interactive` |
-| **Focus ring** | `outline-focus`, `$focus-outline`, focus ring | `focus-ring` |
-| **Focus offset** | `$focus-inset`, ring offset, halo | `focus-ring-offset` |
-
-The last three are kept apart on purpose. Several systems collapse "the boundary
-that satisfies WCAG 1.4.11" and "the indicator shown on keyboard focus" into one
-token. Primer separates `border.default` from `outline.focus`; Fluent separates
-`StrokeControl` from `StrokeFocus`. They are different requirements with different
-consequences, and merging them makes one of the two impossible to express.
-
-### 3.5 Accent and status roles
-
-| Canonical | Also called | Ours |
-| --- | --- | --- |
-| **Accent fill** | `$background-brand`, brand-bg, primary | `accent-bg` |
-| **Accent fill hover** | `$background-brand-hover` | `accent-bg-hover` |
-| **Accent fill active** | `$background-brand-active` | `accent-bg-active` |
-| **Accent subtle fill** | `$background-brand-hover`, subtle | `accent-bg-subtle` |
-| **Accent text** | `$link`, link-fg, brand text | `accent-text` |
-| **Accent stroke** | `$focus`, brand border | `accent-border` |
-| **Success / Warning / Danger / Info** | positive, caution, error/critical, informative | same names — universal |
-
-The status vocabulary is the one place the ecosystem is already unanimous, and the
-only naming we inherited without having to choose.
-
----
-### 3.6 Scale vocabulary
-
-| Canonical | Also called | Ours |
-| --- | --- | --- |
-| **Spacing scale** | spacing, inset, size, gap | `space` — 17 steps |
-| **Type scale** | font-size, text scale, t-shirt sizes | `fontSize` — 12 steps |
-| **Type style** | typescale, composite type, `functional/typography` | *absent* — see §8.2 |
-| **Line height** | leading | `lineHeight` — 5 steps |
-| **Weight scale** | font-weight, weight | `fontWeight` — 4 steps |
-| **Family scale** | typeface, font roles (Material has 6) | `fontFamily` — 2 steps |
-| **Tracking scale** | letter-spacing, tracking | *absent* — see §8.2 |
-| **Radius scale** | corner, border-radius | `borderRadius` — 6 steps |
-| **Stroke scale** | stroke-width, border-width | `borderWidth` — 4 steps |
-| **Elevation scale** | shadow, elevation, `box-shadow` | `shadow` — **2 steps**, see §9.3 |
-| **Stacking scale** | z-index, layer, order | `zIndex` — 9 steps |
-| **Opacity scale** | alpha, overlay | `opacity` — 4 steps |
-| **Control size scale** | size, control height, density | *absent* — see §8.3 |
-| **Target size** | hit area, minimum touch | `size-target-min` |
-| **Measure** | content-max, line length | `size-content-max`, `size-measure` |
-| **Breakpoint scale** | breakpoints, screens, min-width | *absent* — see §8.4 |
-| **Duration scale** | duration, transition time | `duration` — 4 steps |
-| **Easing set** | easing, curve, timing | `easing` — 4 curves |
-| **Transition recipe** | transition shorthand, motion scheme | *absent* — see §8.5 |
-| **Gradient scale** | gradient, mesh | *absent* |
-
-### 3.7 Environment adaptation
-
-| Canonical | Also called | Ours |
-| --- | --- | --- |
-| **Scheme switching** | dark mode, theme, appearance, color scheme | `light-dark()` + `color-scheme` + `[data-fc-theme]` |
-| **High-contrast scheme** | HC, forced theme, contrast theme | *absent* as a token tier |
-| **Forced-colors adaptation** | forced colors, HCM, Windows high contrast | `@media (forced-colors: active)`, all 10 components |
-| **Reduced motion** | motion preference | global reset block + 6 component blocks |
-| **Contrast preference** | `prefers-contrast`, increased contrast | *absent* |
-| **Reduced data** | `prefers-reduced-data` | *absent* |
-| **Reduced transparency** | `prefers-reduced-transparency` | *absent* |
-| **Direction-agnostic layout** | RTL support, logical properties | 30 physical longhands banned by the linter |
-| **Bidi isolation** | `unicode-bidi`, `<bdi>`, mixed-direction runs | *absent* as a utility — see §8.6 |
-| **Vertical writing** | `writing-mode`, tategaki | declined, documented |
-
-### 3.8 Structural and semantic layers
-
-| Canonical | Also called | Ours |
-| --- | --- | --- |
-| **Reset** | normalize, sanitize | `fc.reset`, zero-specificity via `:where()` |
-| **Base** | element defaults, base styles, classless | `fc.base`, zero-specificity via `:where()` |
-| **Layout primitive** | stack, cluster, grid, layout primitive | `fc.layout` — 8 primitives |
-| **Component** | module, pattern, block | `fc.components` — 10 components |
-| **Utility** | helper, escape hatch | `fc.utilities` — 27 classes |
-| **Override** | overrides, patch layer | `fc.overrides` — declared, empty |
-| **Cascade layer order** | layers, at-rules | 7 layers, documented precedence |
-| **Machine-readable state** | `data-state`, conditions, `data-*` contract | `data-fc-*` — 19 attributes |
-| **Live-region politeness** | `aria-live`, toast politeness | *absent* — no toast component |
-
----
-
-

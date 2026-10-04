@@ -1,0 +1,30 @@
+# fc-diff -- line diffing for review surfaces.
+#
+# Myers' O(ND) algorithm, matching src/js/diff.ts exactly. This crate is the
+# algorithm *only*: it never touches the DOM, so it is safe to run in WASM and
+# trivial to run natively.
+#
+# Deliberately free of `js-sys` and `serde-wasm-bindgen`. Every other crate in
+# the workspace links them, and that single choice is what inflates each module
+# to ~10x its budget: js-sys adds roughly 302 KB the moment it is used, and LTO
+# cannot remove it (see Phase A in docs/PLAN.md). The crossing here is primitives
+# in, primitives out -- a flat array of numbers -- so this crate should land
+# under 30 KB and demonstrate the pattern the rest of the workspace needs to
+# reach.
+
+[package]
+name = "fc-diff"
+description = "Line diffing (Myers) for future-css review surfaces"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+fc-core = { path = "../fc-core" }
+wasm-bindgen = { workspace = true }

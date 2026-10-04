@@ -359,6 +359,12 @@ describe("markdown", () => {
     assert.equal(parseLinkTarget("[docs](https://x.dev)"), "https://x.dev");
     assert.equal(parseLinkTarget("no link here"), null);
 
+    // A title must not be folded into the URL: that yields a broken link rather
+    // than an obviously-wrong one, so it would be pasted without complaint.
+    assert.equal(parseLinkTarget('[docs](https://x.dev "API")'), "https://x.dev");
+    assert.equal(parseLinkTarget("[docs](<https://x.dev>)"), "https://x.dev");
+    assert.equal(parseLinkTarget("[docs](/rel/path)"), "/rel/path");
+
     const { spans, text } = parseInline("see [docs](https://x.dev) now");
     assert.deepEqual(spans, [{ mark: "link", start: 4, end: 8 }]);
     // The label survives; the destination is the documented lossy part.

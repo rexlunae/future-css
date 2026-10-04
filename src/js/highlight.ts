@@ -227,22 +227,20 @@ const rust = grammar(
     ["comment", "//[^\\n]*|/\\*[\\s\\S]*?\\*/"],
     ["string", "r?#*\"(?:[^\"\\\\]|\\\\.)*\"#*|\"(?:[^\"\\\\\\n]|\\\\.)*\""],
     /*
-     * `'a` is a lifetime in Rust, not the start of a character literal, and it
-     * is far more common in real source. Listing it first is the difference
-     * between readable output and a screenful of `char` tokens.
+     * Ordering is the disambiguation, and it is the whole mechanism.
      *
-     * The negative lookahead is load-bearing and deliberately narrow: a
-     * lifetime is never immediately followed by a closing quote, because that
-     * would mean we are actually looking at the opening quote of `'a'`. Without
-     * it, `let c = 'a';` matched `'a` as a lifetime and left the closing quote
-     * as stray plain text, so a char literal rendered as two wrong tokens.
+     * `char` comes first deliberately. A complete quoted literal such as `'ab'`
+     * can never be a lifetime, so letting the engine try `char` first means a
+     * lifetime never gets the chance to match the *prefix* of one.
      *
-     * An earlier attempt excluded anything followed by punctuation instead,
-     * which was too broad: it broke `'a` in `fn f<'a>(...)`, the single most
-     * common lifetime position there is. Only the quote is disqualifying.
+     * Both previous orderings were wrong in a way only a test would catch:
+     * `lifetime` first made `'a` win over `'a'`, and putting `char` first alone
+     * was not enough either, because the `lifetime` lookahead could still
+     * backtrack into a shorter match once `char` declined -- leaving `b'` as
+     * stray text. `lifetime` also carries `(?!')` as a second line of defence.
      */
-    ["lifetime", "'(?:static|_|[A-Za-z_]\\w*)(?!')"],
     ["char", "'(?:[^'\\\\\\n]|\\\\.)'"],
+    ["lifetime", "'(?:static|_|[A-Za-z_]\\w*)(?!')"],
     ["attribute", "#!?\\[[^\\]]*\\]"],
     ["number", "\\b(?:0[xX][\\da-fA-F_]+|0[bB][01_]+|0[oO][0-7_]+|\\d[\\d_]*(?:\\.\\d+)?(?:[iuf](?:8|16|32|64|128|size))?)\\b"],
     ["keyword", "\\b(?:macro_rules|struct|static|trait|union|where|while|unsafe|super|return|const|enum|extern|impl|async|await|break|continue|crate|false|fn|for|let|loop|match|mod|move|mut|pub|ref|self|Self|type|true|use|in|if|as|dyn)\\b"],

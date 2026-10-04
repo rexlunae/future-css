@@ -1,0 +1,210 @@
+/*!
+ * future-css -- code block and code editor surface
+ *
+ * Styles the reading surface for source code. The highlighting itself is a
+ * JavaScript concern (`src/js/highlight.ts`); this file owns only the surface,
+ * the gutters, and the token colors.
+ *
+ * Design constraints that shaped this:
+ *
+ *   - **The markup is an enhancement, the text is the contract.** Every token
+ *     span sits inside a single `<code>`, so the element's `textContent` is
+ *     byte-identical to the source. A copy button and a machine reader both get
+ *     the original text, and highlighting can be turned off with CSS alone.
+ *   - **No inline styles.** Roles are classes (`fc-code__tok--keyword`), so a
+ *     theme can restyle them and the CSS stays inspectable. An inline `style` per
+ *     span would make the DOM the stylesheet.
+ *   - **Wrapping is a design decision, not an inherited one.** `pre-wrap` is a
+ *     real accessibility improvement, but it makes line numbers meaningless, so
+ *     the gutter and the wrap mode are designed together.
+ */
+
+@layer fc.components {
+  /* ---- Surface ----------------------------------------------------------- */
+
+  .fc-code {
+    display: block;
+    min-inline-size: 0;
+    background-color: var(--fc-code-bg);
+    color: var(--fc-code-fg);
+    border: var(--fc-border-width-thin) solid var(--fc-code-border-default);
+    border-radius: var(--fc-radius-md);
+    /*
+     * Code carries a denser leading than prose. The document's line-height is
+     * tuned for reading sentences; code is read by shape, and loose leading
+     * blurs the line boundaries that carry the structure.
+     */
+    line-height: var(--fc-line-height-snug);
+  }
+
+  /*
+   * Wrapping is the default, deliberately. WCAG 2.2 requires content to work at
+   * 400% zoom without two-dimensional scrolling, and `pre` with `overflow-x`
+   * fails that for any line wider than the viewport. `.fc-code--scroll` opts
+   * into scrolling for the cases where column alignment genuinely matters.
+   */
+  .fc-code__source {
+    display: block;
+    padding: var(--fc-space-3) var(--fc-space-4);
+    margin: 0;
+    font-family: var(--fc-font-family-mono);
+    font-size: var(--fc-font-size-sm);
+    tab-size: 2;
+    /* `break-word` rather than `anywhere`: it breaks a long token only when it
+       would otherwise overflow, so short lines are left untouched. */
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+  }
+
+  /*
+   * `:where()` on the descendant, deliberately.
+   *
+   * Scoping a modifier to a child needs two classes in a selector, which reads as
+   * over-qualification -- and rightly so, since a bare descendant combinator
+   * raises specificity for no gain. `:where()` contributes zero, so the modifier
+   * selects *what* to style while `.fc-code__source` keeps its own single-class
+   * specificity and a consumer's override still wins. This is the same reasoning
+   * as the reset layer, applied inside a component.
+   */
+  .fc-code--scroll :where(.fc-code__source) {
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: auto;
+  }
+
+  /* ---- Chrome ------------------------------------------------------------ */
+
+  /*
+   * Optional header carrying the language name and actions. Separate from the
+   * source so the source can be copied without dragging the label along.
+   */
+  .fc-code__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fc-space-2);
+    padding: var(--fc-space-2) var(--fc-space-4);
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-code-border-default);
+    background-color: var(--fc-code-bg-subtle);
+    font-family: var(--fc-font-family-sans);
+    font-size: var(--fc-font-size-xs);
+    color: var(--fc-code-fg);
+  }
+
+  /*
+   * The language name is a real element, not a CSS `content` value. Generated
+   * content is exposed inconsistently to screen readers and cannot be selected
+   * or copied, which would make the one piece of real information unselectable.
+   */
+  .fc-code__lang {
+    font-weight: var(--fc-font-weight-medium);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* ---- Gutter ------------------------------------------------------------ */
+
+  /*
+   * Line numbers are `aria-hidden` in the markup. They are a visual index, and
+   * announcing "line 47" before each of 47 lines makes the content unusable.
+   * The source text remains the accessible content.
+   */
+  .fc-code--numbered {
+    display: grid;
+    /* One column for both halves, so the numbers and the source stay aligned. */
+    grid-template-columns: auto 1fr;
+  }
+
+  .fc-code__gutter {
+    padding: var(--fc-space-3) var(--fc-space-2);
+    border-inline-end: var(--fc-border-width-thin) solid var(--fc-code-border-default);
+    background-color: var(--fc-code-bg-inset);
+    color: var(--fc-code-fg);
+    font-family: var(--fc-font-family-mono);
+    font-size: var(--fc-font-size-sm);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    /* Numbers are their own blocks so they align as a column rather than
+       running together into "1234". */
+    user-select: none;
+  }
+
+  .fc-code__gutter > span {
+    display: block;
+  }
+
+  .fc-code--numbered :where(.fc-code__source) {
+    padding-inline-start: var(--fc-space-4);
+  }
+/* ---- Token colors ------------------------------------------------------ */
+
+  /*
+   * Every role is declared, even where two share a value. A missing declaration
+   * silently inherits, so an unstyled role looks like a deliberate choice and is
+   * not. Declaring all of them also puts the whole role set in one place when a
+   * theme is remapped.
+   *
+   * Weight is used on two roles only. Weighting every token is what makes some
+   * themes look like a fruit salad; keywords and types are the ones a reader
+   * actually scans for.
+   */
+  .fc-code__tok--fg { color: var(--fc-code-fg); }
+  .fc-code__tok--comment { color: var(--fc-code-comment); font-style: italic; }
+  .fc-code__tok--keyword { color: var(--fc-code-keyword); font-weight: var(--fc-font-weight-semibold); }
+  .fc-code__tok--string { color: var(--fc-code-string); }
+  .fc-code__tok--number { color: var(--fc-code-number); }
+  .fc-code__tok--function { color: var(--fc-code-function); }
+  .fc-code__tok--type { color: var(--fc-code-type); }
+  .fc-code__tok--operator { color: var(--fc-code-operator); }
+  .fc-code__tok--punctuation { color: var(--fc-code-punctuation); }
+  .fc-code__tok--property { color: var(--fc-code-property); }
+  .fc-code__tok--constant { color: var(--fc-code-constant); }
+  .fc-code__tok--tag { color: var(--fc-code-tag); }
+  .fc-code__tok--attribute { color: var(--fc-code-attribute); }
+  .fc-code__tok--regexp { color: var(--fc-code-regexp); }
+  .fc-code__tok--heading { color: var(--fc-code-heading); font-weight: var(--fc-font-weight-semibold); }
+  .fc-code__tok--link { color: var(--fc-code-link); text-decoration: underline; }
+  .fc-code__tok--invalid { color: var(--fc-code-invalid); }
+
+  /*
+   * An unrecognised language. The text is left exactly as written -- a fallback
+   * must never damage content -- but the block is marked so a developer can see
+   * that highlighting did not apply.
+   */
+  .fc-code--unsupported :where(.fc-code__source) {
+    color: var(--fc-code-fg);
+  }
+
+  /* ---- Forced colors ----------------------------------------------------- */
+
+  /*
+   * The OS discards every `color` declared above, so the distinctions between
+   * roles collapse. That is the correct outcome -- these users asked for a
+   * palette the OS controls -- but the italic comment style survives, because it
+   * is not a color, and it keeps comments distinguishable without any hue.
+   */
+  @media (forced-colors: active) {
+    .fc-code {
+      background-color: Canvas;
+      color: CanvasText;
+      border-color: CanvasText;
+    }
+
+    .fc-code__bar,
+    .fc-code__gutter {
+      background-color: Canvas;
+      color: GrayText;
+      border-color: GrayText;
+    }
+
+    .fc-code__tok--comment {
+      font-style: italic;
+    }
+
+    /* Underlined, so links stay distinguishable once hue is discarded. */
+    .fc-code__tok--link {
+      text-decoration: underline;
+    }
+  }
+}

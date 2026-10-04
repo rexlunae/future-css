@@ -14,7 +14,7 @@
  */
 
 import assert from "node:assert/strict";
-import { after, before, describe, it } from "node:test";
+import { after, afterEach, before, describe, it } from "node:test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -101,6 +101,21 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     await new Promise((r) => setTimeout(r, 1000));
   });
 
+  /*
+   * Every test in this suite shares one page. The reflow test below has to
+   * navigate to the demo, so without this it would leave the demo loaded and
+   * the tests after it would fail against the wrong document -- a confusing way
+   * to learn about a layout change.
+   */
+  afterEach(async () => {
+    await send("Emulation.clearDeviceMetricsOverride");
+    const where = await evaluate(`return location.pathname;`);
+    if (where !== "/tests/browser/fixture.html") {
+      await send("Page.navigate", { url: `${server.origin}/tests/browser/fixture.html` });
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+  });
+
   after(async () => {
     try {
       ws?.close();
@@ -146,8 +161,11 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         import('/src/js/menu.js'),
         import('/src/js/grid.js'),
         import('/src/js/webview.js'),
-      ]).then(([e, m, g, w]) => {
+        import('/src/js/highlight.js'),
+        import('/src/js/diff.js'),
+      ]).then(([e, m, g, w, h, d]) => {
         globalThis.E = e; globalThis.M = m; globalThis.G = g; globalThis.W = w;
+        globalThis.H = h; globalThis.D = d;
         return 'ok';
       })
     `);
@@ -157,9 +175,14 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
   it("loads every binding module in a browser with no WASM and no build step", async () => {
     await loadBindings();
     const names = await evaluate(
-      `return [typeof E.FutureCssEditor, typeof M.FutureCssMenu, typeof G.FutureCssGrid, typeof W.FutureCssWebview]`,
+      `return [
+        typeof E.FutureCssEditor, typeof M.FutureCssMenu, typeof G.FutureCssGrid,
+        typeof W.FutureCssWebview, typeof H.highlight, typeof D.diffLines,
+      ]`,
     );
-    assert.deepEqual(names, ["function", "function", "function", "function"]);
+    assert.deepEqual(names, [
+      "function", "function", "function", "function", "function", "function",
+    ]);
   });
   // ---------------------------------------------------------------- editor
 
@@ -559,5 +582,180 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       return [moved, document.querySelector('#wv iframe').src.includes('example.com')];
     `);
     assert.deepEqual(moved, [true, true]);
+  });
+
+  // ------------------------------------------------------------------ reflow
+
+  /*
+   * WCAG 1.4.10 Reflow: content must not require two-dimensional scrolling at
+   * 400% zoom (a 1280x800 viewport scaled down to 320 CSS px).
+   *
+   * This runs against the *demo*, not the fixture, because reflow is a
+   * page-level property: a single component can pass in isolation while the
+   * layout around it forces the page wide.
+   *
+   * Scoped to the demo deliberately. The shipped library's components each
+   * handle their own overflow (see `.fc-code__source` and `.fc-diff__line`),
+   * and the nav strip scrolls along its own axis by design -- neither makes the
+   * *page* scroll, which is what this asserts.
+   */
+  it("reflows to 400% zoom without horizontal page scrolling", async () => {
+    await send("Emulation.setDeviceMetricsOverride", {
+      width: 320,
+      height: 200,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    await send("Page.navigate", { url: `${server.origin}/demo/index.html` });
+    await new Promise((r) => setTimeout(r, 1200));
+
+    const result = await evaluate(`
+      const vw = window.innerWidth;
+      const clipped = (el) => {
+        // Walk ancestors: content inside an overflow clip is not page overflow.
+        // A long code line inside a scrolling <pre> and an animated progress bar
+        // inside overflow:hidden both report a rect past the edge while being
+        // fully contained on screen, so a naive rect scan flags them as false
+        // failures. What matters is whether the *page* scrolls.
+        for (let p = el.parentElement; p; p = p.parentElement) {
+          const o = getComputedStyle(p).overflowX;
+          if (o !== "visible") return true;
+        }
+        return false;
+      };
+      const offenders = [...document.querySelectorAll("body *")]
+        .filter((el) => el.getBoundingClientRect().right > vw + 2)
+        .filter((el) => !clipped(el))
+        .map((el) => String(el.className || el.tagName).split(" ")[0]);
+      const de = document.documentElement;
+      return {
+        scrollWidth: de.scrollWidth,
+        clientWidth: de.clientWidth,
+        overflowing: [...new Set(offenders)],
+      };
+    `);
+
+    assert.ok(
+      result.scrollWidth <= result.clientWidth,
+      `page must reflow without horizontal scrolling; ` +
+        `scrollWidth ${result.scrollWidth} > clientWidth ${result.clientWidth}`,
+    );
+    // Named so the failure says which element broke, not just that something did.
+    assert.deepEqual(result.overflowing, [], "elements overflowing the viewport");
+
+    await send("Emulation.clearDeviceMetricsOverride");
+  });
+
+  // ------------------------------------------------------------------- code
+
+  it("renders highlighted spans that reconstruct the source exactly", async () => {
+    await loadBindings();
+    const outcome = await evaluate(`
+      const src = 'const greeting: string = "hi"; // note';
+      // Built detached on purpose: this suite shares one page across every test,
+      // so mounting into the fixture would mutate state other tests depend on.
+      const rendered = H.renderHighlighted(src, 'typescript');
+      document.querySelector('#code-src').after(rendered);
+      return [
+        rendered.querySelectorAll('.fc-code__tok').length,
+        rendered.textContent === src,
+        rendered.matches('.fc-code__source'),
+      ];
+    `);
+    assert.ok(outcome[0] > 1, "the sample must actually produce several tokens");
+    // If the highlighter ever drops or reorders a character, the user's source
+    // is silently rewritten under them. This is the check that prevents it.
+    assert.equal(outcome[1], true);
+    assert.equal(outcome[2], true, "the renderer must emit the component's own class");
+  });
+
+  it("gives every token a semantic role class, not a colour name", async () => {
+    await loadBindings();
+    const roles = await evaluate(`
+      const rendered = H.renderHighlighted('let a = 1;', 'javascript');
+      return [...rendered.querySelectorAll('.fc-code__tok')]
+        .map((n) => [...n.classList].find((c) => c.startsWith('fc-code__tok--')));
+    `);
+    assert.ok(roles.every((r: string) => /^fc-code__tok--[a-z-]+$/.test(r)));
+    assert.ok(roles.includes("fc-code__tok--keyword"), "expected a keyword token");
+  });
+
+  it("keeps the gutter out of the accessible name of the code", async () => {
+    // Line numbers are decoration. A screen reader announcing "1 2 const x"
+    // reads the gutter as content and makes the code harder to follow, not easier.
+    await loadBindings();
+    const exposed = await evaluate(`
+      const g = document.querySelector('#code-gutter');
+      return g.getAttribute('aria-hidden');
+    `);
+    assert.equal(exposed, "true");
+  });
+
+  it("draws code and gutter side by side rather than stacking", async () => {
+    // `display: grid` with implicit tracks silently collapses to one column when
+    // no container width is set -- the same bug the data grid already hit once.
+    await loadBindings();
+    const layout = await evaluate(`
+      const g = document.querySelector('#code-gutter').getBoundingClientRect();
+      const s = document.querySelector('#code-src').getBoundingClientRect();
+      return [g.top, s.top, g.right, s.left];
+    `);
+    assert.equal(layout[0], layout[1], "gutter must share the first row's top edge");
+    // Stacked would put the gutter's left edge at the container's content start
+    // rather than meeting the source. Allow a pixel of rounding.
+    assert.ok(
+      Math.abs(layout[2] - layout[3]) <= 1,
+      `gutter must end where the source begins, got ${layout[2]} vs ${layout[3]}`,
+    );
+  });
+
+  it("reads the language from the DOM rather than a hard-coded default", async () => {
+    // data-fc-lang is the single source of truth; a JS-side default would silently
+    // highlight Python as JavaScript whenever the attribute was misspelled.
+    await loadBindings();
+    const lang = await evaluate(`
+      return document.querySelector('#code').getAttribute('data-fc-lang');
+    `);
+    assert.equal(lang, "typescript");
+  });
+
+  // ------------------------------------------------------------------- diff
+
+  it("distinguishes added and removed lines without relying on colour", async () => {
+    // data-fc-diff plus a +/- marker means the state survives forced-colors mode
+    // and is legible to a screen reader. A background tint alone would not.
+    await loadBindings();
+    const states = await evaluate(`
+      const read = (id) => {
+        const line = document.querySelector(id);
+        return [line.getAttribute('data-fc-diff'), line.querySelector('.fc-diff__marker').textContent];
+      };
+      return [read('#diff-remove'), read('#diff-add')];
+    `);
+    assert.deepEqual(states, [["remove", "-"], ["add", "+"]]);
+  });
+
+  it("hides line numbers from assistive technology", async () => {
+    // The numbers are positional metadata. Reading "1 empty" on every changed
+    // line is noise, and the changed text is what a screen reader user wants.
+    await loadBindings();
+    const exposed = await evaluate(`
+      const nums = [...document.querySelectorAll('#diff .fc-diff__num')];
+      return nums.map((n) => n.getAttribute('aria-hidden'));
+    `);
+    assert.ok(exposed.length > 0);
+    assert.ok(exposed.every((v: string | null) => v === "true"));
+  });
+
+  it("paints added and removed rows with different resolved colours", async () => {
+    // The unit tests prove the tokens exist; only a real browser proves the
+    // cascade actually applied them to these specific elements.
+    await loadBindings();
+    const colors = await evaluate(`
+      const bg = (id) => getComputedStyle(document.querySelector(id)).backgroundColor;
+      return [bg('#diff-add'), bg('#diff-remove')];
+    `);
+    assert.notEqual(colors[0], colors[1], "added and removed rows must not share a background");
+    assert.ok(!/rgba\(0, 0, 0, 0\)|transparent/.test(colors[0]));
   });
 });

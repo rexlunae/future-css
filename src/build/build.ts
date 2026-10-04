@@ -51,6 +51,8 @@ const BUNDLE_ORDER: ReadonlyArray<readonly [source: string, publishedAs: string]
   ["components/grid.css", "components/grid.css"],
   ["components/webview.css", "components/webview.css"],
   ["components/terminal.css", "components/terminal.css"],
+  ["components/code.css", "components/code.css"],
+  ["components/diff.css", "components/diff.css"],
   ["utilities.css", "utilities.css"],
 ];
 

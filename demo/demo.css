@@ -107,6 +107,18 @@
 /* ---- Nav ---------------------------------------------------------------- */
 
 .demo-nav {
+  /*
+   * A deliberate horizontal scroller, and wrapping would make it worse.
+   *
+   * The nav is a thin strip that must not grow taller as sections are added --
+   * at 400% zoom a wrapped row becomes five rows and pushes the whole page
+   * content off the top. Scrolling sideways keeps it one line tall.
+   *
+   * This does not violate WCAG 1.4.10: reflow is about *the page* requiring
+   * two-dimensional scrolling. The page does not scroll horizontally here
+   * (asserted in tests/browser/bindings.test.ts); only this strip does, and it
+   * scrolls along its own axis, which is the standard pattern for a tab bar.
+   */
   overflow-x: auto;
   /* When a keyboard user tabs into this strip, the focused link scrolls itself
      into view rather than sitting off-screen. */
@@ -204,6 +216,77 @@
   border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
 }
 
+/* ---------------------------------------------------------------------------
+ * Usage snippet
+ *
+ * A demo that only renders is a screenshot with extra steps. Every section
+ * shows the markup and wiring that produced what is above it, so a reader can
+ * copy the working minimum instead of reverse-engineering it from the output.
+ *
+ * The snippet is a real <pre><code>, not styled text: it is selectable, it
+ * survives a high-contrast mode, and a screen reader announces it as code.
+ * --- */
+.demo-snippet {
+  margin-block-start: var(--fc-space-4);
+  border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  border-radius: var(--fc-radius-md);
+  /* Kept outside .fc-code deliberately: a snippet is chrome *about* the code
+     component, and reusing .fc-code here would make the demo's own furniture
+     indistinguishable from the thing it is demonstrating. */
+  background-color: var(--fc-color-bg-subtle);
+  overflow: hidden;
+}
+
+.demo-snippet__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fc-space-2);
+  padding-block: var(--fc-space-1) var(--fc-space-1);
+  padding-inline: var(--fc-space-3);
+  border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  background-color: var(--fc-color-bg-surface);
+}
+
+.demo-snippet__lang {
+  font-family: var(--fc-font-family-mono);
+  font-size: var(--fc-font-size-xs);
+  color: var(--fc-color-text-muted);
+  text-transform: lowercase;
+}
+
+.demo-snippet__copy {
+  font-family: var(--fc-font-family-sans);
+  font-size: var(--fc-font-size-xs);
+  padding: var(--fc-space-1) var(--fc-space-3);
+  border-radius: var(--fc-radius-sm);
+  border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+  background-color: var(--fc-color-bg-surface);
+  color: var(--fc-color-text-default);
+  cursor: pointer;
+  min-block-size: var(--fc-size-target-min);
+}
+
+.demo-snippet__copy:hover {
+  background-color: var(--fc-color-bg-raised);
+}
+
+.demo-snippet__copy:focus-visible {
+  outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring);
+  outline-offset: var(--fc-space-0-5);
+}
+
+.demo-snippet__pre {
+  margin: 0;
+  padding: var(--fc-space-3) var(--fc-space-4);
+  overflow-x: auto;
+  font-family: var(--fc-font-family-mono);
+  font-size: var(--fc-font-size-xs);
+  line-height: var(--fc-line-height-snug);
+  color: var(--fc-color-text-default);
+  tab-size: 2;
+}
+
 /* The live region under each interactive component. `role="status"` is polite by
    definition, so these announce without interrupting whatever the user is doing. */
 .demo-status {
@@ -217,6 +300,34 @@
 .demo-hint {
   color: var(--fc-color-text-muted);
   font-size: var(--fc-font-size-sm);
+}
+
+/* A labelled control on its own row above a component. The layout reuses the
+   library's .fc-cluster so the demo's controls share a rhythm with the
+   components below rather than inventing a parallel one. */
+.demo-field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fc-space-2);
+  font-size: var(--fc-font-size-sm);
+  color: var(--fc-color-text-muted);
+}
+
+.demo-field > select {
+  font-family: var(--fc-font-family-sans);
+  font-size: var(--fc-font-size-sm);
+  padding-block: var(--fc-space-1);
+  padding-inline: var(--fc-space-2);
+  min-block-size: var(--fc-size-target-min);
+  color: var(--fc-color-text-default);
+  background-color: var(--fc-color-bg-surface);
+  border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+  border-radius: var(--fc-radius-sm);
+}
+
+.demo-field > select:focus-visible {
+  outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring);
+  outline-offset: var(--fc-space-0-5);
 }
 
 .demo-surface {

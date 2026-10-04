@@ -14,6 +14,8 @@ import { FutureCssEditor } from "/src/js/editor.js";
 import { FutureCssMenu } from "/src/js/menu.js";
 import { FutureCssGrid } from "/src/js/grid.js";
 import { FutureCssWebview } from "/src/js/webview.js";
+import { highlight, renderHighlighted, languageNames } from "/src/js/highlight.js";
+import { diffLines, diffStats } from "/src/js/diff.js";
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -333,7 +335,11 @@ for (const id of navLinks.keys()) {
 }
 
 $("#demo-meta")?.append(
-  ` ${SWATCHES.length} token pairings sampled live \u00b7 9 components \u00b7 0 dependencies`,
+  // Counted from the DOM rather than hard-coded: a stale count here is the kind
+// of small lie that makes a demo stop matching the library it documents.
+` ${SWATCHES.length} token pairings sampled live \u00b7 ${
+  document.querySelectorAll("section.demo-section").length - 1
+} components \u00b7 0 dependencies`,
 );
 const webviewEl = $("#webview-root");
 const secureBadge = webviewEl?.querySelector(".fc-webview__secure");
@@ -353,3 +359,216 @@ const webview = new FutureCssWebview({
 
 // Seed the history so Back has somewhere to go on the first click.
 webview.navigate("/demo/page.html");
+
+// ---------------------------------------------------------------------------
+// Snippet copy buttons
+//
+// Delegated on the container, not per button, so a snippet added later needs no
+// wiring. The clipboard call can reject (denied permission, insecure context),
+// so the failure path reports rather than silently doing nothing.
+// ---------------------------------------------------------------------------
+
+document.addEventListener("click", async (event) => {
+  const button = event.target.closest(".demo-snippet__copy");
+  if (!button) return;
+  const snippet = button.closest(".demo-snippet");
+  const code = snippet?.querySelector("code");
+  if (!code) return;
+
+  // textContent, not innerHTML: the snippet holds markup as *text*, and copying
+  // the tags would paste visible angle brackets into the user's editor.
+  const label = button.textContent;
+  let message = "Copied";
+  try {
+    await navigator.clipboard.writeText(code.textContent);
+  } catch {
+    message = "Copy failed";
+  }
+  button.textContent = message;
+  // Announced as well as shown: without the live region the confirmation is
+  // visual only, and a screen reader user gets nothing at all.
+  status("#demo-live", `${button.dataset.snippetLabel ?? "Snippet"} ${message.toLowerCase()}`);
+  setTimeout(() => { button.textContent = label; }, 1600);
+});
+
+// ---------------------------------------------------------------------------
+// Code block
+//
+// The highlighter runs on a real string and writes real elements, so what is on
+// screen is exactly what the module produces -- there is no hand-written markup
+// pretending to be highlighted output.
+// ---------------------------------------------------------------------------
+
+const SAMPLE = `interface DiffLine {
+  kind: "equal" | "add" | "remove";
+  oldLine: number | null;
+  newLine: number | null;
+}
+
+/** Split text into lines, normalizing CRLF first. */
+export function splitLines(text: string): string[] {
+  return text.replace(/\\r\\n/g, "\\n").split("\\n");
+}`;
+
+const langSelect = $("#code-lang");
+
+function paintCode() {
+  const block = $("#code-root");
+  if (!block) return;
+  const lang = langSelect?.value ?? block.dataset.fcLang;
+
+  // data-fc-lang is the single source of truth: the CSS, the gutter, and any
+  // machine reading the DOM all read the same attribute the picker just wrote.
+  block.dataset.fcLang = lang;
+
+  const source = block.querySelector(".fc-code__source");
+  const gutter = block.querySelector(".fc-code__gutter");
+  const rendered = renderHighlighted(SAMPLE, lang);
+  source?.replaceChildren(...rendered.childNodes);
+
+  // The gutter is aria-hidden decoration, rebuilt here because a line count is
+  // data rather than a style -- CSS cannot invent one.
+  const count = SAMPLE.split("\n").length;
+  if (gutter) {
+    gutter.replaceChildren(
+      ...Array.from({ length: count }, (_, i) => {
+        const s = document.createElement("span");
+        s.textContent = String(i + 1);
+        return s;
+      }),
+    );
+  }
+
+  // Prove the round-trip in the UI itself: highlighting must never alter text.
+  const preserved = highlight(SAMPLE, lang).map((s) => s.text).join("") === SAMPLE;
+  const tokens = highlight(SAMPLE, lang).filter((s) => s.role !== "fg").length;
+  status("#code-status", `${lang} \u00b7 ${tokens} tokens \u00b7 text preserved: ${preserved}`);
+}
+
+// Populated from the module's own list, so a language added to highlight.ts
+// appears here without a second edit that could drift out of sync.
+if (langSelect) {
+  langSelect.replaceChildren(
+    ...languageNames.map((name) => {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      return option;
+    }),
+  );
+  langSelect.value = $("#code-root")?.dataset.fcLang ?? "typescript";
+  langSelect.addEventListener("change", paintCode);
+}
+
+$("#code-copy")?.addEventListener("click", async () => {
+  const source = $("#code-root .fc-code__source");
+  try {
+    await navigator.clipboard.writeText(source?.textContent ?? "");
+    status("#code-status", "Copied the original source text.");
+  } catch {
+    status("#code-status", "Clipboard blocked by the browser.");
+  }
+});
+
+paintCode();
+
+// ---------------------------------------------------------------------------
+// Diff viewer
+//
+// Built from diffLines() rather than hand-written rows, so the gutter numbers,
+// the signs, and the stats all come from the same algorithm the package ships.
+// ---------------------------------------------------------------------------
+
+const BEFORE = `function total(items) {
+  let sum = 0;
+  for (const item of items) {
+    sum += item.price;
+  }
+  return sum;
+}`;
+
+const AFTER = `function total(items: Item[]) {
+  let sum = 0;
+  for (const item of items) {
+    if (item.discontinued) continue;
+    sum += item.price * item.quantity;
+  }
+  return Math.round(sum * 100) / 100;
+}`;
+
+function paintDiff() {
+  const root = $("#diff-root");
+  if (!root) return;
+
+  const lines = diffLines(BEFORE, AFTER);
+  const stats = diffStats(lines);
+
+  const bar = root.querySelector(".fc-diff__bar");
+  if (bar) {
+    bar.replaceChildren(
+      ...[
+        ["added", `+${stats.added}`],
+        ["removed", `\u2212${stats.removed}`],
+        ["", stats.identical ? "identical" : "changed"],
+      ].map(([kind, text]) => {
+        const s = document.createElement("span");
+        s.className = kind ? `fc-diff__stat fc-diff__stat--${kind}` : "fc-diff__stat";
+        s.textContent = text;
+        return s;
+      }),
+    );
+  }
+
+  const body = root.querySelector(".fc-diff__body");
+  if (body) {
+    body.replaceChildren(
+      ...lines.map((line) => {
+        const row = document.createElement("div");
+        row.className = "fc-diff__line";
+        // data-fc-diff is the machine-readable half of the contract; the +/- text
+        // is the human half. Both derive from `line`, so they cannot disagree.
+        if (line.kind !== "equal") row.dataset.fcDiff = line.kind;
+
+        const marker = document.createElement("span");
+        marker.className = "fc-diff__marker";
+        marker.setAttribute("aria-hidden", "true");
+        marker.textContent =
+          line.kind === "add" ? "+" : line.kind === "remove" ? "\u2212" : " ";
+
+        // Positional metadata, hidden from assistive tech: announcing "line 3"
+        // before every line makes the content far harder to follow. A line absent
+        // on one side renders empty rather than 0, which would invent a line.
+        const oldNum = document.createElement("span");
+        oldNum.className = "fc-diff__num";
+        oldNum.setAttribute("aria-hidden", "true");
+        oldNum.textContent = line.oldLine ?? "";
+
+        const newNum = oldNum.cloneNode();
+        newNum.textContent = line.newLine ?? "";
+
+        const content = document.createElement("span");
+        content.className = "fc-diff__content";
+        content.textContent = line.text;
+
+        row.append(marker, oldNum, newNum, content);
+        return row;
+      }),
+    );
+  }
+
+  status("#diff-status", `+${stats.added} \u2212${stats.removed} across ${lines.length} lines`);
+}
+
+paintDiff();
+
+$("#diff-swap")?.addEventListener("click", () => {
+  // The block *is* the .fc-diff element, so this must not be a descendant
+  // selector -- `#diff-root .fc-diff` matches nothing and the toggle silently
+  // does nothing, which is exactly what it did before this comment.
+  const wrap = $("#diff-root");
+  // Toggling the modifier rather than restyling proves the modifier API: wrapping
+  // is the accessible default, scrolling is the opt-in.
+  const scrolling = wrap.classList.toggle("fc-diff--scroll");
+  $("#diff-swap").textContent = scrolling ? "Use wrapping" : "Use scrolling";
+  paintDiff();
+});

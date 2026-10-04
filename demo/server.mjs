@@ -89,7 +89,33 @@ export async function startDemoServer(port = 0) {
     }
   });
 
-  await new Promise((resolve) => server.listen(port, "127.0.0.1", resolve));
+  // Port 0 lets the OS choose, which is what the fallback needs.
+  const listen = (candidate) =>
+    new Promise((resolve, reject) => {
+      const onError = (err) => {
+        server.off("listening", onListening);
+        reject(err);
+      };
+      const onListening = () => {
+        server.off("error", onError);
+        resolve();
+      };
+      server.once("error", onError);
+      server.once("listening", onListening);
+      server.listen(candidate, "127.0.0.1");
+    });
+
+  try {
+    await listen(port);
+  } catch (err) {
+    // A stale `npm run demo` is the common case, and a raw EADDRINUSE stack
+    // trace is a poor way to learn that. Falling through to an OS-assigned port
+    // also means a second demo can run for reviewing a branch while the first is
+    // still open, which is the situation that produces this error in the first place.
+    if (err.code !== "EADDRINUSE") throw err;
+    await listen(0);
+  }
+
   const actual = server.address().port;
 
   return {
@@ -99,9 +125,12 @@ export async function startDemoServer(port = 0) {
   };
 }
 
-// Run directly: `npm run demo`. Port 5178 unless taken, then the OS picks one.
+// Run directly: `npm run demo`. Port 5178, or the next free port if it is taken.
 if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split("/").pop())) {
-  const { origin } = await startDemoServer(Number(process.env.PORT ?? 5178));
+  const { origin, port } = await startDemoServer(Number(process.env.PORT ?? 5178));
+  if (port !== 5178) {
+    console.log(`  note: 5178 is in use, using ${port} instead.`);
+  }
   console.log(`\n  future-css demo\n\n  ${origin}\n`);
   console.log("  Ctrl+C to stop.\n");
 }

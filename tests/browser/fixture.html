@@ -62,6 +62,38 @@
     <iframe title="Embedded page"></iframe>
   </div>
 
+  <!--
+    Code surface. The `<code>` starts as plain text on purpose: the test
+    enhances it with the highlighter, which is also how a real consumer uses it.
+    `data-fc-lang` on the block is the single source of truth for the language.
+  -->
+  <div class="fc-code fc-code--numbered" id="code" data-fc-lang="typescript">
+    <div class="fc-code__gutter" id="code-gutter" aria-hidden="true">
+      <span>1</span><span>2</span>
+    </div>
+    <code class="fc-code__source" id="code-src">const x = 1;</code>
+  </div>
+
+  <!-- Diff: state lives in data-fc-diff so CSS and machines read one value. -->
+  <div class="fc-diff" id="diff">
+    <div class="fc-diff__bar">
+      <span class="fc-diff__stat fc-diff__stat--added">+1</span>
+      <span class="fc-diff__stat fc-diff__stat--removed">-1</span>
+    </div>
+    <div class="fc-diff__line" id="diff-remove" data-fc-diff="remove">
+      <span class="fc-diff__marker" aria-hidden="true">-</span>
+      <span class="fc-diff__num" aria-hidden="true">1</span>
+      <span class="fc-diff__num" aria-hidden="true"></span>
+      <span class="fc-diff__content">old line</span>
+    </div>
+    <div class="fc-diff__line" id="diff-add" data-fc-diff="add">
+      <span class="fc-diff__marker" aria-hidden="true">+</span>
+      <span class="fc-diff__num" aria-hidden="true"></span>
+      <span class="fc-diff__num" aria-hidden="true">1</span>
+      <span class="fc-diff__content">new line</span>
+    </div>
+  </div>
+
 </div>
 </body>
 </html>

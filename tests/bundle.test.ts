@@ -90,6 +90,45 @@ describe("bundle", { skip: hasBundle ? false : "run `npm run build` first" }, ()
     assert.doesNotMatch(css, /^\*\.ts/m);
   });
 
+  it("declares color-scheme only in the tokens layer", () => {
+    // `color-scheme` decides how every `light-dark()` pair resolves, so a stray
+    // declaration in a later layer silently overrides the theme switcher.
+    //
+    // It was in `fc.base` while `[data-fc-theme]` lives in `fc.tokens`. Equal
+    // specificity, and base is ordered after tokens -- so `light dark` always won
+    // and `data-fc-theme="light"` computed to `light dark` and did nothing. The
+    // switcher looked wired up, responded to clicks, and changed no colour.
+    //
+    // This asserts on the layer each declaration lives in, because a plain
+    // "does the bundle mention color-scheme" check would pass either way.
+    const layerOf = (index: number): string => {
+      const before = css.slice(0, index);
+      const open = [...before.matchAll(/@layer\s+([\w.]+)\s*\{/g)];
+      return open.length ? open[open.length - 1]![1]! : "(unlayered)";
+    };
+
+    const declarations = [...css.matchAll(/color-scheme\s*:/g)];
+    assert.ok(declarations.length > 0, "the bundle should declare color-scheme somewhere");
+
+    for (const match of declarations) {
+      const layer = layerOf(match.index!);
+      assert.equal(
+        layer,
+        "fc.tokens",
+        `color-scheme is declared in ${layer}; only fc.tokens may own it, ` +
+          `or a consumer's data-fc-theme override will be silently ignored`,
+      );
+    }
+  });
+
+  it("exposes a theme override hook that can actually win", () => {
+    // The hook has to out-specify the default, or it is decoration. `html` plus an
+    // attribute selector beats a bare `:root`, which is why the selector is
+    // written this way rather than as a custom property.
+    assert.match(css, /\[data-fc-theme="light"\]/);
+    assert.match(css, /\[data-fc-theme="dark"\]/);
+  });
+
   it("includes every registered component", () => {
     // Class names, not filenames: the button block is `.fc-btn` and the tool
     // call block is `.fc-tool`. Asserting on filenames would pass while the

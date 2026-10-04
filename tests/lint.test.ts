@@ -48,6 +48,10 @@ let queue = Promise.resolve();
  */
 async function lint(css, layer = "fc.components") {
   const run = queue.then(async () => {
+    // The linter walks the whole fixture directory, so a second file left behind
+    // by the collision suite would be linted too and could report a finding
+    // against this run's fixture. Both helpers therefore own both filenames.
+    await rm(join(fixtureDir, "fixture2.css"), { force: true });
     await writeFile(
       join(fixtureDir, "fixture.css"),
       `@layer ${layer} {\n${css}\n}\n`,
@@ -78,7 +82,14 @@ async function lint(css, layer = "fc.components") {
         continue;
       }
       const rule = line.match(/\[([a-z-]+)\]/);
-      if (rule && inFixture) rules.push(rule[1]);
+      // `no-class-collision` is filtered out here on purpose. This helper writes
+      // exactly one file, so the rule can only fire because the fixture reuses a
+      // class name from the real source -- which most of these tests do
+      // deliberately, `.fc-btn` and `.fc-u-hidden` among them, to exercise
+      // exemptions. Asserting on it here would make every case below a test of
+      // naming hygiene rather than of the rule it is about. The collision rule has
+      // its own suite below, with a helper that writes the two files it needs.
+      if (rule && inFixture && rule[1] !== "no-class-collision") rules.push(rule[1]);
     }
     return rules;
   });
@@ -298,5 +309,111 @@ describe("colour-literal rule does not flag token names", () => {
   it("ignores a colour word that appears only in a selector", async () => {
     const rules = await lint("  .fc-danger { color: var(--fc-color-danger-text); }");
     assert.deepEqual(rules, []);
+  });
+});
+
+/**
+ * Cross-file class collisions.
+ *
+ * The single-file `lint` helper cannot express this rule: it needs the same class
+ * declared in two *different* files, which is the whole point. So this suite
+ * writes its own pair of fixtures and reads the rules reported for the first.
+ *
+ * The rule exists because `.fc-grid` was an auto-fit layout primitive in
+ * fc.layout and the data grid in fc.components at the same time. Cascade layers
+ * resolved it silently, so the data grid inherited `grid-template-columns` and
+ * rendered four columns of data as two. Every rule involved was individually
+ * correct, which is why review missed it.
+ */
+describe("lint: no-class-collision", () => {
+  /** Writes two files into the fixture dir and returns the rules reported for the first. */
+  async function lintPair(first, second) {
+    const run = queue.then(async () => {
+      await writeFile(
+        join(fixtureDir, "fixture.css"),
+        `@layer fc.components {\n${first}\n}\n`,
+        "utf8",
+      );
+      await writeFile(
+        join(fixtureDir, "fixture2.css"),
+        `@layer fc.layout {\n${second}\n}\n`,
+        "utf8",
+      );
+
+      let out = "";
+      try {
+        const { stdout } = await execFileAsync(
+          "node",
+          [join(projectRoot, "tools", "lint-css.mjs")],
+          { cwd: projectRoot },
+        );
+        out = stdout;
+      } catch (err) {
+        out = `${err.stdout ?? ""}${err.stderr ?? ""}`;
+      }
+
+      const fixtureBase = resolve(join(fixtureDir, "fixture.css"));
+      const rules = [];
+      let inFixture = false;
+      for (const line of out.split("\n")) {
+        const header = line.match(/^\s{2}(\S+):(\d+)\s*$/);
+        if (header) {
+          inFixture = resolve(header[1]) === fixtureBase;
+          continue;
+        }
+        const rule = line.match(/\[([a-z-]+)\]/);
+        if (rule && inFixture) rules.push(rule[1]);
+      }
+      return rules;
+    });
+    queue = run.catch(() => undefined);
+    return run;
+  }
+
+  it("catches one class declared in two files", async () => {
+    const rules = await lintPair(
+      "  .fc-thing { color: var(--fc-color-text-default); }",
+      "  .fc-thing { display: grid; }",
+    );
+    assert.ok(
+      rules.includes("no-class-collision"),
+      `expected no-class-collision, got ${JSON.stringify(rules)}`,
+    );
+  });
+
+  it("does not flag distinct classes across two files", async () => {
+    const rules = await lintPair(
+      "  .fc-alpha { color: var(--fc-color-text-default); }",
+      "  .fc-beta { display: grid; }",
+    );
+    assert.deepEqual(rules, [], "unrelated classes in separate files are normal");
+  });
+
+  it("allows one class restyled across states in a single file", async () => {
+    // The false positive that matters most: a component legitimately styles the
+    // same class in its rest, hover, and forced-colors branches. Flagging that
+    // would make the rule unusable on day one.
+    //
+    // Pairs the repeated class in file one against an unrelated class in file
+    // two, so the only way this can fire is if repeats within a file count.
+    const rules = await lintPair(
+      `  .fc-flip { color: var(--fc-color-text-default); }
+  .fc-flip:hover { color: var(--fc-color-text-muted); }
+  @media (forced-colors: active) { .fc-flip { color: ButtonText; } }`,
+      "  .fc-unrelated { display: grid; }",
+    );
+    assert.deepEqual(rules, [], "repeats within one file are not collisions");
+  });
+
+  it("ignores an element a component styles inside a prose block", async () => {
+    // `.fc-doc :is(code)` references code without claiming the name `code`. Only a
+    // selector whose *subject* is the class claims ownership. The names here are
+    // deliberately unlike anything in the real source, so this asserts the rule's
+    // behaviour rather than tripping over a genuine collision elsewhere.
+    const rules = await lintPair(
+      "  .fc-doc :is(code) { color: var(--fc-color-text-default); }",
+      "  .fc-snip { display: grid; }",
+    );
+    assert.deepEqual(rules, [], "a descendant reference is not an ownership claim");
   });
 });

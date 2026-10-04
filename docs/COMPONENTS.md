@@ -388,6 +388,29 @@ does not exist.
 `load` means navigation *completed*, not that it succeeded: a 404 and a good page
 both fire it, so the error state is deliberately not derived from it.
 
+### Grid
+
+`FutureCssGrid` now derives the column template from the widest row and writes
+`grid-template-columns` on the root. This is required, not a nicety: the CSS sets
+`grid-auto-columns`, which sizes *implicit* tracks, and without an explicit
+template nothing creates them — so every cell stacked in a single column while
+roles, focus and ARIA all reported correctly. The count comes from the widest row
+rather than `data-fc-colcount`, because the header row is one cell wider than the
+data rows (corner + headers) and `data-fc-colcount` is the *declared* size a
+virtualized grid advertises, which is a different question.
+
+### Theming
+
+```js
+document.documentElement.dataset.fcTheme = 'dark';  // or 'light'
+```
+
+`color-scheme` is declared **only** in the tokens layer. It also used to appear in
+`fc.base`, and since base is ordered after tokens with equal specificity, that
+declaration silently beat `[data-fc-theme]` and the theme switcher did nothing —
+while still responding to clicks, which is what made it hard to spot. Remove it
+from any other layer and the switcher dies quietly.
+
 ### Testing
 
 Bindings are tested in real headless Chrome (`npm run test:browser`), because the

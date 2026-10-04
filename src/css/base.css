@@ -23,9 +23,21 @@
      * honouring prefers-reduced-motion matters more than the polish. */
     scroll-behavior: auto;
 
-    /* Declares that both schemes are supported, which is what makes form
-     * controls, scrollbars and the UA default canvas follow the OS setting. */
-    color-scheme: light dark;
+    /*
+     * `color-scheme` is deliberately NOT declared here.
+     *
+     * It used to be, with the comment "declares that both schemes are supported".
+     * That made the theme switcher dead: this rule sits in `fc.base`, and the
+     * tokens layer -- which owns `[data-fc-theme]` -- is ordered *before* base.
+     * Equal specificity, so layer order decided it, and `light dark` always won.
+     * Setting `data-fc-theme="light"` on <html> computed to `light dark` and
+     * changed nothing.
+     *
+     * Nothing broke visibly, because the OS preference still worked and
+     * `light-dark()` still resolved -- the page just refused to be overridden.
+     * The declaration belongs in the tokens layer alone, where a consumer's
+     * attribute can actually take effect.
+     */
   }
 
   body {

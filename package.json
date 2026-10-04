@@ -45,7 +45,9 @@
     "build:wasm": "node src/build/build-wasm.ts",
     "test:rust": "cargo test",
     "build:css": "node src/build/build.ts",
-    "test:browser": "node --test \"tests/browser/*.test.ts\""
+    "test:browser": "node --test \"tests/browser/*.test.ts\"",
+    "demo": "node demo/server.mjs",
+    "demo:serve": "node demo/server.mjs"
   },
   "keywords": [
     "css",

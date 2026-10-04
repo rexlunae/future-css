@@ -114,27 +114,34 @@
   }
 
   /*
-   * .fc-grid -- an auto-fitting responsive grid. No media queries and no
+   * .fc-grid-auto -- an auto-fitting responsive grid. No media queries and no
    * breakpoint classes: the column count follows the available inline size.
    * auto-fit + minmax is what makes this identical in LTR and RTL and at any
    * container width.
+   *
+   *   Named `-auto` rather than `.fc-grid` because the data grid component
+   *   already owns that name. Two blocks sharing a class name in different layers
+   *   is not a merge: the later layer wins, so the data grid silently inherited
+   *   `grid-template-columns` from here and rendered 4 columns of data as 2.
+   *   The collision was invisible because both rules are individually correct.
+   *   tools/lint-css.mjs now rejects a class declared in two files.
    */
-  .fc-grid {
+  .fc-grid-auto {
     display: grid;
-    gap: var(--fc-grid-gap, var(--fc-space-4));
+    gap: var(--fc-grid-auto-gap, var(--fc-space-4));
     grid-template-columns: repeat(
       auto-fit,
-      minmax(min(var(--fc-grid-min, 16rem), 100%), 1fr)
+      minmax(min(var(--fc-grid-auto-min, 16rem), 100%), 1fr)
     );
   }
 
-  .fc-grid--0 { --fc-grid-gap: var(--fc-space-0); }
-  .fc-grid--2 { --fc-grid-gap: var(--fc-space-2); }
-  .fc-grid--4 { --fc-grid-gap: var(--fc-space-4); }
-  .fc-grid--6 { --fc-grid-gap: var(--fc-space-6); }
+  .fc-grid-auto--0 { --fc-grid-auto-gap: var(--fc-space-0); }
+  .fc-grid-auto--2 { --fc-grid-auto-gap: var(--fc-space-2); }
+  .fc-grid-auto--4 { --fc-grid-auto-gap: var(--fc-space-4); }
+  .fc-grid-auto--6 { --fc-grid-auto-gap: var(--fc-space-6); }
 
-  .fc-grid--dense { --fc-grid-min: 12rem; }
-  .fc-grid--wide { --fc-grid-min: 24rem; }
+  .fc-grid-auto--dense { --fc-grid-auto-min: 12rem; }
+  .fc-grid-auto--wide { --fc-grid-auto-min: 24rem; }
 
   /*
    * .fc-container -- centres content and enforces a maximum measure.

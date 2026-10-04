@@ -1,0 +1,67 @@
+<!doctype html>
+<!--
+  The page loaded inside the demo webview.
+
+  Sandboxed without `allow-same-origin`, so this document runs in an opaque
+  origin: it cannot read the demo's cookies, storage, or DOM. That is the
+  default the binding applies, and this file is a live demonstration that a
+  page in that position still renders correctly -- the isolation costs nothing
+  visually.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embedded page</title>
+<link rel="stylesheet" href="/dist/future-css.css">
+<style>
+  /*
+    Self-contained, because the iframe is in an opaque origin and cannot rely on
+    the parent's stylesheet -- nor should it. This also proves the component CSS
+    works when loaded standalone, which is how a consumer's build will do it.
+  */
+  body {
+    margin: 0;
+    padding: var(--fc-space-5);
+    background-color: var(--fc-color-bg-canvas);
+    color: var(--fc-color-text-default);
+    font-family: var(--fc-font-family-sans);
+  }
+  .fc-stack { display: flex; flex-direction: column; gap: var(--fc-space-3); }
+  h1 { margin: 0; font-size: var(--fc-font-size-lg); }
+  p { margin: 0; color: var(--fc-color-text-muted); font-size: var(--fc-font-size-sm); }
+  /* Logical inset, so the rule sits on the correct side in either direction. */
+  .note {
+    padding-inline-start: var(--fc-space-3);
+    border-inline-start: var(--fc-border-width-thick) solid var(--fc-color-accent-border);
+    color: var(--fc-color-text-default);
+  }
+  code {
+    font-family: var(--fc-font-family-mono);
+    font-size: var(--fc-font-size-xs);
+    background-color: var(--fc-color-bg-subtle);
+    padding-inline: 0.25em;
+    border-radius: var(--fc-radius-sm);
+  }
+</style>
+</head>
+<body>
+  <div class="fc-stack">
+    <h1>Embedded document</h1>
+    <p>
+      This page is inside an <code>&lt;iframe&gt;</code> with
+      <code>sandbox="allow-scripts allow-forms allow-popups"</code>.
+    </p>
+    <p class="note">
+      <code>allow-same-origin</code> is deliberately absent, so this document has an
+      opaque origin and cannot reach the demo's cookies or storage. The chrome above
+      still works, because it only ever touches this frame&rsquo;s element attributes.
+    </p>
+    <p>
+      Load states are tracked by the binding, and a <code>load</code> event means
+      navigation <em>completed</em> &mdash; not that it succeeded. A 404 and a good page
+      both fire it, which is why the error state is not derived from it.
+    </p>
+  </div>
+</body>
+</html>

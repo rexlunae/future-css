@@ -1,0 +1,348 @@
+/*!
+ * Demo page chrome.
+ *
+ * Everything the *design system* draws comes from dist/future-css.css. This file
+ * only styles the scaffolding around the components -- the masthead, the section
+ * framing, the swatch grid -- which is page furniture and deliberately not part of
+ * the system.
+ *
+ * It obeys the same rules the linter enforces on src/css: logical properties,
+ * tokens rather than literals, no !important, focus always visible. The demo is
+ * the first thing most people look at, so it should not model bad practice.
+ *
+ * Note it lives outside src/css, so `npm run lint` does not walk it. That is a
+ * deliberate boundary: the linter's contract is about the shipped library, and a
+ * demo file that failed it would be confusing rather than informative. The rules
+ * are still followed here.
+ */
+
+/* Skip link. Visually hidden until focused, then pinned where a keyboard user's
+   first Tab lands -- the first thing that makes a long page navigable. */
+.demo-skip {
+  position: fixed;
+  inset-block-start: var(--fc-space-2);
+  inset-inline-start: var(--fc-space-2);
+  z-index: var(--fc-z-overlay);
+
+  padding-block: var(--fc-space-2);
+  padding-inline: var(--fc-space-4);
+
+  background-color: var(--fc-color-accent-bg);
+  color: var(--fc-color-text-on-accent);
+  border-radius: var(--fc-radius-md);
+
+  /* Off-screen rather than display:none, so it stays focusable. */
+  transform: translateY(-200%);
+  transition: transform var(--fc-duration-fast) var(--fc-easing-standard);
+}
+
+.demo-skip:focus-visible {
+  transform: translateY(0);
+}
+
+/* ---- Masthead ----------------------------------------------------------- */
+
+.demo-masthead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: var(--fc-z-sticky);
+
+  background-color: var(--fc-color-bg-surface);
+  /* Logical, so the hairline is below the masthead in both directions. */
+  border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+}
+
+.demo-masthead__bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fc-space-4);
+  align-items: center;
+  justify-content: space-between;
+
+  padding-block: var(--fc-space-3);
+}
+
+.demo-masthead__id {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-3);
+  min-inline-size: 0;
+}
+
+.demo-logo {
+  display: grid;
+  place-items: center;
+
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  flex-shrink: 0;
+
+  background-color: var(--fc-color-accent-bg);
+  color: var(--fc-color-text-on-accent);
+  border-radius: var(--fc-radius-md);
+
+  font-family: var(--fc-font-family-mono);
+  font-size: var(--fc-font-size-sm);
+  font-weight: var(--fc-font-weight-bold);
+}
+
+.demo-title {
+  margin: 0;
+  font-size: var(--fc-font-size-lg);
+  line-height: var(--fc-line-height-tight);
+}
+
+.demo-sub {
+  margin: 0;
+  color: var(--fc-color-text-muted);
+  font-size: var(--fc-font-size-xs);
+}
+
+.demo-controls {
+  display: flex;
+  gap: var(--fc-space-2);
+  flex-shrink: 0;
+}
+
+/* ---- Nav ---------------------------------------------------------------- */
+
+.demo-nav {
+  overflow-x: auto;
+  /* When a keyboard user tabs into this strip, the focused link scrolls itself
+     into view rather than sitting off-screen. */
+  scroll-snap-type: inline proximity;
+}
+
+.demo-nav__list {
+  display: flex;
+  gap: var(--fc-space-1);
+  list-style: none;
+  margin: 0;
+  padding-block: 0 var(--fc-space-2);
+  /* The reset zeroes this via :where(); the nav is the one place it is wanted. */
+  padding-inline: 0;
+}
+
+.demo-nav__list a {
+  display: block;
+  scroll-snap-align: start;
+
+  padding-block: var(--fc-space-1-5);
+  padding-inline: var(--fc-space-3);
+
+  color: var(--fc-color-text-muted);
+  border-radius: var(--fc-radius-sm);
+  text-decoration: none;
+  white-space: nowrap;
+
+  font-size: var(--fc-font-size-sm);
+
+  transition: background-color var(--fc-duration-fast) var(--fc-easing-standard);
+}
+
+.demo-nav__list a:hover {
+  background-color: var(--fc-color-bg-muted);
+  color: var(--fc-color-text-default);
+}
+
+/* ---- Page --------------------------------------------------------------- */
+
+.demo-main {
+  padding-block: var(--fc-space-6) var(--fc-space-8);
+}
+
+.demo-lede {
+  max-inline-size: 62ch;
+  margin-block: 0 var(--fc-space-8);
+
+  color: var(--fc-color-text-muted);
+  font-size: var(--fc-font-size-md);
+  line-height: var(--fc-line-height-normal);
+}
+
+/*
+ * scroll-margin-block-start keeps an anchored heading clear of the sticky
+ * masthead. Without it every in-page link scrolls the target underneath the
+ * header -- which is most visible on the nav links, the whole point of the nav.
+ */
+.demo-section {
+  scroll-margin-block-start: var(--fc-space-12);
+
+  padding-block: var(--fc-space-6);
+  /* Logical separator, so the hairline follows the writing direction. */
+  border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+}
+
+.demo-section__head {
+  margin-block-end: var(--fc-space-4);
+}
+
+.demo-h2 {
+  margin: 0 0 var(--fc-space-2);
+  font-size: var(--fc-font-size-xl);
+  line-height: var(--fc-line-height-tight);
+}
+
+.demo-note {
+  max-inline-size: 68ch;
+  margin: 0;
+  color: var(--fc-color-text-muted);
+  font-size: var(--fc-font-size-sm);
+  line-height: var(--fc-line-height-normal);
+}
+
+.demo-panel {
+  padding: var(--fc-space-4);
+  background-color: var(--fc-color-bg-surface);
+  border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  border-radius: var(--fc-radius-lg);
+}
+
+.demo-rule {
+  margin-block: var(--fc-space-4);
+  border: 0;
+  border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+}
+
+/* The live region under each interactive component. `role="status"` is polite by
+   definition, so these announce without interrupting whatever the user is doing. */
+.demo-status {
+  margin-block-start: var(--fc-space-3);
+  color: var(--fc-color-text-muted);
+  font-family: var(--fc-font-family-mono);
+  font-size: var(--fc-font-size-xs);
+  min-block-size: 1.5em;
+}
+
+.demo-hint {
+  color: var(--fc-color-text-muted);
+  font-size: var(--fc-font-size-sm);
+}
+
+.demo-surface {
+  margin-block-start: var(--fc-space-4);
+  padding: var(--fc-space-6);
+
+  background-color: var(--fc-color-bg-subtle);
+  border: var(--fc-border-width-thin) dashed var(--fc-color-border-default);
+  border-radius: var(--fc-radius-md);
+
+  color: var(--fc-color-text-muted);
+  text-align: center;
+}
+
+.demo-toolbar-sep {
+  inline-size: var(--fc-border-width-thin);
+  align-self: stretch;
+  margin-inline: var(--fc-space-1);
+  background-color: var(--fc-color-border-default);
+}
+
+/* ---- Token swatches ------------------------------------------------------ */
+
+.demo-swatch {
+  padding: var(--fc-space-3);
+  background-color: var(--fc-color-bg-surface);
+  border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  border-radius: var(--fc-radius-md);
+}
+
+.demo-swatch__chip {
+  block-size: 3rem;
+  border-radius: var(--fc-radius-sm);
+  /* The chip shows the colour, so it needs an edge to exist against a canvas of
+     the same colour. */
+  border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+}
+
+.demo-swatch__name {
+  display: block;
+  margin-block-start: var(--fc-space-2);
+
+  font-family: var(--fc-font-family-mono);
+  font-size: var(--fc-font-size-2xs);
+  /* Long token names must not widen the card. */
+  overflow-wrap: anywhere;
+}
+
+.demo-swatch__ratio {
+  display: inline-block;
+  margin-block-start: var(--fc-space-1);
+
+  padding-inline: var(--fc-space-2);
+  border-radius: var(--fc-radius-full);
+  background-color: var(--fc-color-bg-muted);
+
+  font-family: var(--fc-font-family-mono);
+  font-size: var(--fc-font-size-2xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Footer -------------------------------------------------------------- */
+
+.demo-footer {
+  margin-block-start: var(--fc-space-8);
+  padding-block: var(--fc-space-6);
+  border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+
+  color: var(--fc-color-text-muted);
+  font-size: var(--fc-font-size-sm);
+}
+
+.demo-footer p {
+  margin-block: 0 var(--fc-space-2);
+  max-inline-size: 68ch;
+}
+
+.demo-footer__meta {
+  font-family: var(--fc-font-family-mono);
+  font-size: var(--fc-font-size-xs);
+}
+
+/* ---- Forced colors --------------------------------------------------------
+ *
+ * The demo is not a component, so it gets the minimum viable treatment: the OS
+ * discards backgrounds and shadows, leaving text on an unknown canvas. Forcing
+ * Canvas and CanvasText keeps it readable instead of merely not-broken.
+ */
+@media (forced-colors: active) {
+  .demo-masthead,
+  .demo-panel,
+  .demo-swatch,
+  .demo-swatch__chip {
+    background-color: Canvas;
+    border-color: CanvasText;
+  }
+
+  .demo-swatch__ratio {
+    background-color: Canvas;
+    border: var(--fc-border-width-thin) solid CanvasText;
+  }
+
+  .demo-nav__list a[aria-current="true"] {
+    background-color: Highlight;
+    color: HighlightText;
+  }
+}
+
+/* ---- Reduced motion -------------------------------------------------------
+ *
+ * The demo adds only smooth scrolling and a transform transition, both cheap.
+ * Honouring the preference is still correct, and a demo that ignores it is a
+ * poor advertisement for a system that does.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .demo-skip,
+  .demo-nav__list a {
+    transition: none;
+  }
+
+  :root {
+    scroll-behavior: auto;
+  }
+}
+.demo-nav__list a[aria-current="true"] {
+  background-color: var(--fc-color-accent-bg-subtle);
+  color: var(--fc-color-accent-text);
+  font-weight: var(--fc-font-weight-semibold);
+}

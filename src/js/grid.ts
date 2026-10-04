@@ -103,6 +103,43 @@ export class FutureCssGrid {
     for (const cell of this.cells) {
       if (!cell.hasAttribute("role")) cell.setAttribute("role", "gridcell");
     }
+
+    this.applyColumns();
+  }
+
+  /**
+   * Gives the grid an explicit column template.
+   *
+   * The CSS sets `grid-auto-columns`, which sizes *implicit* tracks -- and an
+   * implicit track is only created once something is placed in it. With
+   * `display: contents` on the rows, every cell is a grid item, but the grid has
+   * no template telling it how many columns exist, so it lays every cell out in
+   * a single column and the cells stack vertically. The result looks plausible
+   * in a screenshot of one row and is obviously wrong when you look down a
+   * column.
+   *
+   * The count comes from the widest row rather than from `data-fc-colcount`:
+   * the header row carries a corner cell plus its headers, so it is one wider
+   * than the data rows, and reading the widest row handles both shapes without
+   * the caller having to say which is which. `data-fc-colcount` is the
+   * *declared* size used for ARIA, which is a different question -- a
+   * virtualized grid declares far more columns than it renders.
+   */
+  private applyColumns(): void {
+    const widest = Math.max(
+      0,
+      ...Array.from(this.root.querySelectorAll<HTMLElement>("[role='row']")).map(
+        (row) => row.querySelectorAll("[role='gridcell'], [role='columnheader']").length,
+      ),
+    );
+    if (widest === 0) return;
+
+    // setProperty rather than a style attribute string, so this does not clobber
+    // an inline `grid-template-columns` the consumer set deliberately.
+    this.root.style.setProperty(
+      "grid-template-columns",
+      `repeat(${widest}, minmax(0, 1fr))`,
+    );
   }
 
   /**

@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>future-css &mdash; component demo</title>
+<link rel="stylesheet" href="/dist/future-css.css">
+<link rel="stylesheet" href="/demo/demo.css">
+</head>
+<body>
+
+<a class="demo-skip" href="#main">Skip to content</a>
+
+<header class="demo-masthead">
+  <div class="fc-container">
+    <div class="demo-masthead__bar">
+      <div class="demo-masthead__id">
+        <span class="demo-logo" aria-hidden="true">fc</span>
+        <div>
+          <h1 class="demo-title">future&#8209;css</h1>
+          <p class="demo-sub">Accessible, themeable, direction-agnostic CSS &amp; TypeScript</p>
+        </div>
+      </div>
+
+      <!--
+        The theme and direction controls belong to the demo, not the design
+        system, so they use demo-* classes rather than borrowing a component
+        class and misrepresenting it.
+
+        `aria-pressed` rather than a class, matching the system's own rule that a
+        control's appearance and its announced state must not be two sources of
+        truth free to drift apart.
+      -->
+      <div class="demo-controls" role="group" aria-label="Demo settings">
+        <button type="button" class="fc-btn fc-btn--subtle fc-btn--sm" data-demo-toggle="scheme"
+                aria-pressed="false"><span data-demo-label>Light</span></button>
+        <button type="button" class="fc-btn fc-btn--subtle fc-btn--sm" data-demo-toggle="direction"
+                aria-pressed="false"><span data-demo-label>LTR</span></button>
+      </div>
+    </div>
+
+    <nav class="demo-nav" aria-label="Sections">
+      <ul class="demo-nav__list">
+        <li><a href="#buttons">Buttons</a></li>
+        <li><a href="#editor">Editor</a></li>
+        <li><a href="#grid">Grid</a></li>
+        <li><a href="#menu">Menu</a></li>
+        <li><a href="#chat">Chat</a></li>
+        <li><a href="#tools">Tool calls</a></li>
+        <li><a href="#terminal">Terminal</a></li>
+        <li><a href="#webview">Webview</a></li>
+        <li><a href="#tokens">Tokens</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="fc-container demo-main">
+
+  <p class="demo-lede">
+    Every component below is the real thing, wired to its real bindings. Nothing here
+    is a screenshot or a static mock &mdash; the editor tracks your selection, the grid
+    navigates by keyboard, and the menu returns focus to whatever opened it. Switch the
+    theme or flip to RTL at any time; every component follows without a single
+    direction-specific rule.
+  </p>
+
+  <!-- ============================ BUTTONS ============================ -->
+  <section class="demo-section" id="buttons" aria-labelledby="h-buttons">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-buttons">Buttons</h2>
+      <p class="demo-note">
+        Variants and sizes are separate classes, so they compose freely. Every state is
+        styled: hover, active, focus-visible, disabled, and busy.
+      </p>
+    </div>
+
+    <div class="demo-panel">
+      <div class="fc-cluster">
+        <button type="button" class="fc-btn fc-btn--primary">Primary</button>
+        <button type="button" class="fc-btn fc-btn--secondary">Secondary</button>
+        <button type="button" class="fc-btn fc-btn--ghost">Ghost</button>
+        <button type="button" class="fc-btn fc-btn--subtle">Subtle</button>
+        <button type="button" class="fc-btn fc-btn--danger">Delete</button>
+      </div>
+
+      <hr class="demo-rule">
+
+      <div class="fc-cluster">
+        <button type="button" class="fc-btn fc-btn--primary fc-btn--sm">Small</button>
+        <button type="button" class="fc-btn fc-btn--primary">Default</button>
+        <button type="button" class="fc-btn fc-btn--primary fc-btn--lg">Large</button>
+      </div>
+
+      <hr class="demo-rule">
+
+      <div class="fc-cluster">
+        <!--
+          `disabled` removes the control from the tab order entirely.
+          `aria-disabled` keeps it focusable so a keyboard user can reach it and
+          discover *why* it is unavailable. Both are styled; they are not the same.
+        -->
+        <button type="button" class="fc-btn fc-btn--secondary" disabled>Disabled</button>
+        <button type="button" class="fc-btn fc-btn--secondary"
+                aria-disabled="true">aria-disabled</button>
+
+        <!--
+          Busy keeps the label in the DOM so the accessible name does not change
+          while loading. Swapping it for a spinner would leave the control
+          momentarily unlabelled to a screen reader.
+        -->
+        <button type="button" class="fc-btn fc-btn--primary" id="btn-busy" aria-busy="true">
+          <span class="fc-btn__spinner" aria-hidden="true"></span>
+          <span>Saving&hellip;</span>
+        </button>
+
+        <button type="button" class="fc-btn fc-btn--secondary fc-btn--icon"
+                aria-label="Refresh">&#8635;</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ EDITOR ============================ -->
+  <section class="demo-section" id="editor" aria-labelledby="h-editor">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-editor">Rich text editor</h2>
+      <p class="demo-note">
+        Select some text and watch the toolbar report the marks across the
+        <em>whole</em> selection. A partly-bold selection reads as not-bold, because a
+        toolbar that lies about a partial selection is worse than one that admits it.
+      </p>
+    </div>
+
+    <div class="fc-editor" id="editor-root">
+      <div class="fc-toolbar" role="toolbar" aria-label="Formatting">
+        <button type="button" class="fc-toolbar__item" data-fc-mark="bold" aria-pressed="false">
+          <span aria-hidden="true"><strong>B</strong></span><span class="fc-u-visually-hidden">Bold</span>
+        </button>
+        <button type="button" class="fc-toolbar__item" data-fc-mark="italic" aria-pressed="false">
+          <span aria-hidden="true"><em>I</em></span><span class="fc-u-visually-hidden">Italic</span>
+        </button>
+        <button type="button" class="fc-toolbar__item" data-fc-mark="underline" aria-pressed="false">
+          <span aria-hidden="true"><u>U</u></span><span class="fc-u-visually-hidden">Underline</span>
+        </button>
+        <button type="button" class="fc-toolbar__item" data-fc-mark="strike" aria-pressed="false">
+          <span aria-hidden="true"><s>S</s></span><span class="fc-u-visually-hidden">Strikethrough</span>
+        </button>
+        <button type="button" class="fc-toolbar__item" data-fc-mark="code" aria-pressed="false">
+          <span aria-hidden="true">&lt;/&gt;</span><span class="fc-u-visually-hidden">Code</span>
+        </button>
+
+        <span class="demo-toolbar-sep" role="separator"></span>
+
+        <button type="button" class="fc-toolbar__item" data-fc-block="h2" aria-pressed="false">
+          <span aria-hidden="true">H2</span><span class="fc-u-visually-hidden">&nbsp;heading</span>
+        </button>
+        <button type="button" class="fc-toolbar__item" data-fc-block="blockquote" aria-pressed="false">
+          <span aria-hidden="true">&ldquo;&rdquo;</span><span class="fc-u-visually-hidden">&nbsp;quote</span>
+        </button>
+        <button type="button" class="fc-toolbar__item" data-fc-block="pre" aria-pressed="false">
+          <span aria-hidden="true">{&hellip;}</span><span class="fc-u-visually-hidden">&nbsp;code block</span>
+        </button>
+
+        <span class="demo-toolbar-sep" role="separator"></span>
+
+        <button type="button" class="fc-toolbar__item" id="editor-link">Link</button>
+      </div>
+
+      <!--
+        role="textbox" with aria-multiline is required: contenteditable alone is
+        not reliably announced as an editable region, and the multiline flag is
+        what lets a screen reader know Enter inserts a newline.
+      -->
+      <div class="fc-editor__content fc-prose" id="editor-content"
+           contenteditable="true" role="textbox" aria-multiline="true"
+           aria-label="Document body"><p>Type here, then select a few words.</p><p>The toolbar above updates as the selection changes &mdash; that is the <code>onSelectionChange</code> callback, wired in <code>demo/demo.js</code>.</p></div>
+    </div>
+
+    <p class="demo-status" id="editor-status" role="status">
+      Ready. The bindings are plain TypeScript &mdash; no build step, no bundler, no WASM.
+    </p>
+  </section>
+
+  <!-- ============================ GRID ============================ -->
+  <section class="demo-section" id="grid" aria-labelledby="h-grid">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-grid">Data grid</h2>
+      <p class="demo-note">
+        Click a cell, then use the arrow keys. There is exactly <strong>one</strong> tab
+        stop: arrows move within the grid, Tab leaves it. A grid where every cell is
+        focusable needs nine presses of Tab to escape a 3&times;3 and is unusable at
+        10,000 cells.
+      </p>
+    </div>
+
+    <div class="fc-grid" id="grid-root" role="grid" aria-label="Deployment status"
+         data-fc-rowcount="4" data-fc-colcount="5">
+      <div role="row">
+        <span class="fc-grid__corner" role="columnheader"></span>
+        <span class="fc-grid__col-header" role="columnheader" aria-colindex="1">Service</span>
+        <span class="fc-grid__col-header" role="columnheader" aria-colindex="2">Region</span>
+        <span class="fc-grid__col-header fc-grid__col-header--numeric" role="columnheader" aria-colindex="3">p95 ms</span>
+        <span class="fc-grid__col-header" role="columnheader" aria-colindex="4">State</span>
+        <span class="fc-grid__col-header fc-grid__col-header--numeric" role="columnheader" aria-colindex="5">Cost</span>
+      </div>
+      <div role="row">
+        <span class="fc-grid__row-header" role="rowheader">1</span>
+        <span class="fc-grid__cell" role="gridcell" data-fc-label="Service, row 1">api</span>
+        <span class="fc-grid__cell" role="gridcell" data-fc-label="Region, row 1">eu-west-1</span>
+        <span class="fc-grid__cell fc-grid__cell--numeric" role="gridcell" data-fc-label="p95, row 1">42</span>
+        <span class="fc-grid__cell" role="gridcell" data-fc-label="State, row 1">healthy</span>
+        <span class="fc-grid__cell fc-grid__cell--numeric" role="gridcell" data-fc-label="Cost, row 1">18.40</span>
+      </div>
+      <div role="row">
+        <span class="fc-grid__row-header" role="rowheader">2</span>
+        <span class="fc-grid__cell" role="gridcell" data-fc-label="Service, row 2">api</span>
+        <span class="fc-grid__cell" role="gridcell" data-fc-label="Region, row 2">us-east-1</span>
+        <span class="fc-grid__cell fc-grid__cell--numeric" role="gridcell" data-fc-label="p95, row 2">187</span>
+        <span class="fc-grid__cell" role="gridcell" data-fc-label="State, row 2">degraded</span>
+        <span class="fc-grid__cell fc-grid__cell--numeric" role="gridcell" data-fc-label="Cost, row 2">31.02</span>
+      </div>
+      <div role="row">
+        <span class="fc-grid__row-header" role="rowheader">3</span>
+        <span class="fc-grid__cell" role="gridcell" data-fc-label="Service, row 3">worker</span>
+        <span class="fc-grid__cell" role="gridcell" data-fc-label="Region, row 3">eu-west-1</span>
+        <span class="fc-grid__cell fc-grid__cell--numeric" role="gridcell" data-fc-label="p95, row 3">12</span>
+        <span class="fc-grid__cell" role="gridcell" data-fc-label="State, row 3">healthy</span>
+        <span class="fc-grid__cell fc-grid__cell--numeric" role="gridcell" data-fc-label="Cost, row 3">4.15</span>
+      </div>
+      <div role="row">
+        <span class="fc-grid__row-header" role="rowheader">4</span>
+        <span class="fc-grid__cell" role="gridcell" data-fc-label="Service, row 4">db-primary</span>
+        <span class="fc-grid__cell" role="gridcell" data-fc-label="Region, row 4">us-east-1</span>
+        <span class="fc-grid__cell fc-grid__cell--numeric" role="gridcell" data-fc-label="p95, row 4">9</span>
+        <span class="fc-grid__cell" role="gridcell" data-fc-label="State, row 4">healthy</span>
+        <span class="fc-grid__cell fc-grid__cell--numeric" role="gridcell" data-fc-label="Cost, row 4">96.70</span>
+      </div>
+    </div>
+
+    <p class="demo-status" id="grid-status" role="status">
+      Double-click a cell to edit it. Escape restores the original value.
+    </p>
+  </section>
+
+  <!-- ============================ MENU ============================ -->
+  <section class="demo-section" id="menu" aria-labelledby="h-menu">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-menu">Context menu</h2>
+      <p class="demo-note">
+        Right-click the surface, or press the button. Then try only the keyboard:
+        arrows move, letters jump by typeahead, Escape closes. Focus returns to
+        whatever opened the menu &mdash; every time, including on Escape.
+      </p>
+    </div>
+
+    <div class="demo-panel">
+      <div class="fc-cluster">
+        <button type="button" class="fc-btn fc-btn--secondary" id="menu-trigger"
+                aria-haspopup="menu" aria-expanded="false" aria-controls="demo-menu">
+          Open menu
+        </button>
+        <span class="demo-hint">Or right-click anywhere in this panel.</span>
+      </div>
+
+      <div class="demo-surface" id="menu-surface" tabindex="-1">
+        <p>Right-click target area.</p>
+      </div>
+    </div>
+
+    <div class="fc-menu" id="demo-menu" role="menu" aria-label="Example actions" popover="manual">
+      <div class="fc-menu__group-label" role="presentation">Edit</div>
+      <button type="button" class="fc-menu__item" role="menuitem" data-menu-action="cut">
+        <span class="fc-menu__check" aria-hidden="true"></span>
+        Cut<span class="fc-menu__shortcut" aria-hidden="true">&#8984;X</span>
+      </button>
+      <button type="button" class="fc-menu__item" role="menuitem" data-menu-action="copy">
+        <span class="fc-menu__check" aria-hidden="true"></span>
+        Copy<span class="fc-menu__shortcut" aria-hidden="true">&#8984;C</span>
+      </button>
+      <!--
+        aria-disabled rather than disabled: the item stays reachable by arrow
+        navigation so a screen-reader user learns that Paste exists and is
+        unavailable. A `disabled` item is skipped in silence.
+      -->
+      <button type="button" class="fc-menu__item" role="menuitem" aria-disabled="true" data-menu-action="paste">
+        <span class="fc-menu__check" aria-hidden="true"></span>
+        Paste<span class="fc-menu__shortcut" aria-hidden="true">&#8984;V</span>
+      </button>
+
+      <hr class="fc-menu__separator" role="separator">
+
+      <div class="fc-menu__group-label" role="presentation">View</div>
+      <button type="button" class="fc-menu__item" role="menuitemcheckbox" aria-checked="true" data-menu-action="wrap">
+        <span class="fc-menu__check" aria-hidden="true">&#10003;</span>
+        Wrap lines
+      </button>
+      <button type="button" class="fc-menu__item" role="menuitemcheckbox" aria-checked="false" data-menu-action="numbers">
+        <span class="fc-menu__check" aria-hidden="true">&#10003;</span>
+        Line numbers
+      </button>
+
+      <hr class="fc-menu__separator" role="separator">
+
+      <button type="button" class="fc-menu__item fc-menu__item--danger" role="menuitem" data-menu-action="delete">
+        <span class="fc-menu__check" aria-hidden="true"></span>
+        Delete file
+      </button>
+    </div>
+
+    <p class="demo-status" id="menu-status" role="status">No action chosen yet.</p>
+  </section>
+
+  <!-- ============================ CHAT ============================ -->
+  <section class="demo-section" id="chat" aria-labelledby="h-chat">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-chat">Chat surface</h2>
+      <p class="demo-note">
+        Messages carry their state in <code>data-fc-*</code> attributes, so a machine
+        reading the DOM gets role, sequence, timestamp, and lifecycle state without
+        parsing a word of prose. The attributes are additive: styling never depends on
+        them, and a consumer can ignore them entirely.
+      </p>
+    </div>
+
+    <div class="fc-chat" id="chat-root" role="log" aria-label="Conversation" tabindex="0">
+      <div class="fc-chat__group">
+        <div class="fc-msg" data-fc-kind="message" data-fc-id="m-1" data-fc-seq="1"
+             data-fc-role="user" data-fc-state="complete"
+             data-fc-ts="2026-10-04T09:12:00Z">
+          <div class="fc-msg__meta">
+            <span class="fc-msg__author">You</span>
+            <time class="fc-msg__time" datetime="2026-10-04T09:12:00Z">09:12</time>
+          </div>
+          <div class="fc-msg__body fc-prose">
+            <p>Which services are degraded right now?</p>
+          </div>
+        </div>
+
+        <div class="fc-msg" data-fc-kind="message" data-fc-id="m-2" data-fc-seq="2"
+             data-fc-role="assistant" data-fc-state="complete"
+             data-fc-ts="2026-10-04T09:12:04Z">
+          <div class="fc-msg__meta">
+            <span class="fc-msg__author">Assistant</span>
+            <time class="fc-msg__time" datetime="2026-10-04T09:12:04Z">09:12</time>
+          </div>
+          <div class="fc-msg__body fc-prose">
+            <p>One: <strong>api</strong> in <code>us-east-1</code>, p95 at 187&nbsp;ms.</p>
+          </div>
+        </div>
+
+        <!--
+          Truncation is always declared. `data-fc-truncated="true"` says the text
+          shown is an elision, and the full value stays reachable via title.
+        -->
+        <div class="fc-msg" data-fc-kind="message" data-fc-id="m-3" data-fc-seq="3"
+             data-fc-role="assistant" data-fc-state="complete"
+             data-fc-truncated="true"
+             data-fc-ts="2026-10-04T09:12:09Z">
+          <div class="fc-msg__meta">
+            <span class="fc-msg__author">Assistant</span>
+            <time class="fc-msg__time" datetime="2026-10-04T09:12:09Z">09:12</time>
+          </div>
+          <div class="fc-msg__body fc-prose" title="Full response: 14 log lines, 3 tool calls, 1 error.">
+            <p>Full response: 14 log lines, 3 tool&hellip;</p>
+          </div>
+        </div>
+
+        <!--
+          An error message keeps its text. Styling communicates the failure;
+          removing the content would destroy the only record of what went wrong.
+        -->
+        <div class="fc-msg" data-fc-kind="message" data-fc-id="m-4" data-fc-seq="4"
+             data-fc-role="system" data-fc-state="error"
+             data-fc-ts="2026-10-04T09:13:00Z">
+          <div class="fc-msg__meta">
+            <span class="fc-msg__author">System</span>
+            <time class="fc-msg__time" datetime="2026-10-04T09:13:00Z">09:13</time>
+          </div>
+          <div class="fc-msg__body fc-prose">
+            <p>Metrics fetch failed &mdash; retrying in 30&nbsp;s.</p>
+          </div>
+        </div>
+
+        <div class="fc-msg" data-fc-kind="message" data-fc-id="m-5" data-fc-seq="5"
+             data-fc-role="assistant" data-fc-state="streaming"
+             data-fc-ts="2026-10-04T09:13:04Z">
+          <div class="fc-msg__meta">
+            <span class="fc-msg__author">Assistant</span>
+            <time class="fc-msg__time" datetime="2026-10-04T09:13:04Z">09:13</time>
+          </div>
+          <div class="fc-msg__body fc-prose">
+            <p>Checking the worker queue&hellip;</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ TOOL CALLS ============================ -->
+  <section class="demo-section" id="tools" aria-labelledby="h-tools">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-tools">Tool calls &amp; step traces</h2>
+      <p class="demo-note">
+        Every lifecycle state is styled, not just the rest state: running, complete,
+        error, denied, aborted. Each state is named in text as well as signalled by
+        colour, so it survives greyscale and forced-colors mode.
+      </p>
+    </div>
+
+    <div class="fc-stack fc-stack--3">
+      <div class="fc-tool" data-fc-kind="tool-call" data-fc-id="t-1" data-fc-seq="1"
+           data-fc-state="complete" data-fc-ts="2026-10-04T09:12:05Z">
+        <div class="fc-tool__header">
+          <span class="fc-tool__name">search_logs</span>
+          <span class="fc-tool__state" data-fc-state="complete">complete</span>
+          <span class="fc-tool__duration">412&nbsp;ms</span>
+        </div>
+        <div class="fc-tool__payload">{ "service": "api", "window": "15m" }</div>
+      </div>
+
+      <div class="fc-tool" data-fc-kind="tool-call" data-fc-id="t-2" data-fc-seq="2"
+           data-fc-state="running" data-fc-ts="2026-10-04T09:12:06Z">
+        <div class="fc-tool__header">
+          <span class="fc-tool__name">query_metrics</span>
+          <span class="fc-tool__state" data-fc-state="running">running</span>
+        </div>
+        <!--
+          role="progressbar" with the value attributes, not a bare div. The bar is
+          the only thing telling a screen-reader user the step is not hung.
+        -->
+        <div class="fc-tool__progress">
+          <div class="fc-tool__progress-track">
+            <div class="fc-tool__progress-bar" role="progressbar"
+                 aria-label="query_metrics progress" aria-valuemin="0" aria-valuemax="100"
+                 aria-valuenow="62"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fc-tool" data-fc-kind="tool-call" data-fc-id="t-3" data-fc-seq="3"
+           data-fc-state="denied" data-fc-ts="2026-10-04T09:12:07Z">
+        <div class="fc-tool__header">
+          <span class="fc-tool__name">restart_service</span>
+          <span class="fc-tool__state" data-fc-state="denied">denied</span>
+        </div>
+        <div class="fc-tool__error">
+          Requires the <code>deploy</code> permission, which this session does not hold.
+        </div>
+      </div>
+
+      <div class="fc-tool" data-fc-kind="tool-call" data-fc-id="t-4" data-fc-seq="4"
+           data-fc-state="error" data-fc-ts="2026-10-04T09:12:09Z">
+        <div class="fc-tool__header">
+          <span class="fc-tool__name">write_report</span>
+          <span class="fc-tool__state" data-fc-state="error">error</span>
+        </div>
+        <div class="fc-tool__error">
+          <code>EPERM</code> &mdash; the output path is not writable by this process.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ TERMINAL ============================ -->
+  <section class="demo-section" id="terminal" aria-labelledby="h-terminal">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-terminal">Terminal</h2>
+      <p class="demo-note">
+        A terminal keeps its own palette, and it stays dark in <em>both</em> colour
+        schemes &mdash; flip the theme above and watch this panel deliberately not
+        change. ANSI slots are hue-fixed by protocol, so these 19 pairings are
+        contrast-checked at build time in both schemes.
+      </p>
+    </div>
+
+    <div class="fc-terminal" id="terminal-root" data-fc-state="connected" style="block-size: 22rem;">
+      <!--
+        role="log" with aria-live="polite". Deliberately not assertive: a
+        fast-running command would make a screen reader unusable.
+      -->
+      <div class="fc-terminal__output" role="log" aria-live="polite" aria-label="Terminal output">
+        <div class="fc-terminal__line"><span class="fc-term-ansi-bright-black">~/deploy</span> <span class="fc-terminal__bold">$</span> npm run build</div>
+        <div class="fc-terminal__line"><span class="fc-term-ansi-green">done</span> in 2.4s</div>
+        <div class="fc-terminal__line"><span class="fc-terminal__dim">18 tests passed, 0 failed</span></div>
+        <div class="fc-terminal__line">&nbsp;</div>
+        <div class="fc-terminal__line"><span class="fc-terminal__bold">$</span> deploy --prod</div>
+        <div class="fc-terminal__line"><span class="fc-term-ansi-blue">info</span> uploading 14 files&hellip;</div>
+        <div class="fc-terminal__line"><span class="fc-term-ansi-blue">info</span> waiting for health check</div>
+        <div class="fc-terminal__line"><span class="fc-term-ansi-red">error</span> health check failed: p95 187ms exceeds 120ms</div>
+        <div class="fc-terminal__line"><span class="fc-terminal__dim">rollout halted, previous version retained</span></div>
+        <div class="fc-terminal__line">&nbsp;</div>
+        <div class="fc-terminal__line"><span class="fc-terminal__bold">$</span> <span class="fc-terminal__cursor fc-terminal__cursor--blink" aria-hidden="true">&nbsp;</span></div>
+      </div>
+
+      <!--
+        A real textbox, not a div. Without it, an IME-composed character --
+        routine in CJK and other composing scripts -- silently fails to insert.
+      -->
+      <div class="fc-terminal__input-row">
+        <span class="fc-terminal__prompt" aria-hidden="true">$</span>
+        <label class="fc-u-visually-hidden" for="terminal-input">Terminal input</label>
+        <input class="fc-terminal__input" id="terminal-input" type="text"
+               autocomplete="off" spellcheck="false" placeholder="Type a command and press Enter">
+      </div>
+
+      <div class="fc-terminal__status">
+        <span>utf-8</span>
+        <span>bash</span>
+        <span class="fc-terminal__status-end">
+          <!--
+            Colour AND a word. A red "1" alone is a colour-only signal; "exit 1"
+            survives greyscale, and so does the forced-colors fallback.
+          -->
+          <span class="fc-terminal__exit" data-fc-state="error">exit 1</span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ WEBVIEW ============================ -->
+  <section class="demo-section" id="webview" aria-labelledby="h-webview">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-webview">Embedded browser chrome</h2>
+      <p class="demo-note">
+        The browsing is an <code>&lt;iframe&gt;</code>; the design system owns the
+        accessible, themeable chrome around it. Note the sandbox: the frame loads
+        without <code>allow-same-origin</code>, so the embedded page cannot reach this
+        origin's cookies or storage.
+      </p>
+    </div>
+
+    <div class="fc-webview" id="webview-root" data-fc-home="/demo/page.html" data-fc-state="idle"
+         style="block-size: 24rem;">
+      <div class="fc-webview__toolbar">
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--icon fc-btn--sm"
+                data-fc-action="back" aria-label="Back" disabled>&#8592;</button>
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--icon fc-btn--sm"
+                data-fc-action="forward" aria-label="Forward" disabled>&#8594;</button>
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--icon fc-btn--sm"
+                data-fc-action="reload" aria-label="Reload" disabled>&#8635;</button>
+
+        <!-- A real form, so Enter submits without a keydown handler and mobile
+             keyboards show the right "Go" affordance for free. -->
+        <form class="fc-webview__address" data-fc-role="address-form" role="search">
+          <span class="fc-webview__secure" data-fc-state="insecure">
+            <span aria-hidden="true">&#9888;</span>
+            <span>Not secure</span>
+          </span>
+          <label class="fc-u-visually-hidden" for="webview-address">Address</label>
+          <input class="fc-webview__address-input" id="webview-address" type="text"
+                 value="/demo/page.html" spellcheck="false" autocomplete="off">
+        </form>
+
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--icon fc-btn--sm"
+                data-fc-action="home" aria-label="Home">&#8962;</button>
+      </div>
+
+      <!--
+        title is required on every iframe. Without it the frame is announced as
+        an unnamed region and a screen-reader user has no way to know what it holds.
+      -->
+      <iframe class="fc-webview__frame" id="webview-frame" title="Embedded page"
+              src="/demo/page.html"></iframe>
+    </div>
+
+    <p class="demo-status" id="webview-status" role="status">
+      Unsafe schemes are refused: try <code>javascript:alert(1)</code> in the address bar.
+    </p>
+  </section>
+
+  <!-- ============================ TOKENS ============================ -->
+  <section class="demo-section" id="tokens" aria-labelledby="h-tokens">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-tokens">Design tokens</h2>
+      <p class="demo-note">
+        Colours are named by purpose, never by hue, so a theme can remap them. Each
+        pairing below is read from the live stylesheet, so the ratio shown is the one
+        actually rendering &mdash; computed, not estimated.
+      </p>
+    </div>
+
+    <div class="fc-grid-auto" id="token-grid"></div>
+  </section>
+
+  <footer class="demo-footer">
+    <div class="fc-container">
+      <p>
+        Built from source with <code>npm run build</code>. The bindings on this page are
+        plain TypeScript loaded straight from <code>src/js/</code> &mdash; no bundler,
+        no transpiler, no framework, and no WASM required.
+      </p>
+      <p class="demo-footer__meta"><span id="demo-meta"></span></p>
+    </div>
+  </footer>
+
+</main>
+
+<script type="module" src="/demo/demo.js"></script>
+</body>
+</html>

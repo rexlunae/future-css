@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>future-css bindings fixture</title>
+<link rel="stylesheet" href="../../dist/future-css.css">
+<style>
+  body { padding: 1.5rem; margin: 0; font-family: var(--fc-font-family-sans); }
+  .stack > * { margin-block-end: 1rem; }
+</style>
+</head>
+<body>
+<div class="stack">
+
+  <!-- The markup the bindings expect, exactly as documented. -->
+  <div class="fc-editor" id="ed">
+    <div class="fc-toolbar" role="toolbar" aria-label="Formatting">
+      <button type="button" data-fc-mark="bold" aria-pressed="false">B</button>
+      <button type="button" data-fc-mark="italic" aria-pressed="false">I</button>
+      <button type="button" data-fc-mark="link" aria-pressed="false">Link</button>
+    </div>
+    <div class="fc-editor__content" contenteditable="true" role="textbox"
+         aria-multiline="true" aria-label="Rich text">Hello plain text here</div>
+  </div>
+
+  <div class="fc-grid" id="grid" role="grid" aria-label="Demo grid"
+       data-fc-rowcount="3" data-fc-colcount="3">
+    <div role="row"><span role="gridcell">a1</span><span role="gridcell">b1</span><span role="gridcell">c1</span></div>
+    <div role="row"><span role="gridcell">a2</span><span role="gridcell">b2</span><span role="gridcell">c2</span></div>
+    <div role="row"><span role="gridcell">a3</span><span role="gridcell">b3</span><span role="gridcell">c3</span></div>
+  </div>
+
+  <button id="trigger" type="button">Right-click me</button>
+  <div class="fc-menu" id="menu" popover="manual">
+    <button type="button" class="fc-menu__item" role="menuitem">Cut</button>
+    <button type="button" class="fc-menu__item" role="menuitem">Copy</button>
+    <button type="button" class="fc-menu__item" role="menuitem" aria-disabled="true">Paste</button>
+    <button type="button" class="fc-menu__item" role="menuitem">Delete</button>
+  </div>
+
+  <div class="fc-webview" id="wv" data-fc-home="about:blank">
+    <div class="fc-webview__toolbar">
+      <button type="button" data-fc-action="back" aria-label="Back">&#8592;</button>
+      <button type="button" data-fc-action="forward" aria-label="Forward">&#8594;</button>
+      <button type="button" data-fc-action="reload" aria-label="Reload">&#8635;</button>
+      <form data-fc-role="address-form">
+        <input type="text" aria-label="Address" value="about:blank">
+      </form>
+    </div>
+    <iframe title="Embedded page"></iframe>
+  </div>
+
+</div>
+</body>
+</html>

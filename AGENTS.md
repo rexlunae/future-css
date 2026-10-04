@@ -84,6 +84,7 @@ npm run build:wasm  # Rust crates -> one .wasm per crate, plus a size report
 npm run lint        # architecture linter
 npm test            # JS tests, including WASM/JS parity
 cargo test          # Rust unit tests
+npm run test:browser # bindings in headless Chrome (skipped if none found)
 npm run check       # all of the above; this is the gate
 ```
 
@@ -226,11 +227,13 @@ When adding any component, verify:
 ```
 src/tokens/         Tokens in TypeScript (source of truth)
 src/css/            Layered CSS. index.css declares layer order
-src/js/             The JS accelerator: WASM is optional, JS always works
+src/js/             Component bindings (editor, menu, grid, webview) plus the
+                    WASM accelerator. WASM is optional; JS always works.
 src/build/          Token compiler, CSS bundler, WASM orchestrator
 crates/            Rust crates, one .wasm per crate
 tools/lint-css.mjs  Architecture linter
 tests/              Contract, linter, accelerator, and WASM/JS parity tests
+tests/browser/      Binding tests in headless Chrome. Skipped if no browser.
 docs/               Design documents; PLAN.md is the roadmap, WASM.md the WASM spec
 ```
 

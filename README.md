@@ -87,6 +87,7 @@ tokens, components, and lint rules.
 | --- | --- |
 | [AGENTS.md](AGENTS.md) | **Working here?** Invariants, DOM contract, contribution rules |
 | [PLAN.md](docs/PLAN.md) | **Start here.** Roadmap, phased milestones, exit criteria |
+| [SEMANTIC-COVERAGE.md](docs/SEMANTIC-COVERAGE.md) | What ten reference libraries mean by "semantic", and what we ship against it |
 | [PRINCIPLES.md](docs/PRINCIPLES.md) | The design principles and the reasoning behind them |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Cascade layers, the token pipeline, the build |
 | [TOKENS.md](docs/TOKENS.md) | Token naming, the primitive→semantic model, theming |

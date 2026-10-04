@@ -26,12 +26,19 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 ### Working now
 
 ```
-npm run build        119 tokens (44 theme-aware) + 8-file bundle, ~55 KB
-                     5 WASM modules (over budget — see Phase A)
-npm run lint         14 rules, 0 violations
-npm test             92 tests passing (incl. WASM/JS parity + bundle integrity)
-cargo test           68 tests passing
+npm run build        165 tokens (90 theme-aware) + 15-file bundle, 132 KB
+                     6 Rust crates, 4 WASM modules (over budget — see Phase A)
+npm run lint         15 rules, 0 violations across 15 files
+npm test             245 tests passing (incl. WASM/JS parity + bundle integrity)
+cargo test           75 tests passing
 ```
+
+The bundle figure is uncompressed and unminified, which is the shipped form: the CSS is
+deliberately readable so engineers can debug it in devtools, and consumers minify at
+their own boundary. It exceeds the < 60 KB uncompressed budget in the performance
+section below. That budget has never been enforced — it is scheduled for Phase 4 — so the
+number above is stated as measured rather than as met. See
+[Semantic coverage](SEMANTIC-COVERAGE.md) §"Docs that disagree with the code".
 
 Verified: contrast contract enforced in both schemes · all ramps validated · linter
 verified against both violations and legitimate patterns · WASM modules instantiate and
@@ -104,7 +111,7 @@ defaults, the layout primitives, the utilities, and the first component.
 - [x] Button component as the reference implementation
 - [x] Chat surface (thread, message, lifecycle states, truncation)
 - [x] Tool-call component (arguments, result, determinate and indeterminate progress)
-- [x] Linter with 14 rules and a full test suite
+- [x] Linter with 15 rules and a full test suite
 - [x] Build orchestrator with per-layer outputs
 
 ### Remaining
@@ -393,14 +400,30 @@ describes. Documentation that drifts is worse than none, because it is trusted.
 
 ### Performance budget
 
-| Budget | Target |
-| --- | --- |
-| Full bundle, uncompressed | < 60 KB |
-| Full bundle, minified | < 15 KB |
-| Tokens + base only | < 10 KB minified |
-| CSS applied to a typical page | < 30 KB |
+| Budget | Target | Measured |
+| --- | --- | --- |
+| Full bundle, uncompressed | < 60 KB | **132 KB — over by 2.2x** |
+| Full bundle, minified | < 15 KB | not measured |
+| Tokens + base only | < 10 KB minified | not measured |
+| CSS applied to a typical page | < 30 KB | not measured |
 
 Enforced in CI from Phase 4. Exceeding the budget requires a written justification.
+
+**The uncompressed target is currently missed and always has been.** It was written
+before the bundle had a terminal, a syntax palette, a diff family and seven more
+components, and nothing has re-checked it since. Two honest options, and the choice
+belongs to whoever picks this up:
+
+1. **Restate the budget against the minified figure.** The shipped CSS is deliberately
+   unminified — comments and readable structure are worth more to an engineer debugging
+   in devtools than the last few kilobytes — so an uncompressed budget measures the wrong
+   thing. That requires a minifier, which the zero-dependency constraint currently
+   forbids. Phase 4 would have to add one, or measure with an external tool.
+2. **Raise the uncompressed budget to what the system actually needs**, with the
+   reasoning written down, and keep the minified number as the real target.
+
+Leaving a target the build contradicts is the one option that is not available: it is
+precisely the class of error this system is built to prevent everywhere else.
 
 ### Open questions
 

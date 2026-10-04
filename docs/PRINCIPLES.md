@@ -234,7 +234,7 @@ defeats the point of having a system at all. The utility layer here is capped at
 twenty classes, each earning its place by solving a problem no component can.
 
 The same logic applies to layout primitives: `.fc-stack`, `.fc-cluster`, `.fc-sidebar`,
-`.fc-grid`, `.fc-container`. Five primitives cover the overwhelming majority of real
+`.fc-grid-auto`, `.fc-container`. Five primitives cover the overwhelming majority of real
 layouts, and each is direction-agnostic by construction.
 
 **Enforced.** A utility is added only via the process in

@@ -93,6 +93,32 @@
 
   /* ---- Cells -------------------------------------------------------------- */
 
+  /*
+   * Rows are transparent to the grid.
+   *
+   * `.fc-grid` declares `grid-auto-columns` so that the *cells* are the grid
+   * items, which is what makes a spreadsheet-like surface possible: every cell
+   * in column N lines up with every other cell in column N, no matter which row
+   * it is in.
+   *
+   * That only works if a row contributes no box of its own. A row is still a
+   * `<div role="row">`, which defaults to `display: block` -- so it becomes a
+   * single grid item, each row lands in one implicit column, and the cells
+   * inside it lay out as ordinary block boxes. The result is a grid that looks
+   * roughly right but whose columns do not line up across rows.
+   *
+   * `display: contents` removes the row's box while keeping it in the
+   * accessibility tree, which is exactly the behaviour needed: the row is still
+   * announced as a row grouping its cells, but contributes no layout.
+   *
+   * This is worth stating explicitly rather than leaving implicit, because the
+   * failure is invisible in a screenshot of a single row and obvious only when
+   * you look down a column.
+   */
+  [role="row"] {
+    display: contents;
+  }
+
   .fc-grid__cell {
     display: flex;
     align-items: center;

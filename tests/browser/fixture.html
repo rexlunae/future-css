@@ -38,6 +38,18 @@
     <button type="button" class="fc-menu__item" role="menuitem">Delete</button>
   </div>
 
+  <!--
+    A terminal, so the "stays dark in both schemes" test has something to measure.
+    The component needs a definite height: it is `block-size: 100%` and the CSS is
+    explicit that the consumer supplies one.
+  -->
+  <div class="fc-terminal" id="term" data-fc-state="connected" style="block-size: 8rem;">
+    <div class="fc-terminal__output" role="log" aria-live="polite" aria-label="Output">
+      <div class="fc-terminal__line"><span class="fc-term-ansi-green">ok</span> build finished</div>
+      <div class="fc-terminal__line"><span class="fc-term-ansi-red">error</span> one thing failed</div>
+    </div>
+  </div>
+
   <div class="fc-webview" id="wv" data-fc-home="about:blank">
     <div class="fc-webview__toolbar">
       <button type="button" data-fc-action="back" aria-label="Back">&#8592;</button>

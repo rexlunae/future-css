@@ -98,7 +98,7 @@ defaults, the layout primitives, the utilities, and the first component.
 - [x] Base layer: semantic element defaults for headings, prose, links, tables, forms,
   blockquotes, lists, selection
 - [x] Focus ring with an offset ring for guaranteed visibility
-- [x] Layout primitives: `fc-stack`, `fc-cluster`, `fc-sidebar`, `fc-grid`, `fc-container`
+- [x] Layout primitives: `fc-stack`, `fc-cluster`, `fc-sidebar`, `fc-grid-auto`, `fc-container`
 - [x] Direction-agnostic helpers: `fc-truncate`, `fc-clamp-*`, `fc-scroll-x`, `fc-center`
 - [x] Utilities layer with the accessible-hiding pattern
 - [x] Button component as the reference implementation

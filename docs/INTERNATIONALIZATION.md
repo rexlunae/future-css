@@ -81,7 +81,7 @@ survive English routinely break in these languages.
 | --- | --- |
 | Button label overflows | `white-space: nowrap` is not set; buttons use intrinsic sizing with `min-block-size`, so labels push the button wider |
 | Sidebar clips text | `.fc-truncate` exists, but paired with `title` or a tooltip so the full value stays reachable |
-| Fixed-width columns overflow | `.fc-grid` uses `minmax(min(16rem, 100%), 1fr)`, so tracks never force a container wider than itself |
+| Fixed-width columns overflow | `.fc-grid-auto` uses `minmax(min(16rem, 100%), 1fr)`, so tracks never force a container wider than itself |
 | Flex child refuses to shrink | `min-inline-size: 0` on all flex children, which fixes the classic unbreakable-string overflow |
 | Tabs overflow their row | `.fc-scroll-x` for tab lists and chip rows |
 | Long words break layout | `overflow-wrap: break-word` on prose in the base layer |

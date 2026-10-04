@@ -249,6 +249,72 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(html, "click here", "a refused link must not be inserted");
   });
 
+  // --------------------------------------------------------------- theming
+
+  it("re-themes when the consumer sets data-fc-theme", async () => {
+    // The theme hook shipped broken and nothing caught it. `color-scheme` was
+    // declared in `fc.base` as well as in `fc.tokens`; equal specificity, and base
+    // is ordered after tokens, so `light dark` always won and `data-fc-theme`
+    // computed to `light dark` and did nothing.
+    //
+    // It was invisible to every other test here: roles, focus and ARIA were all
+    // correct, and the OS preference still worked. Only *forcing* the attribute to
+    // the opposite of the current scheme and measuring a change exposes it.
+    const result = await evaluate(`
+      const root = document.documentElement;
+      const probe = document.createElement('div');
+      document.body.append(probe);
+      const read = () => {
+        probe.style.backgroundColor = 'var(--fc-color-bg-canvas)';
+        return getComputedStyle(probe).backgroundColor;
+      };
+
+      root.setAttribute('data-fc-theme', 'light');
+      const light = { bg: read(), scheme: getComputedStyle(root).colorScheme };
+      root.setAttribute('data-fc-theme', 'dark');
+      const dark = { bg: read(), scheme: getComputedStyle(root).colorScheme };
+      root.removeAttribute('data-fc-theme');
+      probe.remove();
+
+      return { light, dark };
+    `);
+
+    assert.equal(result.light.scheme, "light",
+      "data-fc-theme=light must actually set color-scheme");
+    assert.equal(result.dark.scheme, "dark",
+      "data-fc-theme=dark must actually set color-scheme");
+    assert.notEqual(result.light.bg, result.dark.bg,
+      "the two schemes must resolve to different canvas colours");
+  });
+
+  it("keeps the terminal dark in both colour schemes", async () => {
+    // Structural, not stylistic: a terminal following the OS into a light theme is
+    // a genuine usability regression, and every terminal theme keeps its own dark
+    // background. `--fc-term-*` is the only hue-named namespace in the system for
+    // exactly this reason.
+    const result = await evaluate(`
+      const root = document.documentElement;
+      const term = document.querySelector('.fc-terminal');
+      if (!term) return null;
+      root.setAttribute('data-fc-theme', 'light');
+      const lightTerm = getComputedStyle(term).backgroundColor;
+      root.setAttribute('data-fc-theme', 'dark');
+      const darkTerm = getComputedStyle(term).backgroundColor;
+      root.removeAttribute('data-fc-theme');
+      const lum = (rgb) => {
+        const [r, g, b] = rgb.match(/[\\d.]+/g).map(Number);
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      return { lightLum: lum(lightTerm), darkLum: lum(darkTerm), lightTerm, darkTerm };
+    `);
+
+    assert.ok(result, "fixture must contain a .fc-terminal for this assertion to mean anything");
+    assert.ok(result.lightLum < 40,
+      `terminal should stay dark in the light scheme, got ${result.lightTerm}`);
+    assert.ok(result.darkLum < 40,
+      `terminal should stay dark in the dark scheme, got ${result.darkTerm}`);
+  });
+
   // ----------------------------------------------------------------- grid
 
   it("keeps exactly one cell tabbable (roving tabindex)", async () => {
@@ -271,6 +337,41 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       return [root.getAttribute('role'), root.getAttribute('aria-rowcount'), root.getAttribute('aria-colcount')];
     `);
     assert.deepEqual(attrs, ["grid", "3", "3"]);
+  });
+
+  it("lays cells out in aligned columns, not one stacked column", async () => {
+    // The gap this covers is invisible to every other assertion in this file.
+    // Roles, tabindex and ARIA counts were all correct while the grid rendered
+    // as a single column: `grid-auto-columns` sizes implicit tracks, and without
+    // an explicit template nothing creates them. Navigation, focus and every
+    // announced attribute passed while the thing looked wrong.
+    //
+    // So this asserts on geometry -- the one property that had actually broken.
+    await loadBindings();
+    const layout = await evaluate(`
+      globalThis.g = new G.FutureCssGrid({ root: '#grid' });
+      const rows = [...document.querySelectorAll('#grid [role="row"]')];
+      const xs = (row) => [...row.querySelectorAll('[role="gridcell"]')]
+        .map(c => Math.round(c.getBoundingClientRect().x));
+      const cellsInRow = rows[0].querySelectorAll('[role="gridcell"]').length;
+      return {
+        cellsInRow,
+        template: getComputedStyle(document.querySelector('#grid')).gridTemplateColumns,
+        row0: xs(rows[0]),
+        row1: xs(rows[1]),
+        // Cells within a row share a baseline, i.e. they are side by side.
+        sameLine: new Set([...rows[0].querySelectorAll('[role="gridcell"]')]
+          .map(c => Math.round(c.getBoundingClientRect().y))).size === 1,
+      };
+    `);
+
+    // A real template, not the single-column fallback.
+    assert.notEqual(layout.template, "none");
+    assert.equal(layout.template.split(" ").length, layout.cellsInRow,
+      "template should have one track per cell in the row");
+    assert.ok(layout.sameLine, "cells in a row must share a line, not stack");
+    // The property that matters: the same column is at the same x in every row.
+    assert.deepEqual(layout.row1, layout.row0, "columns must align across rows");
   });
 
   it("moves the active cell with the arrow keys", async () => {

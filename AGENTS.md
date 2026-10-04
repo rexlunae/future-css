@@ -85,6 +85,7 @@ npm run lint        # architecture linter
 npm test            # JS tests, including WASM/JS parity
 cargo test          # Rust unit tests
 npm run test:browser # bindings in headless Chrome (skipped if none found)
+npm run demo       # serve the component demo at http://127.0.0.1:5178
 npm run check       # all of the above; this is the gate
 ```
 
@@ -145,6 +146,35 @@ So:
   build in tests.
 
 ---
+
+## The demo
+
+`npm run demo` serves `demo/` on port 5178. It is a working page, not a gallery of
+screenshots: every component is wired to the same binding module the package
+exports, loaded straight from `src/js/`.
+
+**No build step, deliberately.** `demo/server.mjs` serves the TypeScript sources
+with Node's `stripTypeScriptTypes` and rewrites sibling specifiers to `.js`. That
+is what makes the claim checkable rather than aspirational — if the bindings ever
+needed a bundler, this server would break.
+
+The demo's own chrome (`demo/demo.css`) lives outside `src/css` on purpose, so
+`npm run lint` does not walk it. The linter's contract is about the shipped
+library. The demo still follows the same rules.
+
+**A demo is a test.** Three of the bugs fixed in this area were invisible to unit
+tests and obvious the moment real components rendered in a real browser:
+
+- `.fc-grid` was an auto-fit layout primitive *and* the data grid. Layers resolve
+  that silently, so the grid inherited `grid-template-columns` and rendered four
+  columns of data as two. Both rules were individually correct.
+- `grid-auto-columns` sizes implicit tracks, and nothing created them, so every
+  cell stacked in one column. Roles, tabindex and ARIA were all correct.
+- `color-scheme` was declared in `fc.base` as well as `fc.tokens`. Base is
+  ordered later, so the theme switcher computed to `light dark` and changed
+  nothing — while still responding to clicks.
+
+Each is now covered by a test that fails when the bug is reintroduced.
 
 ## How to add things
 
@@ -234,6 +264,8 @@ crates/            Rust crates, one .wasm per crate
 tools/lint-css.mjs  Architecture linter
 tests/              Contract, linter, accelerator, and WASM/JS parity tests
 tests/browser/      Binding tests in headless Chrome. Skipped if no browser.
+demo/               Live component demo. Serves the built CSS plus the real
+                    TypeScript bindings, types stripped at serve time.
 docs/               Design documents; PLAN.md is the roadmap, WASM.md the WASM spec
 ```
 

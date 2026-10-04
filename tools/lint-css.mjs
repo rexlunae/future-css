@@ -80,6 +80,15 @@ const COLOR_LITERAL = new RegExp(
 
 const findings = [];
 
+/**
+ * Every class seen, mapped to the files that declare it.
+ *
+ * Cross-file state, so the collision rule can run once the whole program has
+ * been scanned. Keyed on the class name alone; the value is where it was seen.
+ * @type {Map<string, { file: string, line: number }[]>}
+ */
+const classOwners = new Map();
+
 function report(file, line, rule, message) {
   findings.push({ file, line, rule, message });
 }
@@ -273,6 +282,18 @@ function analyse(source, file) {
         report(file, lineNo, "no-adjacent-sibling-chains",
           "long sibling chains are direction-fragile. Use flexbox/grid gap instead.");
       }
+
+      // Record the block's own classes for the cross-file collision rule below.
+      // Compound and descendant selectors are skipped deliberately: `.fc-grid__cell`
+      // inside `.fc-prose :is(code)` is styling a shared element, not claiming a
+      // name. Only selectors whose *subject* is a single class claim ownership,
+      // which is exactly the set that can silently collide across layers.
+      const subject = selector.match(/^\s*(\.[\w-]+)/);
+      if (subject) {
+        const name = subject[1].slice(1);
+        if (!classOwners.has(name)) classOwners.set(name, []);
+        classOwners.get(name).push({ file, line: lineNo });
+      }
     }
   }
 }
@@ -284,6 +305,25 @@ async function main() {
     // Generated output is not linted; its TypeScript inputs are tested instead.
     if (source.includes("GENERATED FILE, DO NOT EDIT")) continue;
     analyse(source, relative(projectRoot, file));
+  }
+
+  // A class declared in two files is a collision, not an override.
+  //
+  // Cascade layers make this worse rather than better: the later layer wins
+  // silently, so the earlier layer's rule simply stops existing for anyone who
+  // loads both. This is not hypothetical -- `.fc-grid` was an auto-fit layout
+  // primitive in fc.layout *and* the data grid in fc.components, so the grid
+  // inherited `grid-template-columns` and rendered four columns of data as two.
+  // Both rules were individually correct, and each file looked fine in review.
+  //
+  // Repeats within one file are fine and are excluded: a component styles the
+  // same class across its own states, media queries, and forced-colors branches.
+  for (const [name, seen] of classOwners) {
+    const files_ = [...new Set(seen.map((s) => s.file))];
+    if (files_.length < 2) continue;
+    const first = seen[0];
+    report(first.file, first.line, "no-class-collision",
+      `"${name}" is also declared in ${files_.slice(1).join(", ")}. A class shared across files resolves by layer order, so one rule silently stops existing. Rename one of them.`);
   }
 
   if (findings.length === 0) {

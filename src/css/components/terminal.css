@@ -1,0 +1,338 @@
+/*!
+ * future-css -- terminal
+ *
+ * A terminal emulator surface: the output grid, the input line, and the chrome
+ * around them.
+ *
+ * **Scope, stated plainly.** This is the presentation layer. Parsing escape
+ * sequences, managing a PTY, scrollback buffers, and multiplexing belong to a
+ * terminal engine (xterm.js and equivalents do this well and should be used).
+ * What a design system owns is everything visible: grid geometry, the ANSI
+ * palette, cursor states, selection, and the accessibility contract.
+ *
+ * # Why a terminal has its own palette
+ *
+ * Two reasons, both structural rather than stylistic:
+ *
+ *   1. **A terminal has its own background**, which is dark in *both* color
+ *      schemes. An application that follows the OS into a light theme must not
+ *      produce a light terminal -- every terminal theme ever written keeps it
+ *      dark, and a light one is a genuine usability regression.
+ *   2. **ANSI slots are hue-fixed by protocol.** `\e[31m` is red. A build log's
+ *      red error means nothing rendered blue, so these are the only tokens in the
+ *      system named by hue rather than by purpose.
+ *
+ * Both are enforced: `src/tokens/semantic/terminal.ts` declares 19 contrast
+ * pairings checked at build time in both schemes. The first hand-written version
+ * of that palette failed 16 of them.
+ *
+ * # Accessibility
+ *
+ * Terminals are the hardest surface to make accessible, and most of the work is
+ * not visual:
+ *
+ *   - **The output region is a `log`**, so additions are announced politely
+ *     rather than interrupting. Deliberately not `assertive`: a fast-running
+ *     command would make a screen reader unusable.
+ *   - **The input line is a real textbox**, not a `div`, so caret and IME
+ *     composition work. Without this, an IME-composed character -- common in CJK
+ *     and other composing scripts -- silently fails.
+ *   - **Color is never the only signal.** A failed command carries its exit
+ *     status as text, so a red line is not the only thing marking it.
+ */
+
+@layer fc.components {
+  .fc-terminal {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+    /* A terminal needs a definite height; the consumer sets it. */
+    block-size: 100%;
+
+    background-color: var(--fc-term-bg);
+    color: var(--fc-term-fg);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+    border-radius: var(--fc-radius-md);
+    /* The terminal background is its own contrast environment, so it is never
+       themed -- not even by high-contrast or reduced-transparency preferences. */
+  }
+
+  /*
+   * The output grid.
+   *
+   * `min-block-size: 0` so it scrolls while the input line stays pinned -- the
+   * same flex-shrink requirement as the webview frame, for the same reason.
+   */
+  .fc-terminal__output {
+    flex: 1;
+    min-block-size: 0;
+    overflow-y: auto;
+    overscroll-behavior-block: contain;
+    padding: var(--fc-space-2) var(--fc-space-3);
+
+    /*
+     * Monospace is a functional requirement, not a style choice: a terminal
+     * whose glyphs are proportional columns is unreadable, because column
+     * alignment is how output is structured.
+     */
+    font-family: var(--fc-font-family-mono);
+    font-size: var(--fc-font-size-sm);
+    /* Terminal leading is conventionally ~1.2; more wastes vertical space, less
+       collides descenders. */
+    line-height: var(--fc-line-height-snug);
+    /* Programming ligatures turn `!=` into one glyph and break column counting. */
+    font-variant-ligatures: none;
+    /*
+     * Deliberately NOT `white-space: pre` here.
+     *
+     * That looks correct and is not. With `pre` on the container, every newline
+     * and indent in the markup *between* line elements renders as a blank output
+     * line -- so a 10-line document occupied 598px instead of 180px, and the
+     * output scrolled when it had no reason to. Pre belongs on the line, where
+     * the whitespace is meaningful, and nowhere else.
+     */
+    tab-size: 4;
+  }
+
+  /*
+   * A line of output.
+   *
+   * Block, not inline: an inline element collapses trailing spaces, which carry
+   * meaning in aligned output.
+   */
+  .fc-terminal__line {
+    display: block;
+    /*
+     * `pre` lives here rather than on the container, so leading spaces and
+     * column alignment are preserved within a line while the whitespace between
+     * lines in the markup collapses to nothing.
+     */
+    white-space: pre;
+    min-block-size: 1lh;
+  }
+
+  /* ---- ANSI colors ------------------------------------------------------- */
+
+  /*
+   * One class per SGR slot. There is deliberately no `.fc-terminal__text--danger`
+   * here, and that absence is the point: a terminal's colors are chosen by the
+   * *program's output*, not by the application's intent. The class mirrors the
+   * escape sequence because that is what the content actually says.
+   */
+  .fc-term-ansi-black { color: var(--fc-term-ansi-black); }
+  .fc-term-ansi-red { color: var(--fc-term-ansi-red); }
+  .fc-term-ansi-green { color: var(--fc-term-ansi-green); }
+  .fc-term-ansi-yellow { color: var(--fc-term-ansi-yellow); }
+  .fc-term-ansi-blue { color: var(--fc-term-ansi-blue); }
+  .fc-term-ansi-magenta { color: var(--fc-term-ansi-magenta); }
+  .fc-term-ansi-cyan { color: var(--fc-term-ansi-cyan); }
+  .fc-term-ansi-white { color: var(--fc-term-ansi-white); }
+
+  .fc-term-ansi-bright-black { color: var(--fc-term-ansi-bright-black); }
+  .fc-term-ansi-bright-red { color: var(--fc-term-ansi-bright-red); }
+  .fc-term-ansi-bright-green { color: var(--fc-term-ansi-bright-green); }
+  .fc-term-ansi-bright-yellow { color: var(--fc-term-ansi-bright-yellow); }
+  .fc-term-ansi-bright-blue { color: var(--fc-term-ansi-bright-blue); }
+  .fc-term-ansi-bright-magenta { color: var(--fc-term-ansi-bright-magenta); }
+  .fc-term-ansi-bright-cyan { color: var(--fc-term-ansi-bright-cyan); }
+  .fc-term-ansi-bright-white { color: var(--fc-term-ansi-bright-white); }
+
+  /* ---- Text attributes --------------------------------------------------- */
+
+  /*
+   * Bold, dim, italic, underline, inverse.
+   *
+   * Dim is a real ANSI attribute and the one that most often breaks the contrast
+   * contract -- which is why `--fc-term-fg-dim` is a defined, verified token at
+   * 3:1 rather than a plain opacity on the default foreground. An opacity would
+   * compound with whatever color the line already carries.
+   */
+  .fc-terminal__bold { font-weight: var(--fc-font-weight-bold); }
+  .fc-terminal__dim { color: var(--fc-term-fg-dim); }
+  .fc-terminal__italic { font-style: italic; }
+  .fc-terminal__underline { text-decoration: underline; }
+  .fc-terminal__strike { text-decoration: line-through; }
+
+  /*
+   * Inverse swaps foreground and background for the span.
+   *
+   * Both colors are explicit: relying on `color: inherit` with a background
+   * would resolve against the wrong side inside a nested inverse.
+   */
+  .fc-terminal__inverse {
+    color: var(--fc-term-bg);
+    background-color: var(--fc-term-fg);
+  }
+
+  /* ---- Input line -------------------------------------------------------- */
+
+  /* Flex so the prompt cannot wrap away from the caret. */
+  .fc-terminal__input-row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--fc-space-2);
+    padding: var(--fc-space-2) var(--fc-space-3);
+    border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    min-inline-size: 0;
+  }
+
+  /* `flex-shrink: 0` so a long prompt truncates rather than crushing the input. */
+  .fc-terminal__prompt {
+    flex-shrink: 0;
+    color: var(--fc-term-ansi-green);
+    white-space: pre;
+    user-select: none;
+  }
+
+  /*
+   * A real `<input>`, so caret movement, selection, clipboard, undo, and IME
+   * composition all work natively. Terminals that fake this with a contenteditable
+   * div break IME input for every CJK user.
+   */
+  .fc-terminal__input {
+    flex: 1;
+    min-inline-size: 0;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: var(--fc-term-fg);
+    /* Inherits monospace from the parent so the caret column lines up with the
+       output above it. */
+    font: inherit;
+  }
+
+  /* ---- Cursor ------------------------------------------------------------ */
+
+  /*
+   * The block cursor.
+   *
+   * A real element rather than a pseudo-element on the input, because a cursor
+   * must be selectable and must move with the caret as the user types -- neither
+   * of which a pseudo-element can do.
+   */
+  .fc-terminal__cursor {
+    display: inline-block;
+    inline-size: 0.6em;
+    block-size: 1em;
+    background-color: var(--fc-term-cursor);
+    color: var(--fc-term-bg);
+    /* Sits on the text baseline without adding line height. */
+    vertical-align: text-bottom;
+  }
+
+  /*
+   * The blinking variant.
+   *
+   * The blink is the one animation here and it carries meaning -- it is how the
+   * user knows the shell is waiting. Under reduced motion it becomes a static
+   * block rather than nothing, keeping the signal without the motion.
+   */
+  .fc-terminal__cursor--blink {
+    animation: fc-cursor-blink 1.06s step-end infinite;
+  }
+
+  @keyframes fc-cursor-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fc-terminal__cursor--blink {
+      animation: none;
+    }
+  }
+
+  /* ---- Status bar -------------------------------------------------------- */
+
+  /*
+   * Describes the terminal rather than the application, so it follows the terminal
+   * background rather than the app chrome.
+   */
+  .fc-terminal__status {
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-3);
+    padding-block: var(--fc-space-1);
+    padding-inline: var(--fc-space-3);
+    background-color: var(--fc-term-bg-raised);
+    color: var(--fc-term-fg-dim);
+    border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    font-family: var(--fc-font-family-mono);
+    font-size: var(--fc-font-size-2xs);
+  }
+
+  /* Pushes the last item to the inline end -- an exit code, typically. */
+  .fc-terminal__status-end {
+    margin-inline-start: auto;
+  }
+
+  /*
+   * Exit status, colored AND prefixed with a word.
+   *
+   * A red "127" alone is a color-only signal; "exit 127" survives greyscale and
+   * forced colors.
+   */
+  .fc-terminal__exit {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fc-terminal__exit[data-fc-state="error"] {
+    color: var(--fc-term-ansi-red);
+  }
+
+  .fc-terminal__exit[data-fc-state="complete"] {
+    color: var(--fc-term-ansi-green);
+  }
+
+  /* ---- Selection --------------------------------------------------------- */
+
+  /*
+   * Scoped to the output rather than global: selecting terminal output deserves
+   * its own treatment and should not inherit the app's selection color.
+   */
+  .fc-terminal__output::selection {
+    background-color: var(--fc-term-ansi-blue);
+    color: var(--fc-term-bg);
+  }
+
+  /* ---- State ------------------------------------------------------------- */
+
+  /* A dimmed input row rather than a color change: the output may be frozen or
+     erroring, and a user needs to know the session is over, not merely idle. */
+  .fc-terminal[data-fc-state="disconnected"] .fc-terminal__input-row {
+    opacity: 0.6;
+  }
+
+  @media (forced-colors: active) {
+    .fc-terminal {
+      /* The terminal background is forced to Canvas, so the text must be forced
+         to CanvasText or the output becomes unreadable. Here honoring forced
+         colors is a matter of legibility, not preference. */
+      background-color: Canvas;
+      color: CanvasText;
+      border-color: CanvasText;
+    }
+
+    /* Success and failure collapse to one color: in forced-colors mode there is
+       no hue to distinguish them, which is why the visible label carries the
+       state as text as well. */
+    .fc-term-ansi-red,
+    .fc-term-ansi-bright-red,
+    .fc-term-ansi-green,
+    .fc-term-ansi-bright-green {
+      color: LinkText;
+    }
+
+    .fc-terminal__cursor {
+      background-color: CanvasText;
+      color: Canvas;
+    }
+
+    .fc-terminal__status {
+      background-color: Canvas;
+      color: CanvasText;
+      border-block-start-color: CanvasText;
+    }
+  }
+}

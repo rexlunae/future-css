@@ -168,7 +168,13 @@ function analyse(source, file) {
     // (`.x { color: red }`). Normalise to the declaration text either way so
     // both forms are checked identically.
     const inlineBody = code.match(/\{([^}]*)\}/);
-    const declText = inlineBody ? inlineBody[1].trim() : code;
+    // A selector with no braces is not a declaration at all. Falling back to the
+    // raw line here is what made class names look like property values.
+    const declText = inlineBody
+      ? inlineBody[1].trim()
+      : code.includes(":") && !code.trim().startsWith(".")
+        ? code.trim()
+        : "";
     const decl = declText.match(/^([-a-z]+)\s*:\s*([^;]*)/i);
     if (decl && !code.includes("@")) {
       const prop = decl[1].toLowerCase();
@@ -181,9 +187,18 @@ function analyse(source, file) {
       }
 
       // 2. no colour literals
+      //
+      // Only the declaration VALUE is inspected, never the selector. The ANSI
+      // classes are named by hue (`.fc-term-ansi-red`), and a rule that scanned
+      // the whole line flagged all sixteen of them -- a false positive that would
+      // eventually have pushed someone into disabling the rule.
       if (
         /(color|background|border|outline|fill|stroke|shadow|decoration|caret)/i.test(prop) &&
-        COLOR_LITERAL.test(value)
+        // Strip var() references first. A token *name* may legitimately contain a
+        // colour word -- `--fc-term-ansi-red` is the ANSI red slot -- and matching
+        // inside the reference flagged all sixteen of them while missing nothing
+        // real. What matters is a literal in the value itself.
+        COLOR_LITERAL.test(value.replace(/var\([^)]*\)/g, ""))
       ) {
         report(file, lineNo, "no-color-literals",
           `literal colour in "${prop}". Reference a design token instead; literals break theming and contrast checking.`);

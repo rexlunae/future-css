@@ -265,3 +265,38 @@ describe("linter file-scoped motion rules", () => {
     assert.deepEqual(rules, []);
   });
 });
+
+describe("colour-literal rule does not flag token names", () => {
+  // Regression. The ANSI palette's token names contain colour words
+  // (`--fc-term-ansi-red`), so a rule that scanned the whole line flagged all
+  // sixteen as literals. The fix strips var() references before scanning; this
+  // pins it, because a linter that cries wolf about the system's own token names
+  // gets disabled.
+  it("allows a token whose name contains a colour word", async () => {
+    const rules = await lint(
+      "  .fc-term-ansi-red { color: var(--fc-term-ansi-red); }\n" +
+        "  .fc-term-ansi-bright-magenta { color: var(--fc-term-ansi-bright-magenta); }",
+    );
+    assert.deepEqual(rules, []);
+  });
+
+  it("still catches a real literal alongside a token reference", async () => {
+    const rules = await lint("  .a { color: var(--fc-term-fg) #ff0000; }");
+    assert.ok(rules.includes("no-color-literals"));
+  });
+
+  it("still catches a bare named colour", async () => {
+    const rules = await lint("  .a { color: red; }");
+    assert.ok(rules.includes("no-color-literals"));
+  });
+
+  it("still catches a hex literal", async () => {
+    const rules = await lint("  .a { background-color: #ff0000; }");
+    assert.ok(rules.includes("no-color-literals"));
+  });
+
+  it("ignores a colour word that appears only in a selector", async () => {
+    const rules = await lint("  .fc-danger { color: var(--fc-color-danger-text); }");
+    assert.deepEqual(rules, []);
+  });
+});

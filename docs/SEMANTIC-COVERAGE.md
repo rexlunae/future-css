@@ -117,7 +117,7 @@ above.
 | # | Canonical name | Also called |
 | --- | --- | --- |
 | 1 | **Primitive ramp** | Base scale, global token, ref token, raw value, `base/color/scale/*`, `$gray-10`, `--gray-1..12`, Radix scale step |
-| 2 | **Semantic alias** | Functional token, alias token, sys token, derived variable, `$background`, `--fgColor-default`, `--blue-11`, `govuk-functional-colour("brand")` |
+| 2 | **Semantic alias** | Functional token, alias token, sys token, derived variable, `$background`, `--fgColor-default`, `--blue-11`, `surface-container-low` |
 | 3 | **Component token** | `component/button/*`, `$button-*`, `md.comp.*`, component-scoped token |
 | 4 | **Surface ladder** | Layer, elevation tier, `$layer-01..05`, `surface-container-*`, `bgColor.muted`, `bg-surface-*`, `color-bg` |
 | 5 | **Foreground ladder** | Text ramp, on-surface, `$text-01..05`, `fgColor.default/muted/subtle`, `onSurfaceVariant` |
@@ -238,8 +238,10 @@ The meaning layer. Components read these and never a primitive.
 - **Carbon, Primer, Fluent 2, M3** all separate primitive from alias explicitly.
   Fluent's is the cleanest statement: "Global tokens are context-agnostic and store raw
   values. Alias tokens add semantic meaning."
-- **GOV.UK** enforces the boundary in a way nothing else does — `govuk-functional-colour()`
-  is a *function*, and the docs say "do not copy the specific hexadecimal values."
+- **Enforcement is the differentiator.** None of these libraries prevents a consumer from
+  reaching past the alias layer; they document the boundary and trust review. Ours rejects
+  it mechanically, because `no-color-literals` fails the build on any raw colour in a
+  component regardless of which token the author meant to use.
 
 ### 3. Component token — Absent
 
@@ -742,10 +744,8 @@ separately underneath.
 | **Bulma** | `--bulma-scheme-*` derived tier; explicit per-state tokens including `--bulma-button-disabled-*`; a full spacing/typography helper set | Disabled-as-tokens: yes, that is gap 5. The rest: we have the equivalent at a different altitude |
 | **Open Props** | 500+ props, PropPack granularity, `--motionOK` custom media, UX-named durations | Granular import already exists per layer. `--motionOK`, and durations named by use (`--duration-quick-1` for hover, `--duration-moderate-2` for a modal), are a better vocabulary than `fast`/`normal`/`slow` and would close the transition-recipe item under gap 5 |
 
-**Unscored, read while mapping:** GOV.UK — functional colour as a *function*, which
-forbids hand-copying hex; the prohibition is exactly our `no-color-literals` rule, and
-its tints-and-shades palette is a real alternative to numeric ramps. Tokens Studio — the
-de facto pipeline, and the reason multi-theme token *sets* are a category at all.
+**Unscored, read while mapping:** Tokens Studio — the de facto token pipeline, and the
+reason multi-theme token *sets* are a category at all.
 
 ## Maintaining this document
 

@@ -15,6 +15,7 @@
  */
 
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
@@ -22,6 +23,7 @@ import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 
 import { JsAccelerator } from "../src/js/accelerator.ts";
+import { diffLines, diffStats, type DiffLine } from "../src/js/diff.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(here, "..");
@@ -151,4 +153,61 @@ describe("WASM and JS agree", { skip: built ? false : "run `npm run build:wasm` 
     assert.equal(buf.charCount(), 3);
     assert.equal(buf.charCount(), js.countChars(text, 0, text.length));
   });
+});
+/**
+ * fc-diff parity.
+ *
+ * `diffLines` now exists twice: Myers in JavaScript and Myers in Rust. A
+ * divergence there is the worst bug this system can have, because a user gets
+ * correct results on one path and wrong results on the other with no signal
+ * telling them which they saw. Every offset pair and every line attribution is
+ * compared, not a summary.
+ *
+ * The comparison runs through the crate's `parity` example rather than the .wasm
+ * module, because the crate is not yet wired to JS. That is the point of it: the
+ * algorithm is verified equal *before* anything depends on it being equal.
+ */
+describe("fc-diff and the JS diff agree", () => {
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+  const normalize = (lines: readonly DiffLine[]) =>
+    lines.map((l) => [l.kind, l.text, l.oldLine, l.newLine]);
+
+  const cases: [string, string][] = [
+    ["a\nb\nc", "a\nx\nc"],
+    ["", "new"],
+    ["gone", ""],
+    ["", " "],
+    ["same", "same"],
+    ["a\nb\nc\nd\ne\nf\ng\nh", "a\nb\nc\nX\nY\ne\nf\ng\nh"],
+    ["1\n2\n3\n4\n5", "5\n4\n3\n2\n1"],
+    ["a\n\n\nb", "a\nb"],
+    ["x", "x\nx\nx"],
+    ["l1\nl2", "totally\ndifferent\ncontent\nhere"],
+    ["a\r\nb", "a\r\nc"],
+    ["fn f() {}\nfn g() {}", "fn f() {}\nfn h() {}"],
+    ["a\nb\nc\na\nb\nc", "c\nb\na"],
+  ];
+
+  for (const [before, after] of cases) {
+    it(`agree on ${JSON.stringify(before).slice(0, 24)} -> ${JSON.stringify(after).slice(0, 24)}`, () => {
+      const js = diffLines(before, after);
+      const jsStats = diffStats(js);
+      const raw = execFileSync(
+        "cargo",
+        ["run", "-q", "-p", "fc-diff", "--example", "parity", "--", before, after],
+        { cwd: repoRoot, encoding: "utf8" },
+      );
+      const rust = JSON.parse(raw);
+
+      assert.deepEqual(
+        rust.lines.map((l: DiffLine) => [l.kind, l.text, l.oldLine, l.newLine]),
+        normalize(js),
+        "every line kind, text, and 1-based number must match",
+      );
+      assert.equal(rust.added, jsStats.added);
+      assert.equal(rust.removed, jsStats.removed);
+      assert.equal(rust.identical, jsStats.identical);
+    });
+  }
 });

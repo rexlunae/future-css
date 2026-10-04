@@ -653,3 +653,114 @@ same discipline produced three regression tests, because a demo is a test: the
 `.fc-grid` name collision between the layout primitive and the data grid, the
 `grid-auto-columns` implicit-track mistake, and the `color-scheme` layer-order bug were
 each invisible to unit tests and obvious the moment real components rendered.
+
+## Gaps that are actually gaps
+
+Ordered by cost to a consumer adopting this system, not by effort.
+
+**1. Component tokens (Absent, entry 3)** and **2. Composite type styles (Absent, entry
+15)** follow from one position — everything is a scale, nothing is a role — and both are
+what a product team with a type ramp and a brand system needs first. Together they are
+the difference between a foundation library and an adoptable system. Both are defensible
+omissions; both cost real adoptions.
+
+**3. High-contrast token tier (Partial, entry 14).** One gap seen twice: every token has
+exactly two values, and three use cases need a third. A consumer cannot turn on high
+contrast and cannot honour `prefers-contrast: more`. `focus-ring` was built as two tokens
+specifically so an HC mode could swap in a double-colour ring, so the structure is
+already in place.
+
+**4. No theme sets.** The same two-values problem from the brand side: a consumer cannot
+generate a coherent alternative brand. The semantic layer is already the correct seam —
+the work is a theme-set abstraction in the compiler, not a redesign.
+
+**5. No `selected` or `disabled` colour tokens (Partial, entry 10), and no hover/active
+per status family (Partial, entry 9).** Eighteen tokens. All derivable from the existing
+ramps, all checkable by the existing contract. Close this before more components ship,
+because every component added in the meantime encodes the workaround.
+
+**6. Elevation is two steps.** Every other system ships six or more. Enough for a card
+and a popover; not enough the first time a design wants a menu over a modal over a
+toast. No new decisions required, only more of an existing one.
+
+**7. `prefers-contrast`, `prefers-reduced-data`, `prefers-reduced-transparency`.** Three
+media queries nothing references. The first matters most and belongs with item 3.
+
+**8. Bidi isolation is documented but not shipped.** `docs/INTERNATIONALIZATION.md` covers
+mixed-direction runs thoroughly and the layout layer supports them, but there is no
+`.fc-u-bidi` class and no `<bdi>` guidance in `COMPONENTS.md`. The prose is ahead of the
+API.
+
+**9. Bundle size.** 132 KB uncompressed against a `< 60 KB` budget in `PLAN.md`. The
+output is deliberately unminified and the docs say consumers minify at their own
+boundary, so the honest fix is to measure the minified size and state it — or to raise
+the budget with a justification. Not to leave a number the build contradicts.
+
+### Docs that disagree with the code
+
+Recorded rather than fixed silently, because `AGENTS.md` says documentation that drifts
+is worse than none.
+
+| Claim in `PLAN.md` | Actual |
+| --- | --- |
+| "119 tokens (44 theme-aware)" | **165 tokens, 90 theme-aware** |
+| "~55 KB" bundle | **132 KB** (`dist/future-css.css`) |
+| "92 tests passing" | **231 tests passing** |
+| "Ten CSS components are complete" | Correct — but form controls and overlays are still Phase 3 |
+
+## Per-library verdicts
+
+One line each: what each library does that we do not, and whether we would take it.
+
+| Library | Its advantage over us | Would we adopt it? |
+| --- | --- | --- |
+| **Primer** | Component tokens; ANSI/syntax/diff families; numeric surface depth; type composites | The token families we already have; the rest is the gap list above |
+| **Material 3** | Seed-derived dynamic colour; type composites; elevation as a numbered scale | Dynamic colour: no — it cannot be contrast-checked at build time, which is the point here |
+| **Radix Colors** | P3 output; high-contrast scales; scale-step-as-semantics with zero indirection | HC scales: yes. Step-as-semantics: no — it trades verifiability for brevity |
+| **Tailwind v4** | `@theme` as the generation contract; container queries | Namespace discipline: already lint-enforced. Container queries: open question 3 |
+| **IBM Carbon** | Component tokens; `$ai-*`/`$chat-*` families; explicit `$layer-01..05` depth | Layer depth and chat tokens: yes, both cheap. We ship chat *components* and no chat *tokens* |
+| **Fluent 2** | Two-tier primitive/alias split stated most clearly; HC as a first-class theme | HC theme: yes. The naming discipline we already have |
+| **Spectrum CSS** | Medium/large scale axes for density without new tokens | Density is open question 4; scale axes are the candidate answer |
+| **Shopify Polaris** | Small comprehensible set with per-token `description` metadata | Per-token descriptions: cheap, worth having in `tokens.json` |
+| **Chakra UI v3** | Named `conditions` as an extensible styling API | Interesting, but our cascade layers solve precedence without a JS-side API |
+| **Pico CSS** | A real class-less switch; measure as a first-class concern | Class-less: worth an option. Measure: already shipped |
+| *Open Props* | 500+ props, PropPack granularity, `--motionOK` convention | Granular import already exists per layer. `--motionOK`: a nice idea, not a token |
+| *GOV.UK* | Functional colour as a *function*, forbidding hex copying | The prohibition is exactly our `no-color-literals` rule |
+
+## Maintaining this document
+
+This file is only useful while it is true, and it decays the moment the code moves.
+
+- **Every status cites a file or a test.** A row that cannot cite one is an assumption
+  and should be marked as such rather than stated as fact.
+- **Re-read the sources on any load-bearing claim.** The Primer correction is the worked
+  example: the claim was central, it was wrong in two places, and only reading the
+  shipped CSS caught it. The same is true of anything asserted about Radix, Carbon or
+  Fluent — their token sets change faster than this file does.
+- **Add to the vocabulary before adding to the comparison.** A subfeature that maps to no
+  existing canonical name is either a gap in the vocabulary or a feature nobody else has.
+  Both are worth recording explicitly rather than forced into a neighbouring row.
+- **When a Partial becomes Shipped, say why in the same edit.** The reasoning is the
+  expensive part to reconstruct, and it is what a reader six months from now needs.
+- **Re-derive the tally rather than editing it.** The scorecard count is a claim about the
+  system's shape; recompute it from the table when the table changes.
+
+## What this document concludes
+
+Eighteen of twenty-three canonical meanings are shipped and enforced. Three are partial
+in ways that are cheap to close. Two are absent by decision, and both decisions are
+defensible in isolation while jointly describing one consistent position: **this is a
+foundation library, not a product design system.** It ships scales and meanings, not
+roles and brand slots. That makes it auditable and cheap to vendor, and insufficient for
+a team with a type ramp and a brand system until the extension points above exist.
+
+Two capabilities are ahead of every library surveyed: the machine-readable DOM contract
+(entry 23) and enforced contrast across three separate palettes rather than one (entries
+20-22). The second caught a real bug that *passed* the contrast check — added and
+removed diff rows were the same colour, so both validated identically while telling a
+reader nothing. That single failure is the argument for the whole approach, and it is
+why the contract verifies three palettes separately rather than trusting one.
+
+If three things get done next: component override points, the high-contrast token tier,
+and composite type styles — in that order. The first two unblock adoption; the third
+unblocks design review.

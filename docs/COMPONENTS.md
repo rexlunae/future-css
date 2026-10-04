@@ -342,9 +342,15 @@ importable on their own, independently of any component.
 
 | Module | Exports | Contract |
 | --- | --- | --- |
-| `future-css/highlight` | `highlight`, `renderHighlighted`, `resolveLanguage`, `languages` | Contiguous, non-overlapping spans that reconstruct the source exactly. Unknown language falls back to plain text. |
+| `future-css/highlight` | `highlight`, `resolveLanguage`, `languages` | Contiguous, non-overlapping spans that reconstruct the source exactly. Unknown language falls back to plain text. |
 | `future-css/diff` | `diffLines`, `diffStats`, `splitLines` | Myers with backtracking. Dropping added lines reproduces the original; dropping removed lines reproduces the revision. |
 | `future-css/markdown` | `parseMarkdown`, `serializeMarkdown`, `parseInline`, `serializeInline`, `escapeMarkdown`, `parseLinkTarget` | Parse/serialize for a documented, round-trippable subset. |
+
+**One exception, deliberately.** `highlight` also exports `renderHighlighted`,
+which *does* build DOM nodes — it is the convenience wrapper that turns spans into
+`<span class="fc-code__tok">` elements for the code component. Everything else in
+the table is DOM-free and usable in a worker, a build script, or a test. Import
+`highlight` rather than `renderHighlighted` when you are not building a page.
 
 Two properties are asserted directly rather than described, because both have
 failed in ways a smoke test missed: highlighting never alters the source text,
@@ -352,10 +358,22 @@ and a diff reconstructs both inputs. The Markdown subset has **one** documented
 lossy case — `parseInline` records that a range is a link but not its
 destination, so use `parseLinkTarget` when a target must be preserved.
 
-**No Rust path yet for these three.** They are the natural candidates (see Phase A
-in `PLAN.md`): `fc-diff` would move Myers, and `highlight`'s tokenizer is a hot
-loop over large files. A Rust implementation must ship alongside the JS one with
-a parity test, never instead of it.
+### Rust
+
+`diffLines` already has a Rust implementation, `fc-diff`, which is the same
+algorithm with the same reconstruction guarantee and the same test cases. It is
+**not yet wired to the JS side**: `src/js/diff.ts` remains the only path a
+consumer gets today, and the crate is built as part of `npm run build:wasm`.
+
+It is deliberately free of `js-sys`. Every other crate in the workspace links it,
+and that single dependency is what inflates each module to roughly ten times its
+budget, which is the problem Phase A in `PLAN.md` exists to fix. `fc-diff` is the
+pattern that fix needs: primitives across the boundary, never `Vec<JsValue>`.
+
+The remaining candidates are `highlight`'s tokenizer and the listbox typeahead
+that a select component will need; neither has a Rust path yet. Whenever one is
+added it ships **alongside** the JS implementation with a parity test, never
+instead of it.
 
 ### Editor
 

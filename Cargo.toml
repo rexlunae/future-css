@@ -1,0 +1,51 @@
+# The Rust workspace for future-css.
+#
+# One workspace, many crates, one published WASM module per crate. The reason is
+# load cost, not tidiness: a WASM module is a single indivisible download, so
+# anything compiled together is paid for together. Measured floor cost for an
+# empty wasm-bindgen module is ~17 KB before any real code, which means a
+# monolithic "future-css.wasm" would make every consumer pay for every feature.
+#
+# Crate boundaries are therefore drawn along *what a consumer opts into*, and
+# the dependency direction is strictly downward: nothing in this workspace may
+# depend on a consumer crate.
+
+[workspace]
+resolver = "3"
+members = [
+  "crates/fc-core",
+  "crates/fc-model",
+  "crates/fc-rich-text",
+  "crates/fc-context-menu",
+  "crates/fc-grid",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.82"
+license = "MIT"
+repository = "https://github.com/rexlunae/future-css"
+authors = ["Erica Stith"]
+
+# Pinned to match the wasm-bindgen CLI exactly. The bindgen wire format is
+# explicitly unstable between patch releases, and a mismatch produces a build
+# error deep in the pipeline ("schema version: 0.2.118 vs 0.2.129") that reads
+# like corruption rather than a version skew. See docs/WASM.md.
+[workspace.dependencies]
+wasm-bindgen = "=0.2.118"
+js-sys = "0.3"
+wasm-bindgen-futures = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+console_error_panic_hook = "0.1"
+
+# Size is a design constraint here, not a preference: these modules ship over
+# the network and are instantiated on the main thread. opt-level="z" plus LTO
+# and symbol stripping typically lands a small crate near 15-25 KB.
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

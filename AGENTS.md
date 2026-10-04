@@ -78,10 +78,13 @@ Valid `data-fc-state` values: `pending`, `queued`, `streaming`, `running`,
 ## Commands
 
 ```bash
-npm run build     # compile tokens, then bundle layers
-npm run lint      # architecture linter
-npm test          # contract tests
-npm run check     # all three; this is the gate
+npm run build       # CSS bundle + WASM modules
+npm run build:css   # CSS only; no Rust toolchain needed
+npm run build:wasm  # Rust crates -> one .wasm per crate, plus a size report
+npm run lint        # architecture linter
+npm test            # JS tests, including WASM/JS parity
+cargo test          # Rust unit tests
+npm run check       # all of the above; this is the gate
 ```
 
 The toolchain runs TypeScript directly via Node's type stripping. **Do not add a
@@ -89,6 +92,56 @@ transpiler, bundler, or framework dependency to make a change work.** The
 zero-dependency property is a feature: the system must stay auditable and cheap
 to vendor. If a change seems to need a dependency, that is a signal the change is
 too large.
+
+---
+
+## The Rust/WASM layer
+
+Some components ship an optional Rust model compiled to WASM. **WASM is never
+required.** Every component works with the layer absent, and the CSS build needs
+no Rust toolchain at all.
+
+### The rule that governs everything
+
+**A WASM module is a pure computation library. It never touches the DOM.** Work
+that requires asking the browser something — layout, focus, scroll, rendering,
+ARIA — stays in JavaScript. WASM answers questions about *data*.
+
+### Module size is a design constraint
+
+An empty wasm-bindgen module is ~28 KB. Linking `js-sys` adds **~302 KB** the
+moment it is used, regardless of which API is called, and LTO cannot remove it.
+So:
+
+- **Never return `Vec<JsValue>` or `js_sys::Array` from a crate.** Return
+  primitives: numbers, strings, and flat typed arrays. A range crosses as four
+  numbers.
+- **Never add `js-sys` to a crate** without measuring the result first.
+- `npm run build:wasm` prints a size report and the budgets in
+  `src/build/build-wasm.ts`. Every module is currently **over** budget; Phase A
+  in `docs/PLAN.md` is the work to fix that. Do not raise a budget to make the
+  report green.
+
+### Cross-boundary rules
+
+- **Offsets are UTF-16 code units, everywhere.** They match JavaScript.
+- **Both implementations clamp to character boundaries** rather than splitting a
+  surrogate pair. This diverges from `String.prototype.slice` deliberately: a
+  lone surrogate renders as a replacement glyph and corrupts stored text.
+- `tests/wasm.test.ts` compares every offset pair between the WASM and JS
+  implementations. **A divergence there is the worst bug this system can have**,
+  because users get correct results on one path and wrong results on the other
+  with no way to tell. Run it after any boundary change.
+
+### Toolchain gotchas
+
+- The `wasm-bindgen` CLI version must match the crate exactly (`=0.2.118` is
+  pinned). A mismatch fails with a "schema version" error that reads like
+  corruption.
+- Constructors need `#[wasm_bindgen(constructor)]`; a by-value factory in a
+  `#[wasm_bindgen] impl` block does not compile.
+- The `nodejs` bindgen target emits broken CommonJS in 0.2.118. Use the `web`
+  build in tests.
 
 ---
 
@@ -173,18 +226,25 @@ When adding any component, verify:
 ```
 src/tokens/         Tokens in TypeScript (source of truth)
 src/css/            Layered CSS. index.css declares layer order
-src/build/          Token compiler + bundle orchestrator
+src/js/             The JS accelerator: WASM is optional, JS always works
+src/build/          Token compiler, CSS bundler, WASM orchestrator
+crates/            Rust crates, one .wasm per crate
 tools/lint-css.mjs  Architecture linter
-tests/              Contract and linter tests
-docs/               Design documents; PLAN.md is the roadmap
+tests/              Contract, linter, accelerator, and WASM/JS parity tests
+docs/               Design documents; PLAN.md is the roadmap, WASM.md the WASM spec
 ```
 
 ## Current state
 
-Pre-alpha. Foundations are built and enforced. Three components are complete:
-button, chat surface, and tool call / step trace. Form controls, overlays, and
-navigation are planned but not yet written. See `docs/PLAN.md` for the current
-phase and what is deliberately out of scope.
+Pre-alpha. Foundations are built and enforced. Three CSS components are
+complete: button, chat surface, and tool call / step trace. The Rust/WASM
+layer has five crates with 68 passing tests and a working JS-only fallback,
+but **every module is currently ~10x over its size budget** — see the WASM
+section above and Phase A in `docs/PLAN.md`. Rich text, context menu, and grid
+models exist in Rust; their browser bindings do not yet.
+
+Form controls, overlays, and navigation are planned but not written. See
+`docs/PLAN.md` for the current phase and what is deliberately out of scope.
 
 The docs in `docs/` were written alongside the code and reflect the same
 architecture. If you change the system, change the docs in the same commit —

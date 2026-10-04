@@ -1,0 +1,30 @@
+# fc-core -- the shared runtime for every WASM-powered component.
+#
+# Deliberately the smallest crate in the workspace. It holds only what more than
+# one component needs, because anything here is paid for by every consumer of
+# every component. Two consequences shape it:
+#
+#   1. No component-specific logic, however tempting. A helper that only rich
+#      text uses belongs in fc-rich-text, duplicated if a second component later
+#      needs it. Duplicating 20 lines is cheaper than adding 2 KB to everyone.
+#   2. No dependencies on sibling crates. The dependency arrow points down only.
+
+[package]
+name = "fc-core"
+description = "Shared runtime for future-css WASM components"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = { workspace = true }
+js-sys = { workspace = true }
+serde = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
+console_error_panic_hook = { workspace = true }

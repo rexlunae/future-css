@@ -1,0 +1,30 @@
+# fc-context-menu -- menu model: items, groups, and keyboard navigation.
+#
+# Geometry and hit-testing stay in the browser. A menu must respond to scroll,
+# resize, and visual-viewport changes that only the DOM knows about, and doing
+# that in WASM would mean reimplementing layout. What *is* worth putting in
+# Rust is the part that is pure logic and easy to get subtly wrong in JS:
+# roving-tabindex traversal, typeahead matching, and separator grouping.
+#
+# This crate therefore depends on fc-core only. A consumer using the context menu
+# pays nothing for the text model or the grid model.
+
+[package]
+name = "fc-context-menu"
+description = "Menu model and keyboard navigation for future-css"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+fc-core = { path = "../fc-core" }
+wasm-bindgen = { workspace = true }
+js-sys = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
+serde = { workspace = true }

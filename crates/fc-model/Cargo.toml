@@ -1,0 +1,31 @@
+# fc-model -- the shared text model behind rich text, documents and grid cells.
+#
+# This crate exists because three components need the same thing: a text buffer
+# that can report byte and character offsets, split into lines, and survive
+# editing. Duplicating that per component would mean three subtly different
+# implementations of UTF-8 boundary handling -- the classic source of
+# corruption bugs in editors.
+#
+# It is deliberately *not* a document model. No tree, no nodes, no formatting.
+# That belongs to fc-rich-text, which owns it. Keeping fc-model ignorant of
+# structure is what keeps it small enough for all three consumers to link.
+
+[package]
+name = "fc-model"
+description = "Shared text buffer primitives for future-css components"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+fc-core = { path = "../fc-core" }
+wasm-bindgen = { workspace = true }
+js-sys = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
+serde = { workspace = true }

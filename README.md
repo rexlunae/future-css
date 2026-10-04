@@ -88,6 +88,7 @@ tokens, components, and lint rules.
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Cascade layers, the token pipeline, the build |
 | [TOKENS.md](docs/TOKENS.md) | Token naming, the primitive→semantic model, theming |
 | [COMPONENTS.md](docs/COMPONENTS.md) | Component anatomy, state matrix, contribution guide |
+| [WASM.md](docs/WASM.md) | The Rust/WASM layer, module sizing, and the JS-only path |
 | [ACCESSIBILITY.md](docs/ACCESSIBILITY.md) | WCAG 2.2 AA commitments and how each is enforced |
 | [INTERNATIONALIZATION.md](docs/INTERNATIONALIZATION.md) | Writing direction, text expansion, CJK, RTL playbook |
 | [PLATFORMS.md](docs/PLATFORMS.md) | Browsers, embedded webviews, email, and print |

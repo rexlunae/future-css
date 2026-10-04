@@ -1,0 +1,31 @@
+# fc-grid -- spreadsheet/document grid model.
+#
+# The interesting cost in an Office-like surface is not rendering -- the browser
+# does that -- it is the *bookkeeping*: which cells are visible, how selection
+# rectangles expand, and how far a range can be addressed. Those are exactly the
+# computations that are pure, integer-bound, and slow in JS once a document
+# reaches six figures.
+#
+# This crate models a grid of cells with typed values and reports viewport ranges
+# and selection geometry. It does not render, and it does not handle formulas
+# (see docs/WASM.md for that decision).
+
+[package]
+name = "fc-grid"
+description = "Grid, cell and selection model for future-css"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+fc-core = { path = "../fc-core" }
+wasm-bindgen = { workspace = true }
+js-sys = { workspace = true }
+serde = { workspace = true }
+serde-wasm-bindgen = { workspace = true }

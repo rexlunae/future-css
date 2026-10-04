@@ -86,6 +86,8 @@ export class FutureCssComposer {
   private readonly options: ComposerOptions;
 
   private attachments: Attachment[] = [];
+  /** The attachment each rendered remove button belongs to, in DOM order. */
+  private renderedFor: Attachment[] = [];
   /** Guards the `input` handler while the binding writes the value itself. */
   private syncing = false;
 
@@ -211,38 +213,55 @@ export class FutureCssComposer {
      * same file -- wherever it moved to. When the focused file was the one removed,
      * focus goes to its neighbour instead, or to the input when none are left.
      */
-    const focusedButton = this.removeButtons().includes(
-      document.activeElement as HTMLElement,
-    )
-      ? (document.activeElement as HTMLElement)
-      : null;
-    const focusedName = focusedButton
-      ? this.attachmentNameFor(focusedButton)
-      : null;
+    // Identify the focused chip by the *attachment object* it was rendered from,
+    // captured before the rebuild. Reading it afterwards would consult a
+    // `renderedFor` that already describes the new DOM.
+    const focused = this.focusedAttachment();
 
     this.setAttachments(this.attachments.filter((_, i) => i !== index));
 
-    if (focusedName === null) return; // focus was not on a chip; leave it alone
+    if (!focused) return; // focus was not on a chip; leave it alone
     const buttons = this.removeButtons();
-    const sameFile = buttons.find((b) => this.attachmentNameFor(b) === focusedName);
-    if (sameFile) {
-      sameFile.focus();
+    // The focused attachment survived, so find *that object* in the new list and
+    // focus its button wherever it now sits.
+    const survivingIndex = this.attachments.indexOf(focused);
+    if (survivingIndex >= 0 && buttons[survivingIndex]) {
+      buttons[survivingIndex]!.focus();
       return;
     }
-    // The focused chip was the one removed: prefer the next chip, then the
-    // previous one, then fall back to the input.
+    /*
+     * The focused chip was the one removed: prefer its *former* neighbour, then
+     * the one before it, then the input.
+     *
+     * `buttons` is already the rebuilt list, so "next" is the element now at the
+     * removed slot. Preferring `buttons[index - 1]` first would move focus
+     * *backwards* past the position the user was at, which is disorienting; and
+     * when the removed chip was the last one there is no `buttons[index]` at all.
+     */
     (buttons[index] ?? buttons[index - 1] ?? this.input).focus();
+  }
+
+  /**
+   * The attachment whose remove button currently has focus, or `undefined`.
+   *
+   * Identity rather than the accessible name: two attachments may legitimately
+   * share a name (`report.txt` of different sizes), and matching on the label
+   * would put focus on a different file than the one the user selected.
+   *
+   * Read *before* the list is rebuilt, since `renderedFor` describes the DOM that
+   * exists at that moment and is replaced on the next render.
+   */
+  private focusedAttachment(): Attachment | undefined {
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement) || !this.list?.contains(active)) return undefined;
+    const at = this.removeButtons().indexOf(active);
+    return at < 0 ? undefined : this.renderedFor[at];
   }
 
   private removeButtons(): HTMLElement[] {
     return this.list
       ? Array.from(this.list.querySelectorAll<HTMLElement>(".fc-composer__attachment-remove"))
       : [];
-  }
-
-  /** The file name a remove button belongs to, read from its accessible name. */
-  private attachmentNameFor(button: HTMLElement): string {
-    return (button.getAttribute("aria-label") ?? "").replace(/^Remove\s+/, "");
   }
 
   /**
@@ -313,6 +332,10 @@ export class FutureCssComposer {
   private renderAttachments(): void {
     if (!this.list) return;
     this.list.replaceChildren();
+
+    // Recomputed from scratch each render: it must always describe exactly the
+    // buttons now in the DOM, or focus restoration maps to the wrong chip.
+    this.renderedFor = [...this.attachments];
 
     for (const [index, attachment] of this.attachments.entries()) {
       const item = document.createElement("li");

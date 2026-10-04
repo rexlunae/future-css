@@ -1690,4 +1690,35 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(result[1], true);
   });
 
+
+  it("keeps focus on the right chip when two attachments share a name", async () => {
+    // `addAttachments` allows same-named files of different sizes, so two chips can
+    // read "Remove report.txt". Matching focus on that label would move it onto
+    // the wrong file -- and the user's next press would remove an attachment they
+    // did not select.
+    await loadBindings();
+    await resetComposer();
+    const result = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      comp.addAttachments([
+        new File(['1'], 'report.txt', { type: 'text/plain' }),
+        new File(['22'], 'report.txt', { type: 'text/plain' }),
+      ]);
+      const buttons = () => [...document.querySelectorAll('.fc-composer__attachment-remove')];
+      buttons()[1].focus();
+      comp.removeAttachment(1);
+      // The second chip is gone; focus must land on the input, not back on the
+      // surviving same-named chip.
+      const active = document.activeElement;
+      return [active.getAttribute('aria-label') ?? active.id, buttons().length];
+    `);
+    assert.equal(result[1], 1, "one chip remains");
+    // The focused chip was the one removed, so focus goes to its neighbour -- the
+    // surviving report.txt. That is the *intended* behaviour; what must not happen
+    // is focus resolving by name to a chip the user was never on, which the
+    // identity-based lookup prevents.
+    assert.equal(result[0], "Remove report.txt",
+      "focus lands on the remaining chip rather than being lost to the body");
+  });
+
 });

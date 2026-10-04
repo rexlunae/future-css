@@ -625,7 +625,7 @@ The input surface beneath a chat thread: text entry, attachments, and a send/sto
 control.
 
 ```html
-<div class="fc-composer" data-fc-state="idle">
+<div class="fc-composer" id="composer" data-fc-state="idle">
   <label class="fc-u-visually-hidden" for="composer-input">Message</label>
   <textarea class="fc-composer__input" id="composer-input" rows="2"></textarea>
   <ul class="fc-composer__attachments"></ul>
@@ -699,6 +699,9 @@ const composer = new FutureCssComposer({
 ```
 
 ### Focus on removal
+
+The markup above needs `id="composer"` to match the `root: "#composer"` in the
+JavaScript example; copied apart, neither initialises.
 
 Removing a chip destroys the button that had focus, which would strand focus on
 `<body>`. Focus is restored **by file name**, not by index: if the removed chip was

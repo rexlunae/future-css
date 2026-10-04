@@ -25,6 +25,12 @@ import { oklchToHex } from "../tokens/color-utils.ts";
 import { checkContrast, semanticColors, semanticColorNames } from "../tokens/semantic/color.ts";
 import { ansiColorNames, ansiColors, checkAnsiContrast } from "../tokens/semantic/terminal.ts";
 import {
+  checkSyntaxContrast,
+  codeBoundaryReference,
+  syntaxColorNames,
+  syntaxColors,
+} from "../tokens/semantic/syntax.ts";
+import {
   borderRadius,
   borderWidth,
   fontFamily,
@@ -111,6 +117,22 @@ for (const name of ansiColorNames) {
   // they must not share a name.
   tokens.push({
     name: `${PREFIX}-term-${name}`,
+    value: `light-dark(${oklchToHex(light)}, ${oklchToHex(dark)})`,
+    light: oklchToHex(light),
+    dark: oklchToHex(dark),
+  });
+}
+
+// ---- Syntax highlighting palette ----------------------------------------
+// Separate namespace (`fc-code-*`) from both the app palette and the ANSI set.
+// A code block follows the app theme, but its colors carry *syntactic meaning*
+// rather than brand meaning, so they must not be remapped by a brand theme --
+// and they must not collide with `fc-color-*` names, several of which
+// (bg, fg, border-default) exist in both.
+for (const name of syntaxColorNames) {
+  const { light, dark } = syntaxColors[name];
+  tokens.push({
+    name: `${PREFIX}-code-${name}`,
     value: `light-dark(${oklchToHex(light)}, ${oklchToHex(dark)})`,
     light: oklchToHex(light),
     dark: oklchToHex(dark),
@@ -221,12 +243,16 @@ ${renderTokenBlock()}
 async function main(): Promise<void> {
   assertUniqueNames(tokens);
 
-  // Both contracts in one gate. The ANSI palette is the least accessible surface
-  // in the system -- dense small text, its own background, hue-fixed slots -- so
-  // it gets the same treatment as the app palette rather than an exemption.
+  // All three contracts in one gate. The ANSI palette is the least accessible
+  // surface in the system -- dense small text, its own background, hue-fixed
+  // slots -- so it gets the same treatment as the app palette rather than an
+  // exemption. The syntax palette joins them because every color it defines
+  // carries syntactic meaning: an illegible keyword color is a bug you cannot
+  // see, not merely an ugly one.
   const failures = [
     ...checkContrast(),
     ...checkAnsiContrast(),
+    ...checkSyntaxContrast(),
   ];
   if (failures.length > 0) {
     console.error("Contrast contract violated:\n");

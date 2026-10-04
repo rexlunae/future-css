@@ -49,6 +49,8 @@
         <li><a href="#tools">Tool calls</a></li>
         <li><a href="#terminal">Terminal</a></li>
         <li><a href="#webview">Webview</a></li>
+        <li><a href="#code">Code</a></li>
+        <li><a href="#diff">Diff</a></li>
         <li><a href="#tokens">Tokens</a></li>
       </ul>
     </nav>
@@ -118,6 +120,32 @@
                 aria-label="Refresh">&#8635;</button>
       </div>
     </div>
+
+    <div class="demo-snippet" data-demo-snippet="buttons">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">html</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Button markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>&lt;!-- Variant and size are separate classes, so they compose. --&gt;
+&lt;button class="fc-btn fc-btn--primary"&gt;Save&lt;/button&gt;
+&lt;button class="fc-btn fc-btn--primary fc-btn--sm"&gt;Save&lt;/button&gt;
+
+&lt;!-- `disabled` leaves the tab order. `aria-disabled` stays reachable, so a
+     keyboard user can find it and learn *why* it is unavailable. --&gt;
+&lt;button class="fc-btn fc-btn--secondary" disabled&gt;Disabled&lt;/button&gt;
+&lt;button class="fc-btn fc-btn--secondary" aria-disabled="true"&gt;aria-disabled&lt;/button&gt;
+
+&lt;!-- Busy keeps the label in the DOM. Swapping it for a spinner would leave
+     the control momentarily unlabelled to a screen reader. --&gt;
+&lt;button class="fc-btn fc-btn--primary" aria-busy="true"&gt;
+  &lt;span class="fc-btn__spinner" aria-hidden="true"&gt;&lt;/span&gt;
+  &lt;span&gt;Saving&hellip;&lt;/span&gt;
+&lt;/button&gt;
+
+&lt;!-- Icon-only needs an explicit name: the glyph is decorative. --&gt;
+&lt;button class="fc-btn fc-btn--ghost fc-btn--icon" aria-label="Refresh"&gt;&amp;#8635;&lt;/button&gt;</code></pre>
+    </div>
   </section>
 
   <!-- ============================ EDITOR ============================ -->
@@ -179,6 +207,58 @@
     <p class="demo-status" id="editor-status" role="status">
       Ready. The bindings are plain TypeScript &mdash; no build step, no bundler, no WASM.
     </p>
+
+    <div class="demo-snippet" data-demo-snippet="editor">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">js</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Editor wiring">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>import { FutureCssEditor } from "future-css/editor";
+
+const editor = new FutureCssEditor({
+  root: "#editor-root",
+
+  onChange: (html) =&gt; console.log(html),
+
+  // Fires on every selection change. The payload is the state of each mark
+  // across the *whole* selection, so a partly-bold range reports not-bold --
+  // a toolbar that lies about a partial selection is worse than one that
+  // admits it. The binding keeps its own toolbar in sync from this; there is
+  // no public syncToolbar to call.
+  onSelectionChange: (active) =&gt; {
+    const marks = Object.entries(active).filter(([, on]) =&gt; on).map(([n]) =&gt; n);
+    console.log(marks);
+  },
+});
+
+// Marks are applied by calling the method, not by a callback. The toolbar
+// buttons in the markup carry data-fc-mark and the binding reads them.
+editor.applyMark("bold");</code></pre>
+    </div>
+
+    <div class="demo-snippet" data-demo-snippet="editor-markup">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">html</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Editor markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>&lt;div class="fc-editor"&gt;
+  &lt;div class="fc-toolbar" role="toolbar" aria-label="Formatting"&gt;
+    &lt;!-- The glyph is decorative; the name is real text. --&gt;
+    &lt;button class="fc-toolbar__item" data-fc-mark="bold" aria-pressed="false"&gt;
+      &lt;span aria-hidden="true"&gt;&lt;strong&gt;B&lt;/strong&gt;&lt;/span&gt;
+      &lt;span class="fc-u-visually-hidden"&gt;Bold&lt;/span&gt;
+    &lt;/button&gt;
+  &lt;/div&gt;
+
+  &lt;!-- role="textbox" + aria-multiline: contenteditable alone is not reliably
+       announced as editable, and Enter needs the multiline flag. --&gt;
+  &lt;div class="fc-editor__content fc-prose"
+       contenteditable="true" role="textbox" aria-multiline="true"
+       aria-label="Document body"&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+    </div>
   </section>
 
   <!-- ============================ GRID ============================ -->
@@ -240,6 +320,34 @@
     <p class="demo-status" id="grid-status" role="status">
       Double-click a cell to edit it. Escape restores the original value.
     </p>
+
+    <div class="demo-snippet" data-demo-snippet="grid">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">html</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Grid markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>&lt;!-- Row and column counts live in attributes so the binding knows the
+     shape without counting children. --&gt;
+&lt;div class="fc-grid" role="grid" aria-label="Deployment status"
+     data-fc-rowcount="2" data-fc-colcount="3"&gt;
+  &lt;div role="row"&gt;
+    &lt;span class="fc-grid__corner" role="columnheader"&gt;&lt;/span&gt;
+    &lt;span class="fc-grid__col-header" role="columnheader"
+          aria-colindex="1"&gt;Service&lt;/span&gt;
+  &lt;/div&gt;
+
+  &lt;!-- Roving tabindex: exactly ONE cell in the grid is tabbable. Arrows move
+       within it, Tab leaves. tabindex="0" moves with the selection. --&gt;
+  &lt;div role="row"&gt;
+    &lt;span class="fc-grid__row-header" role="rowheader"&gt;1&lt;/span&gt;
+    &lt;!-- data-fc-label is the accessible name. A gridcell has no content of
+         its own to announce, so without it the cell reads as a bare "1". --&gt;
+    &lt;span class="fc-grid__cell" role="gridcell" tabindex="0"
+          data-fc-label="Service, row 1"&gt;api&lt;/span&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+    </div>
   </section>
 
   <!-- ============================ MENU ============================ -->
@@ -308,6 +416,57 @@
     </div>
 
     <p class="demo-status" id="menu-status" role="status">No action chosen yet.</p>
+
+    <div class="demo-snippet" data-demo-snippet="menu">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">js</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Menu wiring">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>import { FutureCssMenu } from "future-css/menu";
+
+const menu = new FutureCssMenu({
+  root:   document.querySelector("#demo-menu"),
+  trigger: document.querySelector("#menu-trigger"),
+  target: document.querySelector("#menu-surface"),   // right-click surface
+
+  // Focus returns to whatever opened the menu -- every time, Escape included.
+  // Losing focus to the body strands a keyboard user at the top of the page.
+  onClose: (reason) =&gt; trigger.focus(),
+
+  onAction: (action) =&gt; console.log(action),
+});</code></pre>
+    </div>
+
+    <div class="demo-snippet" data-demo-snippet="menu-markup">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">html</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Menu markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>&lt;!-- The trigger owns the expanded state. aria-controls points at the menu,
+     and aria-haspopup tells AT what will appear. --&gt;
+&lt;button class="fc-btn fc-btn--secondary" aria-haspopup="menu"
+        aria-expanded="false" aria-controls="demo-menu"&gt;Open menu&lt;/button&gt;
+
+&lt;div class="fc-menu" id="demo-menu" role="menu" popover="manual"&gt;
+  &lt;button class="fc-menu__item" role="menuitem" data-menu-action="cut"&gt;
+    &lt;!-- The check slot is always present and empty when unchecked, so the
+         labels stay aligned down the column. --&gt;
+    &lt;span class="fc-menu__check" aria-hidden="true"&gt;&lt;/span&gt;
+    Cut
+  &lt;/button&gt;
+
+  &lt;!-- aria-disabled, not disabled: a disabled item is skipped in silence,
+       so the user never learns Paste exists. --&gt;
+  &lt;button class="fc-menu__item" role="menuitem" aria-disabled="true"&gt;Paste&lt;/button&gt;
+
+  &lt;button class="fc-menu__item" role="menuitemcheckbox" aria-checked="true"&gt;
+    &lt;span class="fc-menu__check" aria-hidden="true"&gt;&amp;#10003;&lt;/span&gt;
+    Wrap lines
+  &lt;/button&gt;
+&lt;/div&gt;</code></pre>
+    </div>
   </section>
 
   <!-- ============================ CHAT ============================ -->
@@ -394,6 +553,47 @@
         </div>
       </div>
     </div>
+
+    <div class="demo-snippet" data-demo-snippet="chat">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">html</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Message markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>&lt;!-- role="log" so AT announces new turns without interrupting. --&gt;
+&lt;div class="fc-chat" role="log" aria-label="Conversation" tabindex="0"&gt;
+  &lt;!-- State is data, not class. An agent reads these; CSS reads the same
+       attributes. Never derive appearance from a class that can drift. --&gt;
+  &lt;div class="fc-msg"
+       data-fc-kind="message" data-fc-id="m-2" data-fc-seq="2"
+       data-fc-role="assistant" data-fc-state="complete"
+       data-fc-ts="2026-10-04T09:12:04Z"&gt;
+    &lt;div class="fc-msg__meta"&gt;
+      &lt;span class="fc-msg__author"&gt;Assistant&lt;/span&gt;
+      &lt;!-- &lt;time datetime&gt; carries the machine-readable value; the text is
+           the human one. --&gt;
+      &lt;time class="fc-msg__time" datetime="2026-10-04T09:12:04Z"&gt;09:12&lt;/time&gt;
+    &lt;/div&gt;
+    &lt;div class="fc-msg__body fc-prose"&gt;&lt;p&gt;One: &lt;strong&gt;api&lt;/strong&gt;.&lt;/p&gt;&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;!-- Truncation is ALWAYS declared, and the full value stays reachable. --&gt;
+  &lt;div class="fc-msg" data-fc-truncated="true" data-fc-state="complete"&gt;
+    &lt;div class="fc-msg__body fc-prose"
+         title="Full response: 14 log lines, 3 tool calls, 1 error."&gt;
+      &lt;p&gt;Full response: 14 log lines, 3 tool&amp;hellip;&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;!-- An error keeps its text. Styling says it failed; deleting the content
+       would destroy the only record of what went wrong. --&gt;
+  &lt;div class="fc-msg" data-fc-state="error"&gt;
+    &lt;div class="fc-msg__body fc-prose"&gt;
+      &lt;p&gt;Metrics fetch failed &amp;mdash; retrying in 30&amp;nbsp;s.&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+    </div>
   </section>
 
   <!-- ============================ TOOL CALLS ============================ -->
@@ -459,6 +659,46 @@
         </div>
       </div>
     </div>
+
+    <div class="demo-snippet" data-demo-snippet="tool-call">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">html</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Tool call markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>&lt;!-- Valid data-fc-state values: pending, queued, streaming, running,
+     complete, aborted, denied, error. All are styled, not just "rest". --&gt;
+&lt;div class="fc-tool" data-fc-kind="tool-call" data-fc-id="t-1" data-fc-seq="1"
+     data-fc-state="complete" data-fc-ts="2026-10-04T09:12:05Z"&gt;
+  &lt;div class="fc-tool__header"&gt;
+    &lt;span class="fc-tool__name"&gt;search_logs&lt;/span&gt;
+
+    &lt;!-- The state is a WORD as well as a colour. "error" survives greyscale
+         and forced-colors mode; a red border alone does not. --&gt;
+    &lt;span class="fc-tool__state" data-fc-state="complete"&gt;complete&lt;/span&gt;
+    &lt;span class="fc-tool__duration"&gt;412&amp;nbsp;ms&lt;/span&gt;
+  &lt;/div&gt;
+  &lt;div class="fc-tool__payload"&gt;{ "service": "api" }&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- A running step needs a real progressbar. It is the only thing telling a
+     screen-reader user the step is not hung. --&gt;
+&lt;div class="fc-tool" data-fc-state="running"&gt;
+  &lt;div class="fc-tool__progress"&gt;
+    &lt;div class="fc-tool__progress-track"&gt;
+      &lt;div class="fc-tool__progress-bar" role="progressbar"
+           aria-label="query_metrics progress" aria-valuemin="0"
+           aria-valuemax="100" aria-valuenow="62"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- A denied step explains WHY. aria-disabled-style semantics: reachable,
+     so the user learns the step exists and what it would take to run it. --&gt;
+&lt;div class="fc-tool" data-fc-state="denied"&gt;
+  &lt;div class="fc-tool__error"&gt;Requires the &lt;code&gt;deploy&lt;/code&gt; permission.&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+    </div>
   </section>
 
   <!-- ============================ TERMINAL ============================ -->
@@ -515,6 +755,43 @@
         </span>
       </div>
     </div>
+
+    <div class="demo-snippet" data-demo-snippet="terminal">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">html</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Terminal markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>&lt;!-- A terminal keeps its own palette and stays dark in BOTH schemes: it
+     emulates another program. ANSI slots are hue-fixed by protocol, and all 19
+     pairings are contrast-checked at build time in both schemes. --&gt;
+&lt;div class="fc-terminal" data-fc-state="connected"&gt;
+  &lt;!-- role="log" aria-live="polite", deliberately NOT assertive: a
+       fast-running command would make a screen reader unusable. --&gt;
+  &lt;div class="fc-terminal__output" role="log" aria-live="polite"
+       aria-label="Terminal output"&gt;
+    &lt;div class="fc-terminal__line"&gt;
+      &lt;span class="fc-term-ansi-green"&gt;done&lt;/span&gt; in 2.4s
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;!-- A real textbox, not a div. Without it an IME-composed character --
+       routine in CJK and other composing scripts -- silently fails to insert. --&gt;
+  &lt;div class="fc-terminal__input-row"&gt;
+    &lt;span class="fc-terminal__prompt" aria-hidden="true"&gt;$&lt;/span&gt;
+    &lt;label class="fc-u-visually-hidden" for="terminal-input"&gt;Terminal input&lt;/label&gt;
+    &lt;input class="fc-terminal__input" id="terminal-input" type="text"
+           autocomplete="off" spellcheck="false"&gt;
+  &lt;/div&gt;
+
+  &lt;div class="fc-terminal__status"&gt;
+    &lt;span&gt;utf-8&lt;/span&gt;
+    &lt;!-- Colour AND a word. A red "1" is a colour-only signal; "exit 1"
+         survives greyscale and the forced-colors fallback. --&gt;
+    &lt;span class="fc-terminal__exit" data-fc-state="error"&gt;exit 1&lt;/span&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+    </div>
   </section>
 
   <!-- ============================ WEBVIEW ============================ -->
@@ -566,6 +843,197 @@
     <p class="demo-status" id="webview-status" role="status">
       Unsafe schemes are refused: try <code>javascript:alert(1)</code> in the address bar.
     </p>
+
+    <div class="demo-snippet" data-demo-snippet="webview">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">js</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Webview wiring">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>import { FutureCssWebview } from "future-css/webview";
+import { isSafeUrl } from "future-css/urls";
+
+const webview = new FutureCssWebview({
+  root: "#webview-root",
+
+  // The binding already refuses javascript:, data:, and file: before they
+  // reach the frame. `isSafeUrl` is exported so a consumer can apply the same
+  // rule to its own links -- it is the same check, not a re-implementation.
+  onNavigate: (url) =&gt; { void isSafeUrl(url); },
+  onStateChange: (state) =&gt; { badge.dataset.fcState = state; },
+});
+
+webview.navigate("/demo/page.html");
+webview.back();</code></pre>
+    </div>
+
+    <div class="demo-snippet" data-demo-snippet="webview-markup">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">html</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Webview markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>&lt;div class="fc-webview" data-fc-home="/demo/page.html" data-fc-state="idle"&gt;
+  &lt;div class="fc-webview__toolbar"&gt;
+    &lt;!-- data-fc-action is what the binding listens for; aria-label carries
+         the name, since the glyph itself is decorative. --&gt;
+    &lt;button class="fc-btn fc-btn--ghost fc-btn--icon" data-fc-action="back"
+            aria-label="Back" disabled&gt;&amp;#8592;&lt;/button&gt;
+
+    &lt;!-- A real form, so Enter submits with no keydown handler and mobile
+         keyboards show the right "Go" affordance for free. --&gt;
+    &lt;form class="fc-webview__address" data-fc-role="address-form" role="search"&gt;
+      &lt;span class="fc-webview__secure" data-fc-state="insecure"&gt;
+        &lt;span aria-hidden="true"&gt;&amp;#9888;&lt;/span&gt;&lt;span&gt;Not secure&lt;/span&gt;
+      &lt;/span&gt;
+      &lt;label class="fc-u-visually-hidden" for="webview-address"&gt;Address&lt;/label&gt;
+      &lt;input class="fc-webview__address-input" id="webview-address"
+             type="text" autocomplete="off" spellcheck="false"&gt;
+    &lt;/form&gt;
+  &lt;/div&gt;
+
+  &lt;!--
+    sandbox WITHOUT allow-same-origin: the embedded page cannot reach this
+    origin's cookies or storage. A cross-origin frame gets no privileges.
+    title is REQUIRED on every iframe -- without it the frame is announced as
+    an unnamed region.
+  --&gt;
+  &lt;iframe class="fc-webview__frame" title="Embedded page"
+          sandbox="allow-scripts allow-forms allow-popups"
+          src="/demo/page.html"&gt;&lt;/iframe&gt;
+&lt;/div&gt;</code></pre>
+    </div>
+  </section>
+
+  <!--
+    One page-wide live region for the copy buttons. Each snippet cannot have its
+    own: a dozen polite regions all updating at once is how a screen reader ends
+    up narrating every snippet on the page instead of the one you touched.
+  -->
+  <p class="fc-u-visually-hidden" id="demo-live" role="status" aria-live="polite"></p>
+
+  <!-- ============================= CODE ============================== -->
+  <section class="demo-section" id="code" aria-labelledby="h-code">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-code">Code</h2>
+      <p class="demo-note">
+        Highlighting is a JavaScript concern; CSS owns only the surface. Switch
+        language and watch the gutter and the token colours both follow &mdash;
+        the status line confirms the source text survives untouched, because a
+        highlighter that alters what you copied is worse than none at all.
+      </p>
+    </div>
+
+    <div class="fc-cluster">
+      <label class="demo-field">
+        <span>Language</span>
+        <!--
+          data-fc-lang on the block below is the single source of truth. This
+          picker only writes it; it never keeps a private copy that could drift.
+        -->
+        <select id="code-lang"></select>
+      </label>
+      <button type="button" class="fc-btn fc-btn--secondary fc-btn--sm" id="code-copy">
+        Copy source
+      </button>
+    </div>
+
+    <div class="fc-code fc-code--numbered" id="code-root" data-fc-lang="typescript">
+      <!-- aria-hidden: a visual index, not content. See code.css. -->
+      <div class="fc-code__gutter" aria-hidden="true"></div>
+      <code class="fc-code__source"></code>
+    </div>
+
+    <p class="demo-status" id="code-status" role="status"></p>
+
+    <div class="demo-snippet" data-demo-snippet="code">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">html</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Code block markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>&lt;div class="fc-code fc-code--numbered" data-fc-lang="typescript"&gt;
+  &lt;!-- line numbers are decoration --&gt;
+  &lt;div class="fc-code__gutter" aria-hidden="true"&gt;&lt;/div&gt;
+  &lt;code class="fc-code__source"&gt;&lt;/code&gt;
+&lt;/div&gt;
+
+&lt;script type="module"&gt;
+  import { renderHighlighted } from "future-css/highlight";
+
+  const block = document.querySelector(".fc-code");
+  const lang  = block.dataset.fcLang;          // single source of truth
+
+  // Highlighted nodes go inside the same &lt;code&gt;, so textContent stays
+  // byte-identical to the source: copy and screen readers get the original.
+  block.querySelector(".fc-code__source")
+       .replaceChildren(...renderHighlighted(source, lang).childNodes);
+&lt;/script&gt;</code></pre>
+    </div>
+  </section>
+
+  <!-- ============================= DIFF ============================== -->
+  <section class="demo-section" id="diff" aria-labelledby="h-diff">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-diff">Diff</h2>
+      <p class="demo-note">
+        Added and removed lines differ by background, by foreground, by a sign
+        glyph, and by <code>data-fc-diff</code>. Drop any one of those &mdash; a
+        colour-blind reader, a printer, forced colours &mdash; and the
+        distinction survives. Lines present on only one side show no number on the
+        other, rather than inventing one.
+      </p>
+    </div>
+
+    <div class="fc-cluster">
+      <button type="button" class="fc-btn fc-btn--secondary fc-btn--sm" id="diff-swap">
+        Use scrolling
+      </button>
+    </div>
+
+    <div class="fc-diff" id="diff-root">
+      <div class="fc-diff__bar"></div>
+      <div class="fc-diff__body"></div>
+    </div>
+
+    <p class="demo-status" id="diff-status" role="status"></p>
+
+    <div class="demo-snippet" data-demo-snippet="diff">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">js</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Diff wiring">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>import { diffLines, diffStats } from "future-css/diff";
+
+const lines = diffLines(before, after);   // Myers, O(N*D)
+const { added, removed } = diffStats(lines);
+
+for (const line of lines) {
+  const row = document.createElement("div");
+  row.className = "fc-diff__line";
+
+  // Machine-readable state. CSS, tests, and agents all read this one attribute.
+  if (line.kind !== "equal") row.dataset.fcDiff = line.kind;
+
+  // Human-readable state. Text, not a CSS content value, so it survives
+  // forced colors and can be selected. Hidden: the attribute already says it.
+  const sign = document.createElement("span");
+  sign.className = "fc-diff__marker";
+  sign.setAttribute("aria-hidden", "true");
+  sign.textContent = line.kind === "add" ? "+"
+                   : line.kind === "remove" ? "\u2212" : " ";
+
+  // null means "not on this side" -- render empty rather than 0.
+  const oldNo = document.createElement("span");
+  oldNo.className = "fc-diff__num";
+  oldNo.setAttribute("aria-hidden", "true");
+  oldNo.textContent = line.oldLine ?? "";
+
+  row.append(sign, oldNo, content);
+  body.append(row);
+}</code></pre>
+    </div>
   </section>
 
   <!-- ============================ TOKENS ============================ -->
@@ -580,6 +1048,30 @@
     </div>
 
     <div class="fc-grid-auto" id="token-grid"></div>
+
+    <div class="demo-snippet" data-demo-snippet="tokens">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">css</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Token usage">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>/* Components reference SEMANTIC tokens only. A primitive is an
+   implementation detail a theme may remap -- referencing one directly
+   means the theme cannot change it. */
+.my-panel {
+  background-color: var(--fc-color-bg-surface);
+  color:            var(--fc-color-text-default);
+  border:           var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+}
+
+/* Theming is one attribute. Every themed token is a light-dark() pair, so
+   this re-themes all 90 of them with no component-level rule anywhere. */
+[data-fc-theme="dark"] { color-scheme: dark; }
+
+/* Direction is structural, not a parallel stylesheet: logical properties
+   mean RTL needs no mirrored rules at all. */
+.my-panel { margin-inline-start: var(--fc-space-4); }</code></pre>
+    </div>
   </section>
 
   <footer class="demo-footer">

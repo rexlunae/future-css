@@ -47,6 +47,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "fc-diff"
+version = "0.1.0"
+dependencies = [
+ "fc-core",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "fc-grid"
 version = "0.1.0"
 dependencies = [

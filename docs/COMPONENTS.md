@@ -335,6 +335,46 @@ because everything here needs to ask the browser something WASM cannot observe:
 where the selection is, what the browser considers a word, what the IME is
 composing.
 
+### Pure modules
+
+These are functions over strings, with no DOM involvement at all. They are
+importable on their own, independently of any component.
+
+| Module | Exports | Contract |
+| --- | --- | --- |
+| `future-css/highlight` | `highlight`, `resolveLanguage`, `languages` | Contiguous, non-overlapping spans that reconstruct the source exactly. Unknown language falls back to plain text. |
+| `future-css/diff` | `diffLines`, `diffStats`, `splitLines` | Myers with backtracking. Dropping added lines reproduces the original; dropping removed lines reproduces the revision. |
+| `future-css/markdown` | `parseMarkdown`, `serializeMarkdown`, `parseInline`, `serializeInline`, `escapeMarkdown`, `parseLinkTarget` | Parse/serialize for a documented, round-trippable subset. |
+
+**One exception, deliberately.** `highlight` also exports `renderHighlighted`,
+which *does* build DOM nodes — it is the convenience wrapper that turns spans into
+`<span class="fc-code__tok">` elements for the code component. Everything else in
+the table is DOM-free and usable in a worker, a build script, or a test. Import
+`highlight` rather than `renderHighlighted` when you are not building a page.
+
+Two properties are asserted directly rather than described, because both have
+failed in ways a smoke test missed: highlighting never alters the source text,
+and a diff reconstructs both inputs. The Markdown subset has **one** documented
+lossy case — `parseInline` records that a range is a link but not its
+destination, so use `parseLinkTarget` when a target must be preserved.
+
+### Rust
+
+`diffLines` already has a Rust implementation, `fc-diff`, which is the same
+algorithm with the same reconstruction guarantee and the same test cases. It is
+**not yet wired to the JS side**: `src/js/diff.ts` remains the only path a
+consumer gets today, and the crate is built as part of `npm run build:wasm`.
+
+It is deliberately free of `js-sys`. Every other crate in the workspace links it,
+and that single dependency is what inflates each module to roughly ten times its
+budget, which is the problem Phase A in `PLAN.md` exists to fix. `fc-diff` is the
+pattern that fix needs: primitives across the boundary, never `Vec<JsValue>`.
+
+The remaining candidates are `highlight`'s tokenizer and the listbox typeahead
+that a select component will need; neither has a Rust path yet. Whenever one is
+added it ships **alongside** the JS implementation with a parity test, never
+instead of it.
+
 ### Editor
 
 ```js
@@ -489,6 +529,96 @@ reason. `pre` belongs on the line, where whitespace is meaningful, and nowhere e
 
 ---
 
+## Code block (implemented)
+
+A reading surface for source code: optional gutter, token colours, and a wrapping
+policy. Highlighting itself is a JS concern (`future-css/highlight`); this owns the
+surface.
+
+```html
+<div class="fc-code fc-code--numbered" data-fc-lang="typescript">
+  <!-- Line numbers are decoration: aria-hidden, because announcing "line 47"
+       before each of 47 lines makes the content unusable. -->
+  <div class="fc-code__gutter" aria-hidden="true">…</div>
+  <code class="fc-code__source"></code>
+</div>
+```
+
+`data-fc-lang` is the single source of truth for the language. A JS-side default
+would silently highlight Python as JavaScript whenever the attribute was
+misspelled.
+
+### Modifiers
+
+| Modifier | Effect |
+| --- | --- |
+| `--numbered` | Adds the gutter column |
+| `--scroll` | `white-space: pre` plus a horizontal scroller, for column-aligned reading |
+
+### Wrapping, and why line numbers can drift
+
+Wrapping is the **default**, because WCAG 1.4.10 requires content to work at 400%
+zoom without two-dimensional scrolling, and `pre` with `overflow-x` fails that for
+any line wider than the viewport.
+
+The cost is that a wrapped numbered block can misalign: one logical line may
+occupy several visual rows while the gutter allocates exactly one number per
+logical line. This is not fixable in CSS — the gutter cannot know how many rows a
+line took. `--scroll` makes numbering exact by disabling wrapping. The tradeoff is
+documented rather than hidden.
+
+### Accessibility
+
+The `<code>` element's `textContent` is byte-identical to the source, because every
+token span sits inside it. A copy button and a screen reader both get the original
+text, and highlighting can be disabled with CSS alone.
+
+---
+
+## Diff viewer (implemented)
+
+Renders the output of `diffLines()` as a reviewable sequence of lines: summary bar,
+per-line markers, old/new gutters, and optional hunk gaps.
+
+```html
+<div class="fc-diff">
+  <div class="fc-diff__bar"><!-- +3 −1 --></div>
+  <div class="fc-diff__line" data-fc-diff="add" aria-label="Added: const a = 1;">
+    <span class="fc-diff__marker" aria-hidden="true">+</span>
+    <span class="fc-diff__num" aria-hidden="true"></span>
+    <span class="fc-diff__num" aria-hidden="true">12</span>
+    <span class="fc-diff__content">const a = 1;</span>
+  </div>
+</div>
+```
+
+### Colour is never the only cue
+
+Added and removed lines differ in **four** independent ways: background,
+foreground hue, a `+`/`−` glyph, and `data-fc-diff`. Drop any one — a colour-blind
+reader, a printer, forced-colors mode, a monochrome terminal — and the distinction
+survives. That redundancy is the whole design; `background: green` would not be a
+diff viewer.
+
+`data-fc-diff` is the machine-readable half, so an automated reader selects rows
+with a selector rather than by reading colours. It is **additive**: styling never
+depends on a consumer reading it.
+
+### Line numbers
+
+`aria-hidden`, and **blank rather than 0** on the side a line does not exist. A
+line present only in the revision has no number in the original, and showing 0
+would invent a line that was never there.
+
+### The accessible name requirement
+
+Because the marker glyph *and* both numbers are hidden, a changed row needs an
+`aria-label` carrying its state. Without one, a removed line and an added line with
+the same text are announced identically — `data-fc-diff` is not announced. The
+generator in `demo/demo.js` sets it; any consumer must do the same.
+
+---
+
 ## Planned components
 
 Ordered by dependency and by how often they appear. Full specifications are written as
@@ -499,7 +629,7 @@ each component is built.
 | Link | `<a href>` | Underline always; focus from base layer |
 | Form field | `<input>` + `<label>` | Label, hint, error, `aria-describedby` wiring |
 | Checkbox / radio | native | Do not rebuild; style the native control |
-| Select | `<select>` | Styling native selects is limited; document the ceiling |
+| Select / listbox | `<button role="combobox">` + `role="listbox"` | Custom listbox; full APG keyboard contract. First consumer is the composer |
 | Dialog | `<dialog>` | Native focus containment and Escape handling |
 | Disclosure | `<details>` | Progressive enhancement target |
 | Card | `<article>` / `<section>` | Surface, border, radius, shadow |
@@ -508,16 +638,29 @@ each component is built.
 | Toast | `<output>` + `role="status"` | Live region politeness matters |
 | Tooltip | `role="tooltip"` | Not for essential content; not hover-only |
 
-### Two components that are not components
-
-**Native select.** Styling a `<select>` is limited by the platform, particularly on macOS
-and iOS. Rather than build a custom listbox that reimplements the accessibility tree, this
-system styles the native control as far as it can go and documents the ceiling. A custom
-select is a major accessibility commitment, not a component.
+### One component that is not a component
 
 **Tooltips.** A tooltip must not contain the only instance of information, must be
 reachable by keyboard, and must not appear on hover only. For anything essential, use
 visible content or `aria-describedby` on a persistent element.
+
+**A bespoke listbox.** *This position has changed.* An earlier revision of this
+document said a custom select is "not a component" and that the native control
+should be styled to its ceiling instead. That was the right call for a general
+design system and the wrong one here.
+
+The composer needs option sets the platform cannot express: models grouped by
+provider and filtered as you type, an effort control whose options change meaning
+by model, and hundreds of entries with typeahead. A native `<select>` has no
+grouping worth the name and no filtering, and styling it further is fighting the
+platform rather than using it.
+
+So a general `fc-select` listbox is now planned, and it is scoped as a **component**
+rather than a composer detail, because anything with a keyboard contract this large
+is worth having once and testing properly. The cost is real and worth stating:
+a custom listbox reimplements part of the accessibility tree, and it will be the
+most accessibility-sensitive component in the system. It ships only with the full
+APG keyboard contract, `aria-activedescendant`, and browser tests for every key.
 
 ---
 

@@ -1,0 +1,242 @@
+/*!
+ * future-css -- diff viewer
+ *
+ * Renders the output of `diffLines()` as a reviewable sequence of lines.
+ *
+ * Design constraints that shaped this:
+ *
+ *   - **Colour is never the only cue.** Added and removed lines differ in
+ *     background, in foreground hue, in a +/- glyph, and in `data-fc-diff`. Drop
+ *     any one of those -- a colour-blind reader, a printer, forced colors, a
+ *     monochrome terminal -- and the distinction survives. That redundancy is why
+ *     this is not simply `.fc-diff--add { background: green }`.
+ *   - **State lives in `data-fc-diff`, not a class.** The value is the
+ *     machine-readable half of the DOM contract described in AGENTS.md, so an
+ *     automated reader selects added or removed rows with a selector rather than
+ *     by reading colors.
+ *   - **Gutter and content share a row.** Each line is one grid row with its own
+ *     number cells, so a line number cannot drift from its content.
+ */
+
+@layer fc.components {
+  .fc-diff {
+    display: block;
+    min-inline-size: 0;
+    background-color: var(--fc-code-bg);
+    color: var(--fc-code-fg);
+    border: var(--fc-border-width-thin) solid var(--fc-code-border-default);
+    border-radius: var(--fc-radius-md);
+    /*
+     * Code carries a denser leading than prose: it is read by shape, and loose
+     * leading blurs the line boundaries that carry the structure.
+     */
+    line-height: var(--fc-line-height-snug);
+  }
+
+  /* ---- Header ------------------------------------------------------------ */
+
+  /*
+   * Summary bar. The counts are text, not decoration: "+3 -1" is the fastest way
+   * for a reviewer to size a change before reading it.
+   */
+  .fc-diff__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fc-space-3);
+    padding: var(--fc-space-2) var(--fc-space-4);
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-code-border-default);
+    background-color: var(--fc-code-bg-subtle);
+    font-family: var(--fc-font-family-sans);
+    font-size: var(--fc-font-size-xs);
+  }
+
+  .fc-diff__stat {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-1);
+    font-variant-numeric: tabular-nums;
+    /* Never zeroed out: a count of zero is meaningful, so the numbers must not
+       shift the layout as they change. */
+    min-inline-size: 3.5ch;
+  }
+
+  .fc-diff__stat--added { color: var(--fc-code-added-fg); }
+  .fc-diff__stat--removed { color: var(--fc-code-removed-fg); }
+
+  /* ---- Lines ------------------------------------------------------------- */
+
+  /*
+   * One grid row per line: marker, old number, new number, content.
+   *
+   * `grid-template-columns` rather than a `<table>`: a diff is not tabular data
+   * with a header relationship, it is a sequence of lines, and a table would
+   * imply column semantics that do not exist. Row role and per-line state come
+   * from attributes instead.
+   */
+  .fc-diff__line {
+    display: grid;
+    grid-template-columns: 2ch auto auto 1fr;
+    align-items: baseline;
+    gap: var(--fc-space-2);
+    padding-inline: var(--fc-space-2);
+
+    font-family: var(--fc-font-family-mono);
+    font-size: var(--fc-font-size-sm);
+
+    /*
+     * `pre-wrap` rather than `pre` plus a scroller: a long line wraps instead of
+     * forcing two-dimensional scrolling, which WCAG 1.4.10 treats as a failure.
+     * `.fc-diff--scroll` opts back out for column-aligned review.
+     */
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+  }
+
+  /*
+   * Scrolling mode has to provide the scroller. Switching rows to `white-space:
+   * pre` without one leaves nowhere for the overflow to go, so a long line
+   * widens the whole document instead of scrolling inside the diff -- which is
+   * the same 1.4.10 failure the wrapping default exists to avoid.
+   */
+  .fc-diff--scroll {
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+
+  .fc-diff--scroll :where(.fc-diff__line) {
+    white-space: pre;
+    overflow-wrap: normal;
+  }
+
+  /*
+   * A grid row's width is its container's, so the row itself cannot scroll; the
+   * bar has to be as wide as its content for the scroller to have anything to
+   * scroll. `min-inline-size: max-content` is what makes this work without
+   * fixing a column width the consumer cannot override.
+   *
+   * `position: sticky` keeps the summary in view while scrolling sideways,
+   * which is the only reason the bar is worth pinning during a horizontal read.
+   */
+  .fc-diff--scroll :where(.fc-diff__bar) {
+    position: sticky;
+    inset-inline-start: 0;
+    min-inline-size: max-content;
+  }
+
+  /*
+   * State, driven by the data attribute so the styling, the machine-readable
+   * contract, and the sign glyph all derive from one source of truth.
+   */
+  .fc-diff__line[data-fc-diff="add"] {
+    background-color: var(--fc-code-bg-added);
+    color: var(--fc-code-added-fg);
+  }
+
+  .fc-diff__line[data-fc-diff="remove"] {
+    background-color: var(--fc-code-bg-removed);
+    color: var(--fc-code-removed-fg);
+  }
+
+  /*
+   * The +/- glyph is text in the markup, not a CSS `content` value, so it is
+   * selectable, translatable, and readable when colors are stripped. It is
+   * `aria-hidden`, since the state is already conveyed by `data-fc-diff`.
+   */
+  .fc-diff__marker {
+    text-align: center;
+    user-select: none;
+  }
+
+  /*
+   * Line numbers. A line present on only one side has no number on the other,
+   * and leaving that cell empty -- rather than showing 0 or a dash -- keeps the
+   * columns aligned and never invents a line that did not exist.
+   */
+  .fc-diff__num {
+    color: var(--fc-code-fg);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    min-inline-size: 3ch;
+    /* Visual reference only; `aria-hidden` in the markup, because announcing
+       "1 1" before every line makes the content far harder to follow. */
+    user-select: none;
+    opacity: 0.75;
+  }
+
+  .fc-diff__content {
+    min-inline-size: 0;
+  }
+/*
+   * Syntax colors inside a diff row need no rules of their own.
+   *
+   * It is tempting to re-declare them scoped to `.fc-diff` because the row tints
+   * the background. That is unnecessary and wrong: the token classes from
+   * `code.css` already carry exactly the right values, and scoping them here
+   * would raise specificity for no gain -- which is precisely what the
+   * `no-over-qualified` rule exists to prevent. The tint is subtle enough that
+   * the solved contrast ratios still hold against it, and that is why
+   * `added-fg`/`removed-fg` were checked against the tinted surfaces rather than
+   * against `bg`.
+   */
+
+  /* ---- Hunk separator ---------------------------------------------------- */
+
+  /*
+   * Collapses long runs of unchanged lines. Purely an affordance: the full line
+   * sequence stays in the DOM, so a machine reading the diff is not misled by
+   * what a person sees.
+   */
+  .fc-diff__gap {
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-2);
+    padding: var(--fc-space-1) var(--fc-space-4);
+    background-color: var(--fc-code-bg-subtle);
+    color: var(--fc-code-fg);
+    border-block: var(--fc-border-width-thin) solid var(--fc-code-border-default);
+    font-family: var(--fc-font-family-sans);
+    font-size: var(--fc-font-size-xs);
+  }
+
+  /* ---- Forced colors ----------------------------------------------------- */
+
+  /*
+   * Under forced colors the OS replaces every background, so the added/removed
+   * distinction cannot be carried by tint at all. It survives through the glyph,
+   * the `data-fc-diff` attribute, and the Highlight pair below.
+   */
+  @media (forced-colors: active) {
+    .fc-diff,
+    .fc-diff__bar,
+    .fc-diff__gap {
+      background-color: Canvas;
+      color: CanvasText;
+      border-color: CanvasText;
+    }
+
+    .fc-diff__line[data-fc-diff="add"],
+    .fc-diff__line[data-fc-diff="remove"] {
+      background-color: Canvas;
+      color: CanvasText;
+    }
+
+    .fc-diff__line[data-fc-diff="add"] .fc-diff__marker,
+    .fc-diff__line[data-fc-diff="remove"] .fc-diff__marker {
+      /*
+       * Highlight/HighlightText is the OS's own "selected" pair -- the closest
+       * system color to "this line changed". `forced-color-adjust: none` is
+       * required to keep it, since the OS suppresses author colors by default;
+       * the exemption is scoped to the two-cell marker rather than the row, so
+       * nothing else escapes the system palette.
+       */
+      background-color: Highlight;
+      color: HighlightText;
+      forced-color-adjust: none;
+    }
+
+    .fc-diff__num {
+      color: GrayText;
+    }
+  }
+}

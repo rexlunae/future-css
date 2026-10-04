@@ -335,6 +335,28 @@ because everything here needs to ask the browser something WASM cannot observe:
 where the selection is, what the browser considers a word, what the IME is
 composing.
 
+### Pure modules
+
+These are functions over strings, with no DOM involvement at all. They are
+importable on their own, independently of any component.
+
+| Module | Exports | Contract |
+| --- | --- | --- |
+| `future-css/highlight` | `highlight`, `renderHighlighted`, `resolveLanguage`, `languages` | Contiguous, non-overlapping spans that reconstruct the source exactly. Unknown language falls back to plain text. |
+| `future-css/diff` | `diffLines`, `diffStats`, `splitLines` | Myers with backtracking. Dropping added lines reproduces the original; dropping removed lines reproduces the revision. |
+| `future-css/markdown` | `parseMarkdown`, `serializeMarkdown`, `parseInline`, `serializeInline`, `escapeMarkdown`, `parseLinkTarget` | Parse/serialize for a documented, round-trippable subset. |
+
+Two properties are asserted directly rather than described, because both have
+failed in ways a smoke test missed: highlighting never alters the source text,
+and a diff reconstructs both inputs. The Markdown subset has **one** documented
+lossy case — `parseInline` records that a range is a link but not its
+destination, so use `parseLinkTarget` when a target must be preserved.
+
+**No Rust path yet for these three.** They are the natural candidates (see Phase A
+in `PLAN.md`): `fc-diff` would move Myers, and `highlight`'s tokenizer is a hot
+loop over large files. A Rust implementation must ship alongside the JS one with
+a parity test, never instead of it.
+
 ### Editor
 
 ```js

@@ -39,6 +39,17 @@ export interface Attachment {
   type?: string;
   /** Set when the file could not be read. Never silently dropped. */
   error?: string;
+  /**
+   * The original `File`, so a consumer can actually read the bytes.
+   *
+   * Kept rather than discarded, and this is load-bearing: an attachment reduced to
+   * `{name, size, type}` is useless to the application. It cannot upload the file,
+   * cannot hash it, cannot inline it into a request -- and because the chip still
+   * looks like a successful attachment until submit, the loss is silent. The
+   * binding is a pass-through here, not a gate: reading the bytes is the
+   * consumer's business.
+   */
+  file?: File;
 }
 
 export interface ComposerOptions {
@@ -144,12 +155,22 @@ export class FutureCssComposer {
     return true;
   }
 
-  /** Adds files, ignoring duplicates by name and size. */
-  addAttachments(files: readonly File[]): void {
+  /**
+   * Adds files, ignoring duplicates by name and size.
+   *
+   * Accepts `File` or a pre-built `Attachment`, so a consumer that already has
+   * the metadata (from a paste handler, say) does not have to reconstruct a File
+   * to add it.
+   */
+  addAttachments(files: readonly (File | Attachment)[]): void {
     const next = [...this.attachments];
-    for (const file of files) {
-      if (next.some((a) => a.name === file.name && a.size === file.size)) continue;
-      next.push({ name: file.name, size: file.size, type: file.type });
+    for (const item of files) {
+      const attachment: Attachment =
+        item instanceof File
+          ? { name: item.name, size: item.size, type: item.type, file: item }
+          : item;
+      if (next.some((a) => a.name === attachment.name && a.size === attachment.size)) continue;
+      next.push(attachment);
     }
     this.setAttachments(next);
   }
@@ -157,7 +178,52 @@ export class FutureCssComposer {
   /** Removes the attachment at `index`. */
   removeAttachment(index: number): void {
     if (index < 0 || index >= this.attachments.length) return;
+    /*
+     * Move focus before the chip is destroyed.
+     *
+     * The button being removed is the element that has focus, so removing it
+     * strands focus on `<body>` -- which is invisible to a mouse user and means a
+     * keyboard user's next Tab starts from the top of the page. Moving to the
+     * neighbouring chip, or back to the input when none are left, keeps them
+     * where they were.
+     */
+    const hadFocus = document.activeElement instanceof HTMLElement
+      && this.list?.contains(document.activeElement);
     this.setAttachments(this.attachments.filter((_, i) => i !== index));
+    if (hadFocus) this.restoreChipFocus(index);
+  }
+
+  /** Focuses the chip that took the removed one's place, or the input. */
+  private restoreChipFocus(removedIndex: number): void {
+    const buttons = this.list
+      ? Array.from(
+          this.list.querySelectorAll<HTMLElement>(".fc-composer__attachment-remove"),
+        )
+      : [];
+    // Prefer the next chip, then the previous one, then the input.
+    const next = buttons[removedIndex] ?? buttons[removedIndex - 1] ?? this.input;
+    next.focus();
+  }
+
+  /**
+   * Adds an attachment that could not be read, with the reason.
+   *
+   * The error state in the markup had no way to be reached from outside, which
+   * made it dead CSS: a failed read had to be dropped silently -- exactly the
+   * outcome that leaves someone sending a request missing what they added.
+   */
+  addFailedAttachment(attachment: Omit<Attachment, "error"> & { error: string }): void {
+    this.setAttachments([...this.attachments, attachment]);
+  }
+
+  /**
+   * The attachment at `index`, including its `File` when it has one.
+   *
+   * The documented way to reach the original file for reading. `files` also
+   * carries them, so this is a convenience rather than a second path.
+   */
+  attachmentAt(index: number): Attachment | undefined {
+    return this.attachments[index];
   }
 
   private setAttachments(next: Attachment[]): void {
@@ -295,10 +361,22 @@ export class FutureCssComposer {
       event.stopPropagation();
     };
 
+    this.root.addEventListener("dragenter", (event) => {
+      stop(event);
+      this.root.dataset.fcDragging = "true";
+    });
+
     this.root.addEventListener("dragover", (event) => {
       stop(event);
       this.root.dataset.fcDragging = "true";
     });
+
+    // A drag that ends anywhere else -- dropped on another target, cancelled with
+    // Escape -- must clear the cue. Without this the composer stays highlighted
+    // after the drag is long over, implying it is still receiving files.
+    this.root.addEventListener("drop", () => delete this.root.dataset.fcDragging);
+    document.addEventListener("drop", () => delete this.root.dataset.fcDragging);
+    document.addEventListener("dragend", () => delete this.root.dataset.fcDragging);
 
     this.root.addEventListener("dragleave", (event) => {
       // `dragleave` fires for every child crossed, so the attribute would flicker.

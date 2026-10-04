@@ -1516,4 +1516,119 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(kept, "precious", "the draft must survive a throwing consumer");
   });
 
+
+  it("hands the original File to onSubmit, not just its metadata", async () => {
+    // An attachment reduced to {name, size, type} is useless: a consumer cannot
+    // upload or inspect it, and the chip still looks like a successful attachment
+    // until submit, so the loss is silent.
+    await loadBindings();
+    await resetComposer();
+    const result = await evaluate(`
+      let received = null;
+      const root = document.querySelector('#composer-root');
+      const input = document.querySelector('#composer-input');
+      root.replaceChild(input.cloneNode(true), input);
+      globalThis.comp = new C.FutureCssComposer({
+        root: '#composer-root',
+        onSubmit: (_t, files) => { received = files[0]; },
+      });
+      comp.addAttachments([new File(['payload bytes'], 'report.pdf', { type: 'application/pdf' })]);
+      const hasFileBefore = comp.files[0].file instanceof File;
+      const viaAccessor = comp.attachmentAt(0).file instanceof File;
+      comp.submit();
+      return [
+        hasFileBefore,
+        viaAccessor,
+        received !== null,
+        received?.file instanceof File,
+        received?.file ? new TextDecoder().decode(await received.file.arrayBuffer()) : null,
+      ];
+    `);
+    assert.equal(result[0], true, "the File must survive addAttachments");
+    assert.equal(result[1], true, "and be reachable through attachmentAt");
+    assert.equal(result[2], true, "onSubmit must receive the attachment");
+    assert.equal(result[3], true, "with the File still attached");
+    assert.equal(result[4], "payload bytes", "the bytes must be readable by the consumer");
+  });
+
+  it("keeps focus in the composer after an attachment is removed", async () => {
+    // The removed button had focus, so removing it stranded focus on <body> --
+    // invisible to a mouse user, and it means a keyboard user's next Tab starts
+    // from the top of the page.
+    await loadBindings();
+    await resetComposer();
+    const focused = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      comp.addAttachments([
+        new File(['a'], 'one.ts'),
+        new File(['b'], 'two.ts'),
+        new File(['c'], 'three.ts'),
+      ]);
+      const buttons = document.querySelectorAll('#composer-attachments .fc-composer__attachment-remove');
+      buttons[1].focus();
+      const before = document.activeElement.getAttribute('aria-label');
+      comp.removeAttachment(1);
+      const active = document.activeElement;
+      return [
+        before,
+        active === document.body,
+        active.getAttribute('aria-label') ?? active.id,
+      ];
+    `);
+    assert.equal(focused[1], false, "focus must not land on the body");
+    assert.equal(focused[2], "Remove three.ts", "focus moves to the chip that took its place");
+  });
+
+  it("returns focus to the input when the last attachment is removed", async () => {
+    await loadBindings();
+    await resetComposer();
+    const where = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      comp.addAttachments([new File(['a'], 'only.ts')]);
+      document.querySelector('#composer-attachments .fc-composer__attachment-remove').focus();
+      comp.removeAttachment(0);
+      return document.activeElement.id;
+    `);
+    assert.equal(where, "composer-input");
+  });
+
+  it("exposes a way to attach a file that could not be read", async () => {
+    // The `data-fc-state="error"` style had no public entry point, so a failed
+    // read had to be dropped silently -- exactly what leaves someone sending a
+    // request missing what they added.
+    await loadBindings();
+    await resetComposer();
+    const state = await evaluate(`
+      globalThis.comp = new C.FutureCssComposer({ root: '#composer-root' });
+      comp.addFailedAttachment({ name: 'locked.pdf', size: 0, error: 'Permission denied' });
+      const chip = document.querySelector('#composer-attachments .fc-composer__attachment');
+      return [chip.dataset.fcState, chip.textContent.includes('Permission denied')];
+    `);
+    assert.equal(state[0], "error");
+    assert.equal(state[1], true, "the reason must be visible, not just flagged");
+  });
+
+  it("clears the drop cue when a drag ends without a drop", async () => {
+    // Otherwise the composer stays highlighted after the drag is long over,
+    // implying it is still receiving files.
+    await loadBindings();
+    await resetComposer();
+    const after = await evaluate(`
+      const root = document.querySelector('#composer-root');
+      root.dispatchEvent(new DragEvent('dragenter', { bubbles: true }));
+      root.dispatchEvent(new DragEvent('dragover', { bubbles: true }));
+      const during = root.dataset.fcDragging;
+      root.dispatchEvent(new DragEvent('dragleave', { bubbles: true }));
+      const left = root.dataset.fcDragging;
+      root.dispatchEvent(new DragEvent('dragenter', { bubbles: true }));
+      document.dispatchEvent(new DragEvent('dragend', { bubbles: true }));
+      return [during, left, root.dataset.fcDragging];
+    `);
+    assert.equal(after[0], "true", "the cue appears during a drag");
+    // Absent rather than "false": the attribute is removed rather than negated,
+    // so the CSS selector for the cue stops matching entirely.
+    assert.ok(after[1] == null, "and clears when the pointer leaves");
+    assert.ok(after[2] == null, "and when the drag ends without a drop");
+  });
+
 });

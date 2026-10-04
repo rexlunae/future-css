@@ -623,6 +623,8 @@ $("#model-filter")?.addEventListener("input", (event) => {
 // ---------------------------------------------------------------------------
 
 let composerRunning = false;
+/** Handle for the simulated run, cleared before each new one. */
+let runTimer;
 
 const composer = new FutureCssComposer({
   root: "#composer-root",
@@ -634,15 +636,23 @@ const composer = new FutureCssComposer({
     );
     // The demo "runs" for a moment so the Stop state is reachable. A real app
     // calls setRunning() from its stream's lifecycle, not on a timer.
+    //
+    // The pending timer is cleared first: submitting again while a previous
+    // run's timeout is still queued would let the *older* timer end the *newer*
+    // run, flipping the control back to Send mid-response.
+    clearTimeout(runTimer);
     composerRunning = true;
     composer.setRunning(true);
-    setTimeout(() => {
+    runTimer = setTimeout(() => {
       composerRunning = false;
       composer.setRunning(false);
     }, 2500);
   },
   onStop: () => {
     status("#composer-status", "Stopped. Your draft was kept.");
+    // Cancel the pending end-of-run, or it would fire after the stop and reset
+    // state the user has already moved on from.
+    clearTimeout(runTimer);
     composerRunning = false;
     composer.setRunning(false);
   },

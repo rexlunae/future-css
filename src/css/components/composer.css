@@ -216,14 +216,25 @@
    * the fill goes away, because "stop" is an interruption rather than a
    * confirmation, and a filled accent button invites a click that aborts work.
    */
+  /*
+   * `danger-bg-subtle`, not the solid `danger-bg`.
+   *
+   * The only *declared* danger pairing is `danger-text` on `danger-bg-subtle`;
+   * pairing dark danger text with a solid danger fill puts two neighbouring ramp
+   * steps together and the label stops being readable. Stop is the only control
+   * for aborting a run, so it has to meet the 4.5:1 minimum in both schemes --
+   * which means using the combination the contrast contract actually validates
+   * rather than the one that looks more emphatic.
+   */
   .fc-composer__send[data-fc-state="running"] {
-    background-color: var(--fc-color-danger-bg);
+    background-color: var(--fc-color-danger-bg-subtle);
     color: var(--fc-color-danger-text);
     border-color: var(--fc-color-danger-border);
+    font-weight: var(--fc-font-weight-semibold);
   }
 
   .fc-composer__send[data-fc-state="running"]:hover {
-    background-color: var(--fc-color-danger-bg);
+    background-color: var(--fc-color-danger-bg-subtle);
     border-color: var(--fc-color-danger-border);
   }
 

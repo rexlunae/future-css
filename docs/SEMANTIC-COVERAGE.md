@@ -180,7 +180,7 @@ Counts by canonical name. "Shipped" counts only what is enforced, not merely pre
 | 22 | Diff role | **Shipped** | Added/removed as surface *and* foreground, not surface alone |
 | 23 | Machine-readable state | **Shipped** | 8 documented `data-fc-*` attributes, AGENTS.md contract |
 
-**Shipped: 17. Partial: 4. Absent: 2.**
+**Shipped: 18. Partial: 3. Absent: 2.**
 
 The two Absent rows are the substantive findings, and both are discussed in
 [Gaps](#gaps-that-are-actually-gaps).
@@ -623,14 +623,14 @@ tokens — but they are the other half of "semantic" and belong in the same comp
 | | Overlays (dialog, tooltip, toast) | Absent | Phase 3 |
 | | Navigation (tabs, breadcrumb) | Absent | Phase 3 |
 | **Accessibility** | Keyboard, focus-visible, skip link | Shipped | base + `.fc-u-visually-hidden` |
-| | forced-colors per component | Shipped | 14 blocks across 10 files |
+| | forced-colors per component | Shipped | 1 block per component, all 10 |
 | | Contrast verified in both schemes | Shipped | 30 declared pairs total |
 | | Target size | Shipped | token + button/grid |
 | | `prefers-reduced-motion` | Shipped | reset + 6 components |
 | | Live-region politeness | Absent | needs a toast component |
 | | APCA alongside WCAG | Absent | open question 2, `PLAN.md` |
-| **Behaviour** | JS bindings | Shipped | `src/js/`, 8 modules |
-| | Optional WASM accelerator | Shipped | 5 crates, WASM/JS parity tested |
+| **Behaviour** | JS bindings | Shipped | `src/js/`, 10 modules |
+| | Optional WASM accelerator | Shipped | 6 crates, WASM/JS parity tested |
 | | highlight / diff / markdown | Shipped | 6 languages, Myers, round-trip |
 
 Three of these deserve a note because they are places the field is *behind*, and being
@@ -641,7 +641,7 @@ the TypeScript directly. Only reachable because tokens are compiled from TypeScr
 rather than Sass — a Sass pipeline would make the dependency-free property impossible
 to keep.
 
-**Enforced RTL.** 30 physical longhands are rejected by the `logical-properties` lint
+**Enforced RTL.** 31 physical longhands are rejected by the `logical-properties` lint
 rule, so there is no `[dir="rtl"]` block anywhere in the codebase. There is nothing to
 override because nothing physical was written. Pico ships an RTL stylesheet, Primer ships
 direction overrides, Bulma ships an RTL mixin. All three are maintaining a second
@@ -653,5 +653,3 @@ same discipline produced three regression tests, because a demo is a test: the
 `.fc-grid` name collision between the layout primitive and the data grid, the
 `grid-auto-columns` implicit-track mistake, and the `color-scheme` layer-order bug were
 each invisible to unit tests and obvious the moment real components rendered.
-
----

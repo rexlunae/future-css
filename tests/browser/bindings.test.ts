@@ -166,10 +166,11 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         import('/src/js/select.js'),
         import('/src/js/composer.js'),
         import('/src/js/context-strip.js'),
-      ]).then(([e, m, g, w, h, d, s, c, k]) => {
+        import('/src/js/git.js'),
+      ]).then(([e, m, g, w, h, d, s, c, k, it]) => {
         globalThis.E = e; globalThis.M = m; globalThis.G = g; globalThis.W = w;
         globalThis.H = h; globalThis.D = d; globalThis.S = s;
-        globalThis.C = c; globalThis.K = k;
+        globalThis.C = c; globalThis.K = k; globalThis.IT = it;
         return 'ok';
       })
     `);
@@ -183,12 +184,12 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         typeof E.FutureCssEditor, typeof M.FutureCssMenu, typeof G.FutureCssGrid,
         typeof W.FutureCssWebview, typeof H.highlight, typeof D.diffLines,
         typeof S.FutureCssSelect, typeof C.FutureCssComposer,
-        typeof K.FutureCssContextStrip,
+        typeof K.FutureCssContextStrip, typeof IT.FutureCssGitSurface,
       ]`,
     );
     assert.deepEqual(names, [
       "function", "function", "function", "function", "function", "function",
-      "function", "function", "function",
+      "function", "function", "function", "function",
     ]);
   });
   // ---------------------------------------------------------------- editor
@@ -1946,6 +1947,281 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       return strip.state.provider;
     `);
     assert.equal(provider, "anthropic", "state must not change for an unknown id");
+  });
+
+
+  // ------------------------------------------------------------ git surface
+
+  const ENTRIES = [
+    { path: "src/js/git.ts", index: "modified", worktree: "modified",
+      before: "a\nb\nc\n", after: "a\nc\nd\nd\n" },
+    { path: "crates/fc-git/src/lib.rs", worktree: "untracked",
+      after: "one\ntwo\n" },
+    { path: "src/css/components/git.css", worktree: "modified",
+      before: "x\ny\n", after: "x\ny\n" },
+    { path: "src/js/conflict.ts", index: "conflicted", worktree: "conflicted" },
+    { path: "README.md", index: "added" },
+    { path: "old/path.ts", index: "deleted" },
+    { path: "src/js/no-contents.ts", worktree: "modified" },
+  ];
+
+  /**
+   * `handlers` is appended as *code*, not JSON.
+   *
+   * A callback cannot cross `JSON.stringify`, so passing one through a data
+   * override would hand the constructor a string where it expects a function --
+   * which fails silently, because "the callback never fired" looks exactly like
+   * "nothing was clicked".
+   */
+  const buildGit = async (
+    over: Record<string, unknown> = {},
+    handlers = "",
+  ) => {
+    await evaluate(`
+      const old = document.querySelector('#git-root');
+      const fresh = old.cloneNode(true);
+      old.replaceWith(fresh);
+      globalThis.git = new IT.FutureCssGitSurface({
+        root: '#git-root',
+        branch: 'feat/git-surface',
+        entries: ${JSON.stringify(ENTRIES)},
+        ...${JSON.stringify(over)},
+        ${handlers}
+      });
+      return true;
+    `);
+  };
+
+  it("never shells out: it renders what the caller passes", async () => {
+    // The whole surface is a view over data. A test cannot assert the absence of
+    // a subprocess portably, so it asserts the positive property instead: an
+    // entry that is not in the input cannot appear in the output.
+    await loadBindings();
+    await buildGit();
+    const paths = await evaluate(`
+      return [...document.querySelectorAll('#git-root .fc-git__row')]
+        .map((r) => r.dataset.fcPath);
+    `);
+    assert.equal(paths.length, ENTRIES.length);
+    assert.deepEqual([...paths].sort(), ENTRIES.map((e) => e.path).sort());
+  });
+
+  it("counts staged and unstaged separately", async () => {
+    // Collapsing these into one number is how a commit silently includes edits the
+    // user did not intend.
+    await loadBindings();
+    await buildGit();
+    const counts = await evaluate(`
+      const root = document.querySelector('#git-root');
+      return [root.dataset.fcStaged, root.dataset.fcUnstaged,
+              root.dataset.fcConflicted, root.dataset.fcUntracked];
+    `);
+    // Staged: git.ts, conflict.ts, README.md, old/path.ts.
+    assert.equal(counts[0], "4", "staged count");
+    assert.equal(counts[2], "1", "conflicted count");
+    assert.equal(counts[3], "1", "untracked sub-count");
+  });
+
+  it("orders conflicts first, then files needing a staging decision", async () => {
+    await loadBindings();
+    await buildGit();
+    const paths = await evaluate(`
+      return [...document.querySelectorAll('#git-root .fc-git__row')]
+        .map((r) => r.dataset.fcPath);
+    `);
+    assert.equal(paths[0], "src/js/conflict.ts", "conflicts block everything else");
+    assert.equal(paths[1], "src/js/git.ts", "changed in both index and worktree");
+    const rest = paths.slice(2);
+    // localeCompare, matching the implementation: a plain sort() would compare
+    // code units and put "README.md" before "crates/..." because uppercase sorts
+    // first, which is not the order a reader expects.
+    assert.deepEqual(rest, [...rest].sort((a, b) => a.localeCompare(b)),
+      "the remainder is alphabetical, so it does not reshuffle");
+  });
+
+  it("renders a stage badge per side, not per file", async () => {
+    // A file staged as modified and also modified again is two facts, and it is
+    // the case where one badge would hide a staged change behind a worktree one.
+    await loadBindings();
+    await buildGit();
+    const badges = await evaluate(`
+      const row = document.querySelector('[data-fc-path="src/js/git.ts"]');
+      return [...row.querySelectorAll('.fc-git__badge')]
+        .map((b) => b.dataset.fcStage + ':' + b.dataset.fcState);
+    `);
+    assert.deepEqual(badges, ["index:modified", "worktree:modified"]);
+  });
+
+  it("gives every state a non-colour marker for forced colors", async () => {
+    // Under forced colors the badge colour is discarded, so without a glyph every
+    // state reads as the same outlined word.
+    await loadBindings();
+    await buildGit();
+    const glyphs = await evaluate(`
+      return [...document.querySelectorAll('#git-root .fc-git__badge')]
+        .map((b) => b.dataset.fcState + '=' + (b.dataset.fcGlyph || ''));
+    `);
+    for (const entry of glyphs) {
+      const glyph = entry.slice(entry.indexOf("=") + 1);
+      assert.ok(glyph.length > 0, entry + " must carry a glyph");
+    }
+    assert.ok(glyphs.length >= 8, "every staged and worktree badge is covered");
+  });
+
+  it("omits the stat when contents were never loaded", async () => {
+    // +0 -0 is a claim that the file is unchanged. It is not: its contents were
+    // never read.
+    await loadBindings();
+    await buildGit();
+    const result = await evaluate(`
+      const row = document.querySelector('[data-fc-path="src/js/no-contents.ts"]');
+      const stat = row.querySelector('.fc-git__stat');
+      return [stat.hidden, stat.textContent];
+    `);
+    assert.equal(result[0], true, "no stat rendered at all");
+    assert.equal(result[1], "");
+  });
+
+  it("omits a zero stat for a file that really is unchanged", async () => {
+    await loadBindings();
+    await buildGit();
+    const hidden = await evaluate(`
+      const row = document.querySelector('[data-fc-path="src/css/components/git.css"]');
+      return row.querySelector('.fc-git__stat').hidden;
+    `);
+    assert.equal(hidden, true);
+  });
+
+  it("computes the per-file line stat", async () => {
+    await loadBindings();
+    await buildGit();
+    const stat = await evaluate(`
+      const row = document.querySelector('[data-fc-path="src/js/git.ts"]');
+      const stat = row.querySelector('.fc-git__stat');
+      return [stat.querySelector('.fc-git__stat-add').textContent,
+              stat.querySelector('.fc-git__stat-remove').textContent];
+    `);
+    assert.deepEqual(stat, ["+3", "\u22122"]);
+  });
+
+  it("says the working tree is clean rather than showing zeros", async () => {
+    await loadBindings();
+    await buildGit({ entries: [] });
+    const result = await evaluate(`
+      const root = document.querySelector('#git-root');
+      return [root.querySelector('.fc-git__summary').textContent,
+              root.dataset.fcEmpty,
+              root.querySelector('.fc-git__empty').textContent];
+    `);
+    assert.match(result[0], /clean/i);
+    assert.equal(result[1], "true");
+    assert.match(result[2], /no changes/i);
+  });
+
+  it("names an unborn branch rather than rendering an empty header", async () => {
+    // An empty branch header reads as a rendering failure rather than as a
+    // repository state.
+    await loadBindings();
+    await buildGit({ branch: null, entries: [] });
+    const result = await evaluate(`
+      const root = document.querySelector('#git-root');
+      return [root.querySelector('.fc-git__branch').textContent,
+              root.dataset.fcBranchState, root.dataset.fcBranch];
+    `);
+    assert.equal(result[0], "Initial commit");
+    assert.equal(result[1], "unborn");
+    assert.equal(result[2], "", "declared empty, not undefined");
+  });
+
+  it("keeps the file list a single tab stop", async () => {
+    // Otherwise Tab walks every row, which is a listbox failure.
+    await loadBindings();
+    await buildGit();
+    const stops = await evaluate(`
+      const rows = [...document.querySelectorAll('#git-root .fc-git__row')];
+      return [rows.filter((r) => r.tabIndex === 0).length,
+              rows.filter((r) => r.tabIndex === -1).length, rows.length];
+    `);
+    assert.equal(stops[0], 1, "exactly one row is tabbable");
+    assert.equal(stops[1] + stops[0], stops[2], "and every other row is -1");
+  });
+
+  it("selects on click and reports the path", async () => {
+    await loadBindings();
+    await buildGit({}, "onSelect: (path) => { globalThis.picked = path; }");
+    const result = await evaluate(`
+      const row = document.querySelector('[data-fc-path="README.md"]');
+      row.click();
+      const root = document.querySelector('#git-root');
+      return [globalThis.picked, root.querySelector('[data-fc-selected="true"]')?.dataset.fcPath];
+    `);
+    assert.deepEqual(result, ["README.md", "README.md"]);
+  });
+
+  it("selects with the keyboard", async () => {
+    // Rows are focusable, so Enter and Space must reach the same handler as a
+    // click. A mouse-only selection is a keyboard trap.
+    await loadBindings();
+    await buildGit({}, "onSelect: (path) => { globalThis.picked = path; }");
+    const picked = await evaluate(`
+      const row = document.querySelector('[data-fc-path="README.md"]');
+      globalThis.picked = null;
+      row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      return globalThis.picked;
+    `);
+    assert.equal(picked, "README.md");
+  });
+
+  it("refuses to select a path that is not in the surface", async () => {
+    await loadBindings();
+    await buildGit({}, "onSelect: (path) => { globalThis.picked = path; }");
+    const result = await evaluate(`
+      // Reset first: every test shares one page, so a global set by the previous
+      // test is still here and would be read as this test's callback firing.
+      globalThis.picked = null;
+      const before = document.querySelector('#git-root [data-fc-selected="true"]')?.dataset.fcPath;
+      git.select('does/not/exist.ts');
+      return [before, globalThis.picked, git.selectedPath];
+    `);
+    // Not `undefined`: JSON drops undefined across the bridge and the test would
+    // pass for the wrong reason. Asserting "nothing was reported" is the claim.
+    assert.ok(result[1] === null || result[1] === undefined,
+      "no callback for a path that is not there, got " + String(result[1]));
+    assert.equal(result[2], result[0], "selection unchanged");
+  });
+
+  it("stages a file without also selecting it", async () => {
+    // Two different actions; a click that fires both means staging something the
+    // user only meant to look at.
+    await loadBindings();
+    await buildGit({}, "onSelect: (path) => { globalThis.picked = path; },\n                 onStage: (path) => { globalThis.staged = path; }");
+    const result = await evaluate(`
+      const before = document.querySelector('#git-root [data-fc-selected="true"]')?.dataset.fcPath;
+      globalThis.staged = null; globalThis.picked = null;
+      // A worktree-only file is the one that carries a stage button, so it is the
+      // only place the two callbacks can actually be distinguished.
+      const row = document.querySelector('[data-fc-path="src/css/components/git.css"]');
+      const button = row.querySelector('.fc-git__stage-button');
+      button.click();
+      return [globalThis.staged, globalThis.picked, before];
+    `);
+    assert.equal(result[0], "src/css/components/git.css", "the stage callback fired");
+    assert.equal(result[1], null, "staging must not change the selection");
+    assert.notEqual(result[2], result[0], "and the row was not already selected");
+  });
+
+  it("offers no stage button for a file that already has an index state", async () => {
+    // Staging it again is a no-op the user should not be offered.
+    await loadBindings();
+    await buildGit();
+    const buttons = await evaluate(`
+      const row = document.querySelector('[data-fc-path="README.md"]');
+      const other = document.querySelector('[data-fc-path="src/css/components/git.css"]');
+      return [row.querySelectorAll('.fc-git__stage-button').length,
+              other.querySelectorAll('.fc-git__stage-button').length];
+    `);
+    assert.equal(buttons[0], 0, "already staged, so no button");
+    assert.equal(buttons[1], 1, "worktree only, so there is one");
   });
 
 });

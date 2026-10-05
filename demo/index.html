@@ -50,6 +50,7 @@
         <li><a href="#terminal">Terminal</a></li>
         <li><a href="#webview">Webview</a></li>
         <li><a href="#code">Code</a></li>
+        <li><a href="#git">Git surface</a></li>
         <li><a href="#strip">Context strip</a></li>
         <li><a href="#composer">Composer</a></li>
         <li><a href="#select">Select</a></li>
@@ -972,6 +973,75 @@ webview.back();</code></pre>
   block.querySelector(".fc-code__source")
        .replaceChildren(...renderHighlighted(source, lang).childNodes);
 &lt;/script&gt;</code></pre>
+    </div>
+  </section>
+
+  <!-- ============================ GIT SURFACE ========================== -->
+  <section class="demo-section" id="git" aria-labelledby="h-git">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-git">Git surface</h2>
+      <p class="demo-note">
+        A working tree rendered from <strong>fixture data</strong>. Nothing here
+        shells out to git or parses porcelain output &mdash; the surface is a view
+        over status entries the application already has.
+        Watch the <strong>order</strong>: conflicts first, then files changed in
+        both the index and the worktree, because those are the ones where staging
+        is a real decision.
+      </p>
+    </div>
+
+    <div class="fc-git" id="git-root">
+      <div class="fc-git__header">
+        <span class="fc-git__branch"></span>
+        <span class="fc-git__summary"></span>
+      </div>
+      <div class="fc-git__files" role="listbox" aria-label="Changed files"></div>
+    </div>
+
+    <div class="demo-btn-row">
+      <button type="button" class="fc-btn fc-btn--secondary" id="git-another">Load a conflicting tree</button>
+      <button type="button" class="fc-btn fc-btn--ghost" id="git-clean">Load a clean tree</button>
+      <button type="button" class="fc-btn fc-btn--ghost" id="git-unborn">Unborn branch</button>
+    </div>
+    <p class="demo-status" id="git-status" role="status"></p>
+
+    <div class="demo-snippet" data-demo-snippet="git">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">js</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Git surface">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>import { FutureCssGitSurface } from "future-css/git";
+
+const git = new FutureCssGitSurface({
+  root: "#git-root",
+  branch: "feat/git-surface",
+
+  // Plain data. The surface renders what it is given; it does not run git,
+  // spawn a process, or parse porcelain output. Bring your own entries from
+  // libgit2, a language binding, or a fixture.
+  entries: [
+    { path: "src/js/git.ts", index: "modified", worktree: "modified",
+      before: "a\nb\nc\n", after: "a\nc\nd\nd\n" },
+    { path: "src/js/new.ts", worktree: "untracked" },
+    // No contents -&gt; no line stat. Rendering +0 -0 would claim the file is
+    // unchanged, which it is not; it was never read.
+    { path: "README.md", worktree: "modified" },
+  ],
+
+  onSelect: (path) =&gt; showDiffFor(path),
+  onStage: (path) =&gt; stageFile(path),
+});
+
+// The ordering that matters, and why:
+//   conflicts first      they block everything else
+//   changed in both      staging is a real decision here
+//   then alphabetical    so the list does not reshuffle while you read it
+
+// Counts are declared on the root, so a reader does not have to parse the
+// header sentence to find them:
+//   data-fc-staged data-fc-unstaged data-fc-conflicted data-fc-untracked
+// and data-fc-branch-state is "unborn" rather than the header being empty.</code></pre>
     </div>
   </section>
 

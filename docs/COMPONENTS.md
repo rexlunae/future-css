@@ -924,3 +924,73 @@ const strip = new FutureCssContextStrip({
 
 The catalogue is the application's, not the library's: these bindings do not know
 what any vendor sells. Requires no WASM and no Rust toolchain.
+
+---
+
+## Git surface
+
+A working tree: branch, status counts, a file list, and per-file line stats.
+
+| Element | Description |
+| --- | --- |
+| `.fc-git` | Root. Header plus a scrolling file list. |
+| `.fc-git__header` | Branch and summary; does not scroll. |
+| `.fc-git__branch` | Branch name, or "Initial commit" when unborn. |
+| `.fc-git__summary` | Counts, with `tabular-nums` so the header does not reflow. |
+| `.fc-git__files` | The list. A `role="listbox"`. |
+| `.fc-git__row` | One file. Roving tabindex, keyboard-selectable. |
+| `.fc-git__file-name` / `__file-dir` | Filename with the directory de-emphasised. |
+| `.fc-git__stages`, `__badge`, `__stage-button` | Per-side badges and the stage action. |
+| `.fc-git__stat`, `__stat-add`, `__stat-remove` | Line counts. |
+| `.fc-git__empty` | "No changes". |
+
+### This does not run Git
+
+Nothing shells out and nothing parses porcelain output. The surface renders
+status entries the application already has — from libgit2, a language binding, or
+a fixture. Spawning a process per render is not a UI layer's job and breaks in the
+browser; parsing porcelain is a spec-following exercise whose failure mode is a
+plausible-looking wrong answer.
+
+### Three decisions worth knowing
+
+**Staged and unstaged are counted separately.** They answer different questions —
+"what is in the commit I am about to make" and "what have I not staged yet." A
+file changed in both is counted in both, which is correct. Collapsing them is how a
+commit silently includes edits the user did not intend.
+
+**A missing stat is absent, not `+0 -0`.** If a file's contents were never
+loaded, the surface says nothing about lines. `+0 -0` would claim the file is
+unchanged, which it is not.
+
+**Badges are per side, and carry a non-colour marker.** `data-fc-stage` is `index`
+or `worktree`, because a file staged as modified *and* modified again is two facts.
+Each badge also sets `data-fc-glyph`, used as `content` under forced colors — where
+the badge colour is discarded, and without the glyph every state would read as the
+same outlined word.
+
+```js
+import { FutureCssGitSurface } from "future-css/git";
+
+const git = new FutureCssGitSurface({
+  root: "#git-root",
+  branch: "feat/git-surface",
+  entries: [
+    { path: "src/js/git.ts", index: "modified", worktree: "modified",
+      before: "a\nb\nc\n", after: "a\nc\nd\nd\n" },
+  ],
+  onSelect: (path) => showDiffFor(path),
+  onStage: (path) => stageFile(path),
+});
+```
+
+### Rust and WASM
+
+`summarizeStatus`, `orderEntries`, and `diffCounts` are pure and exist in
+`crates/fc-git`, which is **primitives-only and under budget at 44.7 KB** — the
+first module in the workspace to reach Phase A's target. Everything crosses as flat
+arrays of numbers; no `js-sys`. 71 parity tests compare it against the JS twin.
+
+One documented limitation: `order_entries_js` breaks ties by *input* order,
+because paths never cross into WASM. The caller must present entries sorted by
+path. A parity test caught this divergence and now pins the contract.

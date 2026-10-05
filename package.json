@@ -30,6 +30,7 @@
     "./select": "./src/js/select.ts",
     "./composer": "./src/js/composer.ts",
     "./context-strip": "./src/js/context-strip.ts",
+    "./git": "./src/js/git.ts",
     "./grid": "./src/js/grid.ts",
     "./webview": "./src/js/webview.ts",
     "./highlight": "./src/js/highlight.ts",
@@ -79,6 +80,7 @@
     "./markdown": "Markdown parse and serialize for the documented, round-trippable subset.",
     "./select": "Select / listbox behavior: roving highlight, typeahead, filtering, and focus retention. Requires no WASM or Rust toolchain.",
     "./composer": "Chat composer behavior: IME-safe entry, send/stop lifecycle, and attachments. Requires no WASM or Rust toolchain.",
-    "./context-strip": "Context strip: provider, model, effort, and model parameters resolved as one state. Requires no WASM or Rust toolchain."
+    "./context-strip": "Context strip: provider, model, effort, and model parameters resolved as one state. Requires no WASM or Rust toolchain.",
+    "./git": "Git surface: branch, status counts, file list, and per-file line stats. Renders caller-supplied status entries; does not run git. Has a Rust crate with a JS fallback."
   }
 }

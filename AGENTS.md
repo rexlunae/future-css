@@ -271,12 +271,13 @@ docs/               Design documents; PLAN.md is the roadmap, WASM.md the WASM s
 
 ## Current state
 
-Pre-alpha. Foundations are built and enforced. Thirteen CSS components are
+Pre-alpha. Foundations are built and enforced. Fourteen CSS components are
 complete: button, chat surface, tool call / step trace, rich text editor,
 context menu, data grid, embedded browser chrome, terminal, code block, diff
-viewer, the select/listbox, the chat composer, and the context strip. Seven ship
-browser bindings -- editor, menu, grid, webview, select, composer, and context
-strip -- exercised by tests in a real headless Chrome. Syntax highlighting,
+viewer, the select/listbox, the chat composer, the context strip, and the
+git surface. Eight ship
+browser bindings -- editor, menu, grid, webview, select, composer, context
+strip, and git surface -- exercised by tests in a real headless Chrome. Syntax highlighting,
 Markdown, and line diffing ship as JS modules (`highlight`, `diff`,
 `markdown`); the diff has a Rust crate, the other two do not yet.
 
@@ -286,9 +287,11 @@ is not universally available, and neither relationship can live in a select --
 two selects that each owned their own state would disagree, showing a model from
 one provider selected under another. That is a request nobody can fulfil.
 
-Form controls and dialogs are not yet written. The fixture-driven Git UI is the
-next planned item, reusing `fc-diff`. The Rust/WASM layer has seven crates with 96 passing tests and a working JS-only fallback,
-but **every module is currently ~10x over its size budget** — see the WASM
+Form controls and dialogs are not yet written. The fixture-driven git surface
+(branch, status counts, file list, per-file line stats) is complete and reuses
+`fc-diff`; its Rust crate is the **first module in the workspace under its size
+budget** at 44.7 KB, which is the Phase A pattern working. The Rust/WASM layer has seven crates with 96 passing tests and a working JS-only fallback,
+but **every module except `fc-git` is still over its size budget** — see the WASM
 section above and Phase A in `docs/PLAN.md`. The rich text, context menu, and
 grid models exist in Rust and are covered by a JS parity test, but only the
 editor's browser binding is wired.

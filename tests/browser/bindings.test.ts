@@ -1909,18 +1909,22 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(result[2], "400k");
   });
 
-  it("reports one change event per resolved change", async () => {
+  it("reports every resolved change to the consumer", async () => {
+    // The consumer needs one event per resolved change -- a provider switch that
+    // silently re-resolves the model has to be reported as one change, not two,
+    // or the caller will send a request for a model it never chose.
     await loadBindings();
-    await buildStrip();
-    const count = await evaluate(`
+    await buildStrip("onChange: (s) => { globalThis.seen.push(s.model); }");
+    const seen = await evaluate(`
       globalThis.seen = [];
-      strip.setProvider('anthropic');
-      strip.setModel('opus-5');
+      strip.setProvider('openai');
+      strip.setModel('shared');
       strip.setEffort('high');
-      return globalThis.seen.length;
+      strip.setModel('gpt-5');
+      return globalThis.seen;
     `);
-    // onChange was registered in the constructor via buildStrip's extra arg.
-    assert.ok(count >= 0, "sanity");
+    assert.deepEqual(seen, ["gpt-5", "shared", "shared", "gpt-5"],
+      "one event per change, each carrying the model that is actually selected");
   });
 
   it("ignores a model the current provider does not offer", async () => {

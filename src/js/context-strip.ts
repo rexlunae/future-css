@@ -85,6 +85,8 @@ export class FutureCssContextStrip {
   private effort: Effort | undefined;
   /** The model last selected under each provider, so switching back restores it. */
   private readonly remembered = new Map<string, string>();
+  /** Set while the constructor resolves the initial state. See `setProvider`. */
+  private suppress = false;
 
   constructor(options: ContextStripOptions) {
     this.root = resolve(options.root, "context strip root");
@@ -93,7 +95,18 @@ export class FutureCssContextStrip {
 
     this.wire();
     // Start on the first provider so the strip is never in a half-state on load.
-    this.setProvider(this.providers[0]?.id ?? "");
+    //
+    // `suppress` because a constructor that calls a consumer callback it has not
+    // yet returned can fail *their* setup: a handler touching state declared after
+    // the `new` would throw inside the constructor, and the caller would see a
+    // confusing error at the construction site rather than at theirs. The first
+    // resolved state is already readable from `.state`.
+    this.suppress = true;
+    try {
+      this.setProvider(this.providers[0]?.id ?? "");
+    } finally {
+      this.suppress = false;
+    }
   }
 
   /** The resolved state. */
@@ -142,14 +155,15 @@ export class FutureCssContextStrip {
     // Prefer the model this provider had last time, then a model the *other*
     // provider also offers, then its own first option. The middle case is what
     // makes two providers sharing a model behave as the user expects.
-    const remembered = this.remembered.get(providerId);
-    const shared = previousModel && available.some((m) => m.id === previousModel)
-      ? previousModel
-      : undefined;
+    // Three candidates, most specific first: what the new provider last had, a
+    // model it shares with the provider we are leaving, then its own first option.
+    // The middle case is what makes two providers offering the same model behave
+    // as the user expects instead of resetting.
+    const candidates = [this.remembered.get(providerId), previousModel];
     this.modelId =
-      (shared && available.some((m) => m.id === shared) ? shared : undefined)
-      ?? (remembered && available.some((m) => m.id === remembered) ? remembered : undefined)
-      ?? (available[0]?.id ?? "");
+      candidates.find((id) => id && available.some((m) => m.id === id)) ??
+      available[0]?.id ??
+      "";
 
     this.renderProviderOptions();
     this.renderModelOptions();
@@ -335,15 +349,20 @@ export class FutureCssContextStrip {
   }
 
   private emit(): void {
+    if (this.suppress) return;
     this.onChange?.(this.state);
   }
 }
 
-/** The part of `FutureCssSelect` this module needs. */
+/**
+ * The part of `FutureCssSelect` this module uses.
+ *
+ * Narrower than the class: the strip never reads the option list or filters,
+ * because it *rebuilds* the model list when the provider changes rather than
+ * narrowing it. Declaring only what is used keeps the dependency honest.
+ */
 interface FutureCssSelectLike {
-  readonly visibleOptions: readonly { value: string }[];
   setValue(value: string): void;
-  filter(query: string): void;
 }
 
 /**

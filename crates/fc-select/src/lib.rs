@@ -116,6 +116,23 @@ impl Select {
         self.committed.as_deref()
     }
 
+    /// Adopts externally held view state between stateless WASM calls.
+    ///
+    /// The JS binding owns the filter result, the highlight, and the typeahead
+    /// buffer between keystrokes; the stateless boundary functions rebuild a
+    /// model per call, so they need one entry to hand that state back in before
+    /// computing. `active` outside the option list is dropped rather than
+    /// trusted: the caller's copy may predate a list change.
+    pub fn adopt_state(&mut self, visible: Vec<usize>, active: Option<usize>, typeahead: String) {
+        // Clamp rather than trust: a caller copy may predate a list change, and
+        // an out-of-range index would panic two frames later, far from the
+        // mistake. The boundary functions clamp too; this is the same rule at
+        // the model level.
+        self.visible = visible.into_iter().filter(|&i| i < self.options.len()).collect();
+        self.active = active.filter(|&a| a < self.options.len());
+        self.typeahead = typeahead;
+    }
+
     /// True when a filter is hiding options.
     pub fn filtered(&self) -> bool {
         self.visible.len() != self.options.len()
@@ -132,7 +149,15 @@ impl Select {
             .iter()
             .copied()
             .find(|i| self.options[*i].value == value.unwrap_or(""))
-            .or_else(|| self.visible.first().copied());
+            .or_else(|| {
+                // Mirror the JS twin: the fallback is the first *selectable*
+                // visible option. `visible.first()` can be unavailable, and a
+                // highlight on an unavailable option means Enter does nothing.
+                self.visible
+                    .iter()
+                    .copied()
+                    .find(|&i| self.options[i].selectable())
+            });
         self.typeahead.clear();
     }
 
@@ -162,10 +187,24 @@ impl Select {
             return;
         }
         let len = self.visible.len() as isize;
+        // Seed from the option's *position in visible*, never its raw index.
+        // `visible` is a filtered list, so raw index 4 may sit at position 0 or
+        // be absent entirely -- and `(4 + step) % len` then walks the wrong
+        // list. This is the same bug the JS twin hit and fixed; `typeahead`
+        // below carries the longer explanation. With no filter the two coincide,
+        // which is exactly why the parity suite needs filtered cases too.
+        let current = match self.active {
+            Some(a) => self
+                .visible
+                .iter()
+                .position(|&i| i == a)
+                .map(|p| p as isize)
+                .unwrap_or(if delta > 0 { -1 } else { 0 }),
+            None => if delta > 0 { -1 } else { 0 },
+        };
         // Walk in the requested direction until a selectable option turns up.
         // Bounded by `len` so an all-disabled list terminates instead of looping.
         for step in 1..=len {
-            let current = self.active.map(|a| a as isize).unwrap_or(if delta > 0 { -1 } else { 0 });
             let next = (current + delta * step).rem_euclid(len);
             let index = self.visible[next as usize];
             if self.options[index].selectable() {
@@ -390,6 +429,57 @@ pub fn js_select_typeahead(values: Vec<String>, labels: Vec<String>, disabled: V
     vec![select.active().map(|i| i as i32).unwrap_or(-1), i32::from(matched)]
 }
 
+/// Next active index after a move seeded from the *current* highlight and the
+/// *visible* set. -1 for none.
+///
+/// `selectMove` re-opens on the committed value, which is right for the first
+/// arrow of an interaction and wrong for the second: consecutive arrows must
+/// continue from wherever the highlight is now. `visible` crosses explicitly so
+/// a filtered list steers the walk the same way it does in the JS twin -- which
+/// is also what makes filtered moves parity-testable at all; before this entry
+/// existed, the boundary could not express one, and that was a blind spot.
+#[wasm_bindgen(js_name = selectMoveFrom)]
+pub fn js_select_move_from(values: Vec<String>, labels: Vec<String>, disabled: Vec<i32>, visible: Vec<i32>, active: i32, delta: i32) -> i32 {
+    let mut select = model_with(&values, &labels, &disabled);
+    if select.options().is_empty() {
+        return -1;
+    }
+    let vis: Vec<usize> = visible
+        .iter()
+        .copied()
+        .filter(|i| (*i as usize) < values.len())
+        .map(|i| i as usize)
+        .collect();
+    select.adopt_state(vis, (active >= 0).then_some(active as usize), String::new());
+    select.move_by(delta as isize);
+    select.active().map(|i| i as i32).unwrap_or(-1)
+}
+
+/// `[active, matched]` after a typeahead keystroke seeded from the current
+/// highlight, the visible set, and the buffer. `matched` is 0 when nothing
+/// matched; the caller clears its buffer copy when it is.
+///
+/// The buffer crosses as a plain string and the repeating-character rule runs
+/// inside the model, so the JS side never reimplements the match. The 600ms
+/// window stays in JS: it is a clock, and clocks are not computation this
+/// module should own.
+#[wasm_bindgen(js_name = selectTypeaheadFrom)]
+pub fn js_select_typeahead_from(values: Vec<String>, labels: Vec<String>, disabled: Vec<i32>, visible: Vec<i32>, active: i32, buffer: String, query: String) -> Vec<i32> {
+    let mut select = model_with(&values, &labels, &disabled);
+    if select.options().is_empty() {
+        return vec![-1, 0];
+    }
+    let vis: Vec<usize> = visible
+        .iter()
+        .copied()
+        .filter(|i| (*i as usize) < values.len())
+        .map(|i| i as usize)
+        .collect();
+    select.adopt_state(vis, (active >= 0).then_some(active as usize), buffer);
+    let matched = select.typeahead(&query);
+    vec![select.active().map(|i| i as i32).unwrap_or(-1), i32::from(matched)]
+}
+
 /// Builds a model, honouring the disabled flags.
 ///
 /// `disabled` is a parameter rather than being left empty on purpose: without it
@@ -461,18 +551,108 @@ mod tests {
             "must skip the disabled Llama rather than stopping on it");
     }
 
+    // Six selectable options, so visible sets like [0, 2, 5] are expressible
+    // without a disabled entry muddying the move expectations.
+    fn sample6() -> Select {
+        Select::new(
+            ["a", "b", "c", "d", "e", "f"]
+                .iter()
+                .enumerate()
+                .map(|(i, v)| Option_::new(v, &format!("Option {}", v.to_uppercase())))
+                .collect(),
+        )
+    }
+
+    #[test]
+    fn move_by_seeds_from_position_in_visible_not_raw_index() {
+        // Filtered to [0, 2, 5], active on raw index 2 -- visible position 1.
+        // Moving down must land on visible position 2, raw index 5. Seeding
+        // from the raw index gives (2+1) % 3 = 0 and lands on raw index 0
+        // instead: a silent skip that only exists when a filter is active.
+        let mut s = sample6();
+        s.adopt_state(vec![0, 2, 5], Some(2), String::new());
+        s.move_by(1);
+        assert_eq!(s.active(), Some(5), "must continue from the position in visible");
+    }
+
+    #[test]
+    fn move_by_from_absent_active_falls_back_like_the_js_twin() {
+        // Active 4 is hidden by the visible set. The JS twin treats that as
+        // "start from nothing": down lands on the first visible option, not on
+        // (4+1) % 3, which is whatever raw index happens to sit there.
+        let mut s = sample6();
+        s.adopt_state(vec![0, 2, 5], Some(4), String::new());
+        s.move_by(1);
+        assert_eq!(s.active(), Some(0));
+        s.adopt_state(vec![0, 2, 5], Some(4), String::new());
+        s.move_by(-1);
+        assert_eq!(s.active(), Some(5), "up from nothing lands on the last visible");
+    }
+
+    #[test]
+    fn move_by_from_nothing_starts_at_the_edge_of_visible() {
+        let mut s = sample6();
+        s.adopt_state(vec![2, 4], None, String::new());
+        s.move_by(1);
+        assert_eq!(s.active(), Some(2));
+        s.adopt_state(vec![2, 4], None, String::new());
+        s.move_by(-1);
+        assert_eq!(s.active(), Some(4));
+    }
+
+    #[test]
+    fn move_by_wraps_within_the_visible_set() {
+        let mut s = sample6();
+        s.adopt_state(vec![0, 2, 5], Some(5), String::new());
+        s.move_by(1);
+        assert_eq!(s.active(), Some(0), "past the last visible wraps to the first");
+        s.adopt_state(vec![0, 2, 5], Some(0), String::new());
+        s.move_by(-1);
+        assert_eq!(s.active(), Some(5));
+    }
+
+    #[test]
+    fn adopt_state_clamps_a_visible_set_that_predates_a_list_change() {
+        // Index 5 does not exist in a five-option list. A stale caller copy
+        // must be dropped, not panicked on two frames away from the mistake.
+        let mut s = sample();
+        s.adopt_state(vec![0, 1, 5], Some(1), String::new());
+        assert_eq!(s.visible(), &[0, 1]);
+        s.move_by(1);
+        assert_eq!(s.active(), Some(0), "wrap over the clamped set, no panic");
+    }
+
+    #[test]
+    fn adopt_state_drops_an_out_of_range_highlight() {
+        // A stale caller copy predating a list change must never be trusted;
+        // move_by would otherwise seed from an index that means nothing.
+        let mut s = sample();
+        s.adopt_state(vec![0, 1], Some(99), String::new());
+        assert_eq!(s.active(), None);
+        s.move_by(1);
+        assert_eq!(s.active(), Some(0), "moves from nothing after a dropped highlight");
+    }
+
     #[test]
     fn arrow_movement_terminates_when_every_option_is_disabled() {
         // The reason move_by is bounded by the list length: an unbounded scan for a
         // selectable option would loop forever here and hang the module.
+        //
+        // This test used to assert that opening highlights the first option
+        // even when it is unavailable. That was the disabled-blind fallback the
+        // JS twin never shared -- its `open` picks the first *selectable*
+        // visible option, which on an all-disabled list is nothing. Highlighting
+        // an option Enter cannot commit reads as a broken control, so the model
+        // now agrees with the twin: open highlights nothing, moves terminate.
         let mut s = Select::new(vec![
             Option_::new("a", "A").disabled(),
             Option_::new("b", "B").disabled(),
         ]);
         s.open(None);
+        assert_eq!(s.active(), None, "nothing committable, nothing highlighted");
         s.move_by(1);
         s.move_by(-1);
-        assert_eq!(s.active().map(|i| s.options()[i].label.as_str()), Some("A"));
+        assert_eq!(s.active(), None, "moves terminate instead of selecting the unavailable");
     }
 
     #[test]

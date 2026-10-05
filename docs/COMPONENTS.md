@@ -788,17 +788,26 @@ tree, and this is the most accessibility-sensitive component in the system.
 
 `fc-select` implements the navigation *model* — which option is active, how
 typeahead accumulates, which options survive a filter — behind a primitives-only
-boundary (flat `Int32Array`s, no `js-sys`), landing at 69.5 KB against 414.2 KB
-for `fc-context-menu`.
+boundary (flat arrays and strings, no `js-sys`), landing at 74.6 KB against
+414.2 KB for `fc-context-menu`.
 
-**The binding does not yet call it.** `FutureCssSelect` uses the JS model; the WASM
-module is exercised only by `tests/wasm.test.ts`, which proves the two agree but
-proves nothing about the binding using the fast path. The current WASM entry points
-are also stateless — `selectMove` and `selectTypeahead` rebuild the model from the
-committed value on each call — so consecutive arrows would not accumulate even if
-it were wired. Both are prerequisites for the switch, not cosmetic changes to it.
+**The binding opts into it** with `await select.useWasm(url)`. The boundary entry
+points are stateless — they rebuild the model on each call — so the adapter
+(`WasmSelectModel`) holds the view state and hands it back in on every call
+(`adopt_state` in the crate). `selectMoveFrom` and `selectTypeaheadFrom` accept the
+*visible* set, which is what makes filtered navigation expressible at the boundary
+at all; before those existed, filtered moves were a parity blind spot, not a
+covered equivalence.
 
-WASM is never required: the component is complete and correct on the JS path.
+`tests/wasm.test.ts` drives the JS twin and the shipped adapter over the same
+operation list — including the filtered cases — and requires identical state after
+every operation. What crosses: the open seed, the filter, the filtered move, and
+the typeahead match. What stays in JS: state writes, the trivial first/last-visible
+scans, the typeahead buffer concat, and the 600ms window, which is a clock rather
+than model logic.
+
+WASM is never required: the component is complete and correct on the JS path, and
+a `useWasm` that returns false keeps it that way.
 
 ---
 
@@ -812,7 +821,6 @@ each component is built.
 | Link | `<a href>` | Underline always; focus from base layer |
 | Form field | `<input>` + `<label>` | Label, hint, error, `aria-describedby` wiring |
 | Checkbox / radio | native | Do not rebuild; style the native control |
-| Select / listbox | `<button role="combobox">` + `role="listbox"` | Custom listbox; full APG keyboard contract. First consumer is the composer |
 | Dialog | `<dialog>` | Native focus containment and Escape handling |
 | Disclosure | `<details>` | Progressive enhancement target |
 | Card | `<article>` / `<section>` | Surface, border, radius, shadow |

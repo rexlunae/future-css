@@ -588,10 +588,12 @@ $("#diff-swap")?.addEventListener("click", () => {
 // ---------------------------------------------------------------------------
 // Select / listbox
 //
-// Wired to the real binding and driven by the same Rust model the package
-// exports, so this is the component rather than a lookalike. The point of the
-// section is the keyboard contract: try arrows, typeahead ("cl" for Claude),
-// Escape (which restores), and Tab (which commits and leaves).
+// Wired to the real binding, so this is the component rather than a lookalike.
+// The model is JS by default; the wiring below opts into the Rust build of the
+// same model, and the readout reports which one is actually running -- the
+// point of showing it is that the two must be indistinguishable. The point of
+// the section is the keyboard contract: try arrows, typeahead ("cl" for
+// Claude), Escape (which restores), and Tab (which commits and leaves).
 // ---------------------------------------------------------------------------
 
 const modelSelect = new FutureCssSelect({
@@ -613,6 +615,29 @@ const effortSelect = new FutureCssSelect({
 $("#model-filter")?.addEventListener("input", (event) => {
   modelSelect.filter(event.target.value);
 });
+
+// Opt in to the Rust model. `useWasm` returns false -- and keeps the JS model --
+// whenever the module is absent (dist not built) or fails to load, so this line
+// is safe to leave in an app that has not shipped its WASM assets yet.
+const WASM_SELECT_URL = "/dist/wasm/fc-select/web/fc_select.js";
+const wasmTargets = [modelSelect, effortSelect];
+let wasmLoaded = 0;
+const backendNote = document.createElement("p");
+backendNote.className = "demo-note";
+backendNote.id = "select-backend";
+backendNote.textContent = "Model backend: JS (fallback)";
+document.querySelector("#model-select")?.closest(".demo-cluster")?.after(backendNote);
+for (const target of wasmTargets) {
+  target.useWasm(WASM_SELECT_URL).then((ok) => {
+    if (ok) wasmLoaded += 1;
+    backendNote.textContent =
+      wasmLoaded === wasmTargets.length
+        ? "Model backend: Rust (WASM) -- interactions are identical by test"
+        : wasmLoaded
+          ? `Model backend: Rust (WASM) ${wasmLoaded}/${wasmTargets.length}`
+          : "Model backend: JS (fallback)";
+  });
+}
 
 
 // ---------------------------------------------------------------------------

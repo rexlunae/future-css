@@ -524,6 +524,17 @@ describe("fc-git and the JS model agree", () => {
       ["a\n\n\nb\n", "a\n\n\nb\nc\n"],
       ["unicode ✓ ünïcødé\n", "unicode ✓ ünïcødé\nnew ✓\n"],
       ["x".repeat(500) + "\n", "x".repeat(500) + "\ny\n"],
+      // Empty and near-empty inputs, where the trim's two loops can meet in the
+      // middle. A release-only integer wrap lived here and reported a file as
+      // having billions of changed lines.
+      ["", ""],
+      ["", "a\n"],
+      ["a\n", ""],
+      ["\n", "\n"],
+      ["\n", "a\n\n"],
+      ["\n\n\n", "\n"],
+      ["a", ""],
+      ["", "a"],
     ];
 
     for (const [before, after] of REVISIONS) {

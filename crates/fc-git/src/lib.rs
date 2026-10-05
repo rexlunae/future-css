@@ -181,15 +181,32 @@ pub fn order_entries(entries: &[Entry]) -> Vec<u32> {
 /// `identical` is *not* returned. The JS twin returns it, but a caller that has
 /// the two texts already can compare them; carrying a third value across the
 /// boundary for a bit it can derive would be waste.
+///
+/// # Counts are of lines, never bytes
+///
+/// A line ends at `\n` and a trailing newline yields a final empty element, so
+/// `"a\n"` is two lines and `"a"` is one. That is the same rule `fc-diff` and the
+/// JS twin use, and it is why the two agree on `"a\n"` vs `"a"`. It looks like a
+/// quirk; it is deliberate, because all three implementations must split the same
+/// way or the counts disagree.
 pub fn diff_counts(before: Option<&str>, after: Option<&str>) -> (u32, u32) {
     let before = before.unwrap_or("");
     let after = after.unwrap_or("");
     let before_lines: Vec<&str> = before.split('\n').collect();
     let after_lines: Vec<&str> = after.split('\n').collect();
 
-    // Trim the common prefix and suffix before running the LCS, for the same
-    // reason `fc-diff` does: it is what makes a small edit in a large file
-    // produce one contiguous hunk instead of a scattered one.
+    // Trim the common prefix and suffix, then count what remains.
+    //
+    // There is no algorithm here at all, and that is the point: the surface only
+    // needs totals, so `added` is however many lines `after` has that `before`
+    // does not. `fc-diff` runs Myers because it has to reconstruct *which* lines;
+    // running it here would cost real time to produce a number this gets for
+    // free, and would make the two implementations agree by accident rather than
+    // by construction.
+    //
+    // The trimming is what keeps the answer useful. Without it, a one-line change
+    // at the top of a 5000-line file reports the whole file as rewritten, because
+    // the common tail is counted as removed and then added again.
     let mut head = 0;
     while head < before_lines.len() && head < after_lines.len()
         && before_lines[head] == after_lines[head]
@@ -204,9 +221,15 @@ pub fn diff_counts(before: Option<&str>, after: Option<&str>) -> (u32, u32) {
         tail += 1;
     }
 
-    let a = &before_lines[head..before_lines.len() - tail];
-    let b = &after_lines[head..after_lines.len() - tail];
-    (b.len() as u32, a.len() as u32)
+    // `saturating_sub`, because the two loops can each consume lines and their
+    // combined reach is not bounded by either alone. Plain subtraction panics in
+    // debug and wraps in release -- so a release build would report a file with
+    // billions of changed lines rather than crashing, which is far worse than
+    // either. Reached by inputs like "\n" vs "\n", where both lines are empty and
+    // head and tail meet in the middle.
+    let before_remaining = before_lines.len().saturating_sub(head + tail);
+    let after_remaining = after_lines.len().saturating_sub(head + tail);
+    (after_remaining as u32, before_remaining as u32)
 }
 
 // ---- The wasm-bindgen boundary ---------------------------------------------
@@ -403,6 +426,31 @@ mod tests {
         let (added, removed) = diff_counts(Some("a\n"), Some("a"));
         assert_eq!(added, 0);
         assert_eq!(removed, 1);
+    }
+
+    #[test]
+    fn handles_empty_strings_without_underflowing() {
+        // The prefix/suffix trim subtracts from the line counts, so an empty input
+        // is where an off-by-one would panic rather than return a wrong answer --
+        // which is the better failure, but still a failure.
+        assert_eq!(diff_counts(Some(""), Some("")), (0, 0));
+        // "" splits to [""], so it is one line, not zero. Adding a line to an
+        // empty file is therefore +1 -- and the JS twin says the same, which is
+        // the only reason this is correct rather than merely consistent.
+        assert_eq!(diff_counts(Some(""), Some("a\n")), (1, 0));
+        assert_eq!(diff_counts(Some("a\n"), Some("")), (0, 1));
+        // "\n" is ["", ""]: head consumes both lines, leaving nothing for the
+        // suffix loop. Plain subtraction wrapped here in a release build and
+        // would have reported ~4 billion changed lines instead of failing.
+        assert_eq!(diff_counts(Some("\n"), Some("\n")), (0, 0));
+        assert_eq!(diff_counts(Some("\n"), Some("a\n\n")), (1, 0));
+    }
+
+    #[test]
+    fn counts_a_whitespace_only_change() {
+        // Lines are compared verbatim; no trimming of either side, because
+        // whitespace is content in a diff.
+        assert_eq!(diff_counts(Some("a\n b\n"), Some("a\nb\n")), (1, 1));
     }
 
     #[test]

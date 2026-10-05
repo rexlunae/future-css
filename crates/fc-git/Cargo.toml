@@ -1,0 +1,28 @@
+# fc-git -- working-tree summary for the git surface.
+#
+# Three pure functions over status entries: summarize_status, order_entries, and
+# diff_counts. Deliberately free of `js-sys` and `serde-wasm-bindgen`, for the same
+# reason fc-diff is: js-sys adds roughly 302 KB the moment it is used and LTO
+# cannot remove it (see Phase A in docs/PLAN.md). Every crossing here is a flat
+# array of numbers in, a flat array of numbers out, so this crate should land well
+# under 30 KB.
+#
+# There is no `fc-core` dependency and no `serde`, because none of the three
+# functions needs shared infrastructure -- adding a dependency for symmetry with
+# other crates would be the wrong reason.
+
+[package]
+name = "fc-git"
+description = "Working-tree summary for the future-css git surface"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = { workspace = true }

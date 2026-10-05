@@ -1,0 +1,284 @@
+/*!
+ * future-css -- git surface
+ *
+ * A working tree: branch, status counts, and a file list with per-file badges and
+ * line stats.
+ *
+ * WHY THE STATES ARE DECLARED RATHER THAN INFERRED
+ * ================================================
+ *
+ * A file's stage is genuinely two independent facts -- its index state and its
+ * worktree state -- and a file can be in any combination. A file staged as
+ * modified and *also* modified again in the worktree is the case that matters:
+ * it appears twice in a commit-shaped question and once in an unstaged question.
+ *
+ * So both are rendered as separate badges keyed by `data-fc-stage`, and the row
+ * declares `data-fc-index` / `data-fc-worktree` for a reader that wants the facts
+ * rather than the labels.
+ */
+
+@layer fc.components {
+  .fc-git {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-2);
+
+    background-color: var(--fc-color-bg-surface);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-md);
+    overflow: hidden;
+  }
+
+  .fc-git__header {
+    display: flex;
+    align-items: baseline;
+    gap: var(--fc-space-2);
+    flex-wrap: wrap;
+
+    padding-block: var(--fc-space-2);
+    padding-inline: var(--fc-space-3);
+
+    background-color: var(--fc-color-bg-subtle);
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  }
+
+  .fc-git__branch {
+    font-family: var(--fc-font-family-mono);
+    font-size: var(--fc-font-size-sm);
+    font-weight: var(--fc-font-weight-semibold);
+    color: var(--fc-color-text-default);
+    /* A long branch name is normal. Truncating the *end* keeps the repository
+       name visible, which is the part that identifies which branch this is. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-inline-size: 0;
+  }
+
+  .fc-git__summary {
+    font-size: var(--fc-font-size-xs);
+    color: var(--fc-color-text-muted);
+    /* The counts change in width as they change. Pinning them stops the header
+       from reflowing on every keystroke elsewhere in the tree. */
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fc-git__files {
+    display: flex;
+    flex-direction: column;
+    /* The list scrolls; the header does not. A file list taller than the viewport
+       is normal, a header that scrolls away with it is not. */
+    overflow-y: auto;
+    max-block-size: 24rem;
+  }
+
+  .fc-git__empty {
+    margin: 0;
+    padding: var(--fc-space-4) var(--fc-space-3);
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-sm);
+    text-align: center;
+  }
+
+  /* ---- One file ----------------------------------------------------------- */
+
+  .fc-git__row {
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-2);
+
+    padding-block: var(--fc-space-2);
+    padding-inline: var(--fc-space-3);
+
+    min-block-size: var(--fc-size-target-min);
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    cursor: pointer;
+  }
+
+  .fc-git__row:last-child {
+    border-block-end: none;
+  }
+
+  .fc-git__row:hover {
+    background-color: var(--fc-color-bg-subtle);
+  }
+
+  /*
+   * Selection is a background *and* an inset ring.
+   *
+   * The ring is there because the background alone disappears under forced
+   * colors, where background-color is discarded entirely -- so with only a
+   * background, the selected row would be invisible in exactly the mode where
+   * distinguishing it matters most.
+   */
+  .fc-git__row[data-fc-selected="true"] {
+    background-color: var(--fc-color-accent-bg-subtle);
+    box-shadow: inset 2px 0 0 0 var(--fc-color-accent-text);
+  }
+
+  .fc-git__file-name {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+
+    font-family: var(--fc-font-family-mono);
+    font-size: var(--fc-font-size-sm);
+    color: var(--fc-color-text-default);
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The directory de-emphasised so the filename reads first, which is the part a
+     reader is scanning for. */
+  .fc-git__file-dir {
+    color: var(--fc-color-text-muted);
+  }
+
+  .fc-git__stages {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-1);
+    flex: 0 0 auto;
+  }
+
+  .fc-git__badge {
+    padding-block: 0 var(--fc-space-0-5);
+    padding-inline: var(--fc-space-2);
+
+    border: var(--fc-border-width-thin) solid currentColor;
+    border-radius: var(--fc-radius-full);
+
+    font-family: var(--fc-font-family-mono);
+    font-size: var(--fc-font-size-xs);
+    line-height: var(--fc-line-height-tight);
+    text-transform: lowercase;
+  }
+
+  /*
+   * Badge colours come from the semantic state tokens, not from literals, so the
+   * whole set re-themes. And each state is carried by a border *and* the word,
+   * so removing colour removes nothing.
+   */
+  .fc-git__badge[data-fc-state="modified"] {
+    color: var(--fc-color-warning-text);
+  }
+
+  .fc-git__badge[data-fc-state="added"],
+  .fc-git__badge[data-fc-state="untracked"] {
+    color: var(--fc-color-success-text);
+  }
+
+  .fc-git__badge[data-fc-state="deleted"] {
+    color: var(--fc-color-danger-text);
+  }
+
+  .fc-git__badge[data-fc-state="renamed"] {
+    color: var(--fc-color-info-text);
+  }
+
+  .fc-git__badge[data-fc-state="conflicted"] {
+    color: var(--fc-color-danger-text);
+    font-weight: var(--fc-font-weight-semibold);
+  }
+
+  .fc-git__stage-button {
+    padding-block: var(--fc-space-0-5);
+    padding-inline: var(--fc-space-2);
+
+    min-block-size: var(--fc-size-target-min);
+
+    background-color: transparent;
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+    border-radius: var(--fc-radius-sm);
+
+    color: var(--fc-color-text-default);
+    font-family: var(--fc-font-family-sans);
+    font-size: var(--fc-font-size-xs);
+    cursor: pointer;
+  }
+
+  .fc-git__stage-button:hover {
+    background-color: var(--fc-color-bg-subtle);
+  }
+
+  .fc-git__stage-button:focus-visible {
+    outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring);
+    outline-offset: var(--fc-space-0-5);
+  }
+
+  /* ---- Line stats --------------------------------------------------------- */
+
+  .fc-git__stat {
+    display: inline-flex;
+    gap: var(--fc-space-2);
+    flex: 0 0 auto;
+
+    font-family: var(--fc-font-family-mono);
+    font-size: var(--fc-font-size-xs);
+    /* Aligned to the digits: the count must not shift the row's other content as
+       it changes. */
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fc-git__stat-add {
+    color: var(--fc-color-success-text);
+  }
+
+  .fc-git__stat-remove {
+    color: var(--fc-color-danger-text);
+  }
+
+  /* ---- Focus -------------------------------------------------------------- */
+
+  /*
+   * `:focus-visible` and never `outline: none`.
+   *
+   * The row is a `role="option"` with a roving tabindex, so it is focusable and
+   * the ring is the only thing telling a keyboard user where they are.
+   */
+  .fc-git__row:focus-visible {
+    outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring);
+    outline-offset: calc(-1 * var(--fc-border-width-focus));
+  }
+
+  /* ---- Reduced motion ----------------------------------------------------- */
+
+  /* Nothing here animates today, and if something is added later the reduced
+     motion reset covers it. Stated rather than left implicit so the omission is
+     a decision, not an oversight. */
+
+  /* ---- Forced colors ------------------------------------------------------ */
+
+  /*
+   * Under forced colors the accent background is discarded, so selection rests
+   * entirely on the ring and the row keeps its own border.
+   */
+  @media (forced-colors: active) {
+    .fc-git,
+    .fc-git__header,
+    .fc-git__row {
+      background-color: Canvas;
+      color: CanvasText;
+      border-color: CanvasText;
+    }
+
+    .fc-git__row[data-fc-selected="true"] {
+      /* Highlight is the system-selected background, which the OS maps to its own
+         chosen pair -- so it is guaranteed contrast in a scheme we cannot see. */
+      background-color: Highlight;
+      color: HighlightText;
+      forced-color-adjust: none;
+    }
+
+    /*
+     * Badges lose their semantic colour here, so each state is marked with a
+     * leading glyph instead. `content` on a pseudo-element survives forced
+     * colors because it is generated text, not paint.
+     */
+    .fc-git__badge::before {
+      content: attr(data-fc-glyph);
+      margin-inline-end: var(--fc-space-0-5);
+    }
+  }
+}

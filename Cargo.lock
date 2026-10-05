@@ -55,6 +55,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "fc-git"
+version = "0.1.0"
+dependencies = [
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "fc-grid"
 version = "0.1.0"
 dependencies = [

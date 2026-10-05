@@ -19,6 +19,7 @@ import { diffLines, diffStats } from "/src/js/diff.js";
 import { FutureCssSelect } from "/src/js/select.js";
 import { FutureCssComposer } from "/src/js/composer.js";
 import { FutureCssContextStrip } from "/src/js/context-strip.js";
+import { FutureCssGitSurface } from "/src/js/git.js";
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -708,3 +709,48 @@ const contextStrip = new FutureCssContextStrip({
     status("#strip-status", `${state.provider} / ${state.model}${state.effort ? ` / effort ${state.effort}` : ""}`);
   },
 });
+
+// ---------------------------------------------------------------------------
+// Git surface
+//
+// Fixture data, not a repository. Click Stage to see that staging a file does
+// not also select it -- two different actions. The three buttons load trees that
+// exercise the states that matter: a conflict, a clean tree, and an unborn branch.
+// ---------------------------------------------------------------------------
+
+const GIT_TREE = [
+  { path: "src/js/git.ts", index: "modified", worktree: "modified",
+    before: "a\nb\nc\n", after: "a\nc\nd\nd\n" },
+  { path: "crates/fc-git/src/lib.rs", worktree: "untracked", after: "one\ntwo\n" },
+  { path: "src/css/components/git.css", worktree: "modified",
+    before: "x\ny\n", after: "x\ny\n" },
+  { path: "src/js/merge.ts", index: "conflicted", worktree: "conflicted" },
+  { path: "README.md", index: "added" },
+  { path: "src/old-name.ts", index: "deleted" },
+  { path: "src/js/no-contents.ts", worktree: "modified" },
+];
+
+const GIT_CONFLICTING = [
+  { path: "src/js/git.ts", index: "conflicted", worktree: "conflicted" },
+  { path: "crates/fc-git/src/lib.rs", index: "modified", worktree: "modified",
+    before: "a\n", after: "b\nc\n" },
+  { path: "README.md", worktree: "untracked" },
+];
+
+let gitSurface = null;
+
+/** Rebuilds the surface over a different tree, keeping the listeners intact. */
+function loadGit(branch, entries) {
+  gitSurface = new FutureCssGitSurface({
+    root: "#git-root",
+    branch,
+    entries,
+    onSelect: (path) => status("#git-status", `selected ${path}`),
+    onStage: (path) => status("#git-status", `staged ${path} — selection unchanged`),
+  });
+}
+
+loadGit("feat/git-surface", GIT_TREE);
+$("#git-another").addEventListener("click", () => loadGit("main", GIT_CONFLICTING));
+$("#git-clean").addEventListener("click", () => loadGit("main", []));
+$("#git-unborn").addEventListener("click", () => loadGit(null, GIT_TREE.slice(0, 2)));

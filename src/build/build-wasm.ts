@@ -58,6 +58,8 @@ const CRATES: ReadonlyArray<readonly [crate: string, module: string]> = [
   // Second primitives-only module. Together with fc-diff this gives Phase A a
   // worked example rather than a theory.
   ["fc-select", "fc-select"],
+  // Third primitives-only module. Status folding and ordering for the git surface.
+  ["fc-git", "fc-git"],
 ];
 
 interface SizeReport {

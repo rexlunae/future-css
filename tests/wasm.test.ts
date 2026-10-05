@@ -23,6 +23,7 @@ import { before, describe, it } from "node:test";
 
 import { JsAccelerator } from "../src/js/accelerator.ts";
 import { diffLines, diffStats } from "../src/js/diff.ts";
+import { summarizeStatus, orderEntries, diffCounts } from "../src/js/git.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(here, "..");
@@ -417,3 +418,176 @@ describe("fc-select and the JS model agree", () => {
     });
   });
 });
+
+/**
+ * fc-git parity.
+ *
+ * The Rust summary and the JS twin must agree on every count, order, and line
+ * stat, or a user sees a different working tree depending on whether WASM loaded.
+ *
+ * The case that matters most is `diffCounts`. `fileSummary` is what every badge
+ * and every `data-fc-*` count in the git surface is built from, so a divergence
+ * there does not look like a bug -- it looks like the repository changed.
+ */
+describe("fc-git and the JS model agree", () => {
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const wasmDir = join(repoRoot, "dist", "wasm", "fc-git", "web");
+  const gitBuilt = existsSync(join(wasmDir, "fc_git.js"));
+
+  type GitModule = {
+    default: (input?: { module_or_path?: Uint8Array }) => Promise<void>;
+    summarize_status_js: (codes: Int32Array) => Uint32Array;
+    order_entries_js: (codes: Int32Array) => Uint32Array;
+    diff_counts_js: (before: string | undefined, after: string | undefined) => Uint32Array;
+  };
+
+  let mod: GitModule;
+  before(async () => {
+    mod = (await import(join(wasmDir, "fc_git.js"))) as GitModule;
+    await mod.default({ module_or_path: await readFile(join(wasmDir, "fc_git_bg.wasm")) });
+  });
+
+  // Codes matching the JS `IndexState` order.
+  const ADDED = 0, MODIFIED = 1, DELETED = 2, RENAMED = 3, UNTRACKED = 4, CONFLICTED = 5;
+  const NONE = 255;
+
+  describe("status counts", { skip: gitBuilt ? false : "run `npm run build:wasm` first" }, () => {
+    const CASES: Array<{ name: string; codes: number[] }> = [
+      { name: "a clean tree", codes: [] },
+      { name: "staged only", codes: [MODIFIED, NONE] },
+      { name: "worktree only", codes: [NONE, MODIFIED] },
+      { name: "changed in both", codes: [MODIFIED, MODIFIED] },
+      { name: "several untracked", codes: [NONE, UNTRACKED, NONE, UNTRACKED] },
+      { name: "conflicted in both", codes: [CONFLICTED, CONFLICTED] },
+      { name: "conflicted in the index only", codes: [CONFLICTED, NONE] },
+      { name: "conflicted in the worktree only", codes: [NONE, CONFLICTED] },
+      { name: "added, deleted, and renamed", codes: [ADDED, NONE, DELETED, NONE, RENAMED, NONE] },
+      { name: "an unknown code is absent, not guessed", codes: [99, 99, MODIFIED, NONE] },
+      {
+        name: "a mixed tree",
+        codes: [
+          MODIFIED, NONE, NONE, UNTRACKED, MODIFIED, MODIFIED,
+          CONFLICTED, CONFLICTED, ADDED, NONE,
+        ],
+      },
+    ];
+
+    for (const testCase of CASES) {
+      it(testCase.name, () => {
+        const wasm = mod.summarize_status_js(Int32Array.from(testCase.codes));
+        const js = summarizeStatus(entriesFromCodes(testCase.codes));
+        assert.deepEqual([...wasm], [js.staged, js.unstaged, js.conflicted, js.untracked],
+          `WASM ${[...wasm]} vs JS [${js.staged}, ${js.unstaged}, ${js.conflicted}, ${js.untracked}]`);
+      });
+    }
+  });
+
+  describe("ordering", { skip: gitBuilt ? false : "run `npm run build:wasm` first" }, () => {
+    it("agrees on which entries need attention first", () => {
+      const codes = [MODIFIED, NONE, MODIFIED, MODIFIED, CONFLICTED, CONFLICTED, NONE, UNTRACKED];
+      assertOrderAgrees(mod, codes, "conflicts first, then both-sided, then the rest");
+    });
+
+    it("agrees on an empty tree", () => {
+      assert.deepEqual([...mod.order_entries_js(new Int32Array(0))], []);
+    });
+
+    it("agrees on a long tree with many ties", () => {
+      // Stability is only observable with ties, and the WASM and JS sorts are
+      // separate implementations of it.
+      const codes = new Array(40).fill([MODIFIED, NONE]).flat();
+      assertOrderAgrees(mod, codes, "a long tree with many ties");
+    });
+
+    it("agrees when ranks tie and paths are in reverse order", () => {
+      // The case that exposed the boundary limitation: same rank throughout, and
+      // deliberately not in path order, so a tie-break difference cannot hide.
+      const codes = [UNTRACKED, NONE, UNTRACKED, NONE, UNTRACKED, NONE];
+      assertOrderAgrees(mod, codes, "all ties, deliberately unsorted paths");
+    });
+  });
+
+  describe("line counts", { skip: gitBuilt ? false : "run `npm run build:wasm` first" }, () => {
+    const REVISIONS: Array<[string | undefined, string | undefined]> = [
+      ["a\nb\n", "a\nc\nd\n"],
+      [undefined, "a\nb\n"],
+      ["a\nb\n", undefined],
+      [undefined, undefined],
+      ["a\nb\n", "a\nb\n"],
+      ["a\n", "a"],
+      ["a", "a\n"],
+      ["a\nb\n", "x\n"],
+      ["", "x"],
+      ["x", ""],
+      ["", ""],
+      ["one\ntwo\nthree\nfour\n", "one\nTWO\nthree\nfour\n"],
+      ["a\n\n\nb\n", "a\n\n\nb\nc\n"],
+      ["unicode ✓ ünïcødé\n", "unicode ✓ ünïcødé\nnew ✓\n"],
+      ["x".repeat(500) + "\n", "x".repeat(500) + "\ny\n"],
+    ];
+
+    for (const [before, after] of REVISIONS) {
+      it(`agrees on ${JSON.stringify(before?.slice(0, 18))} -> ${JSON.stringify(after?.slice(0, 18))}`, () => {
+        const wasm = [...mod.diff_counts_js(before, after)];
+        const js = diffCounts(before, after);
+        assert.deepEqual(wasm, [js.added, js.removed], `WASM ${wasm} vs JS ${JSON.stringify(js)}`);
+      });
+    }
+  });
+});
+
+/** Rebuilds JS status entries from the same interleaved codes the WASM takes. */
+function entriesFromCodes(codes: number[]): Parameters<typeof summarizeStatus>[0] {
+  const out: Array<{ path: string; index?: never; worktree?: never }> = [];
+  for (let i = 0; i < codes.length; i += 2) {
+    // The path is the entry's position, zero-padded so that lexical order equals
+    // numeric order: `orderEntries` sorts paths with `localeCompare`, which puts
+    // "10" before "9", and an unpadded index would make both implementations sort
+    // correctly but differently from what the assertion reads as expected.
+    const entry: Record<string, never | string> = { path: String(i / 2).padStart(6, "0") };
+    if (codes[i] !== 255) entry.index = STATE_NAMES[codes[i]];
+    if (codes[i + 1] !== 255) entry.worktree = STATE_NAMES[codes[i + 1]];
+    out.push(entry as never);
+  }
+  return out;
+}
+
+const STATE_NAMES: Record<number, "added" | "modified" | "deleted" | "renamed" | "untracked" | "conflicted"> = {
+  0: "added", 1: "modified", 2: "deleted", 3: "renamed", 4: "untracked", 5: "conflicted",
+};
+
+/**
+ * Compares WASM ordering against the JS twin.
+ *
+ * Both are fed entries tagged with their *position* as the path, so the JS result
+ * is read back as positions directly. Tagging with the state code instead would
+ * silently collapse duplicates -- every entry here shares one of four codes, so
+ * `indexOf` would return the first match for all of them and the comparison would
+ * pass while testing nothing.
+ */
+function assertOrderAgrees(
+  mod: { order_entries_js: (codes: Int32Array) => Uint32Array },
+  codes: number[],
+  label: string,
+): void {
+  const entries = entriesFromCodes(codes);
+  // Feed both sides in *path* order. `order_entries_js` breaks ties by input order
+  // because paths never cross into the WASM module -- see the crate's
+  // `order_entries` doc. Feeding unsorted input made the two disagree, which is
+  // real but not a parity bug: the JS twin is allowed to sort by path, and the
+  // caller is required to present it sorted. This assert is the *contract*, and
+  // it fails loudly if either side changes how it orders ties.
+  const byPath = [...entries].sort((a, b) => a.path.localeCompare(b.path));
+  const sortedCodes = byPath.map((entry) => [
+    entry.index === undefined ? 255 : STATE_NAMES_CODES[entry.index],
+    entry.worktree === undefined ? 255 : STATE_NAMES_CODES[entry.worktree],
+  ]).flat();
+
+  const wasm = [...mod.order_entries_js(Int32Array.from(sortedCodes))];
+  const js = orderEntries(entries).map((entry) => Number(entry.path));
+  assert.deepEqual(wasm, js, label);
+}
+
+const STATE_NAMES_CODES: Record<string, number> = {
+  added: 0, modified: 1, deleted: 2, renamed: 3, untracked: 4, conflicted: 5,
+};

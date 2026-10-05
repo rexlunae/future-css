@@ -20,6 +20,7 @@ members = [
   "crates/fc-grid",
   "crates/fc-diff",
   "crates/fc-select",
+  "crates/fc-git",
 ]
 
 [workspace.package]

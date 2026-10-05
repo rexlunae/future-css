@@ -199,6 +199,20 @@
     <span class="fc-context-strip__notice" hidden></span>
   </div>
 
+  <!--
+    Git surface. A fixture working tree, not a real repository: nothing here
+    shells out to git. The entries deliberately cover every combination that
+    matters -- conflicted, changed in both index and worktree, untracked, and a
+    file with no contents loaded so its stat must be absent rather than +0 -0.
+  -->
+  <div class="fc-git" id="git-root">
+    <div class="fc-git__header">
+      <span class="fc-git__branch"></span>
+      <span class="fc-git__summary"></span>
+    </div>
+    <div class="fc-git__files" role="listbox" aria-label="Changed files"></div>
+  </div>
+
 </div>
 </body>
 </html>

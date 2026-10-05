@@ -558,7 +558,7 @@ mod tests {
             ["a", "b", "c", "d", "e", "f"]
                 .iter()
                 .enumerate()
-                .map(|(i, v)| Option_::new(v, &format!("Option {}", v.to_uppercase())))
+                .map(|(_, v)| Option_::new(v, &format!("Option {}", v.to_uppercase())))
                 .collect(),
         )
     }

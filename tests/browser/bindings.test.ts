@@ -18,11 +18,19 @@ import { after, afterEach, before, describe, it } from "node:test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 import { findChrome, startServer } from "./server.mjs";
 
 const chromePath = await findChrome();
+
+// The WASM-backed select tests need the compiled module; skip cleanly without it.
+// Two levels up: this file lives in tests/browser/. One level lands on tests/,
+// and every WASM test then skips for a reason that has nothing to do with WASM.
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const selectWasmBuilt = existsSync(join(repoRoot, "dist", "wasm", "fc-select", "web", "fc_select.js"));
 
 describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome found" }, () => {
   let server: Awaited<ReturnType<typeof startServer>>;
@@ -2222,6 +2230,83 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     `);
     assert.equal(buttons[0], 0, "already staged, so no button");
     assert.equal(buttons[1], 1, "worktree only, so there is one");
+  });
+
+  // ---------------------------------------------------------- select / WASM
+
+  it("runs select navigation on the Rust model when WASM is served", { skip: selectWasmBuilt ? false : "run `npm run build:wasm` first" }, async () => {
+    await loadBindings();
+    await resetSelect();
+    const result = await evaluate(`
+      globalThis.wsel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      const loaded = await wsel.useWasm('${server.origin}/dist/wasm/fc-select/web/fc_select.js');
+      if (!loaded) return { loaded };
+      // Same interaction as the JS-path test: arrow down from o3 must skip
+      // the unavailable Llama and wrap to Opus. Identical expected values on
+      // both models is the point of the wiring.
+      wsel.setValue('o3');
+      wsel.openList();
+      const invoker = document.querySelector('#select-invoker');
+      invoker.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      const id = invoker.getAttribute('aria-activedescendant');
+      return { loaded, value: document.getElementById(id)?.dataset.fcValue };
+    `);
+    assert.equal(result.loaded, true, "the Rust model should load over HTTP");
+    assert.equal(result.value, "opus-5", "the Rust model must skip the unavailable option");
+  });
+
+  it("runs filtered typeahead through the Rust model too", { skip: selectWasmBuilt ? false : "run `npm run build:wasm` first" }, async () => {
+    // Filtered typeahead is the computation the old boundary could not express
+    // at all, which is why the wiring had to wait for selectTypeaheadFrom.
+    await loadBindings();
+    await resetSelect();
+    const result = await evaluate(`
+      globalThis.tsel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      const loaded = await tsel.useWasm('${server.origin}/dist/wasm/fc-select/web/fc_select.js');
+      if (!loaded) return { loaded };
+      tsel.openList();
+      const invoker = document.querySelector('#select-invoker');
+      const active = () => {
+        const id = invoker.getAttribute('aria-activedescendant');
+        return document.getElementById(id)?.dataset.fcValue;
+      };
+      const first = (active(), undefined); // warm up: highlight is gpt-5
+      invoker.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true }));
+      const afterC = active();
+      invoker.dispatchEvent(new KeyboardEvent('keydown', { key: 'l', bubbles: true }));
+      const afterCl = active();
+      return { loaded, afterC, afterCl };
+    `);
+    assert.equal(result.loaded, true);
+    // The scan starts after the highlight and wraps: "c" lands on Opus (the
+    // first c-label after GPT-5), and "cl" -- the accumulated buffer, not a
+    // fresh search -- lands on Sonnet, the first cl-label after Opus. Two
+    // different options for two keystrokes is what proves the buffer crossed.
+    assert.equal(result.afterC, "opus-5");
+    assert.equal(result.afterCl, "sonnet-5");
+  });
+
+  it("falls back to the JS model when the WASM module is missing", async () => {
+    await loadBindings();
+    await resetSelect();
+    const result = await evaluate(`
+      globalThis.fsel = new S.FutureCssSelect({
+        invoker: '#select-invoker', list: '#select-list',
+      });
+      const loaded = await fsel.useWasm('${server.origin}/dist/wasm/does-not-exist.js');
+      fsel.setValue('o3');
+      fsel.openList();
+      const invoker = document.querySelector('#select-invoker');
+      invoker.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      const id = invoker.getAttribute('aria-activedescendant');
+      return { loaded, value: document.getElementById(id)?.dataset.fcValue };
+    `);
+    assert.equal(result.loaded, false, "a missing module must report failure, not throw");
+    assert.equal(result.value, "opus-5", "navigation must keep working on the JS model");
   });
 
 });

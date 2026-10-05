@@ -21,6 +21,9 @@ const TYPES = {
   ".html": "text/html",
   ".css": "text/css",
   ".js": "text/javascript",
+  // The bindgen glue falls back from streaming when the type is wrong, but the
+  // right type is one line and the wrong one hides a real server mistake.
+  ".wasm": "application/wasm",
 };
 
 /** Starts the server and returns its origin. */

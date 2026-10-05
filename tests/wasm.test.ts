@@ -24,6 +24,8 @@ import { before, describe, it } from "node:test";
 import { JsAccelerator } from "../src/js/accelerator.ts";
 import { diffLines, diffStats } from "../src/js/diff.ts";
 import { summarizeStatus, orderEntries, diffCounts } from "../src/js/git.ts";
+import { SelectModel, WasmSelectModel } from "../src/js/select.ts";
+import type { SelectOption, SelectWasmModule } from "../src/js/select.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(here, "..");
@@ -602,3 +604,78 @@ function assertOrderAgrees(
 const STATE_NAMES_CODES: Record<string, number> = {
   added: 0, modified: 1, deleted: 2, renamed: 3, untracked: 4, conflicted: 5,
 };
+
+/**
+ * The shipped adapter vs the JS twin, driven identically.
+ *
+ * This is the test the stateless boundary could not support before
+ * `selectMoveFrom` / `selectTypeaheadFrom` existed: those entry points accept
+ * the *visible* set, which is what makes filtered navigation expressible at
+ * all. Every operation below runs on both models and both must agree after
+ * each one -- the assertion names the operation, so a divergence points at the
+ * exact call rather than at an end state.
+ */
+describe("the shipped WasmSelectModel adapter and the JS twin agree", () => {
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const wasmDir = join(repoRoot, "dist", "wasm", "fc-select", "web");
+  const adapterBuilt = existsSync(join(wasmDir, "fc_select.js"));
+
+  const ITEMS: SelectOption[] = [
+    { value: "opus-5", label: "Claude Opus 5", group: "Anthropic" },
+    { value: "sonnet-5", label: "Claude Sonnet 5", group: "Anthropic" },
+    { value: "gpt-5", label: "GPT-5", group: "OpenAI" },
+    { value: "o3", label: "o3", group: "OpenAI" },
+    { value: "llama-4", label: "Llama 4 (local)", group: "Local", disabled: true },
+  ];
+
+  // Every computation that crosses the boundary, plus the filtered cases that
+  // were parity-blind until the boundary could express them.
+  const OPS: Array<[string, ...unknown[]]> = [
+    ["open", "gpt-5"],
+    ["move", 1],
+    ["move", 1], // wraps past the disabled tail onto the first option
+    ["move", -1],
+    ["filter", "cla"], // narrows to the two Anthropic options
+    ["move", 1], // filtered move: the case move_by used to seed wrongly
+    ["move", -1],
+    ["typeahead", "s"],
+    ["typeahead", "o"], // extends the buffer
+    ["typeahead", "z"], // no match anywhere: buffer must clear on both sides
+    ["close", false], // Escape restores
+    ["open", "opus-5"],
+    ["close", true], // commits the highlight
+    ["setCommitted", "gpt-5"],
+    ["open", undefined],
+    ["focusFirst"],
+    ["focusLast"], // must stop on o3, not the disabled Llama
+    ["setActive", 3],
+    ["filter", ""], // empty query restores everything
+    ["move", 1],
+  ];
+
+  it(
+    "agrees after every operation, including filtered ones",
+    { skip: adapterBuilt ? false : "run `npm run build:wasm` first" },
+    async () => {
+      const mod = (await import(join(wasmDir, "fc_select.js"))) as unknown as SelectWasmModule;
+      await mod.default({ module_or_path: await readFile(join(wasmDir, "fc_select_bg.wasm")) });
+
+      const js = new SelectModel(ITEMS);
+      const wasm = new WasmSelectModel(mod, ITEMS);
+
+      const stateOf = (m: SelectModel | WasmSelectModel) => ({
+        visible: [...m.visibleIndices()],
+        active: m.activeIndex,
+        committed: m.committedValue,
+      });
+
+      for (const [op, ...args] of OPS) {
+        // Same call, same receiver shape, compared immediately -- not at the
+        // end, where one early divergence would drown the rest.
+        (js as unknown as Record<string, (...a: unknown[]) => unknown>)[op](...args);
+        (wasm as unknown as Record<string, (...a: unknown[]) => unknown>)[op](...args);
+        assert.deepEqual(stateOf(wasm), stateOf(js), `diverged after ${op}(${args.join(", ")})`);
+      }
+    },
+  );
+});

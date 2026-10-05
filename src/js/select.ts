@@ -24,11 +24,15 @@
  *
  * # What is delegated to WASM
  *
- * `fc-select` owns the navigation *model* -- which option is active, how
- * typeahead accumulates, which options survive a filter. It never touches the
- * DOM. Everything here is the part WASM cannot do: ARIA, focus, positioning, and
- * rendering. WASM is optional throughout; without it the identical model runs in
- * `SelectModel` below and nothing is lost but speed.
+ * Opt-in via `useWasm`. When it is on, the *computations* cross: the open seed,
+ * the filter, the filtered move, and the typeahead match. What stays in JS is
+ * everything those stateless functions cannot see -- state writes (`close`,
+ * `setActive`), the trivial first/last-visible scans, and the typeahead buffer
+ * concat, which is three lines of string handling rather than model logic. The
+ * entry points rebuild a model per call, so the adapter hands view state back
+ * in on every call (`adopt_state` in the crate). Without WASM the identical
+ * computations run in `SelectModel` below; `tests/wasm.test.ts` drives both
+ * over the same operation list and requires identical results after each one.
  */
 
 /** One option as the binding understands it. */
@@ -55,6 +59,27 @@ export interface SelectOptions {
 }
 
 /**
+ * The model surface the binding uses. Two implementations: `SelectModel` (the
+ * JS twin, always available) and `WasmSelectModel` (the Rust model, opt-in).
+ * Both must satisfy it exactly -- the binding must not know which one it has.
+ */
+interface SelectModelLike {
+  readonly committedValue: string;
+  readonly activeIndex: number;
+  visibleIndices(): number[];
+  indexOf(value: string): number;
+  setCommitted(value: string): void;
+  setActive(index: number): void;
+  open(value: string | undefined): void;
+  close(commit: boolean): void;
+  move(delta: number): void;
+  focusFirst(): void;
+  focusLast(): void;
+  typeahead(query: string): boolean;
+  filter(query: string): number[];
+}
+
+/**
  * The JS twin of the Rust model.
  *
  * Duplicated deliberately: WASM is never required, so the pure-JS path has to be
@@ -62,7 +87,7 @@ export interface SelectOptions {
  * files would mean one of them is never loaded in a test; keeping them together
  * makes the duplication visible and therefore reviewable.
  */
-class SelectModel {
+export class SelectModel implements SelectModelLike {
   private readonly options: readonly SelectOption[];
   /** Indices surviving the current filter. */
   private visible: number[];
@@ -251,6 +276,136 @@ class SelectModel {
   }
 }
 
+/** The compiled `fc-select` module, as the binding consumes it. */
+export interface SelectWasmModule {
+  default: (init?: { module_or_path?: string | Uint8Array }) => Promise<void>;
+  selectOpen: (values: string[], labels: string[], groups: string[], disabled: number[], current: string) => number;
+  selectIndexOf: (values: string[], value: string) => number;
+  selectFilter: (labels: string[], values: string[], query: string) => Int32Array | number[];
+  selectMoveFrom: (values: string[], labels: string[], disabled: number[], visible: number[], active: number, delta: number) => number;
+  selectTypeaheadFrom: (values: string[], labels: string[], disabled: number[], visible: number[], active: number, buffer: string, query: string) => Int32Array | number[];
+}
+
+/**
+ * The Rust model behind the stateless boundary.
+ *
+ * Holds the option arrays once and the view state between calls; every
+ * computation delegates. The reconciliation after `open` and `filter` runs here
+ * rather than in Rust because it reads this adapter's own `visible` -- the
+ * stateless calls see a fresh model each time and cannot reconcile against a
+ * filter they did not perform.
+ */
+export class WasmSelectModel implements SelectModelLike {
+  private readonly mod: SelectWasmModule;
+  private readonly items: readonly SelectOption[];
+  private readonly values: string[];
+  private readonly labels: string[];
+  private readonly groups: string[];
+  private readonly disabledFlags: number[];
+  private visible: number[];
+  private active = -1;
+  private committed = "";
+  private buffer = "";
+
+  constructor(mod: SelectWasmModule, items: readonly SelectOption[]) {
+    this.mod = mod;
+    this.items = items;
+    this.values = items.map((o) => o.value);
+    this.labels = items.map((o) => o.label);
+    this.groups = items.map((o) => o.group ?? "");
+    this.disabledFlags = items.map((o) => (o.disabled ? 1 : 0));
+    this.visible = items.map((_, i) => i);
+  }
+
+  visibleIndices(): number[] {
+    return this.visible;
+  }
+
+  indexOf(value: string): number {
+    return this.mod.selectIndexOf(this.values, value);
+  }
+
+  get committedValue(): string {
+    return this.committed;
+  }
+
+  setCommitted(value: string): void {
+    this.committed = value;
+  }
+
+  get activeIndex(): number {
+    return this.active;
+  }
+
+  setActive(index: number): void {
+    if (index >= 0 && index < this.items.length) this.active = index;
+  }
+
+  open(value: string | undefined): void {
+    this.committed = value ?? "";
+    this.buffer = "";
+    const seed = this.mod.selectOpen(this.values, this.labels, this.groups, this.disabledFlags, this.committed);
+    // The seed is computed over the full list; reconcile against this adapter's
+    // filter exactly as the JS twin does.
+    this.active = this.visible.includes(seed) ? seed : this.firstSelectableVisible();
+  }
+
+  close(commit: boolean): void {
+    if (commit && this.active >= 0 && !this.items[this.active]?.disabled) {
+      this.committed = this.values[this.active]!;
+    }
+    this.active = -1;
+    this.buffer = "";
+  }
+
+  move(delta: number): void {
+    this.active = this.mod.selectMoveFrom(this.values, this.labels, this.disabledFlags, this.visible, this.active, delta);
+  }
+
+  focusFirst(): void {
+    this.active = this.firstSelectableVisible();
+  }
+
+  focusLast(): void {
+    this.active = this.lastSelectableVisible();
+  }
+
+  typeahead(query: string): boolean {
+    const result = Array.from(this.mod.selectTypeaheadFrom(this.values, this.labels, this.disabledFlags, this.visible, this.active, this.buffer, query));
+    this.active = result[0]!;
+    const matched = result[1] === 1;
+    // The buffer concat stays here, deliberately: it is string handling, and
+    // the same rule the JS twin applies. `matched` is the only part of the
+    // buffer's fate that affects behaviour.
+    const first = query[0];
+    const repeating = first !== undefined && [...this.buffer].every((c) => c === first);
+    this.buffer = matched ? (repeating ? query : this.buffer + query) : "";
+    return matched;
+  }
+
+  filter(query: string): number[] {
+    this.visible = Array.from(this.mod.selectFilter(this.labels, this.values, query));
+    // Same reconciliation as the JS twin: the highlight must survive only
+    // while it is still visible, or Enter can commit something hidden.
+    if (!this.visible.includes(this.active)) {
+      this.active = this.firstSelectableVisible();
+    }
+    return this.visible;
+  }
+
+  private firstSelectableVisible(): number {
+    return this.visible.find((i) => !this.items[i]?.disabled) ?? -1;
+  }
+
+  private lastSelectableVisible(): number {
+    for (let p = this.visible.length - 1; p >= 0; p -= 1) {
+      const i = this.visible[p]!;
+      if (!this.items[i]?.disabled) return i;
+    }
+    return -1;
+  }
+}
+
 const OPTION_SELECTOR = "[role='option']";
 
 export class FutureCssSelect {
@@ -262,7 +417,8 @@ export class FutureCssSelect {
    * which is `undefined`, so nothing ever fired and nothing threw. */
   private readonly items: readonly SelectOption[];
   private readonly config: SelectOptions;
-  private readonly model: SelectModel;
+  /** Not readonly: `useWasm` swaps the model after construction. */
+  private model: SelectModelLike;
 
   private open = false;
   private visible: number[] = [];
@@ -674,6 +830,32 @@ export class FutureCssSelect {
     this.list.addEventListener("toggle", (e) => {
       if ((e as ToggleEvent).newState === "closed" && this.open) this.closeList(false);
     });
+  }
+
+  /**
+   * Swaps the JS model for the Rust one, when the module loads.
+   *
+   * Returns false -- and keeps the JS model -- on any failure: a listbox that
+   * silently lost its navigation because a fetch failed is worse than one that
+   * never got the accelerator. Never swaps while the list is open; the swap
+   * would replace view state under an active interaction.
+   *
+   * `init` passes through to the bindgen glue. Browsers omit it -- the glue
+   * resolves the .wasm next to itself over HTTP. Node passes `module_or_path`.
+   */
+  async useWasm(url: string, init?: { module_or_path?: string | Uint8Array }): Promise<boolean> {
+    if (this.open) return false;
+    try {
+      const mod = (await import(url)) as SelectWasmModule;
+      await mod.default(init);
+      const committed = this.model.committedValue;
+      this.model = new WasmSelectModel(mod, this.items);
+      this.model.setCommitted(committed);
+      this.visible = this.model.visibleIndices();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private onKeydown(e: KeyboardEvent): void {

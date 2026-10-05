@@ -1405,6 +1405,10 @@ const select = new FutureCssSelect({
 // Substring search, which a prefix typeahead cannot do.
 select.filter("sonnet");
 
+// Optional: run the model in Rust. Returns false -- and keeps the JS model --
+// whenever the module is absent or fails to load, so the call needs no guard.
+await select.useWasm("/dist/wasm/fc-select/web/fc_select.js");
+
 // Keyboard contract, all in the binding:
   //   Enter / Space   open, or commit the highlighted option
   //   ArrowUp / Down  move, wrapping, stepping over unavailable options

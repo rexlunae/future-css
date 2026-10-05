@@ -193,3 +193,32 @@ will be discovered by a user.
 Browsers implement the first four natively when the correct element is used, which is the
 practical argument for principle 1: choosing `<button>` over `<div>` gets Space/Enter
 handling for free, and hand-rolled versions routinely get it wrong.
+
+## Manual verification: IME composition (issue #15)
+
+The composer's Enter-to-send guard checks `isComposing` and the legacy
+`keyCode === 229`, and the automated tests dispatch synthetic events. Synthetic
+events cannot reproduce a genuine composition session, so the following is a
+manual checklist that runs whenever the guard's logic is touched, on a platform
+with a real IME (macOS Pinyin or Japanese Romaji are the easiest to drive):
+
+1. Type a multi-keystroke composition (e.g. `nihongo` with Romaji-Japanese) into
+   the composer, and press Enter **while candidates are showing**. Expected:
+   Enter commits the candidate text into the textarea; nothing is sent. The
+   send control must not fire, and the textarea must not lose focus.
+2. Complete the composition, then press Enter on the committed text with the
+   textarea focused and candidates dismissed. Expected: the message sends.
+3. With candidates showing, press Escape. Expected: the composition is
+   cancelled; the composer must not treat Escape as anything else (no focus
+   steal, no dialog close if the composer sits in one).
+4. Mid-composition, click Send with the mouse. Expected: either the send is
+   held until the composition commits, or the composition commits and then the
+   message sends — matching the platform convention — but never a half-composed
+   string on the wire.
+5. Verify each of the four against the composer's `data-fc-state` attribute in
+   the inspector, not only against visible behavior: the attribute must say
+   `idle` while a composition is being committed and `running` only after an
+   actual send.
+
+Record the result in the PR that touched the guard. A PR that changes
+composition handling without this checklist run is not done.

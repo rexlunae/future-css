@@ -26,6 +26,8 @@
  */
 
 import { checkContrast, type ContrastPair, type SchemeColors } from "./color.ts";
+import type { Oklch } from "../color-utils.ts";
+import { oklabDistance } from "../color-utils.ts";
 import { neutral } from "../palette.ts";
 
 export const syntaxColors = {
@@ -148,4 +150,40 @@ export const codeBoundaryReference = {
 /** Evaluate the syntax contract, including the canvas boundary reference. */
 export function checkSyntaxContrast(): ReturnType<typeof checkContrast> {
   return checkContrast(syntaxContrastPairs, { ...syntaxColors, ...codeBoundaryReference });
+}
+/**
+ * Pairs that must be *told apart*, not merely legible.
+ *
+ * Contrast ratio cannot express this: two identical colors contrast identically
+ * against anything, which is exactly how `bg-added` and `bg-removed` were once
+ * the same value in dark mode and the contract passed without a word. Each pair
+ * is checked in both schemes at build time on OKLab distance, so a collapse to
+ * zero fails loudly instead of passing silently.
+ */
+export const distinctPairs = [
+  { usage: "Added vs removed diff row background", a: "bg-added", b: "bg-removed", min: 0.03 },
+  { usage: "Added vs removed diff row text", a: "added-fg", b: "removed-fg", min: 0.03 },
+] as const;
+
+export type DistinctPair = (typeof distinctPairs)[number];
+
+export function checkDistinct(
+  pairs: readonly DistinctPair[] = distinctPairs,
+  colors: Record<string, Record<"light" | "dark", Oklch>> = syntaxColors as never,
+): { pair: DistinctPair; scheme: "light" | "dark"; delta: number }[] {
+  const failures: { pair: DistinctPair; scheme: "light" | "dark"; delta: number }[] = [];
+  for (const pair of pairs) {
+    for (const scheme of ["light", "dark"] as const) {
+      const a = colors[pair.a]?.[scheme];
+      const b = colors[pair.b]?.[scheme];
+      if (!a || !b) {
+        throw new Error(`Distinct pair references unknown token: ${pair.a} / ${pair.b}`);
+      }
+      const delta = oklabDistance(a, b);
+      if (delta < pair.min) {
+        failures.push({ pair, scheme, delta });
+      }
+    }
+  }
+  return failures;
 }

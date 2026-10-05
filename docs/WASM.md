@@ -280,3 +280,44 @@ category.
 be second-guessed, so the reasoning is recorded rather than just the rule: a WASM
 module that reached for the DOM would have to be reimplemented when the DOM
 changed, and would duplicate something the browser already does better.
+## What actually ships
+
+The size report carries two numbers per module, and they answer different
+questions. The **budget basis** is the pre-bindgen rustc output — the number the
+budgets were set against, and the one where the ~302 KB `js-sys` cost is
+visible. The **ships** column is what a consumer downloads: the post-bindgen web
+module after the optional `wasm-opt -Oz --enable-bulk-memory` pass.
+
+Measured (issue #16, binaryen 132):
+
+| module | report basis | ships |
+| --- | ---: | ---: |
+| fc-core | 336.4 KB | 18.3 KB |
+| fc-model | 360.9 KB | 36.3 KB |
+| fc-rich-text | 374.3 KB | 45.9 KB |
+| fc-context-menu | 414.2 KB | 81.3 KB |
+| fc-grid | 363.4 KB | 35.1 KB |
+| fc-diff | 56.2 KB | 34.8 KB |
+| fc-select | 74.6 KB | 50.0 KB |
+| fc-git | 45.0 KB | 25.9 KB |
+
+Two facts follow, and both matter:
+
+1. **The raw basis overstates the wire.** bindgen strips its custom sections and
+   wasm-opt removes most of the remainder, so "`js-sys` costs ~302 KB" is a
+   statement about the unoptimized linked artifact, not about what ships. The
+   architecture rule (primitives only) still holds — it keeps the artifact small
+   before any optimizer runs — but the wire cost of the current `js-sys` modules
+   is tens of KB, not hundreds.
+2. **The shipped basis re-prioritizes Phase A.** On what actually downloads,
+   `fc-context-menu` (81.3 KB) is the real outlier, then `fc-select` (50.0) and
+   `fc-rich-text` (45.9); `fc-core` ships 18.3 KB and `fc-grid` 35.1. The
+   budgets remain on the raw basis until Phase A decides whether to re-derive
+   them against shipped bytes — deliberately, because moving the goalposts and
+   measuring the result are two different changes.
+
+`wasm-opt` is an optional system tool, like the `wasm-bindgen` CLI: install
+binaryen and the build uses it, skip it and the build is complete but the
+shipped sizes are ~10% larger. The report says which happened. The parity suite
+runs against the optimized modules, so a wasm-opt regression is caught by the
+same tests that catch a Rust regression.

@@ -25,6 +25,7 @@ import { oklchToHex } from "../tokens/color-utils.ts";
 import { checkContrast, semanticColors, semanticColorNames } from "../tokens/semantic/color.ts";
 import { ansiColorNames, ansiColors, checkAnsiContrast } from "../tokens/semantic/terminal.ts";
 import {
+  checkDistinct,
   checkSyntaxContrast,
   codeBoundaryReference,
   syntaxColorNames,
@@ -254,10 +255,20 @@ async function main(): Promise<void> {
     ...checkAnsiContrast(),
     ...checkSyntaxContrast(),
   ];
-  if (failures.length > 0) {
+  // Distinctness is a second contract, not a contrast variant: two identical
+  // colors pass every contrast check against anything, which is how the diff
+  // row backgrounds once collapsed. See issue #18.
+  const indistinct = checkDistinct();
+  if (failures.length > 0 || indistinct.length > 0) {
     console.error("Contrast contract violated:\n");
     for (const { pair, scheme, ratio } of failures) {
       console.error(`  [${scheme}] ${pair.usage}: ${ratio.toFixed(2)}:1 (needs ${pair.min}:1)`);
+    }
+    if (indistinct.length > 0) {
+      console.error("\nDistinctness contract violated:\n");
+      for (const { pair, scheme, delta } of indistinct) {
+        console.error(`  [${scheme}] ${pair.usage}: OKLab distance ${delta.toFixed(4)} (needs ${pair.min})`);
+      }
     }
     process.exitCode = 1;
     return;

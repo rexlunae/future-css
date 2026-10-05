@@ -120,9 +120,15 @@ So:
   numbers.
 - **Never add `js-sys` to a crate** without measuring the result first.
 - `npm run build:wasm` prints a size report and the budgets in
-  `src/build/build-wasm.ts`. Every module is currently **over** budget; Phase A
-  in `docs/PLAN.md` is the work to fix that. Do not raise a budget to make the
-  report green.
+  `src/build/build-wasm.ts`. Seven modules are over budget on the report's raw
+  basis; on the **shipped** basis (what actually downloads, post-bindgen and
+  post-opt — see docs/WASM.md) three exceed theirs. Phase A in `docs/PLAN.md` is
+  the work to fix that. Do not raise a budget to make the report green.
+- **Never run `git push -u origin HEAD:<branch>` while checked out on `main`.**
+  The `-u` rewrites main's upstream to the feature branch, and when that branch
+  is later deleted every pull fails with "no such ref was fetched". Push feature
+  branches without `-u` when HEAD may be main. Fix when hit:
+  `git branch --set-upstream-to=origin/main main`.
 
 ### Cross-boundary rules
 

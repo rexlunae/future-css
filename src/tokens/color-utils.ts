@@ -100,3 +100,19 @@ export function describeContrast(fg: Oklch, bg: Oklch): string {
   const ratio = contrastRatio(fg, bg);
   return `${ratio.toFixed(2)}:1 (fg ${oklchToHex(fg)} on bg ${oklchToHex(bg)})`;
 }
+
+/**
+ * Perceptual distance between two colors in OKLab.
+ *
+ * Contrast ratio answers "is one legible on the other"; this answers "can the
+ * two be told apart at all". The questions are independent -- two identical
+ * colors contrast identically against anything, which is how the diff row
+ * backgrounds were once the same value in dark mode and passed a
+ * contrast-only contract without a word (see the syntax palette's
+ * `distinctPairs` and issue #18).
+ */
+export function oklabDistance(a: Oklch, b: Oklch): number {
+  const A = { L: a.l, a: a.c * Math.cos((a.h * Math.PI) / 180), b: a.c * Math.sin((a.h * Math.PI) / 180) };
+  const B = { L: b.l, a: b.c * Math.cos((b.h * Math.PI) / 180), b: b.c * Math.sin((b.h * Math.PI) / 180) };
+  return Math.sqrt((A.L - B.L) ** 2 + (A.a - B.a) ** 2 + (A.b - B.b) ** 2);
+}

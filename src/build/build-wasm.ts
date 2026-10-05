@@ -13,7 +13,7 @@
  */
 
 import { execFile } from "node:child_process";
-import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, rename, stat, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -65,14 +65,38 @@ const CRATES: ReadonlyArray<readonly [crate: string, module: string]> = [
 interface SizeReport {
   crate: string;
   module: string;
+  /** Pre-bindgen rustc output — the basis the budgets are set on. */
   bytes: number;
   budget: number;
   withinBudget: boolean;
+  /**
+   * What a consumer actually downloads: the post-bindgen web-target module,
+   * after the optional wasm-opt pass. Measured separately because it is the
+   * number that reaches the network, while `bytes` is the number the budgets
+   * were set against. The two differ by ~25% (bindgen strips its custom
+   * sections; wasm-opt shrinks further), so conflating them made the report
+   * overstate shipping cost.
+   */
+  shippedBytes: number;
 }
 
 async function main(): Promise<void> {
   const cargo = process.env.CARGO ?? "cargo";
   const bindgen = process.env.WASM_BINDGEN ?? "wasm-bindgen";
+
+  // Optional binaryen pass. Skipped when the tool is absent, so a contributor
+  // without binaryen still gets a complete build -- the report just shows the
+  // unoptimized shipped size. `--enable-bulk-memory` is required because rustc
+  // emits memory.copy/memory.fill without setting the feature bit, which
+  // wasm-opt otherwise rejects at validation ("unexpected false" on every
+  // memory.copy, which reads like corruption).
+  let wasmOpt: string | null = null;
+  try {
+    await execFileAsync("wasm-opt", ["--version"]);
+    wasmOpt = "wasm-opt";
+  } catch {
+    // Absent is a normal configuration, not an error.
+  }
 
   try {
     await execFileAsync(cargo, ["build", "--release", "--target", "wasm32-unknown-unknown"], {
@@ -123,10 +147,25 @@ async function main(): Promise<void> {
         ["--target", target, "--out-dir", targetOut, "--no-typescript", source],
         { cwd: projectRoot },
       );
+      if (wasmOpt) {
+        // Write to a sibling and rename: wasm-opt reading and writing the same
+        // path is undefined behavior on some filesystems, and a half-written
+        // module would fail at instantiate time, far from the cause.
+        const bg = resolve(targetOut, `${stem}_bg.wasm`);
+        await execFileAsync(wasmOpt, ["-Oz", "--enable-bulk-memory", bg, "-o", `${bg}.opt`]);
+        await rename(`${bg}.opt`, bg);
+      }
+    }
+
+    let shippedBytes = 0;
+    try {
+      shippedBytes = (await stat(resolve(outDir, module, "web", `${stem}_bg.wasm`))).size;
+    } catch {
+      shippedBytes = 0;
     }
 
     const budget = BUDGET[stem] ?? 50_000;
-    reports.push({ crate, module, bytes, budget, withinBudget: bytes <= budget });
+    reports.push({ crate, module, bytes, budget, withinBudget: bytes <= budget, shippedBytes });
   }
 
   await writeFile(
@@ -138,13 +177,24 @@ async function main(): Promise<void> {
   // The report is the deliverable, so it prints whether or not it is good news.
   console.log("build:wasm — release module sizes\n");
   let total = 0;
+  let shippedTotal = 0;
   for (const r of reports) {
     total += r.bytes;
+    shippedTotal += r.shippedBytes;
     const kb = (r.bytes / 1024).toFixed(1);
+    const shipped = (r.shippedBytes / 1024).toFixed(1);
     const status = r.withinBudget ? "ok  " : "OVER";
-    console.log(`  [${status}] ${r.crate.padEnd(18)} ${kb.padStart(7)} KB   (budget ${(r.budget / 1024).toFixed(0)} KB)`);
+    console.log(
+      `  [${status}] ${r.crate.padEnd(18)} ${kb.padStart(7)} KB   (budget ${(r.budget / 1024).toFixed(0)} KB, ships ${shipped} KB)`,
+    );
   }
   console.log(`\n  sum: ${(total / 1024).toFixed(1)} KB across ${reports.length} modules`);
+  console.log(`  ships: ${(shippedTotal / 1024).toFixed(1)} KB (post-bindgen, post-opt, web target)`);
+  if (!wasmOpt) {
+    console.log("\n  wasm-opt not found; shipped sizes are unoptimized. Install binaryen");
+    console.log("  for ~10% smaller modules -- measured, not a guess. The build is");
+    console.log("  complete without it.");
+  }
   const over = reports.filter((r) => !r.withinBudget);
   if (over.length > 0) {
     console.log(

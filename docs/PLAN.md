@@ -248,6 +248,11 @@ than tree-shaking to the used subset.
 
 Remaining:
 
+- Re-derive the budgets on the **shipped** basis. The raw (pre-bindgen) basis now
+  overstates the wire by 2–18x — see the table in docs/WASM.md — and three
+  modules exceed their budgets on shipped bytes (`fc-context-menu` 81.3 KB,
+  `fc-select` 50.0, `fc-diff` 34.8) while four are within them. Phase A's effort
+  should go where the bytes are, which the raw basis gets wrong.
 - Replace `js_sys::Array` / `Vec<JsValue>` returns with flat primitives: numbers, strings,
   and typed arrays. A range crosses as four numbers, not an object.
 - Drop `serde-wasm-bindgen` in favour of hand-written `to_js` for the few shapes crossing

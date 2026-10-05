@@ -13,6 +13,11 @@ import { describe, it } from "node:test";
 
 import { checkContrast, contrastPairs } from "../src/tokens/semantic/color.ts";
 import {
+  checkDistinct,
+  distinctPairs,
+  syntaxColors,
+} from "../src/tokens/semantic/syntax.ts";
+import {
   ansiColorNames,
   ansiColors,
   ansiContrastPairs,
@@ -168,5 +173,26 @@ describe("ANSI terminal palette", () => {
     // when the ratio technically passes.
     const ratio = contrastRatio(ansiColors.cursor!.light, ansiColors.bg!.light);
     assert.ok(ratio >= 3, `cursor must be visible on the background, got ${ratio.toFixed(2)}:1`);
+  });
+});
+
+describe("distinctness contract", () => {
+  it("passes on the shipped palette in both schemes", () => {
+    // The bg pair measures 0.039 light / 0.053 dark; the fg pair 0.22+. The
+    // minimum is 0.03, so the real values sit above it with real margin and a
+    // collapse to zero fails.
+    assert.deepEqual(checkDistinct(), []);
+  });
+
+  it("fails loudly when a pair collapses to the same value", () => {
+    // Reproduce the original bug: make the removed background identical to the
+    // added one and the check must catch it, because contrast on its own
+    // cannot -- two identical colors contrast identically against anything.
+    const collapsed = { ...syntaxColors, "bg-removed": syntaxColors["bg-added"] };
+    const failures = checkDistinct(distinctPairs, collapsed as never);
+    const hit = failures.find((f) => f.pair.a === "bg-added");
+    assert.ok(hit, "the collapsed bg pair must be reported");
+    assert.equal(hit!.scheme, "light");
+    assert.equal(hit!.delta, 0);
   });
 });

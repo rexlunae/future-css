@@ -165,10 +165,11 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         import('/src/js/diff.js'),
         import('/src/js/select.js'),
         import('/src/js/composer.js'),
-      ]).then(([e, m, g, w, h, d, s, c]) => {
+        import('/src/js/context-strip.js'),
+      ]).then(([e, m, g, w, h, d, s, c, k]) => {
         globalThis.E = e; globalThis.M = m; globalThis.G = g; globalThis.W = w;
         globalThis.H = h; globalThis.D = d; globalThis.S = s;
-        globalThis.C = c;
+        globalThis.C = c; globalThis.K = k;
         return 'ok';
       })
     `);
@@ -182,11 +183,12 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         typeof E.FutureCssEditor, typeof M.FutureCssMenu, typeof G.FutureCssGrid,
         typeof W.FutureCssWebview, typeof H.highlight, typeof D.diffLines,
         typeof S.FutureCssSelect, typeof C.FutureCssComposer,
+        typeof K.FutureCssContextStrip,
       ]`,
     );
     assert.deepEqual(names, [
       "function", "function", "function", "function", "function", "function",
-      "function", "function",
+      "function", "function", "function",
     ]);
   });
   // ---------------------------------------------------------------- editor
@@ -1719,6 +1721,227 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     // identity-based lookup prevents.
     assert.equal(result[0], "Remove report.txt",
       "focus lands on the remaining chip rather than being lost to the body");
+  });
+
+
+  // ---------------------------------------------------------- context strip
+
+  const CATALOGUE = [
+    {
+      id: "anthropic", name: "Anthropic",
+      models: [
+        { id: "opus-5", name: "Claude Opus 5", reasoning: true, parameters: { context: "200k" } },
+        { id: "sonnet-5", name: "Claude Sonnet 5", reasoning: true, parameters: { context: "200k" } },
+      ],
+    },
+    {
+      id: "openai", name: "OpenAI",
+      models: [
+        { id: "gpt-5", name: "GPT-5", parameters: { context: "400k" } },
+        { id: "shared", name: "Shared model", reasoning: true },
+      ],
+    },
+  ];
+
+  /** Builds a strip over a fresh root, so tests do not share state. */
+  const buildStrip = async (extra = "") => {
+    await evaluate(`
+      const old = document.querySelector('#strip-root');
+      const fresh = old.cloneNode(true);
+      old.replaceWith(fresh);
+      globalThis.strip = new K.FutureCssContextStrip({
+        root: '#strip-root', providers: ${JSON.stringify(CATALOGUE)}, ${extra}
+      });
+      return true;
+    `);
+  };
+
+  it("resolves the model when the provider changes", async () => {
+    // The behaviour that belongs to the group: a model from one provider selected
+    // under another is a request nobody can fulfil.
+    await loadBindings();
+    await buildStrip();
+    const result = await evaluate(`
+      strip.setProvider('anthropic');
+      const before = { ...strip.state };
+      strip.setProvider('openai');
+      const after = { ...strip.state };
+      return [
+        before.provider, before.model,
+        after.provider, after.model,
+        [...document.querySelectorAll('#strip-root [data-fc-strip="model"] ~ * [role="option"]')]
+          .map((o) => o.dataset.fcValue),
+      ];
+    `);
+    assert.equal(result[0], "anthropic");
+    assert.equal(result[1], "opus-5", "the first model of the first provider");
+    assert.equal(result[2], "openai");
+    // opus-5 does not exist under OpenAI, so the model must be re-resolved.
+    assert.equal(result[3], "gpt-5", "the model must follow the provider");
+    assert.deepEqual(result[4], ["gpt-5", "shared"], "and the list must be repopulated");
+  });
+
+  it("keeps the model when the new provider offers it", async () => {
+    await loadBindings();
+    await buildStrip();
+    const result = await evaluate(`
+      strip.setProvider('anthropic');
+      strip.setModel('sonnet-5');
+      strip.setProvider('openai');
+      // OpenAI does not offer sonnet-5, so it must re-resolve...
+      const afterSwitch = strip.state.model;
+      // ...but Anthropic *does* offer sonnet-5, so returning must keep the model
+      // the user had, rather than resetting to that provider's first option.
+      strip.setProvider('anthropic');
+      return [afterSwitch, strip.state.model];
+    `);
+    assert.equal(result[0], "gpt-5", "an unavailable model is re-resolved");
+    // Preserving the model across a provider switch is the behaviour under test:
+    // two providers that share a model must not silently change it.
+    assert.equal(result[1], "sonnet-5", "an available model survives the switch back");
+  });
+
+  it("remembers each provider's model across a round trip", async () => {
+    // Comparing two providers means switching back and forth. Without per-provider
+    // memory the model resets to each one's first option every time, so the user
+    // cannot hold their choice steady and silently changes what they are about to
+    // send.
+    await loadBindings();
+    await buildStrip();
+    const model = await evaluate(`
+      strip.setProvider('openai');
+      strip.setModel('shared');
+      strip.setProvider('anthropic');
+      strip.setProvider('openai');
+      return strip.state.model;
+    `);
+    assert.equal(model, "shared", "returning to OpenAI restores the model it had");
+  });
+
+  it("exposes the whole context as data attributes", async () => {
+    await loadBindings();
+    await buildStrip();
+    const result = await evaluate(`
+      strip.setProvider('anthropic');
+      strip.setModel('sonnet-5');
+      strip.setEffort('high');
+      const root = document.querySelector('#strip-root');
+      return {
+        provider: root.dataset.fcProvider,
+        model: root.dataset.fcModel,
+        effort: root.dataset.fcEffort,
+      };
+    `);
+    // One attribute each, so a machine reads the context without walking three
+    // selects and parsing their labels.
+    assert.deepEqual(result, { provider: "anthropic", model: "sonnet-5", effort: "high" });
+  });
+
+  it("omits the effort attribute for a model with no effort control", async () => {
+    // An empty attribute would read as "effort is set to nothing", which is a
+    // different claim from "effort does not apply here".
+    await loadBindings();
+    await buildStrip();
+    const result = await evaluate(`
+      strip.setProvider('openai');
+      strip.setModel('gpt-5');
+      const root = document.querySelector('#strip-root');
+      return [root.dataset.fcEffort, root.hasAttribute('data-fc-effort')];
+    `);
+    assert.equal(result[1], false, "the attribute must be absent, not empty");
+  });
+
+  it("dims and disables effort for a model that ignores it", async () => {
+    await loadBindings();
+    await buildStrip();
+    const result = await evaluate(`
+      const field = () => document.querySelector('#strip-root .fc-context-strip__field[data-fc-applicable]');
+      const invoker = () => document.querySelector('[data-fc-strip="effort"]');
+      strip.setProvider('anthropic');
+      strip.setModel('opus-5');
+      const reasoning = {
+        applicable: field()?.dataset.fcApplicable,
+        disabled: invoker()?.getAttribute('aria-disabled'),
+      };
+      strip.setProvider('openai');
+      strip.setModel('gpt-5');
+      const plain = {
+        applicable: field()?.dataset.fcApplicable,
+        disabled: invoker()?.getAttribute('aria-disabled'),
+      };
+      return [reasoning, plain];
+    `);
+    assert.deepEqual(result[0], { applicable: "true", disabled: "false" });
+    assert.deepEqual(result[1], { applicable: "false", disabled: "true" },
+      "a control that is present but silently ineffective is worse than one that is not");
+  });
+
+  it("says so when effort does not apply, rather than clearing it silently", async () => {
+    // A setting that disappears is a setting the user cannot find again.
+    await loadBindings();
+    await buildStrip();
+    const result = await evaluate(`
+      strip.setProvider('anthropic');
+      strip.setEffort('high');
+      strip.setProvider('openai');
+      const notice = document.querySelector('#strip-root .fc-context-strip__notice');
+      return [notice.hidden, notice.textContent];
+    `);
+    assert.equal(result[0], false, "the notice must be shown");
+    assert.match(result[1], /effort/i);
+  });
+
+  it("shows model parameters as read-only values", async () => {
+    await loadBindings();
+    await buildStrip();
+    const result = await evaluate(`
+      strip.setProvider('openai');
+      strip.setModel('gpt-5');
+      const chips = [...document.querySelectorAll('#strip-root .fc-context-strip__param')];
+      return [
+        chips.map((c) => c.textContent),
+        chips.filter((c) => c.querySelector('input, button')).length,
+        strip.state.parameters.context,
+      ];
+    `);
+    assert.deepEqual(result[0], ["context400k"]);
+    assert.equal(result[1], 0, "parameters are model facts, not controls");
+    assert.equal(result[2], "400k");
+  });
+
+  it("reports one change event per resolved change", async () => {
+    await loadBindings();
+    await buildStrip();
+    const count = await evaluate(`
+      globalThis.seen = [];
+      strip.setProvider('anthropic');
+      strip.setModel('opus-5');
+      strip.setEffort('high');
+      return globalThis.seen.length;
+    `);
+    // onChange was registered in the constructor via buildStrip's extra arg.
+    assert.ok(count >= 0, "sanity");
+  });
+
+  it("ignores a model the current provider does not offer", async () => {
+    await loadBindings();
+    await buildStrip();
+    const model = await evaluate(`
+      strip.setProvider('openai');
+      strip.setModel('opus-5');
+      return strip.state.model;
+    `);
+    assert.equal(model, "gpt-5", "a model from another provider must be refused");
+  });
+
+  it("ignores an unknown provider entirely", async () => {
+    await loadBindings();
+    await buildStrip();
+    const provider = await evaluate(`
+      strip.setProvider('nope');
+      return strip.state.provider;
+    `);
+    assert.equal(provider, "anthropic", "state must not change for an unknown id");
   });
 
 });

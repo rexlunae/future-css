@@ -861,3 +861,66 @@ APG keyboard contract, `aria-activedescendant`, and browser tests for every key.
 9. **Document** anatomy, states, and the no-JS fallback.
 
 A component is not done at step 7. Steps 8 and 9 are the definition of done.
+
+---
+
+## Context strip
+
+The row of controls above a chat composer: provider, model, effort, and model
+parameters. Each control is an `fc-select`, so the strip itself is mostly
+layout — but two behaviours belong to the *group*, and neither can live in a
+select.
+
+| Element | Description |
+| --- | --- |
+| `.fc-context-strip` | Root. Flex row that **wraps**, never scrolls horizontally. |
+| `.fc-context-strip__field` | One labelled control. |
+| `.fc-context-strip__label` | Visually hidden; each control takes its accessible name from it. |
+| `.fc-context-strip__spacer` | Pushes the parameter chips to the end at wide sizes. |
+| `.fc-context-strip__params` | Read-only parameter chips. |
+| `.fc-context-strip__param` | One `name` / `value` pair. |
+| `.fc-context-strip__notice` | Explains why effort does not apply. |
+
+### Why it is a component at all
+
+**Provider filters model.** A model from one provider selected under another is
+a request nobody can fulfil, so provider change re-resolves the model. Two
+providers that *do* share a model keep it, and each provider remembers the model
+it last had — otherwise comparing two providers resets the model every time and
+the user silently changes what they are about to send.
+
+**Effort is not universally available.** Reasoning models take an effort level;
+others ignore it. An inapplicable control is dimmed via `data-fc-applicable` and
+explained in `fc-context-strip__notice` rather than removed, because a row that
+reflows when the model changes makes the whole strip jump and the absence would
+not be announced at all.
+
+### DOM contract
+
+`data-fc-provider`, `data-fc-model`, and `data-fc-effort` on the root mirror the
+whole state, so a machine reads the context without walking three selects and
+parsing their labels. **`data-fc-effort` is absent, not empty**, when effort does
+not apply — an empty attribute claims a value of nothing, which is a different
+claim. Per the dual-audience rule these are additive: nothing in the CSS depends
+on them, so the strip degrades correctly for a consumer that ignores them.
+
+```js
+import { FutureCssContextStrip } from "future-css/context-strip";
+
+const strip = new FutureCssContextStrip({
+  root: "#strip-root",
+  providers: [
+    {
+      id: "anthropic", name: "Anthropic",
+      models: [
+        { id: "opus-5", name: "Claude Opus 5",
+          reasoning: true, parameters: { context: "200k" } },
+      ],
+    },
+  ],
+  onChange: (state) => send({ ...state }),
+});
+```
+
+The catalogue is the application's, not the library's: these bindings do not know
+what any vendor sells. Requires no WASM and no Rust toolchain.

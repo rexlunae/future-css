@@ -159,6 +159,46 @@
     <p class="fc-composer__status" id="composer-status" role="status"></p>
   </div>
 
+  <!--
+    Context strip. Provider, model, and effort, plus read-only model parameters.
+    The provider list is grouped; the model list is repopulated from the selected
+    provider, which is the behaviour that belongs to the group and not to either
+    select. One model is a reasoning model and one is not, so the effort control
+    has to be dimmed for the latter.
+  -->
+  <div class="fc-context-strip" id="strip-root">
+    <div class="fc-context-strip__field">
+      <span class="fc-context-strip__label fc-u-visually-hidden">Provider</span>
+      <button type="button" class="fc-select" data-fc-strip="provider" data-fc-placeholder="Provider">
+        <span class="fc-select__value">Provider</span>
+        <span class="fc-select__chevron" aria-hidden="true">&#9662;</span>
+      </button>
+      <div class="fc-select__list" role="listbox" aria-label="Provider"></div>
+    </div>
+
+    <div class="fc-context-strip__field">
+      <span class="fc-context-strip__label fc-u-visually-hidden">Model</span>
+      <button type="button" class="fc-select" data-fc-strip="model" data-fc-placeholder="Model">
+        <span class="fc-select__value">Model</span>
+        <span class="fc-select__chevron" aria-hidden="true">&#9662;</span>
+      </button>
+      <div class="fc-select__list" role="listbox" aria-label="Model"></div>
+    </div>
+
+    <div class="fc-context-strip__field">
+      <span class="fc-context-strip__label fc-u-visually-hidden">Effort</span>
+      <button type="button" class="fc-select" data-fc-strip="effort" data-fc-placeholder="Effort">
+        <span class="fc-select__value">Effort</span>
+        <span class="fc-select__chevron" aria-hidden="true">&#9662;</span>
+      </button>
+      <div class="fc-select__list" role="listbox" aria-label="Effort"></div>
+    </div>
+
+    <span class="fc-context-strip__spacer"></span>
+    <div class="fc-context-strip__params"></div>
+    <span class="fc-context-strip__notice" hidden></span>
+  </div>
+
 </div>
 </body>
 </html>

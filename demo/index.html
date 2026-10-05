@@ -50,6 +50,7 @@
         <li><a href="#terminal">Terminal</a></li>
         <li><a href="#webview">Webview</a></li>
         <li><a href="#code">Code</a></li>
+        <li><a href="#strip">Context strip</a></li>
         <li><a href="#composer">Composer</a></li>
         <li><a href="#select">Select</a></li>
         <li><a href="#diff">Diff</a></li>
@@ -971,6 +972,98 @@ webview.back();</code></pre>
   block.querySelector(".fc-code__source")
        .replaceChildren(...renderHighlighted(source, lang).childNodes);
 &lt;/script&gt;</code></pre>
+    </div>
+  </section>
+
+  <!-- ========================== CONTEXT STRIP ========================== -->
+  <section class="demo-section" id="strip" aria-labelledby="h-strip">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-strip">Context strip</h2>
+      <p class="demo-note">
+        Provider, model, and effort, resolved as <strong>one piece of state</strong>.
+        Change the provider and the model follows it &mdash; a model from one
+        provider selected under another is a request nobody can fulfil. Change back
+        and each provider restores the model it had. Switch to a model with no
+        reasoning and effort <strong>dims and says so</strong> rather than
+        silently ignoring the setting.
+      </p>
+    </div>
+
+    <div class="fc-context-strip" id="strip-root">
+      <div class="fc-context-strip__field">
+        <span class="fc-context-strip__label fc-u-visually-hidden">Provider</span>
+        <button type="button" class="fc-select" data-fc-strip="provider" data-fc-placeholder="Provider">
+          <span class="fc-select__value">Provider</span>
+          <span class="fc-select__chevron" aria-hidden="true">&#9662;</span>
+        </button>
+        <div class="fc-select__list" role="listbox" aria-label="Provider"></div>
+      </div>
+
+      <div class="fc-context-strip__field">
+        <span class="fc-context-strip__label fc-u-visually-hidden">Model</span>
+        <button type="button" class="fc-select" data-fc-strip="model" data-fc-placeholder="Model">
+          <span class="fc-select__value">Model</span>
+          <span class="fc-select__chevron" aria-hidden="true">&#9662;</span>
+        </button>
+        <div class="fc-select__list" role="listbox" aria-label="Model"></div>
+      </div>
+
+      <div class="fc-context-strip__field">
+        <span class="fc-context-strip__label fc-u-visually-hidden">Effort</span>
+        <button type="button" class="fc-select" data-fc-strip="effort" data-fc-placeholder="Effort">
+          <span class="fc-select__value">Effort</span>
+          <span class="fc-select__chevron" aria-hidden="true">&#9662;</span>
+        </button>
+        <div class="fc-select__list" role="listbox" aria-label="Effort"></div>
+      </div>
+
+      <span class="fc-context-strip__spacer"></span>
+      <div class="fc-context-strip__params"></div>
+      <span class="fc-context-strip__notice" hidden></span>
+    </div>
+
+    <p class="demo-status" id="strip-status" role="status"></p>
+
+    <div class="demo-snippet" data-demo-snippet="strip">
+      <div class="demo-snippet__bar">
+        <span class="demo-snippet__lang">js</span>
+        <button type="button" class="demo-snippet__copy"
+                data-snippet-label="Context strip wiring">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code>import { FutureCssContextStrip } from "future-css/context-strip";
+
+const strip = new FutureCssContextStrip({
+  root: "#strip-root",
+
+  // The catalogue is the application's, not the library's. These bindings do
+  // not know what any vendor sells.
+  providers: [
+    {
+      id: "anthropic", name: "Anthropic",
+      models: [
+        { id: "opus-5", name: "Claude Opus 5",
+          reasoning: true, parameters: { context: "200k" } },
+        { id: "haiku-5", name: "Claude Haiku 5",
+          parameters: { context: "200k" } },
+      ],
+    },
+  ],
+
+  onChange: (state) =&gt; send({ ...state }),
+});
+
+// The strip owns the relationships between the controls, which is why it is a
+// component rather than three selects placed side by side:
+//
+//   provider -&gt; model   the model is re-resolved when the provider changes
+//   per-provider memory    switching back restores that provider's model
+//   model -&gt; effort      dimmed and explained when the model ignores it
+//
+// Whole state is mirrored to data attributes on the root, so a machine reads
+// it without walking three selects and parsing their labels:
+//   data-fc-provider="anthropic" data-fc-model="opus-5" data-fc-effort="high"
+// and data-fc-effort is *absent* -- not empty -- when effort does not apply.
+// The attributes are additive: the strip works for a consumer that ignores them.</code></pre>
     </div>
   </section>
 

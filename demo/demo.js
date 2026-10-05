@@ -18,6 +18,7 @@ import { highlight, renderHighlighted, languageNames } from "/src/js/highlight.j
 import { diffLines, diffStats } from "/src/js/diff.js";
 import { FutureCssSelect } from "/src/js/select.js";
 import { FutureCssComposer } from "/src/js/composer.js";
+import { FutureCssContextStrip } from "/src/js/context-strip.js";
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -666,4 +667,44 @@ $("#composer-attach")?.addEventListener("click", () => {
     new File(["x".repeat(900)], "diff-viewer.ts", { type: "text/plain" }),
     new File(["y".repeat(1200)], "schema.sql", { type: "text/plain" }),
   ]);
+});
+
+// ---------------------------------------------------------------------------
+// Context strip
+//
+// Provider, model, and effort wired as one piece of state. The thing worth
+// watching: change provider and watch the model follow it, then change back and
+// watch each provider restore the model it had. Also switch to GPT-5 (no
+// reasoning) and the effort control dims and explains itself rather than
+// silently ignoring the setting.
+// ---------------------------------------------------------------------------
+
+const contextStrip = new FutureCssContextStrip({
+  root: "#strip-root",
+  providers: [
+    {
+      id: "anthropic", name: "Anthropic",
+      models: [
+        { id: "opus-5", name: "Claude Opus 5", reasoning: true, parameters: { context: "200k", max_out: "64k" } },
+        { id: "sonnet-5", name: "Claude Sonnet 5", reasoning: true, parameters: { context: "200k", max_out: "64k" } },
+        { id: "haiku-5", name: "Claude Haiku 5", parameters: { context: "200k" } },
+      ],
+    },
+    {
+      id: "openai", name: "OpenAI",
+      models: [
+        { id: "gpt-5", name: "GPT-5", reasoning: true, parameters: { context: "400k" } },
+        { id: "gpt-5-mini", name: "GPT-5 mini", parameters: { context: "400k" } },
+      ],
+    },
+    {
+      id: "local", name: "Local",
+      models: [
+        { id: "llama-4", name: "Llama 4", parameters: { context: "128k", quant: "Q4" } },
+      ],
+    },
+  ],
+  onChange: (state) => {
+    status("#strip-status", `${state.provider} / ${state.model}${state.effort ? ` / effort ${state.effort}` : ""}`);
+  },
 });

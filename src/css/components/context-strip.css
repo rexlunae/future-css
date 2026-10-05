@@ -1,0 +1,168 @@
+/*!
+ * future-css -- context strip
+ *
+ * The row of context controls above a chat composer: provider, model, effort,
+ * and model parameters.
+ *
+ * WHY THIS IS ITS OWN COMPONENT
+ * =============================
+ *
+ * Each control is a `fc-select`, so the strip itself is mostly layout. But two
+ * behaviours belong to the *group* rather than to any one control, and neither
+ * can live in the select:
+ *
+ *   1. **Provider filters model.** Changing provider swaps the model list, and the
+ *      previously selected model may not exist under the new one. Each control
+ *      owning its own state would leave the pair disagreeing — a model from one
+ *      provider selected under another, which is a request nobody can fulfil.
+ *   2. **Effort is not always available.** Reasoning models accept an effort
+ *      level; others do not, and offering a control that will be silently ignored
+ *      is worse than not offering it.
+ *
+ * So the strip is where those relationships live, and each control stays a
+ * reusable select.
+ */
+
+@layer fc.components {
+  .fc-context-strip {
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-2);
+    /*
+     * Wraps rather than scrolls. A strip of five controls at 400% zoom on a narrow
+     * window has to reflow; a horizontal scroller here is the same 1.4.10 failure
+     * the diff view had.
+     */
+    flex-wrap: wrap;
+
+    padding-block: var(--fc-space-2);
+    padding-inline: var(--fc-space-3);
+
+    background-color: var(--fc-color-bg-subtle);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-md);
+  }
+
+  /*
+   * One labelled control.
+   *
+   * The label is `fc-u-visually-hidden` in markup rather than a visible word, so
+   * the strip stays compact; each control's accessible name comes from its label.
+   */
+  .fc-context-strip__field {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-2);
+    min-inline-size: 0;
+  }
+
+  .fc-context-strip__label {
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-xs);
+    font-weight: var(--fc-font-weight-medium);
+    /* Wrapping a label mid-word reads as a rendering fault. */
+    white-space: nowrap;
+  }
+
+  /* Pushes the parameters to the end of the row at wide sizes. */
+  .fc-context-strip__spacer {
+    flex: 1 1 0;
+    min-inline-size: 0;
+  }
+
+  /*
+   * Model parameters: temperature, max tokens, and so on.
+   *
+   * Shown as read-only values rather than inputs. They are model *facts* the
+   * application configures, and a spinner next to a generated token count implies
+   * a precision the number does not have. A consumer that wants them editable
+   * replaces this region.
+   */
+  .fc-context-strip__params {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-2);
+    flex-wrap: wrap;
+  }
+
+  .fc-context-strip__param {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--fc-space-1);
+
+    padding-block: var(--fc-space-1);
+    padding-inline: var(--fc-space-2);
+
+    background-color: var(--fc-color-bg-surface);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-full);
+
+    font-family: var(--fc-font-family-mono);
+    font-size: var(--fc-font-size-xs);
+    color: var(--fc-color-text-default);
+  }
+
+  .fc-context-strip__param-name {
+    color: var(--fc-color-text-muted);
+  }
+
+  /* Figures must not shift width as they change. */
+  .fc-context-strip__param-value {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /*
+   * A control that does not apply to the current model.
+   *
+   * Kept in the layout and dimmed rather than removed: a row that reflows when the
+   * user changes model makes the whole strip jump, and the absence would not be
+   * announced at all. `aria-disabled` is already on the select; this is the visual
+   * half, and it does not depend on the attribute so a consumer overriding the
+   * attribute does not silently lose the styling.
+   */
+  .fc-context-strip__field[data-fc-applicable="false"] {
+    opacity: 0.55;
+  }
+
+  /*
+   * A value the current model does not support, e.g. an effort level carried over
+   * from a model that had one. Surfaced rather than quietly cleared, because a
+   * setting that disappears is a setting the user cannot find again.
+   */
+  .fc-context-strip__notice {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-1);
+
+    color: var(--fc-color-warning-text);
+    font-size: var(--fc-font-size-xs);
+  }
+
+  /* ---- Forced colors ------------------------------------------------------- */
+
+  /*
+   * The dimmed-not-applicable state is opacity, which the OS does not discard,
+   * so it survives here. The notice is colour-only in the default scheme and must
+   * be restated.
+   */
+  @media (forced-colors: active) {
+    .fc-context-strip {
+      background-color: Canvas;
+      color: CanvasText;
+      border-color: CanvasText;
+    }
+
+    .fc-context-strip__param {
+      background-color: Canvas;
+      color: CanvasText;
+      border-color: CanvasText;
+    }
+
+    .fc-context-strip__notice {
+      color: CanvasText;
+      /* The warning is also conveyed by the text itself ("not supported"), so the
+         colour here is reinforcement rather than the signal. */
+      font-weight: var(--fc-font-weight-semibold);
+    }
+  }
+}

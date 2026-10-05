@@ -271,17 +271,23 @@ docs/               Design documents; PLAN.md is the roadmap, WASM.md the WASM s
 
 ## Current state
 
-Pre-alpha. Foundations are built and enforced. Twelve CSS components are
+Pre-alpha. Foundations are built and enforced. Thirteen CSS components are
 complete: button, chat surface, tool call / step trace, rich text editor,
 context menu, data grid, embedded browser chrome, terminal, code block, diff
-viewer, the select/listbox, and the chat composer. Six ship browser bindings --
-editor, menu, grid, webview, select, and composer -- exercised by tests in a real
-headless Chrome. Syntax highlighting,
+viewer, the select/listbox, the chat composer, and the context strip. Seven ship
+browser bindings -- editor, menu, grid, webview, select, composer, and context
+strip -- exercised by tests in a real headless Chrome. Syntax highlighting,
 Markdown, and line diffing ship as JS modules (`highlight`, `diff`,
 `markdown`); the diff has a Rust crate, the other two do not yet.
-Form controls and dialogs are not yet written. The composer's context strip
-(provider, model, effort) is the next planned item, built on the select/listbox
-that shipped ahead of it for exactly that reason. The Rust/WASM layer has seven crates with 96 passing tests and a working JS-only fallback,
+
+The context strip is the clearest example of why a group of controls can be a
+component. Each control is an `fc-select`, but provider filters model and effort
+is not universally available, and neither relationship can live in a select --
+two selects that each owned their own state would disagree, showing a model from
+one provider selected under another. That is a request nobody can fulfil.
+
+Form controls and dialogs are not yet written. The fixture-driven Git UI is the
+next planned item, reusing `fc-diff`. The Rust/WASM layer has seven crates with 96 passing tests and a working JS-only fallback,
 but **every module is currently ~10x over its size budget** — see the WASM
 section above and Phase A in `docs/PLAN.md`. The rich text, context menu, and
 grid models exist in Rust and are covered by a JS parity test, but only the

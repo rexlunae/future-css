@@ -55,6 +55,7 @@ const BUNDLE_ORDER: ReadonlyArray<readonly [source: string, publishedAs: string]
   ["components/diff.css", "components/diff.css"],
   ["components/select.css", "components/select.css"],
   ["components/composer.css", "components/composer.css"],
+  ["components/context-strip.css", "components/context-strip.css"],
   ["utilities.css", "utilities.css"],
 ];
 

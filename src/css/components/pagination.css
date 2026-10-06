@@ -1,0 +1,111 @@
+/*!
+ * future-css -- pagination
+ *
+ *   <nav class="fc-pagination" aria-label="Pagination">
+ *     <ul class="fc-pagination__list">
+ *       <li><a class="fc-pagination__link fc-pagination__link--prev" aria-disabled="true">Previous</a></li>
+ *       <li><a class="fc-pagination__link" href="?page=1" aria-current="page">1</a></li>
+ *       <li><a class="fc-pagination__link" href="?page=2">2</a></li>
+ *       <li><span class="fc-pagination__gap" aria-hidden="true">…</span></li>
+ *       <li><a class="fc-pagination__link fc-pagination__link--next" href="?page=2">Next</a></li>
+ *     </ul>
+ *   </nav>
+ *
+ * Links, not buttons: every page has a URL, so it can be opened in a new tab,
+ * bookmarked, and shared. The disabled "Previous" on page one is an anchor with
+ * no href and aria-disabled, which keeps its position stable instead of making
+ * the control row jump when it appears.
+ */
+
+@layer fc.components {
+  .fc-pagination {
+    min-inline-size: 0;
+  }
+
+  .fc-pagination__list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fc-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fc-pagination__link,
+  .fc-pagination__gap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fc-space-1);
+    min-inline-size: var(--fc-size-target-comfortable);
+    min-block-size: var(--fc-size-target-comfortable);
+    padding-inline: var(--fc-space-2);
+    font-size: var(--fc-font-size-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fc-pagination__link {
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid transparent;
+    border-radius: var(--fc-radius-md);
+    text-decoration: none;
+    transition: background-color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-pagination__link:hover {
+    background-color: var(--fc-color-bg-muted);
+  }
+
+  .fc-pagination__link:active {
+    background-color: var(--fc-color-bg-subtle);
+  }
+
+  .fc-pagination__link[aria-current="page"] {
+    background-color: var(--fc-color-accent-bg-subtle);
+    color: var(--fc-color-accent-text);
+    border-color: var(--fc-color-accent-border);
+    font-weight: var(--fc-font-weight-semibold);
+  }
+
+  .fc-pagination__link[aria-disabled="true"] {
+    color: var(--fc-color-text-subtle);
+    background-color: transparent;
+    pointer-events: none;
+  }
+
+  .fc-pagination__gap {
+    color: var(--fc-color-text-subtle);
+  }
+
+  /*
+   * Arrows are generated so they mirror with the direction. In RTL "Previous"
+   * points right, because the previous page is to the reader's right.
+   */
+  .fc-pagination__link--prev::before {
+    content: "\2190" / "";
+  }
+
+  .fc-pagination__link--next::after {
+    content: "\2192" / "";
+  }
+
+  .fc-pagination__link--prev:dir(rtl)::before {
+    content: "\2192" / "";
+  }
+
+  .fc-pagination__link--next:dir(rtl)::after {
+    content: "\2190" / "";
+  }
+
+  @media (forced-colors: active) {
+    .fc-pagination__link[aria-current="page"] {
+      border-color: Highlight;
+      border-width: var(--fc-border-width-thick);
+    }
+
+    .fc-pagination__link[aria-disabled="true"] {
+      color: GrayText;
+    }
+  }
+}

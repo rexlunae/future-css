@@ -23,14 +23,19 @@ an opaque blob — it is readable CSS you can debug in devtools.
 architecture, the reset and base layers, the layout primitives, the linter, the
 accessibility contract, and an optional Rust/WASM layer.
 
-Ten components have their CSS: button, chat surface, tool call / step trace, rich text
-editor, context menu, data grid, embedded browser chrome, terminal, code block, and diff
-viewer. Four also have a browser binding — editor, menu, grid, and webview — covered by
-tests in a real headless Chrome; the rest are CSS plus the pure-JS modules beside them
-(syntax highlighting, Markdown, line diffing). Form controls, dialogs, and a
-select/listbox are planned but not yet written. See
-[the development plan](docs/PLAN.md) for what is done, what is next, and what is
-deliberately out of scope.
+Thirty-two components have their CSS. The general set: button, form field and input
+group, checkbox / radio / switch, card, badge and tag, alert, dialog and side sheet,
+popover and tooltip, toast, tabs, breadcrumb, pagination, spinner / skeleton /
+progress, avatar, empty state, and disclosure. The AI-chat set: chat surface, message
+actions, reasoning trace, citations and sources, suggested prompts, tool call / step
+trace, composer, context strip, select/listbox, code block, diff viewer, git surface,
+terminal, rich text editor, context menu, data grid, and embedded browser chrome.
+
+Eleven ship browser bindings -- editor, menu, grid, webview, select, composer, context
+strip, git surface, tabs, toast, and tooltip -- covered by tests in a real headless
+Chrome. Overlays use the platform (`<dialog>`, the popover API, `<details>`) and need no
+script. See [the development plan](docs/PLAN.md) for what is done, what is next, and
+what is deliberately out of scope.
 
 ---
 

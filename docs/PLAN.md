@@ -3,8 +3,10 @@
 Phased roadmap with exit criteria. Each phase ends with a gate that can be checked, not a
 judgment call.
 
-**Current status: Phase 2 in progress, Phase A (WASM size) started.** Phases 0 and 1 are
-complete; Phase 2 has the foundation built and the components remaining. The Rust/WASM
+**Current status: Phase 2 complete except the fixture page, Phase 3 mostly delivered, Phase A
+(WASM size) started.** Phases 0 and 1 are complete. Form controls, overlays, navigation, and
+the status family now exist as CSS, with bindings where the platform does not already
+provide the behavior. The Rust/WASM
 layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 
 ---
@@ -15,8 +17,8 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | --- | --- | --- |
 | 0. Foundations | Complete | Repo, toolchain, decisions |
 | 1. Token system | Complete | Palette, semantic layer, contrast contract, compiler |
-| 2. Core CSS | In progress | Reset, base, layout, utilities, button, chat, tool-call, editor, menu, grid, webview |
-| 3. Component set | Not started | Form controls, overlays, navigation |
+| 2. Core CSS | Nearly complete | Reset, base, layout, utilities, and every Phase 2 component; fixture page remains |
+| 3. Component set | Mostly delivered | Forms, overlays, tabs, breadcrumb, pagination, loading, cards; axe-core pass remains |
 | A. WASM foundations | Started | Rust workspace, 6 crates, accelerator abstraction |
 | B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
 | 4. Verification | Not started | Visual regression, browser matrix, docs site |
@@ -26,10 +28,10 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 ### Working now
 
 ```
-npm run build        165 tokens (90 theme-aware) + 17-file bundle, 153 KB
+npm run build        167 tokens (91 theme-aware) + 37-file bundle, 262 KB
                      7 Rust crates, 7 .wasm files in 6 modules (over budget — see Phase A)
-npm run lint         15 rules, 0 violations across 17 files
-npm test             301 tests passing (incl. WASM/JS parity + bundle integrity)
+npm run lint         15 rules, 0 violations across 37 files
+npm test             385 tests passing (incl. WASM/JS parity, bundle integrity, 113 in Chrome)
 cargo test           96 tests passing
 ```
 
@@ -132,14 +134,15 @@ defaults, the layout primitives, the utilities, and the first component.
 
 ### Remaining
 
-- [ ] Text input, textarea, select
-- [ ] Checkbox and radio
-- [ ] Label and form field group
-- [ ] Card / surface
-- [ ] Badge and tag
-- [ ] Alert / callout (the status family)
-- [ ] Breadcrumb, and a minimal nav
+- [x] Text input, textarea, select (`fc-input`, native select with a themed chevron)
+- [x] Checkbox and radio (native, `accent-color`), plus switch
+- [x] Label and form field group (`fc-field`, `fc-input-group`, `fc-error-summary`)
+- [x] Card / surface (`fc-card`, the first container-query component)
+- [x] Badge and tag
+- [x] Alert / callout (the status family)
+- [x] Breadcrumb, and pagination
 - [ ] Fixture page rendering every component in every state, both directions, both schemes
+  (the demo now shows every component in both schemes and directions, but not every state)
 
 ### Defects found and fixed during Phase 2
 
@@ -156,6 +159,18 @@ mechanisms work:
 3. **Neither chat nor tool-call had a `forced-colors` block,** so several
    background-carried affordances would have collapsed into indistinguishable grey. Both
    now restate meaning with system colors.
+
+4. **Every elevation token computed to no shadow.** Shadows were emitted as
+   `light-dark(<shadow>, <shadow>)`, but `light-dark()` accepts colours only. The value
+   was invalid at computed time -- not a parse error -- so menus and the select list
+   rendered flat while every test passed. Fixed by wrapping each layer's colour instead;
+   caught by a browser test that reads the computed `box-shadow`.
+5. **Spinners froze under reduced motion,** despite a component rule slowing them to 2s.
+   The reset's reduced-motion block is `!important` in the earliest layer, and an
+   important declaration in an earlier layer beats everything in later ones. Spinners
+   are now excluded from that block by name.
+6. **`npm run demo` did not start**: a merge left a syntax error in `demo/server.mjs`.
+   The browser tests use their own server, so nothing ran the demo's.
 
 Issues 2 and 3 prompted new lint rules (`reduced-motion`, `forced-colors`) so the gap
 cannot recur silently.
@@ -177,31 +192,32 @@ The components needed for a real application, prioritized by frequency of use.
 
 ### Form controls
 
-- [ ] Text input, textarea, select
-- [ ] Checkbox, radio, switch
-- [ ] Field group: label, hint, error, `aria-describedby` wiring
-- [ ] Validation message component
-- [ ] Form-level error summary with focus management
+- [x] Text input, textarea, select
+- [x] Checkbox, radio, switch
+- [x] Field group: label, hint, error, `aria-describedby` wiring
+- [x] Validation message component (`fc-field__error`)
+- [x] Form-level error summary with focus management (CSS; focus moved by the app)
 
 ### Overlays
 
-- [ ] Dialog, built on `<dialog>` for native focus containment and Escape
-- [ ] Popover, built on the native popover API
-- [ ] Tooltip, keyboard-reachable, never the sole source of information
-- [ ] Toast, with correct live-region politeness (`polite` vs `assertive`)
+- [x] Dialog, built on `<dialog>` for native focus containment and Escape (plus side sheet)
+- [x] Popover, built on the native popover API, anchored where anchor positioning exists
+- [x] Tooltip, keyboard-reachable, never the sole source of information (Escape via binding)
+- [x] Toast, with correct live-region politeness (`polite` vs `assertive`)
 
 ### Navigation
 
-- [ ] Tabs, full keyboard contract (arrows, Home, End)
-- [ ] Menu / dropdown with focus management
-- [ ] Pagination
+- [x] Tabs, full keyboard contract (arrows, Home, End), RTL-aware arrows
+- [x] Menu / dropdown with focus management (the context menu)
+- [x] Pagination
 - [ ] Sidebar
 
 ### Data display
 
 - [ ] Table with sorting affordances
 - [ ] Description list
-- [ ] Empty state and error state patterns
+- [x] Empty state and error state patterns
+- [x] Avatar, disclosure / accordion, spinner, skeleton, progress
 
 **Exit criteria**
 
@@ -299,10 +315,9 @@ Remaining, in priority order:
    browser tests (`tests/browser/`). Terminal, chat, tool-call, code, and diff have CSS
    only -- their behavior is either trivial or delegated to the pure-JS modules beside
    them (`highlight`, `diff`, `markdown`).
-2. **Form field.** Still the highest-value missing component, and the one with the most
-   accessibility surface.
-3. **Dialog.** Prefer native `<dialog>`; document the manual trap only where it is
-   unavailable.
+2. ~~**Form field.**~~ Delivered (`fc-field`, `fc-input`, `fc-check`, `fc-switch`).
+3. ~~**Dialog.**~~ Delivered on native `<dialog>`; no manual focus trap is shipped,
+   because every supported browser has `showModal()`.
 
 Exit criteria: every component has a JS-only path that is fully usable and accessible;
 the WASM path is a performance option; and both are covered by the same behavior tests.
@@ -429,7 +444,7 @@ describes. Documentation that drifts is worse than none, because it is trusted.
 
 | Budget | Target | Measured |
 | --- | --- | --- |
-| Full bundle, uncompressed | < 60 KB | **132 KB — over by 2.2x** |
+| Full bundle, uncompressed | < 60 KB | **262 KB — over by 4.4x** |
 | Full bundle, minified | < 15 KB | not measured |
 | Tokens + base only | < 10 KB minified | not measured |
 | CSS applied to a typical page | < 30 KB | not measured |
@@ -458,9 +473,9 @@ precisely the class of error this system is built to prevent everywhere else.
    as unsupported? Current answer: documented as unsupported, reconsidered in Phase 5.
 2. **APCA.** Likely to replace WCAG 2.x contrast ratios. Adopt alongside WCAG rather than
    instead, until it stabilizes.
-3. **Container queries for components.** Should components respond to their container
-   rather than the viewport? Probably yes for cards and similar. Deferred until a real
-   component needs it.
+3. **Container queries for components.** *Answered: yes, where the component's width is
+   decided by its parent.* `fc-card` is the first: its media moves beside the content
+   when the card, not the viewport, is wide enough.
 4. **Density modes.** Compact and comfortable spacing for data-heavy applications. Adds a
    token dimension; revisit after Phase 3.
 5. **Motion tokens as a scale.** Motion is currently four durations. Real applications may

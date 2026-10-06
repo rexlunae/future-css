@@ -129,6 +129,19 @@ describe("bundle", { skip: hasBundle ? false : "run `npm run build` first" }, ()
     assert.match(css, /\[data-fc-theme="dark"\]/);
   });
 
+  it("never wraps a whole shadow in light-dark()", () => {
+    // light-dark() accepts colours only. A shadow wrapped in it is invalid at
+    // computed time, so every box-shadow reading the token rendered as no shadow
+    // at all -- with no error, because an invalid custom property is not a parse
+    // failure. The browser suite checks the computed result; this catches the
+    // emitted form without a browser.
+    const shadows = [...css.matchAll(/^\s*(--fc-shadow-[\w-]+):\s*([^;]+);/gm)];
+    assert.ok(shadows.length >= 3, "expected the raised, overlay and modal shadows");
+    for (const [, name, value] of shadows) {
+      assert.doesNotMatch(value!, /^light-dark\(/, `${name} wraps a whole shadow in light-dark()`);
+    }
+  });
+
   it("includes every registered component", () => {
     // Class names, not filenames: the button block is `.fc-btn` and the tool
     // call block is `.fc-tool`. Asserting on filenames would pass while the
@@ -144,6 +157,31 @@ describe("bundle", { skip: hasBundle ? false : "run `npm run build` first" }, ()
       "fc-grid",
       "fc-webview",
       "fc-terminal",
+      "fc-field",
+      "fc-input",
+      "fc-check",
+      "fc-switch",
+      "fc-card",
+      "fc-badge",
+      "fc-tag",
+      "fc-alert",
+      "fc-dialog",
+      "fc-popover",
+      "fc-tooltip",
+      "fc-toast",
+      "fc-tabs",
+      "fc-breadcrumb",
+      "fc-pagination",
+      "fc-spinner",
+      "fc-skeleton",
+      "fc-progress",
+      "fc-avatar",
+      "fc-empty",
+      "fc-disclosure",
+      "fc-reasoning",
+      "fc-cite",
+      "fc-sources",
+      "fc-suggestion",
     ];
     for (const block of blocks) {
       assert.match(

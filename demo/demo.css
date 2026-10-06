@@ -457,3 +457,30 @@
   color: var(--fc-color-accent-text);
   font-weight: var(--fc-font-weight-semibold);
 }
+
+/* ---- Additions for the forms, feedback and surfaces sections ---------- */
+
+.demo-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-5);
+  max-inline-size: 32rem;
+}
+
+.demo-skeleton {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--fc-space-3);
+  align-items: start;
+  max-inline-size: 28rem;
+}
+
+/* A stand-in for an image, drawn from tokens so it follows the theme. */
+.demo-media {
+  min-block-size: 9rem;
+  background-image: linear-gradient(
+    135deg,
+    var(--fc-color-accent-bg-subtle),
+    var(--fc-color-info-bg-subtle)
+  );
+}

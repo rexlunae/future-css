@@ -1,0 +1,178 @@
+/*!
+ * future-css -- reasoning trace
+ *
+ * The collapsible "thinking" block a model emits before its answer. It is a
+ * `<details>` so it is collapsed by default, expandable by keyboard, and
+ * readable with JavaScript off:
+ *
+ *   <details class="fc-reasoning" data-fc-kind="reasoning" data-fc-state="streaming">
+ *     <summary class="fc-reasoning__summary">
+ *       <span class="fc-reasoning__label">Thinking</span>
+ *     </summary>
+ *     <div class="fc-reasoning__body">…</div>
+ *   </details>
+ *
+ * When it completes, the application sets `data-fc-state="complete"` and
+ * replaces the label ("Thought for 12s"), adding `data-fc-ts` or a duration
+ * attribute for machine consumers. The shimmer is driven by the state
+ * attribute, so the visual "still thinking" cue cannot outlive the state.
+ *
+ * The body is NOT a live region. Reasoning streams token by token; announcing
+ * it would drown the answer that follows. A user who wants it opens it.
+ */
+
+@layer fc.components {
+  .fc-reasoning {
+    interpolate-size: allow-keywords;
+    max-inline-size: var(--fc-size-measure);
+    font-size: var(--fc-font-size-sm);
+  }
+
+  .fc-reasoning__summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-1-5);
+    min-block-size: var(--fc-size-target-min);
+    padding-block: var(--fc-space-1);
+    padding-inline: var(--fc-space-2) var(--fc-space-1);
+    margin-inline-start: calc(var(--fc-space-2) * -1);
+    color: var(--fc-color-text-muted);
+    border-radius: var(--fc-radius-md);
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .fc-reasoning__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .fc-reasoning__summary:hover {
+    background-color: var(--fc-color-bg-subtle);
+    color: var(--fc-color-text-default);
+  }
+
+  /* Chevron: same construction as the disclosure, smaller. */
+  .fc-reasoning__summary::after {
+    content: "";
+    inline-size: 0.375rem;
+    block-size: 0.375rem;
+    border-block-end: var(--fc-border-width-thin) solid currentColor;
+    border-inline-end: var(--fc-border-width-thin) solid currentColor;
+    rotate: -45deg;
+    transition: rotate var(--fc-duration-normal) var(--fc-easing-standard);
+  }
+
+  .fc-reasoning__summary:dir(rtl)::after {
+    rotate: 45deg;
+  }
+
+  .fc-reasoning[open] > .fc-reasoning__summary::after {
+    rotate: 45deg;
+  }
+
+  .fc-reasoning[open] > .fc-reasoning__summary:dir(rtl)::after {
+    rotate: -45deg;
+  }
+
+  .fc-reasoning__label {
+    font-weight: var(--fc-font-weight-medium);
+  }
+
+  /*
+   * Still thinking: the label shimmers. The gradient runs between two text
+   * tokens that both pass contrast on the surface, so the label is legible at
+   * every frame of the animation, not only at its brightest.
+   */
+  .fc-reasoning[data-fc-state="streaming"] .fc-reasoning__label,
+  .fc-reasoning[data-fc-state="pending"] .fc-reasoning__label {
+    background-image: linear-gradient(
+      90deg,
+      var(--fc-color-text-muted) 0%,
+      var(--fc-color-text-muted) 35%,
+      var(--fc-color-text-default) 50%,
+      var(--fc-color-text-muted) 65%,
+      var(--fc-color-text-muted) 100%
+    );
+    background-size: 250% 100%;
+    background-clip: text;
+    color: transparent;
+    animation: fc-reasoning-shimmer 2s linear infinite;
+  }
+
+  .fc-reasoning[data-fc-state="streaming"] .fc-reasoning__label:dir(rtl),
+  .fc-reasoning[data-fc-state="pending"] .fc-reasoning__label:dir(rtl) {
+    animation-direction: reverse;
+  }
+
+  @keyframes fc-reasoning-shimmer {
+    from {
+      background-position: 100% 0;
+    }
+
+    to {
+      background-position: 0% 0;
+    }
+  }
+
+  .fc-reasoning[data-fc-state="error"] .fc-reasoning__label,
+  .fc-reasoning[data-fc-state="aborted"] .fc-reasoning__label {
+    color: var(--fc-color-warning-text);
+  }
+
+  .fc-reasoning__duration {
+    color: var(--fc-color-text-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fc-reasoning::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size var(--fc-duration-normal) var(--fc-easing-standard),
+      content-visibility var(--fc-duration-normal) allow-discrete;
+  }
+
+  .fc-reasoning[open]::details-content {
+    block-size: auto;
+  }
+
+  .fc-reasoning__body {
+    margin-block: var(--fc-space-2);
+    padding-inline-start: var(--fc-space-3);
+    border-inline-start: var(--fc-border-width-thick) solid var(--fc-color-border-subtle);
+    color: var(--fc-color-text-muted);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    /* A long trace scrolls inside itself rather than pushing the answer away. */
+    max-block-size: 24rem;
+    overflow-y: auto;
+  }
+
+  /* ---- Reduced motion -------------------------------------------------- */
+
+  /* The label text already says "Thinking"; the shimmer is redundant emphasis. */
+  @media (prefers-reduced-motion: reduce) {
+    .fc-reasoning[data-fc-state="streaming"] .fc-reasoning__label,
+    .fc-reasoning[data-fc-state="pending"] .fc-reasoning__label {
+      animation: none;
+      background-image: none;
+      color: var(--fc-color-text-muted);
+    }
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  /* background-clip text would render as invisible text once colours are forced. */
+  @media (forced-colors: active) {
+    .fc-reasoning[data-fc-state="streaming"] .fc-reasoning__label,
+    .fc-reasoning[data-fc-state="pending"] .fc-reasoning__label {
+      background-image: none;
+      color: CanvasText;
+      animation: none;
+    }
+
+    .fc-reasoning__body {
+      border-inline-start-color: CanvasText;
+    }
+  }
+}

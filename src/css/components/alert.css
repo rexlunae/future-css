@@ -1,0 +1,146 @@
+/*!
+ * future-css -- alert / callout
+ *
+ * An inline message about the page or a part of it. The status family (info,
+ * success, warning, danger) shares one anatomy:
+ *
+ *   <div class="fc-alert fc-alert--warning" role="status">
+ *     <span class="fc-alert__icon" aria-hidden="true">!</span>
+ *     <div class="fc-alert__content">
+ *       <p class="fc-alert__title">Quota nearly used</p>
+ *       <p class="fc-alert__body">You have 3 requests left today.</p>
+ *     </div>
+ *   </div>
+ *
+ * The role is the consumer's decision and is not implied by the class: a
+ * callout present at page load needs no role at all, a message inserted after an
+ * action wants `role="status"`, and only something that interrupts -- a failed
+ * save -- wants `role="alert"`. Defaulting to `alert` would make every callout
+ * on a page interrupt the screen reader on load.
+ */
+
+@layer fc.components {
+  .fc-alert {
+    /*
+     * The tone is carried in two custom properties, so each variant is two
+     * declarations and the layout below is written once.
+     */
+    --fc-alert-fg: var(--fc-color-text-default);
+    --fc-alert-bg: var(--fc-color-bg-subtle);
+    --fc-alert-edge: var(--fc-color-border-strong);
+
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: start;
+    gap: var(--fc-space-3);
+    padding: var(--fc-space-4);
+
+    background-color: var(--fc-alert-bg);
+    color: var(--fc-alert-fg);
+    border: var(--fc-border-width-thin) solid color-mix(in oklch, var(--fc-alert-edge) 35%, transparent);
+    border-inline-start: var(--fc-space-1) solid var(--fc-alert-edge);
+    border-radius: var(--fc-radius-lg);
+  }
+
+  .fc-alert--info {
+    --fc-alert-fg: var(--fc-color-info-text);
+    --fc-alert-bg: var(--fc-color-info-bg-subtle);
+    --fc-alert-edge: var(--fc-color-info-border);
+  }
+
+  .fc-alert--success {
+    --fc-alert-fg: var(--fc-color-success-text);
+    --fc-alert-bg: var(--fc-color-success-bg-subtle);
+    --fc-alert-edge: var(--fc-color-success-border);
+  }
+
+  .fc-alert--warning {
+    --fc-alert-fg: var(--fc-color-warning-text);
+    --fc-alert-bg: var(--fc-color-warning-bg-subtle);
+    --fc-alert-edge: var(--fc-color-warning-border);
+  }
+
+  .fc-alert--danger {
+    --fc-alert-fg: var(--fc-color-danger-text);
+    --fc-alert-bg: var(--fc-color-danger-bg-subtle);
+    --fc-alert-edge: var(--fc-color-danger-border);
+  }
+
+  /* No icon: the content takes the first column. */
+  .fc-alert:not(:has(.fc-alert__icon)) {
+    grid-template-columns: 1fr auto;
+  }
+
+  .fc-alert__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.25rem;
+    block-size: 1lh;
+    font-weight: var(--fc-font-weight-bold);
+  }
+
+  .fc-alert__content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-1);
+    min-inline-size: 0;
+  }
+
+  .fc-alert__title {
+    margin: 0;
+    font-size: var(--fc-font-size-sm);
+    font-weight: var(--fc-font-weight-semibold);
+  }
+
+  .fc-alert__body {
+    margin: 0;
+    font-size: var(--fc-font-size-sm);
+  }
+
+  .fc-alert__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fc-space-2);
+    margin-block-start: var(--fc-space-2);
+  }
+
+  .fc-alert__dismiss {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--fc-size-target-min);
+    block-size: var(--fc-size-target-min);
+    margin-block-start: calc(var(--fc-space-0-5) * -1);
+    padding: 0;
+    background-color: transparent;
+    color: inherit;
+    border: 0;
+    border-radius: var(--fc-radius-md);
+    cursor: pointer;
+  }
+
+  .fc-alert__dismiss:hover {
+    background-color: color-mix(in oklch, currentColor 10%, transparent);
+  }
+
+  /* A banner spans its container edge to edge, so it drops the rounded box. */
+  .fc-alert--banner {
+    border-radius: 0;
+    border-inline-width: 0;
+    border-block-start-width: 0;
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-alert-edge);
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  /*
+   * The tint is discarded, so the thick edge is restated as a system colour.
+   * The title text and icon carry the tone from here on.
+   */
+  @media (forced-colors: active) {
+    .fc-alert {
+      border-color: CanvasText;
+    }
+  }
+}

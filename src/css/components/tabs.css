@@ -1,0 +1,215 @@
+/*!
+ * future-css -- tabs
+ *
+ * The APG tabs pattern: a `tablist` of `tab` buttons, each controlling one
+ * `tabpanel`. Selection is `aria-selected`, and only that -- the indicator, the
+ * colour, and the announced state all read from the one attribute.
+ *
+ *   <div class="fc-tabs">
+ *     <div class="fc-tabs__list" role="tablist" aria-label="Output">
+ *       <button class="fc-tabs__tab" role="tab" aria-selected="true"
+ *               aria-controls="p-preview" id="t-preview">Preview</button>
+ *       <button class="fc-tabs__tab" role="tab" aria-selected="false"
+ *               aria-controls="p-code" id="t-code" tabindex="-1">Code</button>
+ *     </div>
+ *     <div class="fc-tabs__panel" role="tabpanel" id="p-preview"
+ *          aria-labelledby="t-preview" tabindex="0">…</div>
+ *     <div class="fc-tabs__panel" role="tabpanel" id="p-code"
+ *          aria-labelledby="t-code" tabindex="0" hidden>…</div>
+ *   </div>
+ *
+ * The `tabs` binding supplies the keyboard contract (arrows, Home, End) and
+ * keeps exactly one tab in the tab order.
+ */
+
+@layer fc.components {
+  .fc-tabs {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .fc-tabs__list {
+    display: flex;
+    gap: var(--fc-space-1);
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    /*
+     * A tab strip wider than its container scrolls rather than wrapping: a
+     * wrapped strip reorders tabs visually between rows, which breaks the
+     * spatial model the arrow keys rely on.
+     */
+    overflow-x: auto;
+    scrollbar-width: thin;
+    /* Room for the focus ring, which the scroll container would otherwise clip. */
+    padding: var(--fc-space-1) var(--fc-space-1) 0;
+  }
+
+  /*
+   * The tab reads its geometry from custom properties that the list variants
+   * set. A variant then restyles its tabs without a descendant selector, and a
+   * consumer can tune one property without overriding the whole rule.
+   */
+  .fc-tabs__tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-2);
+    flex-shrink: 0;
+    min-block-size: var(--fc-tabs-tab-size, var(--fc-size-target-comfortable));
+    padding-inline: var(--fc-space-3);
+
+    background-color: transparent;
+    color: var(--fc-color-text-muted);
+    border: 0;
+    /* The indicator is a border, not a shadow, so forced colours keep it. */
+    border-block-end: var(--fc-tabs-indicator, var(--fc-border-width-thick)) solid transparent;
+    border-radius: var(--fc-tabs-tab-radius, var(--fc-radius-md) var(--fc-radius-md) 0 0);
+    margin-block-end: var(--fc-tabs-overlap, calc(var(--fc-border-width-thin) * -1));
+
+    font: inherit;
+    font-size: var(--fc-font-size-sm);
+    font-weight: var(--fc-font-weight-medium);
+    white-space: nowrap;
+    cursor: pointer;
+
+    transition:
+      color var(--fc-duration-fast) var(--fc-easing-standard),
+      background-color var(--fc-duration-fast) var(--fc-easing-standard),
+      border-color var(--fc-duration-normal) var(--fc-easing-standard),
+      box-shadow var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-tabs__tab:hover {
+    color: var(--fc-color-text-default);
+    background-color: var(--fc-tabs-hover-bg, var(--fc-color-bg-subtle));
+  }
+
+  .fc-tabs__tab[aria-selected="true"] {
+    color: var(--fc-color-text-default);
+    background-color: var(--fc-tabs-selected-bg, transparent);
+    border-block-end-color: var(--fc-color-accent-border);
+    box-shadow: var(--fc-tabs-selected-shadow, none);
+  }
+
+  .fc-tabs__tab:disabled,
+  .fc-tabs__tab[aria-disabled="true"] {
+    color: var(--fc-color-text-subtle);
+    background-color: transparent;
+    cursor: not-allowed;
+  }
+
+  /* A count or status inside a tab: "Problems 3". */
+  .fc-tabs__count {
+    min-inline-size: 1.25rem;
+    padding-inline: var(--fc-space-1-5);
+    background-color: var(--fc-color-bg-muted);
+    color: var(--fc-color-text-muted);
+    border-radius: var(--fc-radius-full);
+    font-size: var(--fc-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  .fc-tabs__panel {
+    padding-block: var(--fc-space-4);
+  }
+
+  /* Panels are focusable so a panel with no focusable content is still reachable. */
+  .fc-tabs__panel:focus-visible {
+    outline-offset: var(--fc-space-1);
+  }
+
+  /* ---- Segmented ------------------------------------------------------- */
+
+  /*
+   * Segmented control: the same pattern drawn as a pill group, for switching
+   * views of one thing (Preview / Code, Day / Week). The modifier goes on the
+   * list, and reaches the tabs only through the properties above.
+   */
+  .fc-tabs__list--segmented {
+    --fc-tabs-tab-size: 2rem;
+    --fc-tabs-indicator: 0;
+    --fc-tabs-tab-radius: var(--fc-radius-md);
+    --fc-tabs-overlap: 0;
+    --fc-tabs-hover-bg: var(--fc-color-bg-subtle);
+    --fc-tabs-selected-bg: var(--fc-color-bg-surface);
+    --fc-tabs-selected-shadow: var(--fc-shadow-raised);
+
+    display: inline-flex;
+    align-self: flex-start;
+    max-inline-size: 100%;
+    gap: var(--fc-space-0-5);
+    padding: var(--fc-space-0-5);
+    background-color: var(--fc-color-bg-muted);
+    border: 0;
+    border-radius: var(--fc-radius-lg);
+  }
+
+  /* ---- Vertical -------------------------------------------------------- */
+
+  /*
+   * Vertical tabs are driven by aria-orientation on the list -- the attribute a
+   * screen reader already uses to decide which arrow keys apply -- so the
+   * layout and the announced orientation cannot disagree. The indicator moves
+   * to the inline-end edge, which mirrors in RTL with no extra rule.
+   */
+  .fc-tabs:has(> [aria-orientation="vertical"]) {
+    flex-direction: row;
+  }
+
+  .fc-tabs__list[aria-orientation="vertical"] {
+    --fc-tabs-indicator: 0;
+    --fc-tabs-overlap: 0;
+    --fc-tabs-tab-radius: var(--fc-radius-md) 0 0 var(--fc-radius-md);
+
+    flex-direction: column;
+    flex-shrink: 0;
+    border-block-end: 0;
+    border-inline-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    overflow-x: visible;
+    padding-block: var(--fc-space-1);
+    padding-inline: var(--fc-space-1) 0;
+  }
+
+  /*
+   * The radius shorthand is physical (it lists corners clockwise from the top
+   * left), so the rounded side has to be flipped explicitly for RTL.
+   */
+  .fc-tabs__list[aria-orientation="vertical"]:dir(rtl) {
+    --fc-tabs-tab-radius: 0 var(--fc-radius-md) var(--fc-radius-md) 0;
+  }
+
+  .fc-tabs__list[aria-orientation="vertical"] .fc-tabs__tab {
+    justify-content: flex-start;
+    margin-inline-end: calc(var(--fc-border-width-thin) * -1);
+    border-inline-end: var(--fc-border-width-thick) solid transparent;
+  }
+
+  .fc-tabs__list[aria-orientation="vertical"] .fc-tabs__tab[aria-selected="true"] {
+    border-inline-end-color: var(--fc-color-accent-border);
+  }
+
+  .fc-tabs:has(> [aria-orientation="vertical"]) .fc-tabs__panel {
+    flex: 1;
+    min-inline-size: 0;
+    padding-block: 0;
+    padding-inline: var(--fc-space-5);
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  @media (forced-colors: active) {
+    .fc-tabs__tab[aria-selected="true"] {
+      border-block-end-color: Highlight;
+    }
+
+    .fc-tabs__list[aria-orientation="vertical"] .fc-tabs__tab[aria-selected="true"] {
+      border-inline-end-color: Highlight;
+    }
+
+    /* The segmented pill's selected fill is discarded; an outline replaces it. */
+    .fc-tabs__list--segmented [aria-selected="true"] {
+      outline: var(--fc-border-width-thin) solid Highlight;
+    }
+  }
+}

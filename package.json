@@ -1,7 +1,7 @@
 {
   "name": "future-css",
   "version": "0.0.0",
-  "description": "A styling system for multi-language, multi-platform systems",
+  "description": "A modern, accessible CSS design system with components for AI chat and general applications",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -36,7 +36,10 @@
     "./highlight": "./src/js/highlight.ts",
     "./diff": "./src/js/diff.ts",
     "./markdown": "./src/js/markdown.ts",
-    "./urls": "./src/js/urls.ts"
+    "./urls": "./src/js/urls.ts",
+    "./tabs": "./src/js/tabs.ts",
+    "./toast": "./src/js/toast.ts",
+    "./tooltip": "./src/js/tooltip.ts"
   },
   "files": [
     "dist",

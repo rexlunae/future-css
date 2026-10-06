@@ -1,0 +1,97 @@
+/*!
+ * future-css -- avatar
+ *
+ *   <span class="fc-avatar">
+ *     <img class="fc-avatar__image" src="…" alt="Ada Lovelace">
+ *   </span>
+ *   <span class="fc-avatar" role="img" aria-label="Ada Lovelace">AL</span>
+ *
+ * An image with a name, or initials with a name. When the avatar sits next to
+ * the visible name -- as it does in a chat message header -- it is decoration
+ * and takes `alt=""` / `aria-hidden="true"` instead, so the name is not read
+ * twice.
+ *
+ * Square avatars (`--square`) are for non-people: an agent, a tool, an
+ * organisation. The shape difference is a convention users already read in
+ * chat products, and it lets "who said this" be parsed at a glance.
+ */
+
+@layer fc.components {
+  .fc-avatar {
+    --fc-avatar-size: 2rem;
+
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    inline-size: var(--fc-avatar-size);
+    block-size: var(--fc-avatar-size);
+
+    background-color: var(--fc-color-accent-bg-subtle);
+    color: var(--fc-color-accent-text);
+    border-radius: var(--fc-radius-full);
+    overflow: hidden;
+
+    font-size: calc(var(--fc-avatar-size) * 0.4);
+    font-weight: var(--fc-font-weight-semibold);
+    line-height: 1;
+    text-transform: uppercase;
+    user-select: none;
+  }
+
+  .fc-avatar__image {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  .fc-avatar--xs {
+    --fc-avatar-size: 1.25rem;
+  }
+
+  .fc-avatar--sm {
+    --fc-avatar-size: 1.5rem;
+  }
+
+  .fc-avatar--lg {
+    --fc-avatar-size: 2.75rem;
+  }
+
+  .fc-avatar--xl {
+    --fc-avatar-size: 4rem;
+  }
+
+  .fc-avatar--square {
+    border-radius: var(--fc-radius-lg);
+  }
+
+  .fc-avatar--neutral {
+    background-color: var(--fc-color-bg-muted);
+    color: var(--fc-color-text-muted);
+  }
+
+  /*
+   * A stack of avatars ("3 people are here"). The ring is an outline in the
+   * surface colour, so each avatar separates from the one it overlaps without
+   * an extra element.
+   */
+  .fc-avatar-group {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .fc-avatar-group > * {
+    outline: var(--fc-border-width-thick) solid var(--fc-color-bg-surface);
+  }
+
+  .fc-avatar-group > * + * {
+    margin-inline-start: calc(var(--fc-avatar-size, 2rem) * -0.2);
+  }
+
+  @media (forced-colors: active) {
+    .fc-avatar {
+      border: var(--fc-border-width-thin) solid CanvasText;
+    }
+  }
+}

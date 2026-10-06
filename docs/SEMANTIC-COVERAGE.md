@@ -634,18 +634,19 @@ tokens — but they are the other half of "semantic" and belong in the same comp
 | | Scroll region | Shipped | `scroll-x` |
 | | RTL by construction | Shipped | logical properties only |
 | | `min-inline-size: 0` overflow fix | Shipped | applied to all 3 primitives |
-| **Components** | 10 shipped | Shipped | button, chat, tool-call, editor, menu, grid, webview, terminal, code, diff |
-| | Form controls | Absent | Phase 3; select is next |
-| | Overlays (dialog, tooltip, toast) | Absent | Phase 3 |
-| | Navigation (tabs, breadcrumb) | Absent | Phase 3 |
+| **Components** | 32 shipped | Shipped | see `docs/COMPONENTS.md` |
+| | Form controls | Shipped | field, input group, select, checkbox, radio, switch, error summary |
+| | Overlays (dialog, popover, tooltip, toast) | Shipped | native `<dialog>` / popover, `@starting-style` motion |
+| | Navigation (tabs, breadcrumb, pagination) | Shipped | tabs binding with RTL-aware arrows |
+| | Container queries | Shipped | `fc-card` |
 | **Accessibility** | Keyboard, focus-visible, skip link | Shipped | base + `.fc-u-visually-hidden` |
-| | forced-colors per component | Shipped | 1 block per component, all 10 |
-| | Contrast verified in both schemes | Shipped | 30 declared pairs total |
+| | forced-colors per component | Shipped | 1 block per component, all 32 |
+| | Contrast verified in both schemes | Shipped | 26 app pairs, plus the ANSI and syntax contracts |
 | | Target size | Shipped | token + button/grid |
 | | `prefers-reduced-motion` | Shipped | reset + 6 components |
-| | Live-region politeness | Absent | needs a toast component |
+| | Live-region politeness | Shipped | toast binding: polite and assertive regions created up front |
 | | APCA alongside WCAG | Absent | open question 2, `PLAN.md` |
-| **Behaviour** | JS bindings | Shipped | `src/js/`, 10 modules |
+| **Behaviour** | JS bindings | Shipped | `src/js/`, 17 modules |
 | | Optional WASM accelerator | Shipped | 6 crates, WASM/JS parity tested |
 | | highlight / diff / markdown | Shipped | 6 languages, Myers, round-trip |
 

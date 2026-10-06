@@ -175,14 +175,28 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         import('/src/js/composer.js'),
         import('/src/js/context-strip.js'),
         import('/src/js/git.js'),
-      ]).then(([e, m, g, w, h, d, s, c, k, it]) => {
+        import('/src/js/tabs.js'),
+        import('/src/js/toast.js'),
+        import('/src/js/tooltip.js'),
+      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt]) => {
         globalThis.E = e; globalThis.M = m; globalThis.G = g; globalThis.W = w;
         globalThis.H = h; globalThis.D = d; globalThis.S = s;
         globalThis.C = c; globalThis.K = k; globalThis.IT = it;
+        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt;
         return 'ok';
       })
     `);
     assert.equal(result, "ok", "binding modules should load with no WASM and no build step");
+  }
+
+  /**
+   * A headless page never has window focus, so focus() moves activeElement
+   * without firing focus events or matching :focus-visible. Tests that depend
+   * on either -- a timer that pauses on focusin, a tooltip shown on keyboard
+   * focus -- turn on focus emulation for their duration.
+   */
+  async function emulateFocus(enabled: boolean): Promise<void> {
+    await send("Emulation.setFocusEmulationEnabled", { enabled });
   }
 
   it("loads every binding module in a browser with no WASM and no build step", async () => {
@@ -193,11 +207,13 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         typeof W.FutureCssWebview, typeof H.highlight, typeof D.diffLines,
         typeof S.FutureCssSelect, typeof C.FutureCssComposer,
         typeof K.FutureCssContextStrip, typeof IT.FutureCssGitSurface,
+        typeof TB.FutureCssTabs, typeof TS.FutureCssToaster, typeof TT.bindTooltips,
       ]`,
     );
     assert.deepEqual(names, [
       "function", "function", "function", "function", "function", "function",
       "function", "function", "function", "function",
+      "function", "function", "function",
     ]);
   });
   // ---------------------------------------------------------------- editor
@@ -2307,6 +2323,267 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     `);
     assert.equal(result.loaded, false, "a missing module must report failure, not throw");
     assert.equal(result.value, "opus-5", "navigation must keep working on the JS model");
+  });
+
+  // ------------------------------------------------------------- elevation
+
+  /*
+   * The shadow tokens were once emitted as light-dark(<shadow>, <shadow>).
+   * light-dark() takes colours only, so the value was invalid at computed time
+   * and every box-shadow reading the token rendered as nothing -- menus, the
+   * select list, and the raised utility were all flat, and no test noticed,
+   * because an invalid custom property is not a parse error.
+   */
+  it("resolves every elevation token to a real shadow in both schemes", async () => {
+    const result = await evaluate(`
+      const probe = document.createElement('div');
+      document.body.append(probe);
+      const read = (scheme) => {
+        document.documentElement.setAttribute('data-fc-theme', scheme);
+        return ['raised', 'overlay', 'modal'].map((n) => {
+          probe.style.boxShadow = 'var(--fc-shadow-' + n + ')';
+          return getComputedStyle(probe).boxShadow;
+        });
+      };
+      const light = read('light');
+      const dark = read('dark');
+      document.documentElement.removeAttribute('data-fc-theme');
+      probe.remove();
+      return { light, dark };
+    `);
+    for (const value of [...result.light, ...result.dark]) {
+      assert.notEqual(value, "none", "a shadow token resolved to no shadow");
+    }
+    assert.notDeepEqual(result.light, result.dark, "shadows should differ between schemes");
+  });
+
+  // ---------------------------------------------------------------- dialog
+
+  it("shows a modal dialog as a flex column and hides it again on close", async () => {
+    const result = await evaluate(`
+      const dlg = document.getElementById('dlg');
+      const closed = getComputedStyle(dlg).display;
+      dlg.showModal();
+      const open = getComputedStyle(dlg).display;
+      const direction = getComputedStyle(dlg).flexDirection;
+      const modal = dlg.matches(':modal');
+      dlg.close();
+      await new Promise((r) => setTimeout(r, 400));
+      return { closed, open, direction, modal, after: getComputedStyle(dlg).display };
+    `);
+    assert.equal(result.closed, "none", "a closed dialog must not be displayed");
+    assert.equal(result.open, "flex");
+    assert.equal(result.direction, "column");
+    assert.equal(result.modal, true);
+    assert.equal(result.after, "none", "closing must hide the dialog after its exit transition");
+  });
+
+  // ------------------------------------------------------------------ card
+
+  it("lays a card out by its own width, not the viewport's", async () => {
+    const result = await evaluate(`
+      const cols = (id) => getComputedStyle(
+        document.querySelector('#' + id + ' .fc-card__layout')).gridTemplateColumns.split(' ').length;
+      return { narrow: cols('card-narrow'), wide: cols('card-wide') };
+    `);
+    assert.equal(result.narrow, 1, "a narrow card stacks its media above the content");
+    assert.equal(result.wide, 2, "a wide card puts its media beside the content");
+  });
+
+  // ---------------------------------------------------------------- switch
+
+  it("moves the switch thumb toward the inline end in both directions", async () => {
+    const result = await evaluate(`
+      const sw = document.getElementById('switch');
+      sw.checked = true;
+      // The thumb is a pseudo-element with its own transition; let it land.
+      await new Promise((r) => setTimeout(r, 350));
+      const ltr = getComputedStyle(sw, '::before').translate;
+      document.getElementById('switch-row').setAttribute('dir', 'rtl');
+      await new Promise((r) => setTimeout(r, 350));
+      const rtl = getComputedStyle(sw, '::before').translate;
+      document.getElementById('switch-row').removeAttribute('dir');
+      sw.checked = false;
+      return { ltr, rtl };
+    `);
+    assert.ok(parseFloat(result.ltr) > 0, `LTR thumb should move right, got ${result.ltr}`);
+    assert.ok(parseFloat(result.rtl) < 0, `RTL thumb should move left, got ${result.rtl}`);
+  });
+
+  // --------------------------------------------------------- reduced motion
+
+  /*
+   * The reset layer's reduced-motion block uses !important, and an important
+   * declaration in an EARLIER layer beats everything in later layers -- so a
+   * component cannot slow its spinner down from fc.components, however it is
+   * written. The spinner is the only cue that work is happening, so freezing it
+   * is a bug, not a preference honoured.
+   */
+  it("slows spinners under reduced motion instead of freezing them", async () => {
+    await send("Emulation.setEmulatedMedia", {
+      features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+    });
+    const result = await evaluate(`
+      const cs = getComputedStyle(document.getElementById('spinner'));
+      return { duration: cs.animationDuration, count: cs.animationIterationCount };
+    `);
+    await send("Emulation.setEmulatedMedia", { features: [] });
+    assert.equal(result.count, "infinite", "the spinner must keep turning");
+    assert.equal(result.duration, "2s");
+  });
+
+  // ------------------------------------------------------------------ tabs
+
+  it("keeps one tab tabbable and shows only the selected panel", async () => {
+    await loadBindings();
+    const result = await evaluate(`
+      globalThis.tabs = new TB.FutureCssTabs('#tabs-root');
+      const tabbable = [...document.querySelectorAll('#tabs-root [role=tab]')].filter((t) => t.tabIndex === 0);
+      const shown = [...document.querySelectorAll('#tabs-root [role=tabpanel]')].filter((p) => !p.hidden);
+      return {
+        tabbable: tabbable.map((t) => t.id),
+        shown: shown.map((p) => p.id),
+        labelled: document.getElementById('panel-a').getAttribute('aria-labelledby'),
+      };
+    `);
+    assert.deepEqual(result.tabbable, ["tab-a"]);
+    assert.deepEqual(result.shown, ["panel-a"]);
+    assert.equal(result.labelled, "tab-a");
+  });
+
+  it("arrows past a disabled tab, and Home/End reach the ends", async () => {
+    await loadBindings();
+    const result = await evaluate(`
+      const list = document.querySelector('#tabs-root [role=tablist]');
+      const press = (key) => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+      tabs.select(0);
+      press('ArrowRight');
+      const afterRight = document.activeElement.id;
+      const panel = [...document.querySelectorAll('#tabs-root [role=tabpanel]')].filter((p) => !p.hidden).map((p) => p.id);
+      press('End');
+      const afterEnd = document.activeElement.id;
+      press('ArrowRight');
+      const wrapped = document.activeElement.id;
+      press('End');
+      press('Home');
+      return { afterRight, panel, afterEnd, wrapped, afterHome: document.activeElement.id };
+    `);
+    assert.equal(result.afterRight, "tab-c", "Beta is aria-disabled and must be skipped");
+    assert.deepEqual(result.panel, ["panel-c"]);
+    assert.equal(result.afterEnd, "tab-d");
+    assert.equal(result.wrapped, "tab-a", "arrowing past the last tab wraps to the first");
+    assert.equal(result.afterHome, "tab-a");
+  });
+
+  it("reverses the arrow keys in a right-to-left tab strip", async () => {
+    await loadBindings();
+    const result = await evaluate(`
+      const root = document.getElementById('tabs-root');
+      root.setAttribute('dir', 'rtl');
+      tabs.select(0);
+      document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+      const id = document.activeElement.id;
+      root.removeAttribute('dir');
+      tabs.select(0);
+      return id;
+    `);
+    assert.equal(result, "tab-c", "in RTL, ArrowLeft moves to the next tab");
+  });
+
+  // ----------------------------------------------------------------- toast
+
+  it("routes toasts to a polite or assertive region that existed beforehand", async () => {
+    await loadBindings();
+    const result = await evaluate(`
+      globalThis.toaster = new TS.FutureCssToaster('#toaster');
+      const polite = document.querySelector('#toaster [aria-live=polite]');
+      const assertive = document.querySelector('#toaster [aria-live=assertive]');
+      const regionsBefore = [polite?.getAttribute('role'), assertive?.getAttribute('role')];
+      const info = toaster.show({ title: 'Saved', body: '<b>not html</b>' });
+      const err = toaster.show({ title: 'Upload failed', tone: 'danger' });
+      return {
+        regionsBefore,
+        infoParent: info.element.parentElement.getAttribute('aria-live'),
+        errParent: err.element.parentElement.getAttribute('aria-live'),
+        body: info.element.querySelector('.fc-toast__body').innerHTML,
+        kind: info.element.dataset.fcKind,
+        closeName: info.element.querySelector('.fc-toast__close').getAttribute('aria-label'),
+      };
+    `);
+    assert.deepEqual(result.regionsBefore, ["status", "alert"]);
+    assert.equal(result.infoParent, "polite");
+    assert.equal(result.errParent, "assertive", "a danger toast interrupts");
+    assert.equal(result.body, "&lt;b&gt;not html&lt;/b&gt;", "toast text is never parsed as HTML");
+    assert.equal(result.kind, "toast");
+    assert.equal(result.closeName, "Dismiss: Saved");
+  });
+
+  it("times a toast out, but not while focus is inside it", async () => {
+    await loadBindings();
+    await emulateFocus(true);
+    const result = await evaluate(`
+      toaster.clear();
+      await new Promise((r) => setTimeout(r, 450));
+      const quick = toaster.show({ title: 'Quick', timeout: 60 });
+      await new Promise((r) => setTimeout(r, 600));
+      const quickGone = !quick.element.isConnected;
+
+      const held = toaster.show({ title: 'Held', timeout: 60 });
+      held.element.querySelector('.fc-toast__close').focus();
+      await new Promise((r) => setTimeout(r, 300));
+      const heldStays = held.element.isConnected;
+      held.element.querySelector('.fc-toast__close').blur();
+      await new Promise((r) => setTimeout(r, 600));
+      return { quickGone, heldStays, heldGoneAfterBlur: !held.element.isConnected };
+    `);
+    await emulateFocus(false);
+    assert.equal(result.quickGone, true, "a timed toast should remove itself");
+    assert.equal(result.heldStays, true, "the timer must pause while focus is inside the toast");
+    assert.equal(result.heldGoneAfterBlur, true, "the timer resumes once focus leaves");
+  });
+
+  it("keeps danger toasts until they are dismissed", async () => {
+    await loadBindings();
+    const result = await evaluate(`
+      toaster.clear();
+      const err = toaster.show({ title: 'Failed', tone: 'danger' });
+      await new Promise((r) => setTimeout(r, 300));
+      const stays = err.element.isConnected;
+      err.dismiss();
+      await new Promise((r) => setTimeout(r, 450));
+      return { stays, gone: !err.element.isConnected };
+    `);
+    assert.equal(result.stays, true);
+    assert.equal(result.gone, true);
+  });
+
+  // --------------------------------------------------------------- tooltip
+
+  it("describes the trigger by its tooltip and dismisses it on Escape", async () => {
+    await loadBindings();
+    await emulateFocus(true);
+    const result = await evaluate(`
+      globalThis.unbindTips = TT.bindTooltips(document);
+      const trigger = document.getElementById('tip-trigger');
+      const bubble = document.querySelector('#tip-root .fc-tooltip__bubble');
+      const describedBy = trigger.getAttribute('aria-describedby');
+      trigger.focus();
+      const shown = getComputedStyle(bubble).visibility;
+      trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      const afterEscape = getComputedStyle(bubble).visibility;
+      const focusKept = document.activeElement === trigger;
+      trigger.blur();
+      const reset = document.getElementById('tip-root').hasAttribute('data-fc-dismissed');
+      unbindTips();
+      return { describedBy, bubbleId: bubble.id, role: bubble.getAttribute('role'), shown, afterEscape, focusKept, reset };
+    `);
+    await emulateFocus(false);
+    assert.equal(result.describedBy, result.bubbleId);
+    assert.equal(result.role, "tooltip");
+    assert.equal(result.shown, "visible", "keyboard focus must show the tooltip, not only hover");
+    assert.equal(result.afterEscape, "hidden");
+    assert.equal(result.focusKept, true, "Escape dismisses the tooltip without moving focus");
+    assert.equal(result.reset, false, "leaving the trigger lets the tooltip show again next time");
   });
 
 });

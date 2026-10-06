@@ -18,7 +18,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | 0. Foundations | Complete | Repo, toolchain, decisions |
 | 1. Token system | Complete | Palette, semantic layer, contrast contract, compiler |
 | 2. Core CSS | Nearly complete | Reset, base, layout, utilities, and every Phase 2 component; fixture page remains |
-| 3. Component set | Mostly delivered | Forms, overlays, tabs, breadcrumb, pagination, loading, cards; axe-core pass remains |
+| 3. Component set | Mostly delivered | Forms, overlays, tabs, breadcrumb, pagination, loading, cards, table, description list; sidebar and axe-core pass remain |
 | A. WASM foundations | Started | Rust workspace, 8 crates, accelerator abstraction |
 | B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
 | C. Token roles and themes | Not started | State tokens, override points, theme tier, type roles |
@@ -220,8 +220,9 @@ The components needed for a real application, prioritized by frequency of use.
 
 ### Data display
 
-- [ ] Table with sorting affordances
-- [ ] Description list
+- [x] Table with sorting affordances (`fc-table`, plus a `table` binding that sorts by
+  `aria-sort`, numerically or by the table's `lang`, and stably)
+- [x] Description list (`fc-dl`, intrinsic two-column layout that stacks when narrow)
 - [x] Empty state and error state patterns
 - [x] Avatar, disclosure / accordion, skeleton, progress
 - [x] A spinner family (ring, arc, typing dots, pulse, stream bars, orbit, sparkle) and an

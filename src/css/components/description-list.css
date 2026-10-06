@@ -1,0 +1,91 @@
+/*!
+ * future-css -- description list
+ *
+ * Key/value metadata: a run's model and duration, a file's size and owner.
+ *
+ *   <dl class="fc-dl fc-dl--divided">
+ *     <div class="fc-dl__item">
+ *       <dt>Model</dt>
+ *       <dd>Large, extended thinking</dd>
+ *     </div>
+ *     <div class="fc-dl__item">
+ *       <dt>Duration</dt>
+ *       <dd class="fc-dl__num">14.2 s</dd>
+ *     </div>
+ *   </dl>
+ *
+ * Each pair sits in a <div>, which HTML allows inside <dl> and which gives the
+ * pair one box to lay out and divide. Assistive technology ignores the <div>,
+ * so the term/description relationship is read exactly as without it.
+ *
+ * The layout is intrinsic rather than a breakpoint: the term takes a fixed
+ * share and the description wraps under it when the two no longer fit side by
+ * side. A list in a narrow sidebar stacks, the same list in a wide panel does
+ * not, and neither needs a media or container query.
+ */
+
+@layer fc.components {
+  .fc-dl {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-dl-gap, var(--fc-space-2));
+    margin: 0;
+    font-size: var(--fc-font-size-sm);
+  }
+
+  .fc-dl__item {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: var(--fc-space-4);
+    row-gap: var(--fc-space-0-5);
+    padding-block-end: var(--fc-dl-item-pad, 0);
+    border-block-end: var(--fc-dl-divider, 0) solid var(--fc-color-border-subtle);
+  }
+
+  .fc-dl__item:last-child {
+    padding-block-end: 0;
+    border-block-end: 0;
+  }
+
+  .fc-dl dt {
+    flex: 0 0 var(--fc-dl-term-size, 10rem);
+    /* A long term wraps inside its column rather than pushing the value off. */
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+    color: var(--fc-color-text-muted);
+    font-weight: var(--fc-font-weight-medium);
+  }
+
+  .fc-dl dd {
+    /* The basis is where the value gives up and wraps under its term. */
+    flex: 1 1 var(--fc-dl-value-min, 12rem);
+    min-inline-size: 0;
+    margin: 0;
+    color: var(--fc-color-text-default);
+    /* Ids, hashes and URLs have no break opportunities and would overflow. */
+    overflow-wrap: anywhere;
+  }
+
+  .fc-dl__num {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- Modifiers ------------------------------------------------------- */
+
+  .fc-dl--divided {
+    --fc-dl-gap: var(--fc-space-3);
+    --fc-dl-item-pad: var(--fc-space-3);
+    --fc-dl-divider: var(--fc-border-width-thin);
+  }
+
+  /* Term above value at every width: dense panels and long terms. */
+  .fc-dl--stacked {
+    --fc-dl-term-size: 100%;
+  }
+
+  /*
+   * Reduced motion and forced colours: nothing here moves, and nothing carries
+   * meaning in a background colour; the divider is a border, which forced
+   * colours keep.
+   */
+}

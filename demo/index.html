@@ -49,6 +49,7 @@
         <li><a href="#navigation">Navigation</a></li>
         <li><a href="#surfaces">Cards</a></li>
         <li><a href="#editor">Editor</a></li>
+        <li><a href="#table">Table</a></li>
         <li><a href="#grid">Grid</a></li>
         <li><a href="#menu">Menu</a></li>
         <li><a href="#chat">Chat</a></li>
@@ -721,6 +722,47 @@ editor.applyMark("bold");</code></pre>
   </section>
 
   <!-- ============================ GRID ============================ -->
+  <section class="demo-section" id="table" aria-labelledby="h-table">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-table">Table and description list</h2>
+      <p class="demo-note">
+        Sort by any column. <code>aria-sort</code> moves to one header and is the only
+        state: the arrow reads from it. Numbers sort as numbers, &ldquo;Updated&rdquo; sorts
+        by its <code>data-fc-sort-value</code> rather than its words, and equal rows keep
+        their previous order. A table wider than its column scrolls inside its own focusable
+        region instead of pushing the page sideways.
+      </p>
+    </div>
+
+    <div class="fc-table-wrap" role="region" aria-labelledby="demo-table-cap" tabindex="0">
+      <table class="fc-table fc-table--sticky fc-table--striped" id="demo-table">
+        <caption id="demo-table-cap">Agent runs</caption>
+        <thead>
+          <tr>
+            <th scope="col" aria-sort="ascending"><button class="fc-table__sort" type="button">Run</button></th>
+            <th scope="col"><button class="fc-table__sort" type="button">State</button></th>
+            <th scope="col" class="fc-table__cell--num"><button class="fc-table__sort" type="button">Tokens</button></th>
+            <th scope="col" class="fc-table__cell--num"><button class="fc-table__sort" type="button">Cost</button></th>
+            <th scope="col"><button class="fc-table__sort" type="button">Updated</button></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Index docs</th><td><span class="fc-badge fc-badge--success">complete</span></td><td class="fc-table__cell--num">12,480</td><td class="fc-table__cell--num">0.19</td><td data-fc-sort-value="120">2 min ago</td></tr>
+          <tr aria-selected="true"><th scope="row">Refactor parser</th><td><span class="fc-badge fc-badge--info">running</span></td><td class="fc-table__cell--num">88,012</td><td class="fc-table__cell--num">1.32</td><td data-fc-sort-value="5">just now</td></tr>
+          <tr><th scope="row">Summarize thread</th><td><span class="fc-badge fc-badge--danger">error</span></td><td class="fc-table__cell--num">940</td><td class="fc-table__cell--num">0.01</td><td data-fc-sort-value="3600">1 h ago</td></tr>
+          <tr><th scope="row">Triage issues</th><td><span class="fc-badge fc-badge--success">complete</span></td><td class="fc-table__cell--num">9</td><td class="fc-table__cell--num">0.00</td><td data-fc-sort-value="86400">yesterday</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="demo-status" id="table-status" role="status"></p>
+
+    <dl class="fc-dl fc-dl--divided">
+      <div class="fc-dl__item"><dt>Model</dt><dd>Large, extended thinking</dd></div>
+      <div class="fc-dl__item"><dt>Duration</dt><dd class="fc-dl__num">14.2 s</dd></div>
+      <div class="fc-dl__item"><dt>Commit</dt><dd><code>9f2c1e04b7a3d58e6f1c2b9a0d4e7f3c8b1a6d5e</code></dd></div>
+    </dl>
+  </section>
+
   <section class="demo-section" id="grid" aria-labelledby="h-grid">
     <div class="demo-section__head">
       <h2 class="demo-h2" id="h-grid">Data grid</h2>

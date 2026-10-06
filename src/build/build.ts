@@ -77,6 +77,8 @@ const BUNDLE_ORDER: ReadonlyArray<readonly [source: string, publishedAs: string]
   ["components/reasoning.css", "components/reasoning.css"],
   ["components/citation.css", "components/citation.css"],
   ["components/suggestion.css", "components/suggestion.css"],
+  ["components/table.css", "components/table.css"],
+  ["components/description-list.css", "components/description-list.css"],
   ["utilities.css", "utilities.css"],
 ];
 

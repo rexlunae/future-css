@@ -28,10 +28,6 @@ dependencies = [
 name = "fc-context-menu"
 version = "0.1.0"
 dependencies = [
- "fc-core",
- "js-sys",
- "serde",
- "serde-wasm-bindgen",
  "wasm-bindgen",
 ]
 

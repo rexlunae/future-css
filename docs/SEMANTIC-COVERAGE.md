@@ -733,7 +733,7 @@ in this file would be the same defect one layer down.
 
 ### The number that matters most is the one still missing
 
-`fc-diff` links no `js-sys` and lands at **56 KB**, against 414 KB for `fc-context-menu`
+`fc-diff` links no `js-sys` and lands at **56 KB**, against 414 KB for `fc-context-menu` at the time
 — which runs the same class of algorithm. That 336 KB delta is not the algorithm; it is
 one dependency linked for a few `Vec<JsValue>` returns that flat typed arrays would
 serve. Five of six modules are still over budget, and `fc-diff` is the evidence that

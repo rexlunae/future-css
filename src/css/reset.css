@@ -135,8 +135,16 @@
    * declared here so the media query is guaranteed to exist in the bundle even
    * before any animated component ships.
    */
+  /*
+   * Spinners are excluded by name, and that is the only way to do it: an
+   * !important declaration in an earlier layer beats every declaration in a
+   * later one, important or not, so no component rule can loosen this block
+   * after the fact. A spinner is the sole cue that work is in progress; frozen,
+   * it reads as a hung page. Each spinner slows itself down in its own
+   * reduced-motion branch instead.
+   */
   @media (prefers-reduced-motion: reduce) {
-    :where(*, *::before, *::after) {
+    :where(*:not(.fc-spinner, .fc-btn__spinner), *::before, *::after) {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;

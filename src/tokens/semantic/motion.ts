@@ -29,14 +29,53 @@ export const easing = {
 /**
  * Elevation. Shadows are theme-aware rather than literal, because a shadow that
  * reads as depth on a white canvas reads as a smudge on a near-black one.
+ *
+ * Each shadow is a list of layers that share their geometry across schemes and
+ * differ only in colour. That split is not cosmetic: `light-dark()` accepts
+ * colours only, so wrapping a whole shadow in it -- which this file once did --
+ * yields an invalid value at computed time, and every `box-shadow` reading the
+ * token silently rendered as no shadow at all. The compiler puts `light-dark()`
+ * around each layer's colour instead.
+ *
+ * Shadow colours are the one place a literal colour is correct: a shadow is an
+ * absence of light, not a themeable surface, so it has no semantic name to map.
  */
-export const shadow = {
-  none: "none",
-  "raised-light": "0 1px 2px 0 rgb(16 18 27 / 0.06), 0 1px 3px 0 rgb(16 18 27 / 0.1)",
-  "raised-dark": "0 1px 2px 0 rgb(0 0 0 / 0.4), 0 1px 3px 0 rgb(0 0 0 / 0.5)",
-  "overlay-light": "0 4px 6px -1px rgb(16 18 27 / 0.1), 0 2px 4px -2px rgb(16 18 27 / 0.1)",
-  "overlay-dark": "0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5)",
-} as const;
+export interface ShadowLayer {
+  /** Offset, blur, and spread, e.g. `0 1px 2px 0`. */
+  geometry: string;
+  light: string;
+  dark: string;
+}
+
+export const shadow: Record<"raised" | "overlay" | "modal", readonly ShadowLayer[]> = {
+  raised: [
+    { geometry: "0 1px 2px 0", light: "rgb(16 18 27 / 0.06)", dark: "rgb(0 0 0 / 0.4)" },
+    { geometry: "0 1px 3px 0", light: "rgb(16 18 27 / 0.1)", dark: "rgb(0 0 0 / 0.5)" },
+  ],
+  overlay: [
+    { geometry: "0 4px 6px -1px", light: "rgb(16 18 27 / 0.1)", dark: "rgb(0 0 0 / 0.5)" },
+    { geometry: "0 2px 4px -2px", light: "rgb(16 18 27 / 0.1)", dark: "rgb(0 0 0 / 0.5)" },
+  ],
+  /*
+   * Dialogs and toasts float furthest from the page. The wide, faint layer is
+   * what reads as height; the tight one keeps the edge crisp against a canvas
+   * of nearly the same lightness.
+   */
+  modal: [
+    { geometry: "0 24px 48px -12px", light: "rgb(16 18 27 / 0.22)", dark: "rgb(0 0 0 / 0.6)" },
+    { geometry: "0 2px 6px -1px", light: "rgb(16 18 27 / 0.08)", dark: "rgb(0 0 0 / 0.5)" },
+  ],
+};
+
+/** A shadow as it resolves in one scheme, for the JSON payload. */
+export function shadowFor(layers: readonly ShadowLayer[], scheme: "light" | "dark"): string {
+  return layers.map((l) => `${l.geometry} ${l[scheme]}`).join(", ");
+}
+
+/** A shadow with `light-dark()` around each colour, valid in a box-shadow. */
+export function shadowValue(layers: readonly ShadowLayer[]): string {
+  return layers.map((l) => `${l.geometry} light-dark(${l.light}, ${l.dark})`).join(", ");
+}
 
 /**
  * Stacking order. A closed scale is what keeps `z-index: 9999` out of

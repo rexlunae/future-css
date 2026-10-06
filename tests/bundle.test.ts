@@ -184,6 +184,9 @@ describe("bundle", { skip: hasBundle ? false : "run `npm run build` first" }, ()
       "fc-cite",
       "fc-sources",
       "fc-suggestion",
+      "fc-table",
+      "fc-table-wrap",
+      "fc-dl",
     ];
     for (const block of blocks) {
       assert.match(

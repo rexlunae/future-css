@@ -277,16 +277,16 @@ docs/               Design documents; PLAN.md is the roadmap, WASM.md the WASM s
 
 ## Current state
 
-Pre-alpha. Foundations are built and enforced. Thirty-four CSS components are
+Pre-alpha. Foundations are built and enforced. Thirty-six CSS components are
 complete. The general set: button, form field and input group, checkbox / radio /
 switch, card, badge and tag, alert, dialog and side sheet, popover and tooltip, toast,
-tabs, breadcrumb, pagination, spinners (ring, arc, typing dots, pulse, stream bars, orbit, sparkle), skeleton, progress, avatar, empty state, and
-disclosure. The AI-chat set: chat surface (with message actions), agent status row, reasoning trace,
+tabs, breadcrumb, pagination, spinners (ring, arc, typing dots, pulse, stream bars, orbit, sparkle), skeleton, progress, avatar, empty state,
+disclosure, data table with sorting, and description list. The AI-chat set: chat surface (with message actions), agent status row, reasoning trace,
 citations and sources, suggested prompts, tool call / step trace, rich text editor,
 context menu, data grid, embedded browser chrome, terminal, code block, diff viewer,
-select/listbox, chat composer, context strip, and git surface. Eleven ship browser
+select/listbox, chat composer, context strip, and git surface. Twelve ship browser
 bindings -- editor, menu, grid, webview, select, composer, context strip, git surface,
-tabs, toast, and tooltip -- exercised by tests in a real headless Chrome. Overlays lean
+tabs, toast, tooltip, and table -- exercised by tests in a real headless Chrome. Overlays lean
 on the platform (`<dialog>`, the popover API, `<details>`, `@starting-style`) and need
 no script. Syntax highlighting, Markdown, and line diffing ship as JS modules
 (`highlight`, `diff`, `markdown`); the diff has a Rust crate, the other two do not yet.
@@ -319,8 +319,7 @@ modules link no Unicode tables. The rich text and grid models exist in Rust but
 are not wired; `fc-model`, `fc-diff`, `fc-select`, `fc-context-menu` and `fc-git`
 have JS parity tests.
 
-A navigation sidebar, data table with sorting, and description list are planned but
-not written. See `docs/PLAN.md` for the current phase and what is deliberately out of
+A navigation sidebar is planned but not written. See `docs/PLAN.md` for the current phase and what is deliberately out of
 scope.
 
 The docs in `docs/` were written alongside the code and reflect the same

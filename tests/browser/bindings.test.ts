@@ -179,11 +179,12 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         import('/src/js/tabs.js'),
         import('/src/js/toast.js'),
         import('/src/js/tooltip.js'),
-      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt]) => {
+        import('/src/js/table.js'),
+      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt, tl]) => {
         globalThis.E = e; globalThis.M = m; globalThis.G = g; globalThis.W = w;
         globalThis.H = h; globalThis.D = d; globalThis.S = s;
         globalThis.C = c; globalThis.K = k; globalThis.IT = it;
-        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt;
+        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt; globalThis.TL = tl;
         return 'ok';
       })
     `);
@@ -209,12 +210,13 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         typeof S.FutureCssSelect, typeof C.FutureCssComposer,
         typeof K.FutureCssContextStrip, typeof IT.FutureCssGitSurface,
         typeof TB.FutureCssTabs, typeof TS.FutureCssToaster, typeof TT.bindTooltips,
+        typeof TL.FutureCssTable,
       ]`,
     );
     assert.deepEqual(names, [
       "function", "function", "function", "function", "function", "function",
       "function", "function", "function", "function",
-      "function", "function", "function",
+      "function", "function", "function", "function",
     ]);
   });
   // ---------------------------------------------------------------- editor
@@ -2836,6 +2838,102 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(result.done.spinner, "none", "a finished step hides its spinner");
     assert.equal(result.done.shimmer, "none", "the shimmer cannot outlive the state");
     assert.match(result.done.glyph, /✓/);
+  });
+
+  // ----------------------------------------------------------------- table
+
+  it("sorts a table, moving aria-sort to one header and flipping on repeat", async () => {
+    await loadBindings();
+    const result = await evaluate(`
+      globalThis.table = new TL.FutureCssTable('#table-root');
+      const ids = () => [...document.querySelectorAll('#table-root tbody tr')].map((r) => r.id.slice(4));
+      const sorts = () => [...document.querySelectorAll('#table-root thead th')].map((th) => th.getAttribute('aria-sort'));
+      const buttons = document.querySelectorAll('#table-root .fc-table__sort');
+      buttons[0].click();
+      const byName = ids(); const nameSort = sorts();
+      buttons[0].click();
+      const byNameDesc = ids();
+      buttons[1].click();
+      const byTokens = ids(); const tokenSort = sorts();
+      buttons[2].click();
+      const byAge = ids();
+      buttons[3].click();
+      return { byName, nameSort, byNameDesc, byTokens, tokenSort, byAge, afterDisabled: sorts() };
+    `);
+    // lang="sv": Å sorts after Z in Swedish, which a plain string compare gets
+    // right by accident and an English collator gets wrong.
+    assert.deepEqual(result.byName, ["alpha", "beta", "zeta", "angstrom"]);
+    assert.deepEqual(result.nameSort, ["ascending", null, null, null], "only the sorted header carries aria-sort");
+    assert.deepEqual(result.byNameDesc, ["angstrom", "zeta", "beta", "alpha"]);
+    // 9 < 100 < 12,480 numerically. Beta and Ångström tie at 100 and keep the
+    // order of the previous (descending name) sort: the sort is stable.
+    assert.deepEqual(result.byTokens, ["zeta", "angstrom", "beta", "alpha"]);
+    assert.deepEqual(result.tokenSort, [null, "ascending", null, null]);
+    assert.deepEqual(result.byAge, ["beta", "alpha", "zeta", "angstrom"], "data-fc-sort-value beats the visible text");
+    assert.deepEqual(result.afterDisabled, [null, null, "ascending", null], "a disabled sort button does nothing");
+  });
+
+  it("only reports the sort in manual mode", async () => {
+    await loadBindings();
+    const result = await evaluate(`
+      table.destroy();
+      const before = [...document.querySelectorAll('#table-root tbody tr')].map((r) => r.id);
+      const calls = [];
+      const manual = new TL.FutureCssTable('#table-wrap', { mode: 'manual', onSort: (c, d) => calls.push([c, d]) });
+      manual.sort(0);
+      manual.sort(0);
+      const after = [...document.querySelectorAll('#table-root tbody tr')].map((r) => r.id);
+      manual.destroy();
+      return { same: before.join() === after.join(), calls, sorted: manual.sorted };
+    `);
+    assert.equal(result.same, true, "manual mode leaves the rows to the server");
+    assert.deepEqual(result.calls, [[0, "ascending"], [0, "descending"]]);
+    assert.deepEqual(result.sorted, { column: 0, direction: "descending" });
+  });
+
+  it("draws the sort arrow from aria-sort and scrolls a wide table inside its wrapper", async () => {
+    const result = await evaluate(`
+      const ths = document.querySelectorAll('#table-root thead th');
+      ths.forEach((th) => th.removeAttribute('aria-sort'));
+      const glyph = (i) => getComputedStyle(ths[i].querySelector('.fc-table__sort'), '::after').content;
+      const unsorted = glyph(0);
+      ths[0].setAttribute('aria-sort', 'descending');
+      const descending = glyph(0);
+      ths[0].removeAttribute('aria-sort');
+      const wrap = document.getElementById('table-wrap');
+      return {
+        unsorted, descending,
+        position: getComputedStyle(ths[0]).position,
+        wrapScrolls: wrap.scrollWidth > wrap.clientWidth,
+        numAlign: getComputedStyle(ths[1]).textAlign,
+        numFlow: getComputedStyle(ths[1].querySelector('.fc-table__sort')).flexDirection,
+      };
+    `);
+    assert.match(result.unsorted, /↕/, "an unsorted column still shows it can be sorted");
+    assert.match(result.descending, /↓/);
+    assert.equal(result.position, "sticky");
+    assert.equal(result.wrapScrolls, true, "the wrapper scrolls, not the page");
+    assert.equal(result.numAlign, "end");
+    assert.equal(result.numFlow, "row-reverse");
+  });
+
+  it("lays a description list out side by side when wide and stacked when narrow", async () => {
+    const result = await evaluate(`
+      const dl = document.getElementById('dl');
+      const top = (sel) => dl.querySelector(sel).getBoundingClientRect().top;
+      const wide = top('dt') === top('dd');
+      dl.style.inlineSize = '14rem';
+      const narrow = top('dt') < top('dd');
+      dl.style.inlineSize = '40rem';
+      dl.classList.add('fc-dl--stacked');
+      const stacked = top('dt') < top('dd');
+      dl.classList.remove('fc-dl--stacked');
+      return { wide, narrow, stacked, ddMargin: getComputedStyle(dl.querySelector('dd')).marginInlineStart };
+    `);
+    assert.equal(result.wide, true);
+    assert.equal(result.narrow, true, "the value wraps under its term when they no longer fit");
+    assert.equal(result.stacked, true);
+    assert.equal(result.ddMargin, "0px", "the UA indent on <dd> is removed");
   });
 
 });

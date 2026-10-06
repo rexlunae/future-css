@@ -1,0 +1,264 @@
+/*!
+ * future-css -- data table
+ *
+ * A real <table> with sortable headers. For a spreadsheet-like surface with a
+ * cell cursor and editing, use `fc-grid`; this is for reading rows.
+ *
+ *   <div class="fc-table-wrap" role="region" aria-labelledby="runs-cap" tabindex="0">
+ *     <table class="fc-table fc-table--sticky">
+ *       <caption id="runs-cap">Recent runs</caption>
+ *       <thead>
+ *         <tr>
+ *           <th scope="col" aria-sort="ascending">
+ *             <button class="fc-table__sort" type="button">Name</button>
+ *           </th>
+ *           <th scope="col" class="fc-table__cell--num">
+ *             <button class="fc-table__sort" type="button">Tokens</button>
+ *           </th>
+ *         </tr>
+ *       </thead>
+ *       <tbody>
+ *         <tr><td>Index docs</td><td class="fc-table__cell--num">12,480</td></tr>
+ *       </tbody>
+ *     </table>
+ *   </div>
+ *
+ * Sorting is `aria-sort` on the <th>, and only that: the arrow, the header
+ * emphasis, and what a screen reader announces all read from the one
+ * attribute. APG puts `aria-sort` on one header at a time; a column that can be
+ * sorted but is not is marked by its button, not by `aria-sort="none"`.
+ *
+ * The sort control is a <button> inside the header, not a click handler on the
+ * <th>, so it is in the tab order and announces as a control. The `table`
+ * binding wires it; without the binding the arrows still show whatever order
+ * the server rendered.
+ */
+
+@layer fc.components {
+  /*
+   * The scroll container is focusable and named so a keyboard user can scroll
+   * a wide table sideways: overflow on a non-focusable element is reachable by
+   * mouse only. This is also what keeps a wide table from making the page
+   * scroll horizontally at 320px.
+   */
+  .fc-table-wrap {
+    max-inline-size: 100%;
+    overflow: auto;
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-lg);
+    background-color: var(--fc-color-bg-surface);
+    scrollbar-width: thin;
+  }
+
+  .fc-table-wrap:focus-visible {
+    outline-offset: var(--fc-space-0-5);
+  }
+
+  /*
+   * Parts read custom properties the modifiers set, so a modifier restyles
+   * every cell without a descendant class selector.
+   */
+  .fc-table {
+    inline-size: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--fc-font-size-sm);
+    color: var(--fc-color-text-default);
+  }
+
+  .fc-table caption {
+    padding: var(--fc-space-3) var(--fc-space-3) var(--fc-space-2);
+    color: var(--fc-color-text-default);
+    font-weight: var(--fc-font-weight-semibold);
+    text-align: start;
+  }
+
+  .fc-table :is(th, td) {
+    padding-block: var(--fc-table-cell-pad-block, var(--fc-space-2));
+    padding-inline: var(--fc-table-cell-pad-inline, var(--fc-space-3));
+    /* Through a property, because this rule outranks a single-class cell
+       modifier: `.fc-table th` is (0,1,1), `.fc-table__cell--num` (0,1,0). */
+    text-align: var(--fc-table-cell-align, start);
+    vertical-align: top;
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  }
+
+  .fc-table thead th {
+    /* Sticky only under --sticky; `static` keeps the default table cheap. */
+    position: var(--fc-table-head-position, static);
+    inset-block-start: 0;
+    z-index: var(--fc-z-raised);
+    background-color: var(--fc-color-bg-subtle);
+    color: var(--fc-color-text-muted);
+    font-weight: var(--fc-font-weight-semibold);
+    white-space: nowrap;
+    vertical-align: bottom;
+    border-block-end-color: var(--fc-color-border-default);
+  }
+
+  .fc-table tbody tr:last-child > :is(th, td) {
+    border-block-end: 0;
+  }
+
+  .fc-table tbody th {
+    font-weight: var(--fc-font-weight-medium);
+  }
+
+  .fc-table tbody tr:nth-child(even) {
+    background-color: var(--fc-table-stripe, transparent);
+  }
+
+  .fc-table tbody tr:hover {
+    background-color: var(--fc-color-bg-subtle);
+  }
+
+  /*
+   * A selected row. `aria-selected` is the state because it is what assistive
+   * technology reads in a table that supports selection; a class would be a
+   * second source of truth.
+   */
+  .fc-table tbody tr[aria-selected="true"] {
+    background-color: var(--fc-color-accent-bg-subtle);
+  }
+
+  /*
+   * Numeric cells align to the end edge with tabular figures, so digits line
+   * up by place value. `end` rather than `right` keeps them on the trailing
+   * side in RTL, which is where Arabic and Hebrew readers expect numbers too.
+   */
+  .fc-table__cell--num {
+    --fc-table-sort-flow: row-reverse;
+    --fc-table-cell-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The full-width cell for "no rows" and "failed to load". */
+  .fc-table__empty {
+    padding-block: var(--fc-space-8);
+    color: var(--fc-color-text-muted);
+    text-align: center;
+  }
+
+  /* ---- Sort control ---------------------------------------------------- */
+
+  .fc-table thead th[aria-sort] {
+    color: var(--fc-color-text-default);
+  }
+
+  .fc-table thead th[aria-sort="ascending"] {
+    --fc-table-sort-glyph: "\2191";
+    --fc-table-sort-glyph-color: var(--fc-color-accent-text);
+  }
+
+  .fc-table thead th[aria-sort="descending"] {
+    --fc-table-sort-glyph: "\2193";
+    --fc-table-sort-glyph-color: var(--fc-color-accent-text);
+  }
+
+  /*
+   * The button fills the header so the whole header is the target, and pulls
+   * back the cell padding with negative margins so the label stays aligned
+   * with the column's data.
+   */
+  .fc-table__sort {
+    display: inline-flex;
+    /* Numeric headers reverse it, putting the arrow before the label so the
+       label stays flush with the end-aligned digits beneath it. */
+    flex-direction: var(--fc-table-sort-flow, row);
+    align-items: center;
+    gap: var(--fc-space-1);
+    min-block-size: var(--fc-size-target-min);
+    margin-block: calc(var(--fc-space-1) * -1);
+    margin-inline: calc(var(--fc-space-1-5) * -1);
+    padding-block: var(--fc-space-1);
+    padding-inline: var(--fc-space-1-5);
+    background-color: transparent;
+    color: inherit;
+    border: 0;
+    border-radius: var(--fc-radius-sm);
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+    transition:
+      color var(--fc-duration-fast) var(--fc-easing-standard),
+      background-color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  /*
+   * The glyph is generated with empty alternative text: `aria-sort` already
+   * announces the direction, and a spoken "up arrow" would say it twice. An
+   * unsorted column shows a faint double arrow so the affordance is visible
+   * before anyone hovers.
+   */
+  .fc-table__sort::after {
+    content: var(--fc-table-sort-glyph, "\2195") / "";
+    color: var(--fc-table-sort-glyph-color, var(--fc-color-text-subtle));
+    font-size: var(--fc-font-size-xs);
+    line-height: var(--fc-line-height-none);
+  }
+
+  .fc-table__sort:hover {
+    color: var(--fc-color-text-default);
+    background-color: var(--fc-color-bg-muted);
+  }
+
+  .fc-table__sort:active {
+    background-color: var(--fc-color-bg-subtle);
+  }
+
+  .fc-table__sort:disabled,
+  .fc-table__sort[aria-disabled="true"] {
+    color: var(--fc-color-text-subtle);
+    background-color: transparent;
+    cursor: not-allowed;
+  }
+
+  /*
+   * Loading: the table keeps its rows (or skeleton rows) and says it is busy.
+   * Dimming would lower contrast below the declared pairings, so the cue is
+   * the cursor plus whatever skeletons the app renders.
+   */
+  .fc-table[aria-busy="true"] {
+    cursor: progress;
+  }
+
+  /* ---- Modifiers ------------------------------------------------------- */
+
+  .fc-table--sticky {
+    --fc-table-head-position: sticky;
+  }
+
+  .fc-table--striped {
+    --fc-table-stripe: var(--fc-color-bg-subtle);
+  }
+
+  .fc-table--compact {
+    --fc-table-cell-pad-block: var(--fc-space-1);
+    --fc-table-cell-pad-inline: var(--fc-space-2);
+  }
+
+  /*
+   * Reduced motion: nothing here moves. The only motion is the sort button's
+   * colour transition, which the reset's reduced-motion block already zeroes.
+   */
+
+  /*
+   * Forced colours drop row backgrounds, so selection and the sorted column
+   * are restated with system colours rather than vanishing.
+   */
+  @media (forced-colors: active) {
+    .fc-table tbody tr[aria-selected="true"] {
+      outline: var(--fc-border-width-thick) solid Highlight;
+      outline-offset: calc(var(--fc-border-width-thick) * -1);
+    }
+
+    .fc-table thead th[aria-sort] {
+      --fc-table-sort-glyph-color: Highlight;
+    }
+
+    .fc-table__sort:disabled,
+    .fc-table__sort[aria-disabled="true"] {
+      color: GrayText;
+    }
+  }
+}

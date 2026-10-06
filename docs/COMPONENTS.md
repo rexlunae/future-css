@@ -951,6 +951,78 @@ alternative text, so they are not read. Long names truncate. The current page is
 `pagination.css`: links, not buttons, so every page has a URL. The disabled "Previous"
 is an anchor with no `href` and `aria-disabled`. Arrows are generated and mirror in RTL.
 
+## Data table (implemented)
+
+`table.css` plus the `table` binding (`FutureCssTable`, `bindTables`). A real `<table>`
+for reading rows; for a cell cursor and editing, use `fc-grid`.
+
+```html
+<div class="fc-table-wrap" role="region" aria-labelledby="runs-cap" tabindex="0">
+  <table class="fc-table fc-table--sticky">
+    <caption id="runs-cap">Recent runs</caption>
+    <thead>
+      <tr>
+        <th scope="col" aria-sort="ascending">
+          <button class="fc-table__sort" type="button">Name</button>
+        </th>
+        <th scope="col" class="fc-table__cell--num">
+          <button class="fc-table__sort" type="button">Tokens</button>
+        </th>
+        <th scope="col"><button class="fc-table__sort" type="button">Updated</button></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">Index docs</th>
+        <td class="fc-table__cell--num">12,480</td>
+        <td data-fc-sort-value="120">2 min ago</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+```
+
+- **`aria-sort` is the only sort state.** It sits on one header at a time (APG), and the
+  arrow, the header emphasis, and the announcement all read from it. An unsorted
+  sortable column shows a faint double arrow, so the affordance is visible before hover.
+  The arrow is generated content with empty alternative text, because `aria-sort`
+  already announces the direction.
+- **The sort control is a `<button>` in the header**, so it is in the tab order and
+  announces as a control. A disabled button (`disabled` or `aria-disabled`) is ignored.
+- **The wrapper scrolls, not the page.** `.fc-table-wrap` is focusable and named, so a
+  keyboard user can scroll a wide table, and the page does not overflow at 320px.
+- **Sorting.** Values compare numerically when both parse (grouping separators are
+  ignored), otherwise with `Intl.Collator` in the table's `lang`. `data-fc-sort-value`
+  overrides a cell's text ("2 min ago", "12.5 KB") and gives a machine reader the raw
+  value. The sort is stable. `mode: "manual"` only moves `aria-sort` and calls
+  `onSort`, for rows that come from a server.
+- **States.** Row hover, `aria-selected="true"` rows, `aria-busy="true"` while loading
+  (render skeletons in the cells; the rows are not dimmed, which would break the
+  declared contrast), and `.fc-table__empty` for a full-width "no rows" or error cell.
+- **Modifiers.** `--sticky` header, `--striped` rows, `--compact` cells.
+  `.fc-table__cell--num` end-aligns a column with tabular figures; on a header it also
+  puts the arrow before the label so the label stays flush with the digits.
+- **Forced colours** restate the selected row with a `Highlight` outline and the sort
+  arrow in `Highlight`.
+
+## Description list (implemented)
+
+`description-list.css`. Key/value metadata on a `<dl>`, one `<div class="fc-dl__item">`
+per pair (HTML allows it, and assistive technology ignores the `<div>`).
+
+```html
+<dl class="fc-dl fc-dl--divided">
+  <div class="fc-dl__item"><dt>Model</dt><dd>Large</dd></div>
+  <div class="fc-dl__item"><dt>Duration</dt><dd class="fc-dl__num">14.2 s</dd></div>
+</dl>
+```
+
+The layout is intrinsic: the term takes `--fc-dl-term-size` (10rem) and the value wraps
+under it once the two no longer fit, so no media or container query is involved. Values
+break anywhere, so ids and hashes cannot overflow. `--divided` adds rules between pairs;
+`--stacked` puts the term above the value at every width. Nothing moves and nothing
+relies on a background colour, so it needs no reduced-motion or forced-colours branch.
+
 ## Spinners (implemented)
 
 `spinner.css`. One block, `.fc-spinner`, with a drawing chosen by what the work is:
@@ -1042,8 +1114,6 @@ each component is built.
 | --- | --- | --- |
 | Link | `<a href>` | Underline always; focus from base layer (styled in base today) |
 | Navigation sidebar | `<nav>` + list | Collapsible, with `aria-current` |
-| Data table | `<table>` | Sorting affordances (`aria-sort`), sticky header |
-| Description list | `<dl>` | Key/value metadata |
 | Combobox with free text | ARIA combobox | Builds on `fc-select` |
 
 ### One component that is not a component

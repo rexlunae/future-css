@@ -37,6 +37,7 @@
     "./diff": "./src/js/diff.ts",
     "./markdown": "./src/js/markdown.ts",
     "./urls": "./src/js/urls.ts",
+    "./table": "./src/js/table.ts",
     "./tabs": "./src/js/tabs.ts",
     "./toast": "./src/js/toast.ts",
     "./tooltip": "./src/js/tooltip.ts"

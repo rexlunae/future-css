@@ -135,10 +135,12 @@ export class MenuModel implements MenuModelLike {
       this.active = -1;
       return;
     }
-    // With nothing active, start just outside the list in the direction of
-    // travel: the first ArrowDown lands on the first item, ArrowUp on the last.
+    // An unfocusable active item (nothing active, or one disabled under the
+    // user) starts from the gap where it sits, so the move lands on its nearest
+    // neighbour in the direction of travel. Same rule as `Menu::move_by`.
     const found = focusable.indexOf(this.active);
-    const pos = found >= 0 ? found : delta > 0 ? -1 : 0;
+    const before = this.active < 0 ? 0 : focusable.filter((f) => f < this.active).length;
+    const pos = found >= 0 ? found : delta > 0 ? before - 1 : before;
     const len = focusable.length;
     // The double modulo is Rust's `rem_euclid`: a large negative delta must land
     // in range rather than produce a negative index.

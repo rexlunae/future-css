@@ -414,7 +414,7 @@ separators and `aria-disabled` items. Typeahead accumulates characters typed wit
 500 ms ("dep" reaches *Deploy* past *Delete*), repeats of one letter cycle, and
 labels exclude `aria-hidden` content, so a check glyph or shortcut never blocks a
 match. `await menu.useWasm(url)` moves this traversal onto the `fc-context-menu`
-crate (21.6 KB shipped); it returns `false` and keeps the JS model on any failure.
+crate (21.7 KB shipped); it returns `false` and keeps the JS model on any failure.
 
 ### Grid
 

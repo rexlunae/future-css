@@ -249,7 +249,7 @@ Delivered:
   from JavaScript today.
 - 75 unit tests covering the algorithms.
 - A JS accelerator abstraction with a pure-JS fallback, so the modules are optional.
-- **`fc-context-menu` off `js-sys`**: 411.6 KB to 40.1 KB raw (79.8 to 21.6 KB
+- **`fc-context-menu` off `js-sys`**: 411.6 KB to 40.2 KB raw (79.8 to 21.7 KB
   shipped), under budget. It no longer depends on `fc-core` or serde, folds case
   in JS rather than linking Unicode tables, and is wired into the menu binding
   behind `useWasm` with a parity test (`tests/menu.test.ts`).

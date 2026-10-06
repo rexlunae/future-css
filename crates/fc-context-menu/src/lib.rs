@@ -117,14 +117,22 @@ impl Menu {
             self.active = None;
             return;
         }
-        // With nothing active, start just outside the list in the direction of
-        // travel, so the first ArrowDown lands on the first item and the first
-        // ArrowUp on the last. Starting at position 0 skipped the first item.
-        let current_pos = self
-            .active
-            .and_then(|a| focusable.iter().position(|f| *f == a))
-            .map(|p| p as isize)
-            .unwrap_or(if delta > 0 { -1 } else { 0 });
+        // When the active item is not focusable -- nothing is active, or the
+        // focused item was disabled under the user -- start from the gap where
+        // it sits, so the move lands on its nearest neighbour in the direction
+        // of travel. With nothing active the gap is before the first item:
+        // ArrowDown lands on the first, ArrowUp on the last. Treating either
+        // case as position 0 skipped an item or jumped backwards.
+        let current_pos = match self.active.and_then(|a| focusable.iter().position(|f| *f == a)) {
+            Some(p) => p as isize,
+            None => {
+                let before = self
+                    .active
+                    .map(|a| focusable.iter().filter(|f| **f < a).count())
+                    .unwrap_or(0) as isize;
+                if delta > 0 { before - 1 } else { before }
+            }
+        };
         let len = focusable.len() as isize;
         // rem_euclid keeps a large negative delta correct, which a naive
         // `+ len` does not.
@@ -487,6 +495,14 @@ mod tests {
     fn boundary_out_of_range_active_is_treated_as_none() {
         // The DOM shrank between keystrokes. Moving must not panic.
         assert_eq!(js_menu_move(vec![1, 1], 9, 1), 0);
+    }
+
+    #[test]
+    fn arrows_from_a_just_disabled_item_reach_its_neighbours() {
+        // cut, copy (just disabled while focused), delete
+        let f = vec![1, 0, 1];
+        assert_eq!(js_menu_move(f.clone(), 1, 1), 2, "down goes on to Delete, not back to Cut");
+        assert_eq!(js_menu_move(f, 1, -1), 0, "up goes back to Cut");
     }
 
     #[test]

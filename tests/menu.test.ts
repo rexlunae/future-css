@@ -103,6 +103,16 @@ describe("MenuModel", () => {
     assert.equal(LABELS[up.activeIndex], "Delete");
   });
 
+  it("moves to the neighbours of an item disabled while focused", () => {
+    const m = new MenuModel(LABELS, FOCUSABLE);
+    m.setActive(3); // Paste, unavailable
+    m.move(1);
+    assert.equal(LABELS[m.activeIndex], "Wrap lines");
+    m.setActive(3);
+    m.move(-1);
+    assert.equal(LABELS[m.activeIndex], "Copy");
+  });
+
   it("answers -1 when nothing is focusable", () => {
     const m = new MenuModel(["A", "B"], [false, false]);
     m.focusFirst();
@@ -168,6 +178,8 @@ describe("fc-context-menu and MenuModel agree", () => {
 
   it("agrees when focus starts nowhere or outside the list", { skip }, () => {
     agree(LABELS, FOCUSABLE, [["move", 1], ["set", 99], ["move", -1], ["set", -1], ["type", "d"]]);
+    // Index 3 (Paste) is disabled: a focused item that became unavailable.
+    agree(LABELS, FOCUSABLE, [["set", 3], ["move", 1], ["set", 3], ["move", -1], ["set", 2], ["move", 2], ["set", 6], ["move", -3], ["set", 3], ["move", 0]]);
     agree(LABELS, FOCUSABLE, [["move", -1], ["set", -1], ["move", 3], ["set", -1], ["move", -4], ["set", -1], ["move", 0]]);
   });
 

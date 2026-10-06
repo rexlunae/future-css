@@ -649,6 +649,23 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.deepEqual(seen, ["Archive", "Deploy"]);
   });
 
+  it("moves on from an item disabled while it has focus", async () => {
+    await loadBindings();
+    const seen = await evaluate(`
+      ${RICH_MENU}
+      const m = new M.FutureCssMenu({ menu, invoker: document.querySelector('#trigger') });
+      m.open({ x: 0, y: 0 });
+      key('ArrowDown'); key('ArrowDown');
+      const before = label();
+      document.activeElement.setAttribute('aria-disabled', 'true');
+      key('ArrowDown');
+      const after = label();
+      m.close();
+      return [before, after];
+    `);
+    assert.deepEqual(seen, ["Line numbers", "Delete"], "must advance, not jump back to the top");
+  });
+
   it("does not let the previous opening's typeahead timer cut a new search short", async () => {
     // Guards the reopen path: a 500 ms expiry left over from the last opening
     // must never fire into the next one and turn "de" into a lone "e".

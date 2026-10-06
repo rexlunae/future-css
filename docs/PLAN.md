@@ -21,6 +21,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | 3. Component set | Mostly delivered | Forms, overlays, tabs, breadcrumb, pagination, loading, cards; axe-core pass remains |
 | A. WASM foundations | Started | Rust workspace, 8 crates, accelerator abstraction |
 | B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
+| C. Token roles and themes | Not started | State tokens, override points, theme tier, type roles |
 | 4. Verification | Not started | Visual regression, browser matrix, docs site |
 | 5. Platform expansion | Not started | Email build, print, native tokens |
 | 6. Release | Not started | Publishing, versioning, governance |
@@ -361,6 +362,119 @@ pattern to a file whose contents can contain anything.
 
 ---
 
+## Phase C -- Token roles and themes (not started)
+
+**Goal.** Close the gaps [Semantic coverage](SEMANTIC-COVERAGE.md) found against the ten
+most widely-used token systems, without giving up what makes ours checkable. That
+document's conclusion is that this is a *foundation library*: it ships scales and
+meanings but not roles and brand slots, which makes it auditable and hard to adopt for a
+team that already has a type ramp and a brand. This phase adds the extension points.
+
+Each item below names the coverage entry it closes, so the two documents can be checked
+against each other. The rule that holds throughout: **every new colour token is a
+declared contrast pair**, and every new token value passes the same contract as the
+existing ones. An extension point that cannot be verified is not one this system ships.
+
+Ordered by what to do first, which is not quite the coverage document's order (that one
+ranks by cost to a consumer). State tokens come first because every component added
+without them encodes the workaround.
+
+### 1. State tokens (closes entries 9 and 10)
+
+- [ ] `selected` background and foreground, replacing the surfaces the data grid, select,
+  tabs and git surface currently borrow from outside the vocabulary
+- [ ] `disabled` background, foreground, and border colours, declared as contrast pairs.
+  Opacity stays available for controls that must keep their identity (a disabled
+  destructive button), but stops being the only mechanism, so the disabled state can be
+  stated rather than only composited
+- [ ] Hover and active steps for each status family -- success, warning, danger, info --
+  so the four families match accent's shape: `<family>-bg-hover` and
+  `<family>-bg-active`, eight tokens derived from the existing ramps. The coverage
+  document estimates sixteen, which would also give `-bg-subtle` its own hover and
+  active steps; add those only if a component needs them
+- [ ] Re-try `warning-text` on `warning-bg` as a declared pair while the warning ramp is
+  being touched. It failed in Phase 1, and components work around it; if it still cannot
+  pass, record why in `color.ts`
+- [ ] Migrate components off the workarounds in the same change, not later
+
+### 2. Component override points (closes entry 3)
+
+Today a consumer who wants "the primary button is blue, not accent" must write CSS in
+`fc.overrides`. Primer, Carbon, M3 and Spectrum all solve this with component tokens.
+
+- [ ] Decide the shape. The constraint is [ARCHITECTURE.md](ARCHITECTURE.md): per-layer
+  distribution and a zero-specificity base must survive, so decisions must not move from
+  the cascade into a token table wholesale. The candidate is a small set of
+  `--fc-<component>-*` custom properties per component, each defaulting to a semantic
+  token, read by the component and set by nothing in the library
+- [ ] Ship them for the components with brand weight first: button, chat surface,
+  composer. The chat components are where Carbon's `$ai-*` / `$chat-*` families show the
+  field going; we ship the components but no tokens for them
+- [ ] The linter and contrast contract cover the defaults; document that overriding one
+  takes the pair outside the contract
+
+### 3. A third value per token: high contrast and theme sets (closes entries 12 and 14)
+
+One mechanism, two consumers. Every token has exactly two values today, and both
+high-contrast schemes and alternative brands need more. Build the compiler abstraction
+once rather than twice.
+
+- [ ] A theme-set abstraction in the token compiler: a named set of semantic values,
+  verified by the same contrast contract, emitted under a selector
+- [ ] High-contrast light and dark sets, opt-in through `[data-fc-theme]` and applied
+  automatically under `@media (prefers-contrast: more)`. `focus-ring` is already two
+  tokens so an HC set can swap in a double-colour ring
+- [ ] A second brand set, generated from a different accent ramp, as the proof that a
+  consumer can do the same. Tokens Studio's "theme set" is the reference
+- [ ] `forced-colors` handling stays as it is; it is the OS half of high contrast and is
+  already complete and linted
+
+### 4. Composite type styles (closes entry 15)
+
+- [ ] Named type roles (`body`, `body-small`, `title`, `heading-*`, `code`, `label`)
+  that bundle size, weight, line height and tracking, exposed as tokens or classes and
+  used by `base.css` instead of per-element composition
+- [ ] A `letterSpacing` token group, so the `-0.01em` literal in `base.css` becomes a
+  token with its script-safety comment intact
+- [ ] Until this ships, `COMPONENTS.md` states the limitation, so a consumer does not
+  discover it during design review
+
+### 5. Smaller additions
+
+Each is cheap and independent; none needs a new decision.
+
+- [ ] **Elevation.** Three shadows today (`raised`, `overlay`, `modal`); a menu over a
+  modal over a toast needs more. Extend the scale rather than adding literals
+- [ ] **Surface depth.** Numbered aliases over the existing surface ladder, so a
+  third-party component can ask for "one step above raised" (Carbon's `$layer-01..05`).
+  The role names stay; depth is an alias, not a replacement
+- [ ] **Bidi isolation.** A `.fc-u-bidi` utility and `<bdi>` guidance in
+  `COMPONENTS.md`, so the API matches what `INTERNATIONALIZATION.md` already describes
+- [ ] **Wide gamut.** Emit an `oklch()` value alongside each hex so P3 displays get the
+  authored colour, while the contrast contract keeps verifying the hex that every browser
+  can fall back to
+- [ ] **Per-token descriptions** in `tokens.json` (Polaris), generated from the comments
+  already in the TypeScript source
+- [ ] **`prefers-reduced-transparency` and `prefers-reduced-data`.** Honour the first
+  wherever a component uses translucency; the second only once something ships that is
+  worth not loading
+
+Deliberately not adopted, with the reasons in the coverage document: seed-derived
+dynamic colour (Material 3) cannot be contrast-checked at build time, and
+scale-step-as-semantics (Radix) trades verifiability for brevity.
+
+**Exit criteria**
+
+- Every Absent and Partial row in the coverage scorecard is Shipped, or Divergent with
+  its reason recorded in the same edit
+- The gap-list items with no Absent or Partial row of their own are closed too: theme
+  sets (gap 4, which sits under the Shipped entry 12), elevation depth (gap 6) and bidi
+  isolation (gap 8)
+- The contrast contract covers every new colour token in every theme set
+- A consumer can switch brand and contrast level without writing CSS
+
+---
+
 ## Phase 4 -- Verification (not started)
 
 Turning manual discipline into automation as the component count grows.
@@ -513,6 +627,14 @@ precisely the class of error this system is built to prevent everywhere else.
    decided by its parent.* `fc-card` is the first: its media moves beside the content
    when the card, not the viewport, is wide enough.
 4. **Density modes.** Compact and comfortable spacing for data-heavy applications. Adds a
-   token dimension; revisit after Phase 3.
+   token dimension; revisit after Phase 3. Spectrum's medium/large scale axes are the
+   candidate answer, and would ride on the theme-set mechanism in Phase C rather than
+   needing their own.
 5. **Motion tokens as a scale.** Motion is currently four durations. Real applications may
-   need a richer scale for orchestrated sequences.
+   need a richer scale for orchestrated sequences. If it grows, name durations by use
+   (Open Props' `--duration-quick-1` for hover, `--duration-moderate-2` for a modal)
+   rather than extending `fast`/`normal`/`slow`, and consider a `--motionOK` custom
+   media query alongside the reset's reduced-motion block.
+6. **A class-less mode.** `base.css` already renders legibly with zero classes. Pico goes
+   further and styles buttons and form controls from bare elements. Worth offering as an
+   opt-in entry point, if it can reuse component CSS rather than duplicating it.

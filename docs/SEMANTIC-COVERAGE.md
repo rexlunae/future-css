@@ -675,6 +675,10 @@ each invisible to unit tests and obvious the moment real components rendered.
 
 Ordered by cost to a consumer adopting this system, not by effort.
 
+Items 1-8 are scheduled as **Phase C** in [`PLAN.md`](PLAN.md#phase-c----token-roles-and-themes-not-started),
+which orders them by what to do first; item 9 lives in that document's performance
+budget section. When an item ships, update its scorecard row here in the same edit.
+
 **1. Component tokens (Absent, entry 3)** and **2. Composite type styles (Absent, entry
 15)** follow from one position — everything is a scale, nothing is a role — and both are
 what a product team with a type ramp and a brand system needs first. Together they are
@@ -696,9 +700,9 @@ per status family (Partial, entry 9).** Eighteen tokens. All derivable from the 
 ramps, all checkable by the existing contract. Close this before more components ship,
 because every component added in the meantime encodes the workaround.
 
-**6. Elevation is two steps.** Every other system ships six or more. Enough for a card
-and a popover; not enough the first time a design wants a menu over a modal over a
-toast. No new decisions required, only more of an existing one.
+**6. Elevation is three steps** (`raised`, `overlay`, `modal`). Every other system ships
+six or more. Enough for a card and a popover; not enough the first time a design wants a
+menu over a modal over a toast. No new decisions required, only more of an existing one.
 
 **7. `prefers-contrast`, `prefers-reduced-data`, `prefers-reduced-transparency`.** Three
 media queries nothing references. The first matters most and belongs with item 3.

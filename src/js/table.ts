@@ -102,7 +102,9 @@ export class FutureCssTable {
     this.table.tHead?.removeEventListener("click", this.onClick);
     if (markerOwner.get(this.table) === this) {
       markerOwner.delete(this.table);
-      this.table.removeAttribute("data-fc-bound");
+      // A host may have handed the element to another binding since; its
+      // marker is not ours to remove.
+      if (this.table.getAttribute("data-fc-bound") === "table") this.table.removeAttribute("data-fc-bound");
     }
   }
 

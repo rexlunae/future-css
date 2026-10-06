@@ -2935,14 +2935,20 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       new TL.FutureCssTable('#table-root').destroy();
       const kept = document.getElementById('table-root').getAttribute('data-fc-bound');
       const third = TL.bindTables(document.getElementById('table-wrap')).length;
+      // A host that handed the element to another binding keeps that marker.
+      const root = document.getElementById('table-root');
+      root.setAttribute('data-fc-bound', 'other');
       rebound.forEach((t) => t.destroy());
-      return { focused, marker, rebound: rebound.length, kept, third };
+      const foreign = root.getAttribute('data-fc-bound');
+      root.removeAttribute('data-fc-bound');
+      return { focused, marker, rebound: rebound.length, kept, third, foreign };
     `);
     assert.equal(result.focused, true, "moving the row must not drop the user's focus");
     assert.equal(result.marker, false, "destroy releases the bound marker");
     assert.equal(result.rebound, 1);
     assert.equal(result.kept, "table", "a stale or unbound instance leaves the live binding's marker");
     assert.equal(result.third, 0, "so the table is not bound twice");
+    assert.equal(result.foreign, "other", "destroy never removes another binding's marker");
   });
 
   it("centres and pads the empty-table cell, and gives short sort headers a full target", async () => {

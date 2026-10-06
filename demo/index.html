@@ -42,10 +42,17 @@
     <nav class="demo-nav" aria-label="Sections">
       <ul class="demo-nav__list">
         <li><a href="#buttons">Buttons</a></li>
+        <li><a href="#forms">Forms</a></li>
+        <li><a href="#feedback">Feedback</a></li>
+        <li><a href="#spinners">Spinners</a></li>
+        <li><a href="#overlays">Overlays</a></li>
+        <li><a href="#navigation">Navigation</a></li>
+        <li><a href="#surfaces">Cards</a></li>
         <li><a href="#editor">Editor</a></li>
         <li><a href="#grid">Grid</a></li>
         <li><a href="#menu">Menu</a></li>
         <li><a href="#chat">Chat</a></li>
+        <li><a href="#answer">Answer</a></li>
         <li><a href="#tools">Tool calls</a></li>
         <li><a href="#terminal">Terminal</a></li>
         <li><a href="#webview">Webview</a></li>
@@ -149,6 +156,454 @@
 
 &lt;!-- Icon-only needs an explicit name: the glyph is decorative. --&gt;
 &lt;button class="fc-btn fc-btn--ghost fc-btn--icon" aria-label="Refresh"&gt;&amp;#8635;&lt;/button&gt;</code></pre>
+    </div>
+  </section>
+
+  <!-- ============================= FORMS ============================= -->
+  <section class="demo-section" id="forms" aria-labelledby="h-forms">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-forms">Forms</h2>
+      <p class="demo-note">
+        Real inputs, wired with <code>for</code> and <code>aria-describedby</code>. Errors are
+        text with a glyph, never colour alone, and invalid styling waits for
+        <code>:user-invalid</code> so nothing is red before you have typed.
+      </p>
+    </div>
+
+    <div class="demo-panel">
+      <form class="demo-form" id="demo-form" novalidate>
+        <div class="fc-error-summary" id="form-summary" tabindex="-1" hidden>
+          <h3 class="fc-error-summary__title">There is a problem</h3>
+          <ul class="fc-error-summary__list">
+            <li><a class="fc-error-summary__link" href="#f-email">Enter an email address, like ada@example.com</a></li>
+          </ul>
+        </div>
+
+        <div class="fc-field">
+          <label class="fc-field__label" for="f-name">Display name</label>
+          <input class="fc-input" id="f-name" autocomplete="nickname" value="Ada">
+        </div>
+
+        <div class="fc-field">
+          <label class="fc-field__label" for="f-email">Email<span class="fc-field__required" aria-hidden="true">*</span></label>
+          <p class="fc-field__hint" id="f-email-hint">Used for sign-in. Never shown to others.</p>
+          <input class="fc-input" id="f-email" type="email" required autocomplete="email"
+                 aria-describedby="f-email-hint f-email-error">
+          <p class="fc-field__error" id="f-email-error"></p>
+        </div>
+
+        <div class="fc-field">
+          <label class="fc-field__label" for="f-budget">Monthly budget</label>
+          <div class="fc-input-group">
+            <span class="fc-input-group__addon" aria-hidden="true">$</span>
+            <input class="fc-input-group__control" id="f-budget" inputmode="decimal" value="40">
+            <span class="fc-input-group__addon">USD</span>
+          </div>
+        </div>
+
+        <div class="fc-field">
+          <label class="fc-field__label" for="f-model">Default model</label>
+          <select class="fc-input" id="f-model">
+            <option>Balanced</option>
+            <option>Fast</option>
+            <option>Most capable</option>
+          </select>
+        </div>
+
+        <div class="fc-field">
+          <label class="fc-field__label" for="f-prompt">System prompt<span class="fc-field__optional">(optional)</span></label>
+          <textarea class="fc-input fc-input--autosize" id="f-prompt"
+                    placeholder="Grows as you type, with no script."></textarea>
+        </div>
+
+        <fieldset class="fc-check-group">
+          <legend class="fc-check-group__legend">Notifications</legend>
+          <label class="fc-check">
+            <input class="fc-check__input" type="checkbox" checked>
+            <span class="fc-check__label">When a long run finishes</span>
+          </label>
+          <label class="fc-check">
+            <input class="fc-check__input" type="checkbox">
+            <span class="fc-check__label">Weekly usage summary</span>
+            <span class="fc-check__hint">Sent on Mondays.</span>
+          </label>
+          <label class="fc-check">
+            <input class="fc-check__input" type="checkbox" disabled>
+            <span class="fc-check__label">Marketing email (unavailable)</span>
+          </label>
+        </fieldset>
+
+        <fieldset class="fc-check-group fc-check-group--inline">
+          <legend class="fc-check-group__legend">Density</legend>
+          <label class="fc-check"><input class="fc-check__input" type="radio" name="density" checked><span class="fc-check__label">Comfortable</span></label>
+          <label class="fc-check"><input class="fc-check__input" type="radio" name="density"><span class="fc-check__label">Compact</span></label>
+        </fieldset>
+
+        <label class="fc-switch-row">
+          <span class="fc-switch-row__text">
+            <span class="fc-switch-row__label">Show reasoning by default</span>
+            <span class="fc-switch-row__hint">Expands the thinking trace on every answer.</span>
+          </span>
+          <input class="fc-switch" type="checkbox" role="switch" checked>
+        </label>
+
+        <div class="fc-cluster">
+          <button type="submit" class="fc-btn fc-btn--primary">Save settings</button>
+          <button type="reset" class="fc-btn fc-btn--ghost">Reset</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============================ FEEDBACK ============================ -->
+  <section class="demo-section" id="feedback" aria-labelledby="h-feedback">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-feedback">Feedback</h2>
+      <p class="demo-note">
+        Alerts, badges, toasts, and loading states. Tone is always restated in text; the
+        colour is reinforcement. Toasts land in live regions that exist before the first
+        message, and pause while you hover or focus them.
+      </p>
+    </div>
+
+    <div class="demo-panel fc-stack">
+      <div class="fc-alert fc-alert--info">
+        <span class="fc-alert__icon" aria-hidden="true">i</span>
+        <div class="fc-alert__content">
+          <p class="fc-alert__title">New models available</p>
+          <p class="fc-alert__body">Pick one from the context strip; your drafts are kept.</p>
+        </div>
+      </div>
+      <div class="fc-alert fc-alert--success">
+        <span class="fc-alert__icon" aria-hidden="true">&#10003;</span>
+        <div class="fc-alert__content"><p class="fc-alert__body">Settings saved.</p></div>
+      </div>
+      <div class="fc-alert fc-alert--warning" role="status">
+        <span class="fc-alert__icon" aria-hidden="true">!</span>
+        <div class="fc-alert__content">
+          <p class="fc-alert__title">Context window 92% full</p>
+          <p class="fc-alert__body">Older messages will be summarised on the next turn.</p>
+          <div class="fc-alert__actions">
+            <button type="button" class="fc-btn fc-btn--secondary fc-btn--sm">Start a new chat</button>
+          </div>
+        </div>
+        <button type="button" class="fc-alert__dismiss" aria-label="Dismiss warning">&#10005;</button>
+      </div>
+      <div class="fc-alert fc-alert--danger">
+        <span class="fc-alert__icon" aria-hidden="true">&#10005;</span>
+        <div class="fc-alert__content">
+          <p class="fc-alert__title">The tool call failed</p>
+          <p class="fc-alert__body">The sandbox ran out of memory after 41s.</p>
+        </div>
+      </div>
+
+      <hr class="demo-rule">
+
+      <div class="fc-cluster">
+        <span class="fc-badge">Draft</span>
+        <span class="fc-badge fc-badge--accent">Beta</span>
+        <span class="fc-badge fc-badge--success"><span class="fc-badge__dot" aria-hidden="true"></span>Passing</span>
+        <span class="fc-badge fc-badge--warning">Rate limited</span>
+        <span class="fc-badge fc-badge--danger">Failed</span>
+        <span class="fc-badge fc-badge--info fc-badge--outline">Read only</span>
+        <span class="fc-badge fc-badge--solid fc-badge--count" aria-label="3 unread">3</span>
+        <span>Press <kbd class="fc-kbd">Enter</kbd> to send</span>
+      </div>
+
+      <div class="fc-cluster" role="group" aria-label="Filter by language">
+        <button type="button" class="fc-tag" aria-pressed="true">TypeScript</button>
+        <button type="button" class="fc-tag" aria-pressed="false">Rust</button>
+        <button type="button" class="fc-tag" aria-pressed="false">CSS</button>
+        <span class="fc-tag"><span class="fc-tag__label">reviewer: ada</span>
+          <button type="button" class="fc-tag__remove" aria-label="Remove reviewer: ada">&#215;</button></span>
+      </div>
+
+      <hr class="demo-rule">
+
+      <div class="fc-cluster">
+        <span role="status"><span class="fc-spinner" aria-hidden="true"></span>
+          <span class="fc-u-visually-hidden">Loading</span></span>
+        <progress class="fc-progress" value="64" max="100" aria-label="Upload progress" style="max-inline-size: 12rem"></progress>
+        <progress class="fc-progress" aria-label="Indexing" style="max-inline-size: 12rem"></progress>
+      </div>
+
+      <div class="demo-skeleton" aria-busy="true" aria-label="Loading message">
+        <span class="fc-skeleton fc-skeleton--circle"></span>
+        <div>
+          <span class="fc-skeleton fc-skeleton--text"></span>
+          <span class="fc-skeleton fc-skeleton--text"></span>
+          <span class="fc-skeleton fc-skeleton--text"></span>
+        </div>
+      </div>
+
+      <hr class="demo-rule">
+
+      <div class="fc-cluster">
+        <button type="button" class="fc-btn fc-btn--secondary" data-demo-toast="success">Show success toast</button>
+        <button type="button" class="fc-btn fc-btn--secondary" data-demo-toast="action">Toast with undo</button>
+        <button type="button" class="fc-btn fc-btn--secondary" data-demo-toast="danger">Show error toast</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ SPINNERS ============================ -->
+  <section class="demo-section" id="spinners" aria-labelledby="h-spinners">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-spinners">Spinners</h2>
+      <p class="demo-note">
+        One block, seven drawings, picked by what the work is. Turn on reduced motion and
+        none of them stop: the turning ones slow down, the bouncing ones become a fade.
+      </p>
+    </div>
+
+    <div class="demo-panel fc-stack">
+      <ul class="demo-spinners">
+        <li><span class="fc-spinner fc-spinner--lg" aria-hidden="true"></span><span>Ring<br><small>loading</small></span></li>
+        <li><span class="fc-spinner fc-spinner--arc fc-spinner--lg" aria-hidden="true"></span><span>Arc<br><small>loading, softer</small></span></li>
+        <li><span class="fc-spinner fc-spinner--dots fc-spinner--lg" aria-hidden="true"><span></span><span></span><span></span></span><span>Dots<br><small>typing</small></span></li>
+        <li><span class="fc-spinner fc-spinner--pulse fc-spinner--lg" aria-hidden="true"></span><span>Pulse<br><small>live, listening</small></span></li>
+        <li><span class="fc-spinner fc-spinner--bars fc-spinner--lg" aria-hidden="true"><span></span><span></span><span></span><span></span></span><span>Bars<br><small>streaming</small></span></li>
+        <li><span class="fc-spinner fc-spinner--orbit fc-spinner--lg" aria-hidden="true"></span><span>Orbit<br><small>indexing, syncing</small></span></li>
+        <li><span class="fc-spinner fc-spinner--sparkle fc-spinner--lg" aria-hidden="true"></span><span>Sparkle<br><small>thinking</small></span></li>
+      </ul>
+
+      <hr class="demo-rule">
+
+      <div class="fc-stack fc-stack--2" id="demo-agent-steps">
+        <div class="fc-agent-status" data-fc-kind="agent-status" data-fc-state="complete">
+          <span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"></span>
+          <span class="fc-agent-status__label" role="status">Read 14 files</span>
+          <span class="fc-agent-status__meta">2s</span>
+        </div>
+        <div class="fc-agent-status" data-fc-kind="agent-status" data-fc-state="running" id="demo-agent-live">
+          <span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"></span>
+          <span class="fc-agent-status__label" role="status">Searching 12 sources</span>
+          <span class="fc-agent-status__meta" data-demo-elapsed>0s</span>
+        </div>
+        <div class="fc-msg" data-fc-role="assistant" data-fc-state="pending">
+          <span class="fc-cluster fc-cluster--2">
+            <span class="fc-spinner fc-spinner--dots fc-spinner--muted" aria-hidden="true"><span></span><span></span><span></span></span>
+            <span class="fc-u-text-muted">Assistant is typing</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="fc-cluster">
+        <button type="button" class="fc-btn fc-btn--secondary" id="demo-agent-next">Next step</button>
+        <span>Inline, in a sentence: <span class="fc-spinner fc-spinner--xs fc-spinner--current" aria-hidden="true"></span> saving&hellip;</span>
+        <span class="fc-shimmer-text">Running tests</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ OVERLAYS ============================ -->
+  <section class="demo-section" id="overlays" aria-labelledby="h-overlays">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-overlays">Overlays</h2>
+      <p class="demo-note">
+        Native <code>&lt;dialog&gt;</code> and the popover API: top layer, focus handling,
+        Escape, and light dismiss come from the platform. Entry and exit animate with
+        <code>@starting-style</code>, with no script.
+      </p>
+    </div>
+
+    <div class="demo-panel fc-cluster">
+      <button type="button" class="fc-btn fc-btn--danger" data-demo-open="demo-dialog">Delete chat&hellip;</button>
+      <button type="button" class="fc-btn fc-btn--secondary" data-demo-open="demo-sheet">Open run inspector</button>
+      <button type="button" class="fc-btn fc-btn--secondary" popovertarget="demo-popover">Sampling</button>
+
+      <span class="fc-tooltip">
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--icon" aria-label="Copy">&#10697;</button>
+        <span class="fc-tooltip__bubble">Copy to clipboard</span>
+      </span>
+
+      <div class="fc-popover" id="demo-popover" popover>
+        <p class="fc-popover__title">Sampling</p>
+        <div class="fc-field">
+          <label class="fc-field__label" for="p-temp">Temperature</label>
+          <input class="fc-input fc-input--sm" id="p-temp" type="number" step="0.1" min="0" max="2" value="0.7">
+        </div>
+        <div class="fc-popover__footer">
+          <button type="button" class="fc-btn fc-btn--primary fc-btn--sm" popovertarget="demo-popover" popovertargetaction="hide">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <dialog class="fc-dialog fc-dialog--sm" id="demo-dialog" aria-labelledby="dlg-title" aria-describedby="dlg-desc">
+      <header class="fc-dialog__header">
+        <h3 class="fc-dialog__title" id="dlg-title">Delete this chat?</h3>
+      </header>
+      <div class="fc-dialog__body" id="dlg-desc">
+        The conversation and its 14 attachments will be removed for everyone. This cannot be undone.
+      </div>
+      <footer class="fc-dialog__footer">
+        <button type="button" class="fc-btn fc-btn--secondary" data-demo-close autofocus>Cancel</button>
+        <button type="button" class="fc-btn fc-btn--danger" data-demo-close>Delete</button>
+      </footer>
+    </dialog>
+
+    <dialog class="fc-dialog fc-dialog--sheet" id="demo-sheet" aria-labelledby="sheet-title">
+      <header class="fc-dialog__header">
+        <h3 class="fc-dialog__title" id="sheet-title">Run inspector</h3>
+        <button type="button" class="fc-dialog__close" data-demo-close aria-label="Close run inspector">&#10005;</button>
+      </header>
+      <div class="fc-dialog__body fc-stack">
+        <div class="fc-cluster"><span class="fc-badge fc-badge--success">complete</span><span class="fc-badge">4 tool calls</span></div>
+        <p>A side sheet is the same element as a dialog with a different geometry. It docks to the
+          inline end, so it opens on the left in RTL with no extra rule.</p>
+      </div>
+    </dialog>
+  </section>
+
+  <!-- =========================== NAVIGATION =========================== -->
+  <section class="demo-section" id="navigation" aria-labelledby="h-navigation">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-navigation">Navigation</h2>
+      <p class="demo-note">
+        Tabs follow the APG keyboard contract, and the arrow keys follow the writing
+        direction: flip to RTL and ArrowLeft moves forward.
+      </p>
+    </div>
+
+    <div class="demo-panel fc-stack">
+      <nav class="fc-breadcrumb" aria-label="Breadcrumb">
+        <ol class="fc-breadcrumb__list">
+          <li class="fc-breadcrumb__item"><a class="fc-breadcrumb__link" href="#navigation">Projects</a></li>
+          <li class="fc-breadcrumb__item"><a class="fc-breadcrumb__link" href="#navigation">future-css</a></li>
+          <li class="fc-breadcrumb__item"><a class="fc-breadcrumb__link" aria-current="page">Navigation</a></li>
+        </ol>
+      </nav>
+
+      <div class="fc-tabs" id="demo-tabs">
+        <div class="fc-tabs__list" role="tablist" aria-label="Answer view">
+          <button type="button" class="fc-tabs__tab" role="tab" aria-selected="true">Preview</button>
+          <button type="button" class="fc-tabs__tab" role="tab">Code</button>
+          <button type="button" class="fc-tabs__tab" role="tab">Problems <span class="fc-tabs__count">2</span></button>
+          <button type="button" class="fc-tabs__tab" role="tab" aria-disabled="true">Deploy</button>
+        </div>
+        <div class="fc-tabs__panel">The rendered answer.</div>
+        <div class="fc-tabs__panel">The source behind it.</div>
+        <div class="fc-tabs__panel">Two lint warnings.</div>
+        <div class="fc-tabs__panel">Deploys are disabled for this project.</div>
+      </div>
+
+      <div class="fc-tabs" id="demo-segmented">
+        <div class="fc-tabs__list fc-tabs__list--segmented" role="tablist" aria-label="Range">
+          <button type="button" class="fc-tabs__tab" role="tab" aria-selected="true">Day</button>
+          <button type="button" class="fc-tabs__tab" role="tab">Week</button>
+          <button type="button" class="fc-tabs__tab" role="tab">Month</button>
+        </div>
+        <div class="fc-tabs__panel">Usage today.</div>
+        <div class="fc-tabs__panel">Usage this week.</div>
+        <div class="fc-tabs__panel">Usage this month.</div>
+      </div>
+
+      <nav class="fc-pagination" aria-label="Pagination">
+        <ul class="fc-pagination__list">
+          <li><a class="fc-pagination__link fc-pagination__link--prev" aria-disabled="true">Previous</a></li>
+          <li><a class="fc-pagination__link" href="#navigation" aria-current="page">1</a></li>
+          <li><a class="fc-pagination__link" href="#navigation">2</a></li>
+          <li><a class="fc-pagination__link" href="#navigation">3</a></li>
+          <li><span class="fc-pagination__gap" aria-hidden="true">&hellip;</span></li>
+          <li><a class="fc-pagination__link" href="#navigation">12</a></li>
+          <li><a class="fc-pagination__link fc-pagination__link--next" href="#navigation">Next</a></li>
+        </ul>
+      </nav>
+    </div>
+  </section>
+
+  <!-- ============================= SURFACES ============================= -->
+  <section class="demo-section" id="surfaces" aria-labelledby="h-surfaces">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-surfaces">Cards and surfaces</h2>
+      <p class="demo-note">
+        Cards are size containers: the wide card below puts its media beside the text
+        because <em>it</em> is wide, not because the window is. Disclosures are native
+        <code>&lt;details&gt;</code>; sharing a <code>name</code> makes them an accordion.
+      </p>
+    </div>
+
+    <div class="demo-panel fc-stack">
+      <div class="fc-grid-auto">
+        <article class="fc-card fc-card--elevated">
+          <div class="fc-card__header">
+            <span class="fc-avatar fc-avatar--square" aria-hidden="true">&#10022;</span>
+            <div class="fc-card__heading">
+              <h3 class="fc-card__title"><a class="fc-card__link" href="#surfaces">Research agent</a></h3>
+              <p class="fc-card__subtitle">Reads the web, cites sources</p>
+            </div>
+          </div>
+          <div class="fc-card__body"><p>The whole card is clickable; only the title is the link.</p></div>
+          <div class="fc-card__footer">
+            <span class="fc-badge fc-badge--success">Ready</span>
+          </div>
+        </article>
+
+        <label class="fc-card">
+          <div class="fc-card__header">
+            <div class="fc-card__heading">
+              <span class="fc-card__title">Team plan</span>
+              <span class="fc-card__subtitle">Shared projects and admin controls</span>
+            </div>
+            <input type="radio" name="demo-plan" class="fc-check__input" checked>
+          </div>
+          <div class="fc-card__body"><p>Selected state comes from the radio inside.</p></div>
+        </label>
+
+        <label class="fc-card">
+          <div class="fc-card__header">
+            <div class="fc-card__heading">
+              <span class="fc-card__title">Personal plan</span>
+              <span class="fc-card__subtitle">One seat</span>
+            </div>
+            <input type="radio" name="demo-plan" class="fc-check__input">
+          </div>
+          <div class="fc-card__body"><p>A large target for a single choice.</p></div>
+        </label>
+      </div>
+
+      <article class="fc-card">
+        <div class="fc-card__layout">
+          <div class="fc-card__media demo-media" aria-hidden="true"></div>
+          <div>
+            <div class="fc-card__header">
+              <div class="fc-card__heading">
+                <h3 class="fc-card__title">Container-aware layout</h3>
+                <p class="fc-card__subtitle">Resize the window: the switch follows this card's width.</p>
+              </div>
+            </div>
+            <div class="fc-card__body"><p>Put the same card in a sidebar and it stacks, at any viewport size.</p></div>
+            <div class="fc-card__footer fc-card__footer--divided">
+              <div class="fc-avatar-group" aria-label="Shared with 3 people" role="img">
+                <span class="fc-avatar fc-avatar--sm">AL</span>
+                <span class="fc-avatar fc-avatar--sm fc-avatar--neutral">GH</span>
+                <span class="fc-avatar fc-avatar--sm">KJ</span>
+              </div>
+              <button type="button" class="fc-btn fc-btn--secondary fc-btn--sm">Share</button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <div>
+        <details class="fc-disclosure" name="demo-faq" open>
+          <summary class="fc-disclosure__summary">Does this need JavaScript?</summary>
+          <div class="fc-disclosure__content">No. The disclosure is a details element, and the accordion behaviour comes from the shared name attribute.</div>
+        </details>
+        <details class="fc-disclosure" name="demo-faq">
+          <summary class="fc-disclosure__summary">Does find-in-page reach closed sections?</summary>
+          <div class="fc-disclosure__content">Yes. The browser opens the section that contains the match.</div>
+        </details>
+      </div>
+
+      <div class="fc-card fc-card--subtle">
+        <div class="fc-empty fc-empty--compact">
+          <div class="fc-empty__icon" aria-hidden="true">&#9906;</div>
+          <h3 class="fc-empty__title">No chats match &ldquo;quarterly&rdquo;</h3>
+          <p class="fc-empty__body">Try a shorter search, or look in archived chats.</p>
+          <div class="fc-empty__actions"><button type="button" class="fc-btn fc-btn--secondary fc-btn--sm">Clear search</button></div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -597,6 +1052,52 @@ const menu = new FutureCssMenu({
     &lt;/div&gt;
   &lt;/div&gt;
 &lt;/div&gt;</code></pre>
+    </div>
+  </section>
+
+  <!-- ============================= ANSWER ============================= -->
+  <section class="demo-section" id="answer" aria-labelledby="h-answer">
+    <div class="demo-section__head">
+      <h2 class="demo-h2" id="h-answer">An answer, end to end</h2>
+      <p class="demo-note">
+        The parts an assistant answer is made of: a reasoning trace that shimmers only
+        while <code>data-fc-state="streaming"</code>, inline citations with real names,
+        message actions that stay reachable by keyboard and touch, and suggested follow-ups.
+      </p>
+    </div>
+
+    <div class="demo-panel fc-stack">
+      <ul class="fc-suggestions fc-suggestions--grid" aria-label="Suggested prompts">
+        <li><button type="button" class="fc-suggestion"><span class="fc-suggestion__title">Summarise this repository</span><span class="fc-suggestion__hint">in five bullet points</span></button></li>
+        <li><button type="button" class="fc-suggestion"><span class="fc-suggestion__title">Find accessibility gaps</span><span class="fc-suggestion__hint">in the new components</span></button></li>
+      </ul>
+
+      <article class="fc-msg" data-fc-kind="message" data-fc-role="assistant" data-fc-state="complete">
+        <details class="fc-reasoning" id="demo-reasoning" data-fc-kind="reasoning" data-fc-state="streaming">
+          <summary class="fc-reasoning__summary">
+            <span class="fc-reasoning__label">Thinking</span>
+            <span class="fc-reasoning__duration" data-demo-duration></span>
+          </summary>
+          <div class="fc-reasoning__body">The user wants the bundle size. PLAN.md records it, and the build prints it. Cite both, and note that the figure is uncompressed.</div>
+        </details>
+        <!-- One line: the message body preserves whitespace, as streamed text does. -->
+        <div class="fc-msg__body">The bundle is shipped unminified on purpose<a class="fc-cite" href="#demo-src-1" aria-label="Source 1: Development plan">1</a>, so it stays readable in devtools; consumers minify at their own boundary<a class="fc-cite" href="#demo-src-2" aria-label="Source 2: Build orchestrator">2</a>.</div>
+        <ol class="fc-sources" aria-label="Sources">
+          <li class="fc-source" id="demo-src-1"><a class="fc-source__link" href="#demo-src-1"><span class="fc-source__index">1</span><span class="fc-source__title">Development plan</span><span class="fc-source__domain">docs/PLAN.md</span></a></li>
+          <li class="fc-source" id="demo-src-2"><a class="fc-source__link" href="#demo-src-2"><span class="fc-source__index">2</span><span class="fc-source__title">Build orchestrator</span><span class="fc-source__domain">src/build/build.ts</span></a></li>
+        </ol>
+        <div class="fc-msg__actions" role="toolbar" aria-label="Message actions">
+          <button type="button" class="fc-msg__action" aria-label="Copy">&#10697;</button>
+          <button type="button" class="fc-msg__action" aria-label="Good response" aria-pressed="false">&#128077;</button>
+          <button type="button" class="fc-msg__action" aria-label="Bad response" aria-pressed="false">&#128078;</button>
+          <button type="button" class="fc-msg__action">&#8635; Retry</button>
+        </div>
+      </article>
+
+      <ul class="fc-suggestions" aria-label="Follow-up suggestions">
+        <li><button type="button" class="fc-suggestion fc-suggestion--pill">How big is it minified?</button></li>
+        <li><button type="button" class="fc-suggestion fc-suggestion--pill">Which layer is largest?</button></li>
+      </ul>
     </div>
   </section>
 

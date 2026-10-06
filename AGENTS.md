@@ -277,15 +277,29 @@ docs/               Design documents; PLAN.md is the roadmap, WASM.md the WASM s
 
 ## Current state
 
-Pre-alpha. Foundations are built and enforced. Fourteen CSS components are
-complete: button, chat surface, tool call / step trace, rich text editor,
-context menu, data grid, embedded browser chrome, terminal, code block, diff
-viewer, the select/listbox, the chat composer, the context strip, and the
-git surface. Eight ship
-browser bindings -- editor, menu, grid, webview, select, composer, context
-strip, and git surface -- exercised by tests in a real headless Chrome. Syntax highlighting,
-Markdown, and line diffing ship as JS modules (`highlight`, `diff`,
-`markdown`); the diff has a Rust crate, the other two do not yet.
+Pre-alpha. Foundations are built and enforced. Thirty-four CSS components are
+complete. The general set: button, form field and input group, checkbox / radio /
+switch, card, badge and tag, alert, dialog and side sheet, popover and tooltip, toast,
+tabs, breadcrumb, pagination, spinners (ring, arc, typing dots, pulse, stream bars, orbit, sparkle), skeleton, progress, avatar, empty state, and
+disclosure. The AI-chat set: chat surface (with message actions), agent status row, reasoning trace,
+citations and sources, suggested prompts, tool call / step trace, rich text editor,
+context menu, data grid, embedded browser chrome, terminal, code block, diff viewer,
+select/listbox, chat composer, context strip, and git surface. Eleven ship browser
+bindings -- editor, menu, grid, webview, select, composer, context strip, git surface,
+tabs, toast, and tooltip -- exercised by tests in a real headless Chrome. Overlays lean
+on the platform (`<dialog>`, the popover API, `<details>`, `@starting-style`) and need
+no script. Syntax highlighting, Markdown, and line diffing ship as JS modules
+(`highlight`, `diff`, `markdown`); the diff has a Rust crate, the other two do not yet.
+
+When a modifier must restyle a component's parts, it sets custom properties the parts
+read (see `.fc-tabs__list--segmented`, `.fc-empty--error`) or keys off a real state
+attribute (`aria-orientation`, `aria-selected`). The linter rejects descendant
+class-on-class selectors; wrapping one in `[class]` or similar to slip past it is a
+workaround, not a fix.
+
+The browser suite looks for Chrome in the usual install paths; set `CHROME_PATH` when
+it lives elsewhere (a Playwright cache, a CI image). A suite that reports "no Chrome
+found" has skipped 100+ tests, so check for that line before calling a run green.
 
 The context strip is the clearest example of why a group of controls can be a
 component. Each control is an `fc-select`, but provider filters model and effort
@@ -293,7 +307,7 @@ is not universally available, and neither relationship can live in a select --
 two selects that each owned their own state would disagree, showing a model from
 one provider selected under another. That is a request nobody can fulfil.
 
-Form controls and dialogs are not yet written. The fixture-driven git surface
+The fixture-driven git surface
 (branch, status counts, file list, per-file line stats) is complete and reuses
 `fc-diff`; its Rust crate is the **first module in the workspace under its size
 budget** at 44.7 KB, which is the Phase A pattern working. The Rust/WASM layer has eight crates with 124 passing tests and a working JS-only fallback,
@@ -303,8 +317,9 @@ and context menu bindings opt into their Rust models with `useWasm`; the rich
 text and grid models exist in Rust and are covered by a JS parity test but are
 not wired.
 
-Form controls, overlays, and navigation are planned but not written. See
-`docs/PLAN.md` for the current phase and what is deliberately out of scope.
+A navigation sidebar, data table with sorting, and description list are planned but
+not written. See `docs/PLAN.md` for the current phase and what is deliberately out of
+scope.
 
 The docs in `docs/` were written alongside the code and reflect the same
 architecture. If you change the system, change the docs in the same commit —

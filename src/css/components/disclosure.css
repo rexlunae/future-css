@@ -1,0 +1,116 @@
+/*!
+ * future-css -- disclosure and accordion
+ *
+ * Built on `<details>`/`<summary>`, which are keyboard-operable, announced as
+ * expandable, searchable with find-in-page (closed content opens to show a
+ * match), and work with JavaScript off.
+ *
+ *   <details class="fc-disclosure" name="faq">
+ *     <summary class="fc-disclosure__summary">What does it cost?</summary>
+ *     <div class="fc-disclosure__content">…</div>
+ *   </details>
+ *
+ * An accordion is several disclosures. Giving them the same `name` makes them
+ * exclusive -- opening one closes the others -- natively, with no script.
+ *
+ * Opening animates its height where `::details-content` and
+ * `interpolate-size` are supported; elsewhere it opens instantly, which is the
+ * correct fallback.
+ */
+
+@layer fc.components {
+  .fc-disclosure {
+    /* Lets `block-size: auto` be a transition endpoint. */
+    interpolate-size: allow-keywords;
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  }
+
+  .fc-disclosure__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fc-space-3);
+    min-block-size: var(--fc-size-target-comfortable);
+    padding-block: var(--fc-space-3);
+    padding-inline: var(--fc-space-1);
+    font-weight: var(--fc-font-weight-medium);
+    list-style: none;
+    cursor: pointer;
+    border-radius: var(--fc-radius-md);
+  }
+
+  /* WebKit still draws its own marker unless told not to. */
+  .fc-disclosure__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .fc-disclosure__summary:hover {
+    color: var(--fc-color-accent-text);
+  }
+
+  /*
+   * The chevron is two borders of a rotated square. `rotate` is physical, so the
+   * closed state's "points toward the content's reading direction" needs an RTL
+   * branch; the open state points down in both directions.
+   */
+  .fc-disclosure__summary::after {
+    content: "";
+    flex-shrink: 0;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    margin-inline-end: var(--fc-space-1);
+    border-block-end: var(--fc-border-width-thick) solid currentColor;
+    border-inline-end: var(--fc-border-width-thick) solid currentColor;
+    rotate: -45deg;
+    transition: rotate var(--fc-duration-normal) var(--fc-easing-standard);
+  }
+
+  .fc-disclosure__summary:dir(rtl)::after {
+    rotate: 45deg;
+  }
+
+  .fc-disclosure[open] > .fc-disclosure__summary::after {
+    rotate: 45deg;
+  }
+
+  .fc-disclosure[open] > .fc-disclosure__summary:dir(rtl)::after {
+    rotate: -45deg;
+  }
+
+  .fc-disclosure::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size var(--fc-duration-normal) var(--fc-easing-standard),
+      content-visibility var(--fc-duration-normal) allow-discrete;
+  }
+
+  .fc-disclosure[open]::details-content {
+    block-size: auto;
+  }
+
+  .fc-disclosure__content {
+    padding-block: 0 var(--fc-space-4);
+    padding-inline: var(--fc-space-1);
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-sm);
+  }
+
+  /* Boxed: a bordered card per item, for settings pages and FAQ blocks. */
+  .fc-disclosure--boxed {
+    background-color: var(--fc-color-bg-surface);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-lg);
+    padding-inline: var(--fc-space-3);
+  }
+
+  .fc-disclosure--boxed + .fc-disclosure--boxed {
+    margin-block-start: var(--fc-space-2);
+  }
+
+  @media (forced-colors: active) {
+    .fc-disclosure {
+      border-block-end-color: CanvasText;
+    }
+  }
+}

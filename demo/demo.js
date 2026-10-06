@@ -20,6 +20,9 @@ import { FutureCssSelect } from "/src/js/select.js";
 import { FutureCssComposer } from "/src/js/composer.js";
 import { FutureCssContextStrip } from "/src/js/context-strip.js";
 import { FutureCssGitSurface } from "/src/js/git.js";
+import { bindTabs } from "/src/js/tabs.js";
+import { FutureCssToaster } from "/src/js/toast.js";
+import { bindTooltips } from "/src/js/tooltip.js";
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -783,3 +786,120 @@ loadGit("feat/git-surface", GIT_TREE);
 $("#git-another").addEventListener("click", () => loadGit("main", GIT_CONFLICTING));
 $("#git-clean").addEventListener("click", () => loadGit("main", []));
 $("#git-unborn").addEventListener("click", () => loadGit(null, GIT_TREE.slice(0, 2)));
+
+// ---------------------------------------------------------------------------
+// Forms
+//
+// Validation runs on submit. The error text goes into the error element that
+// was in the DOM from the start (so aria-describedby already points at it), the
+// control gets aria-invalid, and focus moves to the summary, which links to the
+// field. Nothing is red before the user has tried to submit.
+// ---------------------------------------------------------------------------
+
+const form = $("#demo-form");
+form?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const email = $("#f-email");
+  const error = $("#f-email-error");
+  const summary = $("#form-summary");
+  const valid = email.value.trim() !== "" && email.checkValidity();
+  email.setAttribute("aria-invalid", String(!valid));
+  error.textContent = valid ? "" : "Enter an email address, like ada@example.com";
+  summary.hidden = valid;
+  if (!valid) summary.focus();
+  else toaster.show({ title: "Settings saved", tone: "success" });
+});
+form?.addEventListener("reset", () => {
+  $("#f-email").removeAttribute("aria-invalid");
+  $("#f-email-error").textContent = "";
+  $("#form-summary").hidden = true;
+});
+
+// ---------------------------------------------------------------------------
+// Toasts, tabs, tooltips, dialogs
+// ---------------------------------------------------------------------------
+
+const toaster = new FutureCssToaster();
+
+const TOASTS = {
+  success: { title: "Copied to clipboard", tone: "success" },
+  action: {
+    title: "Chat archived",
+    body: "It will stay searchable.",
+    action: { label: "Undo", onAction: () => toaster.show({ title: "Chat restored", tone: "info" }) },
+  },
+  danger: { title: "Upload failed", body: "report.pdf is larger than 30 MB.", tone: "danger" },
+};
+
+for (const button of document.querySelectorAll("[data-demo-toast]")) {
+  button.addEventListener("click", () => toaster.show(TOASTS[button.dataset.demoToast]));
+}
+
+bindTabs(document);
+bindTooltips(document);
+
+// `commandfor`/`command` would open these with no script; the listeners below
+// cover browsers that do not have invoker commands yet.
+for (const opener of document.querySelectorAll("[data-demo-open]")) {
+  opener.addEventListener("click", () => document.getElementById(opener.dataset.demoOpen)?.showModal());
+}
+for (const closer of document.querySelectorAll("[data-demo-close]")) {
+  closer.addEventListener("click", () => closer.closest("dialog")?.close());
+}
+
+// The reasoning trace streams for a few seconds, then completes: the shimmer is
+// driven by data-fc-state, so it stops the moment the state changes.
+const reasoning = $("#demo-reasoning");
+if (reasoning) {
+  const started = Date.now();
+  setTimeout(() => {
+    reasoning.dataset.fcState = "complete";
+    reasoning.querySelector(".fc-reasoning__label").textContent = "Thought";
+    reasoning.querySelector("[data-demo-duration]").textContent =
+      `for ${Math.round((Date.now() - started) / 1000)}s`;
+  }, 4000);
+}
+
+for (const toggle of document.querySelectorAll(".fc-msg__action[aria-pressed]")) {
+  toggle.addEventListener("click", () => {
+    const next = toggle.getAttribute("aria-pressed") !== "true";
+    // Thumbs up and down are mutually exclusive.
+    for (const other of toggle.parentElement.querySelectorAll("[aria-pressed]")) {
+      other.setAttribute("aria-pressed", "false");
+    }
+    toggle.setAttribute("aria-pressed", String(next));
+  });
+}
+
+for (const tag of document.querySelectorAll("button.fc-tag[aria-pressed]")) {
+  tag.addEventListener("click", () => {
+    tag.setAttribute("aria-pressed", String(tag.getAttribute("aria-pressed") !== "true"));
+  });
+}
+
+// Agent steps: each click completes the live step and starts the next one. The
+// row's look follows data-fc-state alone -- the script never touches a class.
+const STEPS = ["Searching 12 sources", "Reading 4 pages", "Drafting the answer", "Checking citations"];
+let step = 0;
+let stepStarted = Date.now();
+const live = $("#demo-agent-live");
+const elapsed = live?.querySelector("[data-demo-elapsed]");
+setInterval(() => {
+  if (elapsed && live.dataset.fcState === "running") {
+    elapsed.textContent = `${Math.round((Date.now() - stepStarted) / 1000)}s`;
+  }
+}, 1000);
+$("#demo-agent-next")?.addEventListener("click", () => {
+  if (!live) return;
+  const done = live.cloneNode(true);
+  done.removeAttribute("id");
+  done.dataset.fcState = "complete";
+  // Only the live step is a live region; finished ones are history.
+  done.querySelector("[role='status']")?.removeAttribute("role");
+  done.querySelector("[data-demo-elapsed]")?.removeAttribute("data-demo-elapsed");
+  live.before(done);
+  step = (step + 1) % STEPS.length;
+  live.querySelector(".fc-agent-status__label").textContent = STEPS[step];
+  stepStarted = Date.now();
+  elapsed.textContent = "0s";
+});

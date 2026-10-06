@@ -1,0 +1,82 @@
+/*!
+ * future-css -- breadcrumb
+ *
+ *   <nav class="fc-breadcrumb" aria-label="Breadcrumb">
+ *     <ol class="fc-breadcrumb__list">
+ *       <li class="fc-breadcrumb__item"><a class="fc-breadcrumb__link" href="/">Projects</a></li>
+ *       <li class="fc-breadcrumb__item"><a class="fc-breadcrumb__link" href="/p/1">future-css</a></li>
+ *       <li class="fc-breadcrumb__item"><a class="fc-breadcrumb__link" aria-current="page">Tokens</a></li>
+ *     </ol>
+ *   </nav>
+ *
+ * An ordered list, because the order is the information. Separators are
+ * generated content with empty alternative text, so a screen reader reads
+ * "Projects, future-css, Tokens" rather than "Projects slash future-css slash".
+ */
+
+@layer fc.components {
+  .fc-breadcrumb {
+    min-inline-size: 0;
+  }
+
+  .fc-breadcrumb__list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fc-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--fc-font-size-sm);
+  }
+
+  .fc-breadcrumb__item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-1);
+    min-inline-size: 0;
+  }
+
+  /*
+   * A slash, not a chevron: a chevron points a direction and would need
+   * mirroring in RTL, while a slash reads correctly both ways.
+   */
+  .fc-breadcrumb__item + .fc-breadcrumb__item::before {
+    content: "/" / "";
+    color: var(--fc-color-text-subtle);
+  }
+
+  .fc-breadcrumb__link {
+    display: inline-block;
+    /* Long names truncate rather than pushing the trail onto three lines. */
+    max-inline-size: 16rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-block: var(--fc-space-0-5);
+    padding-inline: var(--fc-space-1);
+    border-radius: var(--fc-radius-sm);
+    color: var(--fc-color-text-muted);
+    text-decoration: none;
+  }
+
+  .fc-breadcrumb__link:hover {
+    color: var(--fc-color-text-default);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  /* The current page is a location, not a destination: no link styling. */
+  .fc-breadcrumb__link[aria-current="page"] {
+    color: var(--fc-color-text-default);
+    font-weight: var(--fc-font-weight-medium);
+    text-decoration: none;
+    cursor: default;
+  }
+
+  @media (forced-colors: active) {
+    .fc-breadcrumb__link[aria-current="page"] {
+      color: CanvasText;
+    }
+  }
+}

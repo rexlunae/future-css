@@ -267,6 +267,79 @@
     border-inline-start-color: var(--fc-color-warning-border);
   }
 
+  /* ---- Message actions -------------------------------------------------- */
+
+  /*
+   * Copy, retry, and feedback controls under a message. They recede until the
+   * message is hovered or anything inside it has focus, so a long thread is not
+   * a wall of icons -- but they are never removed from the tab order, and on a
+   * device with no hover they are always shown, since "hover to reveal" would
+   * make them unreachable by touch.
+   */
+  .fc-msg__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fc-space-0-5);
+    margin-inline-start: calc(var(--fc-space-1-5) * -1);
+    opacity: 0;
+    transition: opacity var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-msg:hover .fc-msg__actions,
+  .fc-msg:focus-within .fc-msg__actions,
+  .fc-msg__actions--persistent {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .fc-msg__actions {
+      opacity: 1;
+    }
+  }
+
+  .fc-msg__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fc-space-1);
+    min-inline-size: 2rem;
+    min-block-size: 2rem;
+    padding-inline: var(--fc-space-1-5);
+    background-color: transparent;
+    color: var(--fc-color-text-muted);
+    border: 0;
+    border-radius: var(--fc-radius-md);
+    font: inherit;
+    font-size: var(--fc-font-size-xs);
+    cursor: pointer;
+    transition:
+      background-color var(--fc-duration-fast) var(--fc-easing-standard),
+      color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-msg__action:hover {
+    background-color: var(--fc-color-bg-muted);
+    color: var(--fc-color-text-default);
+  }
+
+  .fc-msg__action:active {
+    background-color: var(--fc-color-bg-subtle);
+  }
+
+  /* Thumbs up/down and similar toggles: aria-pressed is the state. */
+  .fc-msg__action[aria-pressed="true"] {
+    color: var(--fc-color-accent-text);
+    background-color: var(--fc-color-accent-bg-subtle);
+  }
+
+  .fc-msg__action:disabled,
+  .fc-msg__action[aria-disabled="true"] {
+    color: var(--fc-color-text-subtle);
+    background-color: transparent;
+    cursor: not-allowed;
+  }
+
   /*
    * Forced colors.
    *
@@ -310,6 +383,10 @@
 
     .fc-msg[data-fc-state="error"] {
       border-color: LinkText;
+    }
+
+    .fc-msg__action[aria-pressed="true"] {
+      outline: var(--fc-border-width-thin) solid Highlight;
     }
   }
 }

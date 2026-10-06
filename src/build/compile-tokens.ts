@@ -45,6 +45,8 @@ import {
   easing,
   opacity,
   shadow,
+  shadowFor,
+  shadowValue,
   targetSize,
   zIndex,
 } from "../tokens/semantic/motion.ts";
@@ -72,25 +74,22 @@ const addLiteralGroup = (group: string, values: Record<string, string>): void =>
   }
 };
 
-const addRatioGroup = (group: string, values: Record<string, [string, string]>): void => {
-  for (const [key, [light, dark]] of Object.entries(values)) {
-    tokens.push({
-      name: `${PREFIX}-${group}-${key}`,
-      value: `light-dark(${light}, ${dark})`,
-      light,
-      dark,
-    });
-  }
-};
+// ---- Elevation ----------------------------------------------------------
+// light-dark() wraps each layer's colour, never the whole shadow: it accepts
+// colours only, and a wrapped shadow is invalid at computed time.
+for (const [key, layers] of Object.entries(shadow)) {
+  tokens.push({
+    name: `${PREFIX}-shadow-${key}`,
+    value: shadowValue(layers),
+    light: shadowFor(layers, "light"),
+    dark: shadowFor(layers, "dark"),
+  });
+}
 
 // ---- Themes -------------------------------------------------------------
 // A theme is a partial re-mapping of the semantic color layer. Authoring a
 // brand theme means overriding these, and nothing else -- spacing, type, and
 // motion stay identical, so a theme can never accidentally break layout.
-addRatioGroup("shadow", {
-  raised: [shadow["raised-light"]!, shadow["raised-dark"]!],
-  overlay: [shadow["overlay-light"]!, shadow["overlay-dark"]!],
-});
 
 // ---- Colors -------------------------------------------------------------
 for (const name of semanticColorNames) {

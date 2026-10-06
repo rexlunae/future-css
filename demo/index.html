@@ -511,6 +511,46 @@
         </ul>
       </nav>
     </div>
+
+    <div class="demo-panel demo-nav-frame" id="demo-nav-frame">
+      <nav class="fc-nav" id="demo-nav" aria-label="Workspace">
+        <div class="fc-nav__header">
+          <span class="fc-nav__title">Workspace</span>
+          <button class="fc-nav__toggle" type="button" aria-label="Sidebar" aria-expanded="true"></button>
+        </div>
+        <ul class="fc-nav__list">
+          <li><a class="fc-nav__link" href="#navigation" aria-current="page"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 4h14v9H8l-4 3v-3H3z"/></svg><span class="fc-nav__label">Chats</span><span class="fc-nav__meta">3</span></a></li>
+          <li>
+            <a class="fc-nav__link" href="#navigation" aria-current="true"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 5h6l2 2h8v9H2z"/></svg><span class="fc-nav__label">Projects</span></a>
+            <ul class="fc-nav__list fc-nav__list--nested">
+              <li><a class="fc-nav__link" href="#navigation"><span class="fc-nav__label">future-css</span></a></li>
+              <li><a class="fc-nav__link" href="#navigation"><span class="fc-nav__label">A project whose name is long enough to wrap</span></a></li>
+            </ul>
+          </li>
+          <li><a class="fc-nav__link" aria-disabled="true"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 5h16v10H2zM2 8h16"/></svg><span class="fc-nav__label">Billing</span></a></li>
+        </ul>
+        <details class="fc-nav__group" open>
+          <summary class="fc-nav__group-label">Recent</summary>
+          <ul class="fc-nav__list">
+            <li><a class="fc-nav__link" href="#navigation"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM10 6v4l3 2"/></svg><span class="fc-nav__label">Release notes</span></a></li>
+          </ul>
+        </details>
+        <div class="fc-nav__footer">
+          <ul class="fc-nav__list">
+            <li><a class="fc-nav__link" href="#navigation"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM10 2v2M10 16v2M2 10h2M16 10h2M4.3 4.3l1.4 1.4M14.3 14.3l1.4 1.4M4.3 15.7l1.4-1.4M14.3 5.7l1.4-1.4"/></svg><span class="fc-nav__label">Settings</span></a></li>
+          </ul>
+        </div>
+      </nav>
+      <div class="demo-nav-frame__main">
+        <p class="demo-note">
+          The sidebar is links, so Tab walks it and nothing else is needed. The toggle's
+          <code>aria-expanded</code> is the only collapse state: the rail reads it through
+          <code>:has()</code>, and labels stay as each link's accessible name. Flip to RTL
+          and the sidebar, its current-page bar and the toggle all move to the other edge.
+        </p>
+        <p class="demo-status" id="nav-status" role="status"></p>
+      </div>
+    </div>
   </section>
 
   <!-- ============================= SURFACES ============================= -->

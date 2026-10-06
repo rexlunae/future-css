@@ -510,3 +510,21 @@
 .demo-spinners small {
   color: var(--fc-color-text-muted);
 }
+
+/*
+ * The sidebar demo sits in a fixed-height frame so it reads as an app's side
+ * column. Flex rather than the fc-sidebar layout: that primitive sets the
+ * column's flex-basis, which would override the width the rail collapses to.
+ */
+.demo-nav-frame {
+  display: flex;
+  block-size: 30rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.demo-nav-frame__main {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  padding: var(--fc-space-4);
+}

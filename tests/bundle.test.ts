@@ -187,6 +187,7 @@ describe("bundle", { skip: hasBundle ? false : "run `npm run build` first" }, ()
       "fc-table",
       "fc-table-wrap",
       "fc-dl",
+      "fc-nav",
     ];
     for (const block of blocks) {
       assert.match(

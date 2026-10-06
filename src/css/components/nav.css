@@ -1,0 +1,356 @@
+/*!
+ * future-css -- navigation sidebar
+ *
+ * The app's primary navigation: a column of links, optionally grouped, that
+ * can collapse to an icon rail.
+ *
+ *   <nav class="fc-nav" id="app-nav" aria-label="Main">
+ *     <div class="fc-nav__header">
+ *       <span class="fc-nav__title">Workspace</span>
+ *       <button class="fc-nav__toggle" type="button" aria-label="Sidebar"
+ *               aria-expanded="true" aria-controls="app-nav"></button>
+ *     </div>
+ *     <ul class="fc-nav__list">
+ *       <li>
+ *         <a class="fc-nav__link" href="/chats" aria-current="page">
+ *           <svg class="fc-nav__icon" aria-hidden="true">…</svg>
+ *           <span class="fc-nav__label">Chats</span>
+ *           <span class="fc-nav__meta">3</span>
+ *         </a>
+ *       </li>
+ *     </ul>
+ *     <details class="fc-nav__group" open>
+ *       <summary class="fc-nav__group-label">Projects</summary>
+ *       <ul class="fc-nav__list">…</ul>
+ *     </details>
+ *   </nav>
+ *
+ * Links, not a menu or a tree: every destination has a URL, the Tab key walks
+ * them, and screen readers list them as the page's navigation landmark.
+ * `role="tree"` would demand arrow-key navigation users do not expect from a
+ * sidebar, and would hide the links from link lists.
+ *
+ * The current page is `aria-current="page"`. An ancestor of it (a section whose
+ * child page is open) is `aria-current="true"`, so the path stays visible.
+ *
+ * Collapsing is the toggle's `aria-expanded`, and only that: the rail reads
+ * the attribute through `:has()`, so the announced state and the drawn state
+ * cannot disagree. The `nav` binding flips it; without the binding the
+ * sidebar simply stays expanded.
+ */
+
+@layer fc.components {
+  .fc-nav {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-4);
+    inline-size: var(--fc-nav-size, 16rem);
+    max-inline-size: 100%;
+    block-size: 100%;
+    padding: var(--fc-space-3) var(--fc-space-2);
+    background-color: var(--fc-color-bg-subtle);
+    border-inline-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    font-size: var(--fc-font-size-sm);
+    transition: inline-size var(--fc-duration-normal) var(--fc-easing-standard);
+  }
+
+  /*
+   * Collapsed to a rail. Everything that changes reads a custom property set
+   * here, so the parts need no descendant selectors and a consumer can
+   * restyle the rail by setting the same properties.
+   */
+  .fc-nav:has(.fc-nav__toggle[aria-expanded="false"]) {
+    --fc-nav-size: calc(var(--fc-size-target-comfortable) + var(--fc-space-4));
+    --fc-nav-text-display: none;
+    --fc-nav-nested-display: none;
+    --fc-nav-toggle-turn: 180deg;
+    --fc-nav-header-pad: 0;
+    /* Visually hidden, but still each link's accessible name. */
+    --fc-nav-label-position: absolute;
+    --fc-nav-label-size: var(--fc-space-px);
+    --fc-nav-label-clip: inset(50%);
+    --fc-nav-label-wrap: nowrap;
+  }
+
+  .fc-nav__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fc-space-2);
+    padding-inline-start: var(--fc-nav-header-pad, var(--fc-space-2));
+  }
+
+  .fc-nav__title {
+    display: var(--fc-nav-text-display, block);
+    min-inline-size: 0;
+    font-weight: var(--fc-font-weight-semibold);
+    color: var(--fc-color-text-default);
+  }
+
+  /* ---- Toggle ---------------------------------------------------------- */
+
+  .fc-nav__toggle {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--fc-size-target-comfortable);
+    block-size: var(--fc-size-target-comfortable);
+    padding: 0;
+    background-color: transparent;
+    color: var(--fc-color-text-muted);
+    border: 0;
+    border-radius: var(--fc-radius-md);
+    cursor: pointer;
+    transition:
+      color var(--fc-duration-fast) var(--fc-easing-standard),
+      background-color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  /*
+   * A double chevron pointing at the edge the sidebar collapses toward, which
+   * is the inline start: left in LTR, right in RTL. It turns to point outward
+   * once collapsed.
+   */
+  .fc-nav__toggle::before {
+    content: "\00AB" / "";
+    /* Inline boxes ignore `rotate`; without this the glyph never turns. */
+    display: inline-block;
+    font-size: var(--fc-font-size-lg);
+    line-height: var(--fc-line-height-none);
+    rotate: var(--fc-nav-toggle-turn, 0deg);
+    transition: rotate var(--fc-duration-normal) var(--fc-easing-standard);
+  }
+
+  .fc-nav__toggle:dir(rtl)::before {
+    content: "\00BB" / "";
+  }
+
+  .fc-nav__toggle:hover {
+    color: var(--fc-color-text-default);
+    background-color: var(--fc-color-bg-muted);
+  }
+
+  .fc-nav__toggle:active {
+    background-color: var(--fc-color-bg-surface);
+  }
+
+  .fc-nav__toggle:disabled,
+  .fc-nav__toggle[aria-disabled="true"] {
+    color: var(--fc-color-text-subtle);
+    background-color: transparent;
+    cursor: not-allowed;
+  }
+
+  /* ---- Lists and groups ------------------------------------------------ */
+
+  .fc-nav__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-0-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* A second level, under the item it belongs to. */
+  .fc-nav__list--nested {
+    display: var(--fc-nav-nested-display, flex);
+    padding-block-start: var(--fc-space-0-5);
+    padding-inline-start: var(--fc-space-6);
+  }
+
+  /* A static section label. Use a group when the section should fold. */
+  .fc-nav__heading {
+    display: var(--fc-nav-text-display, block);
+    margin: 0 0 var(--fc-space-1);
+    padding-inline: var(--fc-space-2);
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-xs);
+    font-weight: var(--fc-font-weight-semibold);
+  }
+
+  /*
+   * A foldable section on <details>, so it is keyboard-operable, announced as
+   * expandable, and works with no script.
+   */
+  .fc-nav__group-label {
+    display: var(--fc-nav-text-display, flex);
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fc-space-2);
+    min-block-size: var(--fc-size-target-min);
+    margin-block-end: var(--fc-space-1);
+    padding-inline: var(--fc-space-2);
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-xs);
+    font-weight: var(--fc-font-weight-semibold);
+    list-style: none;
+    border-radius: var(--fc-radius-md);
+    cursor: pointer;
+  }
+
+  .fc-nav__group-label::-webkit-details-marker {
+    display: none;
+  }
+
+  .fc-nav__group-label:hover {
+    color: var(--fc-color-text-default);
+    background-color: var(--fc-color-bg-muted);
+  }
+
+  /*
+   * The chevron is two borders of a rotated square. `rotate` is physical, so
+   * the closed state, which points along the reading direction, has an RTL
+   * branch; open points down in both.
+   */
+  .fc-nav__group-label::after {
+    content: "";
+    flex-shrink: 0;
+    inline-size: 0.4rem;
+    block-size: 0.4rem;
+    border-block-end: var(--fc-border-width-thick) solid currentColor;
+    border-inline-end: var(--fc-border-width-thick) solid currentColor;
+    rotate: -45deg;
+    transition: rotate var(--fc-duration-normal) var(--fc-easing-standard);
+  }
+
+  .fc-nav__group-label:dir(rtl)::after {
+    rotate: 45deg;
+  }
+
+  .fc-nav__group[open] > .fc-nav__group-label::after {
+    rotate: 45deg;
+  }
+
+  /* ---- Links ----------------------------------------------------------- */
+
+  .fc-nav__link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-2);
+    min-block-size: var(--fc-size-target-comfortable);
+    padding-block: var(--fc-space-1);
+    padding-inline: var(--fc-space-2);
+    color: var(--fc-color-text-muted);
+    text-decoration: none;
+    border-radius: var(--fc-radius-md);
+    /*
+     * The current-page bar is a border, not a background or shadow, so it
+     * survives forced colours. Transparent until current, so the text does
+     * not shift when it appears.
+     */
+    border-inline-start: var(--fc-border-width-thick) solid transparent;
+    transition:
+      color var(--fc-duration-fast) var(--fc-easing-standard),
+      background-color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-nav__link:hover {
+    color: var(--fc-color-text-default);
+    background-color: var(--fc-color-bg-muted);
+  }
+
+  .fc-nav__link:active {
+    background-color: var(--fc-color-bg-surface);
+  }
+
+  .fc-nav__link[aria-current="page"] {
+    color: var(--fc-color-accent-text);
+    background-color: var(--fc-color-accent-bg-subtle);
+    border-inline-start-color: var(--fc-color-accent-border);
+    font-weight: var(--fc-font-weight-medium);
+  }
+
+  /* The section that contains the current page: on the path, not the page. */
+  .fc-nav__link[aria-current="true"] {
+    color: var(--fc-color-text-default);
+    font-weight: var(--fc-font-weight-medium);
+  }
+
+  /*
+   * A destination that exists but cannot be opened (no access, not set up).
+   * An anchor without href plus aria-disabled keeps it in the list so the
+   * user learns it exists.
+   */
+  .fc-nav__link[aria-disabled="true"] {
+    color: var(--fc-color-text-subtle);
+    background-color: transparent;
+    cursor: not-allowed;
+  }
+
+  .fc-nav__icon {
+    flex-shrink: 0;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+  }
+
+  /*
+   * Labels wrap rather than truncate, so a long project name is never clipped
+   * without a `data-fc-truncated` declaration. In the rail they are visually
+   * hidden through the properties above and still name the link.
+   */
+  .fc-nav__label {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    position: var(--fc-nav-label-position, static);
+    inline-size: var(--fc-nav-label-size, auto);
+    block-size: var(--fc-nav-label-size, auto);
+    overflow: hidden;
+    clip-path: var(--fc-nav-label-clip, none);
+    white-space: var(--fc-nav-label-wrap, normal);
+    overflow-wrap: anywhere;
+  }
+
+  /* A count or status at the end of a link: unread threads, failing runs. */
+  .fc-nav__meta {
+    display: var(--fc-nav-text-display, inline-block);
+    flex-shrink: 0;
+    min-inline-size: 1.25rem;
+    padding-inline: var(--fc-space-1-5);
+    background-color: var(--fc-color-bg-muted);
+    color: var(--fc-color-text-muted);
+    border-radius: var(--fc-radius-full);
+    font-size: var(--fc-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  /* Settings, account: pinned to the bottom of a full-height sidebar. */
+  .fc-nav__footer {
+    margin-block-start: auto;
+    padding-block-start: var(--fc-space-3);
+    border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  }
+
+  /*
+   * Reduced motion: the rail's width change, the toggle's turn, and the group
+   * chevron are transitions, which the reset's reduced-motion block zeroes,
+   * so collapsing is instant. Nothing here animates on its own.
+   */
+
+  /*
+   * Forced colours drop backgrounds, so the current page keeps its
+   * inline-start bar in Highlight and a disabled link reads as GrayText.
+   */
+  @media (forced-colors: active) {
+    .fc-nav__link[aria-current="page"] {
+      color: LinkText;
+      border-inline-start-color: Highlight;
+    }
+
+    .fc-nav__link[aria-disabled="true"],
+    .fc-nav__toggle:disabled,
+    .fc-nav__toggle[aria-disabled="true"] {
+      color: GrayText;
+    }
+
+    .fc-nav__meta {
+      border: var(--fc-border-width-thin) solid CanvasText;
+    }
+  }
+}

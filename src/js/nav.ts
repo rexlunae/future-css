@@ -12,6 +12,10 @@
  * If focus is inside a part the rail hides (a group label, or a nested link),
  * collapsing would strand it on an invisible element, so focus moves to the
  * toggle first.
+ *
+ * In the rail, each link's label becomes its `title`, so a mouse user can read
+ * the name the icon stands for. An `fc-tooltip` cannot do this job: the sidebar
+ * scrolls, and a scroll container clips an absolutely positioned bubble.
  */
 
 export interface NavOptions {
@@ -24,11 +28,18 @@ let uid = 0;
 /** The instance `bindNavs` created for each sidebar, which alone may clear its marker. */
 const markerOwner = new WeakMap<HTMLElement, FutureCssNav>();
 
+/** Links whose `title` a binding set for the rail, so only those are cleared on expand. */
+const railTitles = new WeakSet<HTMLElement>();
+
 export class FutureCssNav {
   private readonly root: HTMLElement;
   private readonly toggle: HTMLElement | null;
   private readonly options: NavOptions;
-  private readonly onClick = () => this.setExpanded(!this.expanded);
+  private readonly onClick = () => {
+    // aria-disabled keeps the toggle focusable, so it still receives clicks.
+    if (this.toggle?.getAttribute("aria-disabled") === "true") return;
+    this.setExpanded(!this.expanded);
+  };
 
   constructor(root: HTMLElement | string, options: NavOptions = {}) {
     const el = typeof root === "string" ? document.querySelector<HTMLElement>(root) : root;
@@ -43,6 +54,7 @@ export class FutureCssNav {
       if (!this.toggle.hasAttribute("aria-expanded")) this.toggle.setAttribute("aria-expanded", "true");
       this.toggle.addEventListener("click", this.onClick);
     }
+    this.syncTitles();
   }
 
   /** Whether the sidebar shows its labels. A sidebar with no toggle is always expanded. */
@@ -56,6 +68,7 @@ export class FutureCssNav {
     if (!toggle || expanded === this.expanded) return;
     if (!expanded && this.focusWillBeHidden()) toggle.focus();
     toggle.setAttribute("aria-expanded", String(expanded));
+    this.syncTitles();
     this.options.onToggle?.(expanded);
   }
 
@@ -71,6 +84,23 @@ export class FutureCssNav {
       // A host may have handed the element to another binding since; its
       // marker is not ours to remove.
       if (this.root.getAttribute("data-fc-bound") === "nav") this.root.removeAttribute("data-fc-bound");
+    }
+  }
+
+  private syncTitles(): void {
+    const collapsed = !this.expanded;
+    for (const link of this.root.querySelectorAll<HTMLElement>(".fc-nav__link")) {
+      if (collapsed) {
+        // A title the author wrote says something the label does not; keep it.
+        if (link.hasAttribute("title") && !railTitles.has(link)) continue;
+        const label = link.querySelector(".fc-nav__label")?.textContent?.trim();
+        if (!label) continue;
+        link.setAttribute("title", label);
+        railTitles.add(link);
+      } else if (railTitles.has(link)) {
+        link.removeAttribute("title");
+        railTitles.delete(link);
+      }
     }
   }
 

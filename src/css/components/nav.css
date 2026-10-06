@@ -203,9 +203,9 @@
   }
 
   /*
-   * The chevron is two borders of a rotated square. `rotate` is physical, so
-   * the closed state, which points along the reading direction, has an RTL
-   * branch; open points down in both.
+   * The chevron is two borders of a rotated square. `rotate` is physical and
+   * the borders are logical, so each state has an RTL branch: closed points
+   * along the reading direction, open points down in both.
    */
   .fc-nav__group-label::after {
     content: "";
@@ -224,6 +224,11 @@
 
   .fc-nav__group[open] > .fc-nav__group-label::after {
     rotate: 45deg;
+  }
+
+  /* The open turn is mirrored too: the border corner is on the other side. */
+  .fc-nav__group[open] > .fc-nav__group-label:dir(rtl)::after {
+    rotate: -45deg;
   }
 
   /* ---- Links ----------------------------------------------------------- */

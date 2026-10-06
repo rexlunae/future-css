@@ -162,6 +162,9 @@ export const contrastPairs: readonly ContrastPair[] = [
   { usage: "Info text on a subtle info background", fg: "info-text", bg: "info-bg-subtle", min: 4.5 },
   { usage: "Muted text on a muted (hovered) surface", fg: "text-muted", bg: "bg-muted", min: 4.5 },
   { usage: "Muted text on a sunken surface", fg: "text-muted", bg: "bg-sunken", min: 4.5 },
+  // The navigation sidebar sits on bg-subtle: links, headings and counts.
+  { usage: "Muted text on a subtle surface (sidebar)", fg: "text-muted", bg: "bg-subtle", min: 4.5 },
+  { usage: "De-emphasised text on a subtle surface (sidebar)", fg: "text-subtle", bg: "bg-subtle", min: 4.5 },
   // Overlays (dialog, popover, toast) sit on bg-raised, which is a different
   // lightness from bg-surface in dark mode, so the pairs are restated for it.
   { usage: "Body text on a raised overlay (dialog, popover, toast)", fg: "text-default", bg: "bg-raised", min: 7 },

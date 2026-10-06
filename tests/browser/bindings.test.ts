@@ -153,8 +153,11 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       awaitPromise: true,
       returnByValue: true,
     });
-    if (res.exceptionDetails) {
-      const detail = res.exceptionDetails.exception?.description ?? res.exceptionDetails.text;
+    // A thrown error is reported beside the value, at the same depth. Checked
+    // one level up, it was missed: the test saw `undefined` instead of the error.
+    const thrown = res.result?.exceptionDetails ?? res.exceptionDetails;
+    if (thrown) {
+      const detail = thrown.exception?.description ?? thrown.text;
       throw new Error(detail.split("\n")[0]);
     }
     // CDP nests the remote-object: { result: { result: { value } } }. The inner
@@ -3073,6 +3076,58 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(result.disabledCursor, "not-allowed");
     assert.match(result.ltr, /«/);
     assert.match(result.rtl, /»/);
+  });
+
+  it("titles links only in the rail, ignores an aria-disabled toggle, and mirrors group chevrons", async () => {
+    await loadBindings();
+    const result = await evaluate(`
+      const root = document.getElementById('nav');
+      const toggle = document.getElementById('nav-toggle');
+      const chats = document.getElementById('nav-chats');
+      const projects = document.getElementById('nav-projects');
+      projects.title = 'Authored title';
+      const nav = new NV.FutureCssNav(root);
+      const before = chats.hasAttribute('title');
+      nav.setExpanded(false);
+      const rail = { chats: chats.title, projects: projects.title };
+      nav.setExpanded(true);
+      const after = { chats: chats.hasAttribute('title'), projects: projects.title };
+      projects.removeAttribute('title');
+
+      toggle.setAttribute('aria-disabled', 'true');
+      toggle.click();
+      const disabledStays = nav.expanded;
+      toggle.removeAttribute('aria-disabled');
+      nav.destroy();
+
+      const group = document.getElementById('nav-group');
+      const details = group.parentElement;
+      // The chevron's turn is transitioned; finish it so the end state is read.
+      const turn = () => {
+        // Transitions only: finishing the page's infinite spinner animations throws.
+        document.getAnimations().filter((a) => a instanceof CSSTransition).forEach((a) => a.finish());
+        return getComputedStyle(group, '::after').rotate;
+      };
+      details.open = true;
+      const ltrOpen = turn();
+      root.setAttribute('dir', 'rtl');
+      const rtlOpen = turn();
+      details.open = false;
+      const rtlClosed = turn();
+      root.removeAttribute('dir');
+      const ltrClosed = turn();
+      details.open = true;
+      return { before, rail, after, disabledStays, ltrOpen, rtlOpen, rtlClosed, ltrClosed };
+    `);
+    assert.equal(result.before, false, "an expanded sidebar adds no titles");
+    assert.equal(result.rail.chats, "Chats", "the rail names each icon for mouse users");
+    assert.equal(result.rail.projects, "Authored title", "an authored title is kept");
+    assert.deepEqual(result.after, { chats: false, projects: "Authored title" });
+    assert.equal(result.disabledStays, true, "an aria-disabled toggle does not collapse");
+    assert.equal(result.ltrOpen, "45deg");
+    assert.equal(result.rtlOpen, "-45deg", "open points down in RTL too");
+    assert.equal(result.rtlClosed, "45deg");
+    assert.equal(result.ltrClosed, "-45deg");
   });
 
 });

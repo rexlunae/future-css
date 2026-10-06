@@ -998,9 +998,10 @@ navigation: links in a column, optionally grouped, that can collapse to an icon 
   through `:has()` and sets custom properties its parts read. The rail visually hides
   labels but keeps them as each link's accessible name, and hides headings, group labels,
   counts and nested lists. The binding flips the attribute, wires `aria-controls`, and
-  moves focus to the toggle if it was on something the rail hides. In the rail, pair
-  links with `fc-tooltip` so mouse users can see the names. Without the binding the
-  sidebar stays expanded.
+  moves focus to the toggle if it was on something the rail hides. In the rail it
+  also gives each link its label as a `title`, so mouse users can read the names, and
+  removes those titles on expand. An `fc-tooltip` would be clipped by the sidebar's
+  scroll container. Without the binding the sidebar stays expanded.
 - **RTL:** the bar, the border and the toggle's chevrons move to the other edge.
   **Reduced motion:** the width, toggle and chevron transitions are zeroed by the reset,
   so collapsing is instant. On small screens, put the same markup in a side sheet

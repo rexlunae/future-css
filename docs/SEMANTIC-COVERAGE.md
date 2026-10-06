@@ -708,10 +708,10 @@ mixed-direction runs thoroughly and the layout layer supports them, but there is
 `.fc-u-bidi` class and no `<bdi>` guidance in `COMPONENTS.md`. The prose is ahead of the
 API.
 
-**9. Bundle size.** 132 KB uncompressed against a `< 60 KB` budget in `PLAN.md`. The
-output is deliberately unminified and the docs say consumers minify at their own
-boundary, so the honest fix is to measure the minified size and state it — or to raise
-the budget with a justification. Not to leave a number the build contradicts.
+**9. Bundle size.** 276.2 KB uncompressed (158.3 KB minified, 33.0 KB gzipped) against
+a `< 60 KB` budget in `PLAN.md`. The minified size is now measured and stated, and
+`PLAN.md` §"Performance budget" lays out the options for restating the budget. The
+choice between them is still open; until it is made, every budget target is missed.
 
 ### Docs that disagree with the code
 

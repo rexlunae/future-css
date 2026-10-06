@@ -93,6 +93,16 @@ describe("MenuModel", () => {
     assert.equal(LABELS[m.activeIndex], "Delete");
   });
 
+  it("starts the first arrow from the nearest end when nothing is active", () => {
+    // Treating "nothing" as position 0 made the first ArrowDown skip an item.
+    const down = new MenuModel(LABELS, FOCUSABLE);
+    down.move(1);
+    assert.equal(LABELS[down.activeIndex], "Cut");
+    const up = new MenuModel(LABELS, FOCUSABLE);
+    up.move(-1);
+    assert.equal(LABELS[up.activeIndex], "Delete");
+  });
+
   it("answers -1 when nothing is focusable", () => {
     const m = new MenuModel(["A", "B"], [false, false]);
     m.focusFirst();
@@ -158,6 +168,7 @@ describe("fc-context-menu and MenuModel agree", () => {
 
   it("agrees when focus starts nowhere or outside the list", { skip }, () => {
     agree(LABELS, FOCUSABLE, [["move", 1], ["set", 99], ["move", -1], ["set", -1], ["type", "d"]]);
+    agree(LABELS, FOCUSABLE, [["move", -1], ["set", -1], ["move", 3], ["set", -1], ["move", -4], ["set", -1], ["move", 0]]);
   });
 
   it("agrees on non-ASCII labels, including an astral repeat", { skip }, () => {

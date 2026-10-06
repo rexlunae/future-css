@@ -845,9 +845,10 @@ editor.applyMark("bold");</code></pre>
         Copy<span class="fc-menu__shortcut" aria-hidden="true">&#8984;C</span>
       </button>
       <!--
-        aria-disabled rather than disabled: the item stays reachable by arrow
-        navigation so a screen-reader user learns that Paste exists and is
-        unavailable. A `disabled` item is skipped in silence.
+        aria-disabled rather than disabled: arrows skip it, as the menu
+        contract says, but it stays in the accessibility tree and in the
+        menu's item count, so a screen-reader user still learns that Paste
+        exists and is unavailable.
       -->
       <button type="button" class="fc-menu__item" role="menuitem" aria-disabled="true" data-menu-action="paste">
         <span class="fc-menu__check" aria-hidden="true"></span>
@@ -916,8 +917,8 @@ const menu = new FutureCssMenu({
     Cut
   &lt;/button&gt;
 
-  &lt;!-- aria-disabled, not disabled: a disabled item is skipped in silence,
-       so the user never learns Paste exists. --&gt;
+  &lt;!-- aria-disabled, not disabled: arrows skip it either way, but it stays
+       in the accessibility tree, so the user still learns Paste exists. --&gt;
   &lt;button class="fc-menu__item" role="menuitem" aria-disabled="true"&gt;Paste&lt;/button&gt;
 
   &lt;button class="fc-menu__item" role="menuitemcheckbox" aria-checked="true"&gt;

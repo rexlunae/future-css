@@ -63,6 +63,8 @@ export interface MenuModelLike {
   focusLast(): void;
   typeahead(query: string): boolean;
   resetTypeahead(): void;
+  /** The pending search, carried across a rebuild so a mid-word refresh does not drop it. */
+  typeaheadBuffer: string;
 }
 
 /**
@@ -101,7 +103,7 @@ export class MenuModel implements MenuModelLike {
   private readonly labels: readonly string[];
   private readonly focusable: readonly boolean[];
   private active = -1;
-  private buffer = "";
+  typeaheadBuffer = "";
 
   constructor(labels: readonly string[], focusable: readonly boolean[]) {
     // Folded once here rather than per keystroke; the WASM path needs them
@@ -133,7 +135,10 @@ export class MenuModel implements MenuModelLike {
       this.active = -1;
       return;
     }
-    const pos = Math.max(0, focusable.indexOf(this.active));
+    // With nothing active, start just outside the list in the direction of
+    // travel: the first ArrowDown lands on the first item, ArrowUp on the last.
+    const found = focusable.indexOf(this.active);
+    const pos = found >= 0 ? found : delta > 0 ? -1 : 0;
     const len = focusable.length;
     // The double modulo is Rust's `rem_euclid`: a large negative delta must land
     // in range rather than produce a negative index.
@@ -156,9 +161,9 @@ export class MenuModel implements MenuModelLike {
     const query = raw.toLowerCase();
     const first = firstCodePoint(query);
     if (first === undefined) return false;
-    this.buffer = extendBuffer(this.buffer, query, first);
+    this.typeaheadBuffer = extendBuffer(this.typeaheadBuffer, query, first);
 
-    const needle = this.buffer;
+    const needle = this.typeaheadBuffer;
     const n = this.labels.length;
     const start = this.active >= 0 ? this.active + 1 : 0;
     for (let step = 0; step < n; step += 1) {
@@ -169,12 +174,12 @@ export class MenuModel implements MenuModelLike {
       }
     }
     // A dead prefix would swallow every later keystroke, so drop it.
-    this.buffer = "";
+    this.typeaheadBuffer = "";
     return false;
   }
 
   resetTypeahead(): void {
-    this.buffer = "";
+    this.typeaheadBuffer = "";
   }
 }
 
@@ -202,7 +207,7 @@ export class WasmMenuModel implements MenuModelLike {
   private readonly labels: string[];
   private readonly flags: number[];
   private active = -1;
-  private buffer = "";
+  typeaheadBuffer = "";
 
   constructor(mod: MenuWasmModule, labels: readonly string[], focusable: readonly boolean[]) {
     this.mod = mod;
@@ -235,17 +240,17 @@ export class WasmMenuModel implements MenuModelLike {
     const first = firstCodePoint(query);
     if (first === undefined) return false;
     const [active, matched] = Array.from(
-      this.mod.menuTypeahead(this.labels, this.flags, this.active, this.buffer, query),
+      this.mod.menuTypeahead(this.labels, this.flags, this.active, this.typeaheadBuffer, query),
     );
     this.active = active!;
     // The concat is the same rule the crate applies internally; only whether it
     // matched decides the buffer's fate.
-    this.buffer = matched === 1 ? extendBuffer(this.buffer, query, first) : "";
+    this.typeaheadBuffer = matched === 1 ? extendBuffer(this.typeaheadBuffer, query, first) : "";
     return matched === 1;
   }
 
   resetTypeahead(): void {
-    this.buffer = "";
+    this.typeaheadBuffer = "";
   }
 }
 
@@ -340,6 +345,8 @@ export class FutureCssMenu {
 
     this.opened = true;
     this.menu.dataset.fcState = "open";
+    // A new opening is a new search, whatever was typed last time.
+    this.model.resetTypeahead();
     this.rebuildModel();
 
     // `showPopover` is the top-layer path; the attribute is the fallback. Both are
@@ -369,6 +376,9 @@ export class FutureCssMenu {
     if (!this.opened) return;
     this.opened = false;
     this.menu.dataset.fcState = "closed";
+    // A timer left running would expire the *next* opening's search early.
+    clearTimeout(this.typeaheadTimer);
+    this.model.resetTypeahead();
 
     if (typeof this.menu.hidePopover === "function") {
       try {
@@ -428,9 +438,20 @@ export class FutureCssMenu {
     return Array.from(this.menu.querySelectorAll<HTMLElement>(ITEM_SELECTOR));
   }
 
+  /**
+   * Builds the model from the items as they are now.
+   *
+   * Run on open and again before every keystroke, because a host may add,
+   * remove, rename, or disable items while the menu is open; a model built only
+   * at open would then answer with indices into a list that no longer exists.
+   * The pending search survives the rebuild, so typing "de" across a refresh
+   * still searches for "de".
+   */
   private rebuildModel(): void {
     const items = this.items;
+    const buffer = this.model.typeaheadBuffer;
     this.model = this.factory(items.map(itemLabel), items.map(isFocusableItem));
+    this.model.typeaheadBuffer = buffer;
   }
 
   /** Moves roving focus to whatever the model now says is active. */
@@ -493,6 +514,7 @@ export class FutureCssMenu {
    */
   private wireKeyboard(): void {
     this.menu.addEventListener("keydown", (event) => {
+      this.rebuildModel();
       // Re-seed from the DOM: a pointer hover or a programmatic focus can move
       // focus without passing through the model.
       this.model.setActive(this.items.findIndex((item) => item === document.activeElement));

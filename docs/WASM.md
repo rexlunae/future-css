@@ -117,7 +117,8 @@ crates/
   fc-diff/           Myers line diff + stats      -> core  (no module yet)
 ```
 
-Measured release sizes with the current code:
+Measured release sizes when the workspace was first built (historical; the
+current figures are in [What actually ships](#what-actually-ships)):
 
 | Crate | Bytes | Contains |
 | --- | ---: | --- |
@@ -131,7 +132,7 @@ Measured release sizes with the current code:
 glue plus ~30 KB of actual logic. The fix, and the next piece of work, is to
 remove `js-sys` from the WASM boundary entirely and return primitives:
 
-| Crate | Now | Target |
+| Crate | Then | Target |
 | --- | ---: | ---: |
 | `fc-core` | 344 KB | ~28 KB |
 | `fc-model` | 370 KB | ~30 KB |

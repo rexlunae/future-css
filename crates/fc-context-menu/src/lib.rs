@@ -117,14 +117,18 @@ impl Menu {
             self.active = None;
             return;
         }
+        // With nothing active, start just outside the list in the direction of
+        // travel, so the first ArrowDown lands on the first item and the first
+        // ArrowUp on the last. Starting at position 0 skipped the first item.
         let current_pos = self
             .active
             .and_then(|a| focusable.iter().position(|f| *f == a))
-            .unwrap_or(0);
+            .map(|p| p as isize)
+            .unwrap_or(if delta > 0 { -1 } else { 0 });
         let len = focusable.len() as isize;
         // rem_euclid keeps a large negative delta correct, which a naive
         // `+ len` does not.
-        let next = (current_pos as isize + delta).rem_euclid(len);
+        let next = (current_pos + delta).rem_euclid(len);
         self.active = Some(focusable[next as usize]);
     }
 
@@ -482,7 +486,15 @@ mod tests {
     #[test]
     fn boundary_out_of_range_active_is_treated_as_none() {
         // The DOM shrank between keystrokes. Moving must not panic.
-        assert_eq!(js_menu_move(vec![1, 1], 9, 1), 1);
+        assert_eq!(js_menu_move(vec![1, 1], 9, 1), 0);
+    }
+
+    #[test]
+    fn first_arrow_from_nothing_lands_on_the_nearest_end() {
+        // cut, copy, separator, paste(disabled), delete
+        let f = vec![1, 1, 0, 0, 1];
+        assert_eq!(js_menu_move(f.clone(), -1, 1), 0, "ArrowDown starts at the top");
+        assert_eq!(js_menu_move(f, -1, -1), 4, "ArrowUp starts at the bottom");
     }
 
     #[test]

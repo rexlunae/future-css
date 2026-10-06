@@ -606,6 +606,72 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.deepEqual(seen, ["Delete", "Deploy"], "'dep' must extend the search, not restart at 'p'");
   });
 
+  it("lands the first ArrowDown on the first item when the menu itself has focus", async () => {
+    await loadBindings();
+    const seen = await evaluate(`
+      ${RICH_MENU}
+      const m = new M.FutureCssMenu({ menu, invoker: document.querySelector('#trigger') });
+      m.open({ x: 0, y: 0 });
+      menu.tabIndex = -1;
+      menu.focus();
+      key('ArrowDown');
+      const down = label();
+      menu.focus();
+      key('ArrowUp');
+      const up = label();
+      m.close();
+      return [down, up];
+    `);
+    assert.deepEqual(seen, ["Cut", "Deploy"]);
+  });
+
+  it("navigates items added or disabled while the menu is open", async () => {
+    // The model is rebuilt per keystroke; one built at open answered with
+    // indices into a list that no longer matched the DOM.
+    await loadBindings();
+    const seen = await evaluate(`
+      ${RICH_MENU}
+      const m = new M.FutureCssMenu({ menu, invoker: document.querySelector('#trigger') });
+      m.open({ x: 0, y: 0 });
+      const extra = document.createElement('button');
+      extra.className = 'fc-menu__item';
+      extra.setAttribute('role', 'menuitem');
+      extra.textContent = 'Archive';
+      menu.appendChild(extra);
+      key('End');
+      const end = label();
+      extra.setAttribute('aria-disabled', 'true');
+      key('Home'); key('End');
+      const afterDisable = label();
+      m.close();
+      return [end, afterDisable];
+    `);
+    assert.deepEqual(seen, ["Archive", "Deploy"]);
+  });
+
+  it("does not let the previous opening's typeahead timer cut a new search short", async () => {
+    // Guards the reopen path: a 500 ms expiry left over from the last opening
+    // must never fire into the next one and turn "de" into a lone "e".
+    await loadBindings();
+    const seen = await evaluate(`
+      ${RICH_MENU}
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const m = new M.FutureCssMenu({ menu, invoker: document.querySelector('#trigger') });
+      m.open({ x: 0, y: 0 });
+      key('d');
+      m.close();
+      m.open({ x: 0, y: 0 });
+      await wait(400);
+      key('d');
+      await wait(200);
+      key('e');
+      const after = label();
+      m.close();
+      return after;
+    `);
+    assert.equal(seen, "Deploy", "'de' must still be one search");
+  });
+
   it("runs menu traversal on the Rust model when WASM is served", { skip: menuWasmBuilt ? false : "run `npm run build:wasm` first" }, async () => {
     // Same keystrokes and the same expected answers as the JS-path tests above:
     // identical results on both models is the point of the wiring.

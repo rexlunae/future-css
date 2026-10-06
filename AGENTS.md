@@ -168,6 +168,14 @@ The demo's own chrome (`demo/demo.css`) lives outside `src/css` on purpose, so
 `npm run lint` does not walk it. The linter's contract is about the shipped
 library. The demo still follows the same rules.
 
+`demo/fixtures.html` is the other half: every component in every state the markup
+can express, with no interaction needed to reach one. `?dir=rtl` and
+`?theme=dark` switch direction and scheme before first paint. The browser suite
+loads it at 320px in all four combinations and fails on page overflow or a blank
+state, forces `:focus-visible` on every control and fails on one with no ring,
+and `tests/bundle.test.ts` fails when a component file has no `data-fixture`
+section. A new component is not done until it has one.
+
 **A demo is a test.** Three of the bugs fixed in this area were invisible to unit
 tests and obvious the moment real components rendered in a real browser:
 

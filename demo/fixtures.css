@@ -1,0 +1,178 @@
+/*
+ * Chrome for the fixture page. Like demo.css it lives outside src/css, so the
+ * linter's contract stays about the shipped library, and it follows the same
+ * rules anyway: tokens only, logical properties only.
+ */
+
+/* The base layer caps body at a reading measure; a fixture sheet wants the width. */
+body {
+  max-inline-size: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fx-head {
+  padding: var(--fc-space-6) var(--fc-space-4) var(--fc-space-4);
+  border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+}
+
+.fx-head__title {
+  margin: 0;
+  font-size: var(--fc-font-size-2xl);
+}
+
+.fx-head__lede {
+  margin-block: var(--fc-space-2) var(--fc-space-3);
+  color: var(--fc-color-text-muted);
+}
+
+.fx-head__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fc-space-2);
+}
+
+.fx-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-8);
+  padding: var(--fc-space-6) var(--fc-space-4) var(--fc-space-16);
+}
+
+.fx {
+  min-inline-size: 0;
+}
+
+.fx__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--fc-space-2);
+  margin: 0 0 var(--fc-space-3);
+  font-size: var(--fc-font-size-lg);
+}
+
+.fx__file {
+  color: var(--fc-color-text-muted);
+  font-size: var(--fc-font-size-xs);
+  font-weight: var(--fc-font-weight-regular);
+}
+
+.fx__note {
+  margin: 0 0 var(--fc-space-3);
+  color: var(--fc-color-text-muted);
+  font-size: var(--fc-font-size-sm);
+}
+
+/* An intrinsic grid: one column at 320px, several on a wide screen. */
+.fx__states {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  gap: var(--fc-space-4);
+}
+
+.fx__state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--fc-space-3);
+  background-color: var(--fc-color-bg-surface);
+  border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  border-radius: var(--fc-radius-lg);
+}
+
+.fx__state--wide {
+  grid-column: 1 / -1;
+}
+
+.fx__caption {
+  color: var(--fc-color-text-muted);
+  font-family: var(--fc-font-family-mono);
+  font-size: var(--fc-font-size-xs);
+}
+
+.fx__body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--fc-space-3);
+  min-inline-size: 0;
+}
+
+/* Block-level components take the full width of their state cell. */
+.fx__body > :is(div, article, dl, details, nav, ol, ul, fieldset, label, table, p) {
+  flex: 1 1 100%;
+  min-inline-size: 0;
+}
+
+/*
+ * Overlays are fixed or absolutely positioned. A transform makes this box the
+ * containing block for both, so an open dialog or menu stays inside its cell
+ * instead of covering the page. Top-layer content would still escape, which is
+ * why the fixture opens dialogs with `open` rather than `showModal()`.
+ */
+.fx-overlay {
+  position: relative;
+  min-block-size: 16rem;
+  transform: translateZ(0);
+  overflow: hidden;
+  border-radius: var(--fc-radius-md);
+  background-color: var(--fc-color-bg-subtle);
+}
+
+.fx-overlay--menu {
+  min-block-size: 20rem;
+}
+
+.fx-overlay--short {
+  min-block-size: 5rem;
+}
+
+.fx-nav {
+  block-size: 30rem;
+}
+
+.fx-term {
+  block-size: 14rem;
+}
+
+.fx-webview {
+  position: relative;
+  block-size: 16rem;
+}
+
+.fx-webview__frame {
+  background-color: var(--fc-color-bg-muted);
+}
+
+.fx-media {
+  min-block-size: 6rem;
+  background-color: var(--fc-color-accent-bg-subtle);
+}
+
+.fx-row {
+  display: flex;
+  gap: var(--fc-space-3);
+  align-items: center;
+}
+
+.fx-grow {
+  flex: 1 1 auto;
+}
+
+.fx-block {
+  inline-size: 100%;
+  block-size: 4rem;
+}
+
+/*
+ * A popover is transparent until :popover-open, which only the top layer
+ * gives it. The fixture shows its drawing in place instead, so it does not
+ * cover the page; this is the one fixture rule that overrides a component.
+ */
+.fx-popover-static {
+  opacity: 1;
+  translate: none;
+}

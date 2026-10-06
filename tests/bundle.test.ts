@@ -15,7 +15,7 @@
  */
 
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
@@ -196,5 +196,22 @@ describe("bundle", { skip: hasBundle ? false : "run `npm run build` first" }, ()
         `bundle is missing the ${block} block`,
       );
     }
+  });
+});
+/*
+ * The fixture page is only a test if it keeps up: a component added without a
+ * fixture is a component nobody has looked at in RTL, dark, or at 320px. The
+ * browser suite checks what the page draws; this checks nothing is missing
+ * from it, and needs no build or browser.
+ */
+describe("fixture page", () => {
+  it("has a fixture for every component", () => {
+    const page = readFileSync(join(projectRoot, "demo", "fixtures.html"), "utf8");
+    const fixtures = new Set([...page.matchAll(/data-fixture="([^"]+)"/g)].map((m) => m[1]));
+    const missing = readdirSync(join(projectRoot, "src", "css", "components"))
+      .filter((file) => file.endsWith(".css"))
+      .map((file) => file.slice(0, -".css".length))
+      .filter((name) => !fixtures.has(name));
+    assert.deepEqual(missing, [], "add a [data-fixture] section to demo/fixtures.html");
   });
 });

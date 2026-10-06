@@ -253,6 +253,8 @@ Direction and locale correctness are hard to eyeball and easy to automate:
 2. **Automate the overflow check.** A headless-browser pass that loads each fixture at
    320px and asserts `document.documentElement.scrollWidth <= innerWidth`. This catches
    horizontal overflow from unbreakable strings, which is the most common i18n defect.
+   The browser suite does this for `demo/fixtures.html` in both directions and both
+   schemes.
 3. **Real translations in CI.** Test with actual translated strings, not English strings
    padded with `&nbsp;`. Real scripts exercise shaping and line-breaking rules that
    synthetic fixtures do not.

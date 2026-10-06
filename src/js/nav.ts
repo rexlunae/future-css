@@ -28,8 +28,11 @@ let uid = 0;
 /** The instance `bindNavs` created for each sidebar, which alone may clear its marker. */
 const markerOwner = new WeakMap<HTMLElement, FutureCssNav>();
 
-/** Links whose `title` a binding set for the rail, so only those are cleared on expand. */
-const railTitles = new WeakSet<HTMLElement>();
+/**
+ * The title a binding set on each link for the rail. A title is the binding's
+ * only while it still holds that value; anything else the app wrote is kept.
+ */
+const railTitles = new WeakMap<HTMLElement, string>();
 
 export class FutureCssNav {
   private readonly root: HTMLElement;
@@ -54,6 +57,10 @@ export class FutureCssNav {
       if (!this.toggle.hasAttribute("aria-expanded")) this.toggle.setAttribute("aria-expanded", "true");
       this.toggle.addEventListener("click", this.onClick);
     }
+    // Links and labels can change while collapsed, so each link's title is
+    // also refreshed as the pointer or focus reaches it, just before it shows.
+    el.addEventListener("pointerover", this.onReach);
+    el.addEventListener("focusin", this.onReach);
     this.syncTitles();
   }
 
@@ -79,6 +86,8 @@ export class FutureCssNav {
    */
   destroy(): void {
     this.toggle?.removeEventListener("click", this.onClick);
+    this.root.removeEventListener("pointerover", this.onReach);
+    this.root.removeEventListener("focusin", this.onReach);
     if (markerOwner.get(this.root) === this) {
       markerOwner.delete(this.root);
       // A host may have handed the element to another binding since; its
@@ -87,20 +96,37 @@ export class FutureCssNav {
     }
   }
 
+  private readonly onReach = (event: Event) => {
+    if (this.expanded) return;
+    const link = (event.target as Element).closest<HTMLElement>(".fc-nav__link");
+    if (link && this.root.contains(link)) this.titleLink(link);
+  };
+
   private syncTitles(): void {
-    const collapsed = !this.expanded;
     for (const link of this.root.querySelectorAll<HTMLElement>(".fc-nav__link")) {
-      if (collapsed) {
-        // A title the author wrote says something the label does not; keep it.
-        if (link.hasAttribute("title") && !railTitles.has(link)) continue;
-        const label = link.querySelector(".fc-nav__label")?.textContent?.trim();
-        if (!label) continue;
-        link.setAttribute("title", label);
-        railTitles.add(link);
-      } else if (railTitles.has(link)) {
-        link.removeAttribute("title");
+      if (!this.expanded) this.titleLink(link);
+      else if (railTitles.has(link)) {
+        if (link.getAttribute("title") === railTitles.get(link)) link.removeAttribute("title");
         railTitles.delete(link);
       }
+    }
+  }
+
+  /** Titles a link with its current label, unless the app gave it a title of its own. */
+  private titleLink(link: HTMLElement): void {
+    const current = link.getAttribute("title");
+    const ours = railTitles.get(link);
+    if (current !== null && current !== ours) {
+      railTitles.delete(link);
+      return;
+    }
+    const label = link.querySelector(".fc-nav__label")?.textContent?.trim();
+    if (label) {
+      link.setAttribute("title", label);
+      railTitles.set(link, label);
+    } else if (ours !== undefined) {
+      link.removeAttribute("title");
+      railTitles.delete(link);
     }
   }
 

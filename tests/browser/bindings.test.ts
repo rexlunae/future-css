@@ -3090,9 +3090,23 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       const before = chats.hasAttribute('title');
       nav.setExpanded(false);
       const rail = { chats: chats.title, projects: projects.title };
+      // While collapsed: the app titles a link, renames a label, and adds a link.
+      const nested = document.getElementById('nav-nested');
+      nested.title = '3 unread';
+      chats.querySelector('.fc-nav__label').textContent = 'Threads';
+      const added = document.createElement('li');
+      added.innerHTML = '<a class="fc-nav__link" id="nav-added" href="#r"><span class="fc-nav__label">Reports</span></a>';
+      root.querySelector('.fc-nav__list').append(added);
+      const reach = (el) => el.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));
+      reach(chats);
+      reach(document.getElementById('nav-added'));
+      const live = { chats: chats.title, added: document.getElementById('nav-added').title };
       nav.setExpanded(true);
-      const after = { chats: chats.hasAttribute('title'), projects: projects.title };
+      const after = { chats: chats.hasAttribute('title'), projects: projects.title, nested: nested.title };
       projects.removeAttribute('title');
+      nested.removeAttribute('title');
+      added.remove();
+      chats.querySelector('.fc-nav__label').textContent = 'Chats';
 
       toggle.setAttribute('aria-disabled', 'true');
       toggle.click();
@@ -3117,12 +3131,14 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       root.removeAttribute('dir');
       const ltrClosed = turn();
       details.open = true;
-      return { before, rail, after, disabledStays, ltrOpen, rtlOpen, rtlClosed, ltrClosed };
+      return { before, rail, live, after, disabledStays, ltrOpen, rtlOpen, rtlClosed, ltrClosed };
     `);
     assert.equal(result.before, false, "an expanded sidebar adds no titles");
     assert.equal(result.rail.chats, "Chats", "the rail names each icon for mouse users");
     assert.equal(result.rail.projects, "Authored title", "an authored title is kept");
-    assert.deepEqual(result.after, { chats: false, projects: "Authored title" });
+    assert.deepEqual(result.live, { chats: "Threads", added: "Reports" }, "titles follow the links as they change");
+    assert.deepEqual(result.after, { chats: false, projects: "Authored title", nested: "3 unread" },
+      "expanding removes only the binding's own titles");
     assert.equal(result.disabledStays, true, "an aria-disabled toggle does not collapse");
     assert.equal(result.ltrOpen, "45deg");
     assert.equal(result.rtlOpen, "-45deg", "open points down in RTL too");

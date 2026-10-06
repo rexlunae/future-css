@@ -67,10 +67,64 @@ impl Option_ {
     }
 }
 
+/// How labels, values and queries are case-folded before matching.
+///
+/// Two strategies exist because the Unicode case tables behind `to_lowercase`
+/// are ~10 KB of the shipped module -- a fifth of it -- and JavaScript already
+/// has the same tables for free. So the WASM boundary takes keys that the
+/// binding folded with `toLowerCase()` and matches them verbatim, while native
+/// Rust callers keep a self-contained, case-insensitive model.
+///
+/// Folding in one place is also the parity argument, not only the size one:
+/// Rust's `to_lowercase` and JavaScript's `toLowerCase` each track their own
+/// Unicode version, so two implementations of "case-insensitive" can disagree on
+/// a character one of them has not learnt yet. With the binding folding, there
+/// is only one.
+///
+/// Function pointers rather than an enum so the linker can drop the Unicode
+/// path: the boundary only ever stores `PREFOLDED`, so nothing it reaches
+/// references `to_lowercase`. An enum match would keep both arms alive.
+#[derive(Clone, Copy)]
+pub struct Folding {
+    /// Folds an option's label or value into its match key.
+    key: fn(&str) -> String,
+    /// Folds a filter query into its needle, trimming included.
+    query: fn(&str) -> String,
+}
+
+impl Folding {
+    /// Case-insensitive via Rust's own Unicode tables.
+    pub const UNICODE: Folding = Folding { key: fold_unicode, query: fold_unicode_query };
+    /// The caller folded and trimmed everything already; match verbatim.
+    pub const PREFOLDED: Folding = Folding { key: str::to_string, query: str::to_string };
+}
+
+impl std::fmt::Debug for Folding {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("Folding")
+    }
+}
+
+impl Default for Folding {
+    fn default() -> Self {
+        Folding::UNICODE
+    }
+}
+
+fn fold_unicode(s: &str) -> String {
+    s.to_lowercase()
+}
+
+fn fold_unicode_query(s: &str) -> String {
+    s.trim().to_lowercase()
+}
+
 /// The option list plus its navigation state.
 #[derive(Debug, Clone, Default)]
 pub struct Select {
     options: Vec<Option_>,
+    /// How matching folds case. See `Folding`.
+    folding: Folding,
     /// Index of the highlighted option, or `None` before the list is opened.
     active: Option<usize>,
     /// The value that was in effect when the list opened.
@@ -89,9 +143,22 @@ pub struct Select {
 
 impl Select {
     pub fn new(options: Vec<Option_>) -> Self {
+        Self::with_folding(options, Folding::UNICODE)
+    }
+
+    /// A model whose labels and values are already match keys.
+    ///
+    /// Every `filter` query must arrive trimmed and folded, and every
+    /// `typeahead` keystroke folded, by the same rule that folded the options.
+    pub fn prefolded(options: Vec<Option_>) -> Self {
+        Self::with_folding(options, Folding::PREFOLDED)
+    }
+
+    fn with_folding(options: Vec<Option_>, folding: Folding) -> Self {
         let visible = (0..options.len()).collect();
         Self {
             options,
+            folding,
             active: None,
             committed: None,
             typeahead: String::new(),
@@ -241,14 +308,15 @@ impl Select {
     /// An empty query restores everything, so clearing the field is not a
     /// separate code path on the JS side.
     pub fn filter(&mut self, query: &str) {
-        let needle = query.trim().to_lowercase();
+        let needle = (self.folding.query)(query);
+        let key = self.folding.key;
         self.visible = if needle.is_empty() {
             (0..self.options.len()).collect()
         } else {
             self.options
                 .iter()
                 .enumerate()
-                .filter(|(_, o)| o.label.to_lowercase().contains(&needle) || o.value.to_lowercase().contains(&needle))
+                .filter(|(_, o)| key(&o.label).contains(&needle) || key(&o.value).contains(&needle))
                 .map(|(i, _)| i)
                 .collect()
         };
@@ -277,13 +345,28 @@ impl Select {
             None => return false,
         };
         let repeating = self.typeahead.chars().all(|c| c == first);
-        self.typeahead = if repeating {
-            query.to_string()
-        } else {
-            format!("{}{query}", self.typeahead)
-        };
+        if repeating {
+            self.typeahead.clear();
+        }
+        // push_str rather than format!: the formatting machinery is a few KB of
+        // the shipped module, and this was its only use outside a panic path.
+        self.typeahead.push_str(query);
 
-        let needle = self.typeahead.to_lowercase();
+        let needle = (self.folding.key)(&self.typeahead);
+        if self.seek_prefix(&needle) {
+            return true;
+        }
+        self.typeahead.clear();
+        false
+    }
+
+    /// Highlights the next selectable visible option whose label starts with
+    /// `needle`, searching from just after the current highlight.
+    ///
+    /// `needle` is already folded, and the typeahead buffer is not touched: the
+    /// WASM boundary keeps the buffer on the JS side, where it is folded, and
+    /// only asks this question.
+    pub fn seek_prefix(&mut self, needle: &str) -> bool {
         /*
          * Search starts *after* the active option, so repeating a character
          * cycles forward rather than sticking on the first match.
@@ -294,6 +377,7 @@ impl Select {
          * index as a position into `visible` walks the wrong list, which is
          * invisible until a filter is active and then silently skips options.
          */
+        let key = self.folding.key;
         let len = self.visible.len();
         let start = self
             .active
@@ -306,12 +390,11 @@ impl Select {
             // Disabled options are skipped, not selected: a search that lands on
             // an unavailable option is a dead end the user cannot escape by
             // typing.
-            if option.selectable() && option.label.to_lowercase().starts_with(&needle) {
+            if option.selectable() && key(&option.label).starts_with(needle) {
                 self.active = Some(index);
                 return true;
             }
         }
-        self.typeahead.clear();
         false
     }
 }
@@ -334,6 +417,13 @@ impl Select {
 // can render headings without a second lookup table. Disabled options cross as
 // a 0/1 array rather than being filtered out: the binding reports *which*
 // options are unavailable, and dropping them would lose the fact that they exist.
+//
+// **Matching keys arrive folded.** Wherever a function matches text (`filter`,
+// `typeahead`), the labels, values and query it receives are the binding's
+// `toLowerCase()` output, and a filter query is trimmed as well. Every model
+// here is built with `Select::prefolded`, never `Select::new`, so the Unicode
+// case tables are not linked; see `Folding` for why that is also the parity
+// fix rather than only a size one.
 
 
 #[wasm_bindgen(js_name = selectOpen)]
@@ -356,7 +446,7 @@ pub fn js_select_open(values: Vec<String>, labels: Vec<String>, groups: Vec<Stri
     if options.is_empty() {
         return -1;
     }
-    let mut model = Select::new(options);
+    let mut model = Select::prefolded(options);
     model.open(if current.is_empty() { None } else { Some(&current) });
     model.active().map(|i| i as i32).unwrap_or(-1)
 }
@@ -380,18 +470,21 @@ pub fn js_select_label_at(labels: Vec<String>, index: i32) -> String {
     labels.get(index as usize).cloned().unwrap_or_default()
 }
 
-/// Indices surviving a `contains` filter, case-insensitive.
+/// Indices surviving a `contains` filter.
 ///
-/// Matches `Select::filter` exactly, including the empty-query case restoring
-/// everything, so the JS layer never implements a second search.
+/// `label_keys`, `value_keys` and `needle` are folded by the caller, and the
+/// needle is trimmed; the match itself is `Select::filter`, including the
+/// empty-needle case restoring everything, so the JS layer never implements a
+/// second search.
 #[wasm_bindgen(js_name = selectFilter)]
-pub fn js_select_filter(labels: Vec<String>, values: Vec<String>, query: String) -> Vec<i32> {
+pub fn js_select_filter(label_keys: Vec<String>, value_keys: Vec<String>, needle: String) -> Vec<i32> {
+    let (labels, values, query) = (label_keys, value_keys, needle);
     let options: Vec<Option_> = labels
         .iter()
         .enumerate()
         .map(|(i, l)| Option_::new(values.get(i).map(String::as_str).unwrap_or(""), l))
         .collect();
-    let mut model = Select::new(options);
+    let mut model = Select::prefolded(options);
     model.filter(&query);
     model.visible().iter().map(|i| *i as i32).collect()
 }
@@ -418,6 +511,8 @@ pub fn js_select_move(values: Vec<String>, labels: Vec<String>, disabled: Vec<i3
 
 /// `[active, matched]` after a typeahead keystroke. `matched` is 0 when nothing
 /// matched, so the caller knows whether to clear the buffer.
+///
+/// `labels` and `query` are folded by the caller.
 #[wasm_bindgen(js_name = selectTypeahead)]
 pub fn js_select_typeahead(values: Vec<String>, labels: Vec<String>, disabled: Vec<i32>, committed: String, query: String) -> Vec<i32> {
     let mut select = model_with(&values, &labels, &disabled);
@@ -455,28 +550,35 @@ pub fn js_select_move_from(values: Vec<String>, labels: Vec<String>, disabled: V
     select.active().map(|i| i as i32).unwrap_or(-1)
 }
 
-/// `[active, matched]` after a typeahead keystroke seeded from the current
-/// highlight, the visible set, and the buffer. `matched` is 0 when nothing
-/// matched; the caller clears its buffer copy when it is.
+/// `[active, matched]` for a typeahead needle, searched from just after the
+/// current highlight within the visible set. `matched` is 0 when nothing matched;
+/// the caller clears its buffer when it is.
 ///
-/// The buffer crosses as a plain string and the repeating-character rule runs
-/// inside the model, so the JS side never reimplements the match. The 600ms
-/// window stays in JS: it is a clock, and clocks are not computation this
-/// module should own.
+/// The caller owns the buffer: it applies the repeating-character rule, appends
+/// the keystroke, and passes the result folded as `needle`, with `label_keys`
+/// folded the same way. The buffer has to be folded as a whole rather than per
+/// keystroke -- lowercasing is context-sensitive (a Greek capital sigma folds
+/// differently at the end of a word) -- so the folded buffer can only be built
+/// where the folding happens. What crosses here is the match, which is the part
+/// worth sharing. The 600ms window stays in JS too: it is a clock, and clocks
+/// are not computation this module should own.
 #[wasm_bindgen(js_name = selectTypeaheadFrom)]
-pub fn js_select_typeahead_from(values: Vec<String>, labels: Vec<String>, disabled: Vec<i32>, visible: Vec<i32>, active: i32, buffer: String, query: String) -> Vec<i32> {
-    let mut select = model_with(&values, &labels, &disabled);
+pub fn js_select_typeahead_from(label_keys: Vec<String>, disabled: Vec<i32>, visible: Vec<i32>, active: i32, needle: String) -> Vec<i32> {
+    // Values play no part in a prefix match on labels; the keys stand in.
+    let mut select = model_with(&label_keys, &label_keys, &disabled);
     if select.options().is_empty() {
         return vec![-1, 0];
     }
     let vis: Vec<usize> = visible
         .iter()
         .copied()
-        .filter(|i| (*i as usize) < values.len())
+        .filter(|i| *i >= 0 && (*i as usize) < label_keys.len())
         .map(|i| i as usize)
         .collect();
-    select.adopt_state(vis, (active >= 0).then_some(active as usize), buffer);
-    let matched = select.typeahead(&query);
+    select.adopt_state(vis, (active >= 0).then_some(active as usize), String::new());
+    // An empty needle is a prefix of everything, so it would "match" the next
+    // option. No keystroke means no move.
+    let matched = !needle.is_empty() && select.seek_prefix(&needle);
     vec![select.active().map(|i| i as i32).unwrap_or(-1), i32::from(matched)]
 }
 
@@ -487,7 +589,7 @@ pub fn js_select_typeahead_from(values: Vec<String>, labels: Vec<String>, disabl
 /// -- the call returns a plausible index and nothing looks wrong until someone
 /// tries to pick the option they were just moved onto.
 fn model_with(values: &[String], labels: &[String], disabled: &[i32]) -> Select {
-    Select::new(
+    Select::prefolded(
         values
             .iter()
             .zip(labels.iter())
@@ -878,5 +980,72 @@ mod prefix_probe {
         assert!(!s.typeahead("s"), "no prefix match");
         s.filter("sonnet");
         assert_eq!(s.visible().len(), 1, "but a substring match");
+    }
+}
+
+#[cfg(test)]
+mod folding {
+    use super::*;
+
+    fn strings(xs: &[&str]) -> Vec<String> {
+        xs.iter().map(|s| s.to_string()).collect()
+    }
+
+    /// The native model folds with Rust's Unicode tables, so a non-ASCII query
+    /// matches regardless of case. Only the WASM boundary hands folding to JS.
+    #[test]
+    fn the_native_model_folds_beyond_ascii() {
+        let mut s = Select::new(vec![Option_::new("a", "Ärger"), Option_::new("b", "Ordnung")]);
+        s.filter("  äR ");
+        assert_eq!(s.visible(), &[0]);
+    }
+
+    /// A prefolded model matches keys verbatim. That is the contract the
+    /// binding relies on: it folds once, and nothing here folds again.
+    #[test]
+    fn a_prefolded_model_matches_keys_verbatim() {
+        let mut s = Select::prefolded(vec![Option_::new("opus", "claude opus")]);
+        s.filter("claude");
+        assert_eq!(s.visible(), &[0]);
+        s.filter("CLAUDE");
+        assert!(s.visible().is_empty(), "an unfolded query is the caller's bug, not ours to fix");
+    }
+
+    /// `seek_prefix` answers the match without touching the buffer, because at
+    /// the boundary the buffer lives in JS.
+    #[test]
+    fn seek_prefix_searches_after_the_highlight_and_leaves_the_buffer_alone() {
+        let mut s = Select::prefolded(vec![
+            Option_::new("a", "cat"),
+            Option_::new("b", "cow"),
+            Option_::new("c", "dog"),
+        ]);
+        s.open(Some("a"));
+        assert!(s.seek_prefix("c"));
+        assert_eq!(s.active(), Some(1), "starts after the highlight, so it cycles");
+        assert!(s.seek_prefix("c"));
+        assert_eq!(s.active(), Some(0), "and wraps");
+        assert!(!s.seek_prefix("x"));
+        assert_eq!(s.active(), Some(0), "a miss does not move the highlight");
+    }
+
+    #[test]
+    fn typeahead_from_an_empty_needle_does_not_move() {
+        let keys = strings(&["cat", "cow"]);
+        assert_eq!(js_select_typeahead_from(keys, vec![0, 0], vec![0, 1], 1, String::new()), vec![1, 0]);
+    }
+
+    #[test]
+    fn typeahead_from_ignores_negative_visible_indices() {
+        // -1 cast to usize is huge, so it was filtered out by accident before;
+        // now it is filtered on purpose.
+        let keys = strings(&["cat", "cow"]);
+        assert_eq!(js_select_typeahead_from(keys, vec![0, 0], vec![-1, 1], -1, "c".into()), vec![1, 1]);
+    }
+
+    #[test]
+    fn typeahead_from_skips_disabled_options() {
+        let keys = strings(&["cat", "cow"]);
+        assert_eq!(js_select_typeahead_from(keys, vec![1, 0], vec![0, 1], -1, "c".into()), vec![1, 1]);
     }
 }

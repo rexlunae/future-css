@@ -27,8 +27,9 @@
  * Opt-in via `useWasm`. When it is on, the *computations* cross: the open seed,
  * the filter, the filtered move, and the typeahead match. What stays in JS is
  * everything those stateless functions cannot see -- state writes (`close`,
- * `setActive`), the trivial first/last-visible scans, and the typeahead buffer
- * concat, which is three lines of string handling rather than model logic. The
+ * `setActive`), the trivial first/last-visible scans, the typeahead buffer
+ * concat, which is three lines of string handling rather than model logic, and
+ * case folding, which JavaScript does with tables it already ships. The
  * entry points rebuild a model per call, so the adapter hands view state back
  * in on every call (`adopt_state` in the crate). Without WASM the identical
  * computations run in `SelectModel` below; `tests/wasm.test.ts` drives both
@@ -281,9 +282,9 @@ export interface SelectWasmModule {
   default: (init?: { module_or_path?: string | Uint8Array }) => Promise<void>;
   selectOpen: (values: string[], labels: string[], groups: string[], disabled: number[], current: string) => number;
   selectIndexOf: (values: string[], value: string) => number;
-  selectFilter: (labels: string[], values: string[], query: string) => Int32Array | number[];
+  selectFilter: (labelKeys: string[], valueKeys: string[], needle: string) => Int32Array | number[];
   selectMoveFrom: (values: string[], labels: string[], disabled: number[], visible: number[], active: number, delta: number) => number;
-  selectTypeaheadFrom: (values: string[], labels: string[], disabled: number[], visible: number[], active: number, buffer: string, query: string) => Int32Array | number[];
+  selectTypeaheadFrom: (labelKeys: string[], disabled: number[], visible: number[], active: number, needle: string) => Int32Array | number[];
 }
 
 /**
@@ -294,6 +295,11 @@ export interface SelectWasmModule {
  * rather than in Rust because it reads this adapter's own `visible` -- the
  * stateless calls see a fresh model each time and cannot reconcile against a
  * filter they did not perform.
+ *
+ * Case folding happens here too, with `toLowerCase()`, and the module matches
+ * the folded keys verbatim. That keeps Rust's Unicode case tables out of the
+ * module (a fifth of its shipped size) and leaves one definition of
+ * "case-insensitive" instead of two that could disagree across Unicode versions.
  */
 export class WasmSelectModel implements SelectModelLike {
   private readonly mod: SelectWasmModule;
@@ -302,6 +308,9 @@ export class WasmSelectModel implements SelectModelLike {
   private readonly labels: string[];
   private readonly groups: string[];
   private readonly disabledFlags: number[];
+  /** Labels and values folded once, the same way the JS twin folds per call. */
+  private readonly labelKeys: string[];
+  private readonly valueKeys: string[];
   private visible: number[];
   private active = -1;
   private committed = "";
@@ -314,6 +323,8 @@ export class WasmSelectModel implements SelectModelLike {
     this.labels = items.map((o) => o.label);
     this.groups = items.map((o) => o.group ?? "");
     this.disabledFlags = items.map((o) => (o.disabled ? 1 : 0));
+    this.labelKeys = this.labels.map((l) => l.toLowerCase());
+    this.valueKeys = this.values.map((v) => v.toLowerCase());
     this.visible = items.map((_, i) => i);
   }
 
@@ -371,20 +382,23 @@ export class WasmSelectModel implements SelectModelLike {
   }
 
   typeahead(query: string): boolean {
-    const result = Array.from(this.mod.selectTypeaheadFrom(this.values, this.labels, this.disabledFlags, this.visible, this.active, this.buffer, query));
+    const first = query[0];
+    if (!first) return false;
+    // The buffer lives here: the repeating rule and the concat are the JS twin's,
+    // and the whole buffer is folded before crossing because lowercasing is
+    // context-sensitive (a final capital sigma folds differently), so it cannot
+    // be folded keystroke by keystroke. The module answers only the match.
+    const repeating = [...this.buffer].every((c) => c === first);
+    const next = repeating ? query : this.buffer + query;
+    const result = Array.from(this.mod.selectTypeaheadFrom(this.labelKeys, this.disabledFlags, this.visible, this.active, next.toLowerCase()));
     this.active = result[0]!;
     const matched = result[1] === 1;
-    // The buffer concat stays here, deliberately: it is string handling, and
-    // the same rule the JS twin applies. `matched` is the only part of the
-    // buffer's fate that affects behaviour.
-    const first = query[0];
-    const repeating = first !== undefined && [...this.buffer].every((c) => c === first);
-    this.buffer = matched ? (repeating ? query : this.buffer + query) : "";
+    this.buffer = matched ? next : "";
     return matched;
   }
 
   filter(query: string): number[] {
-    this.visible = Array.from(this.mod.selectFilter(this.labels, this.values, query));
+    this.visible = Array.from(this.mod.selectFilter(this.labelKeys, this.valueKeys, query.trim().toLowerCase()));
     // Same reconciliation as the JS twin: the highlight must survive only
     // while it is still visible, or Enter can commit something hidden.
     if (!this.visible.includes(this.active)) {

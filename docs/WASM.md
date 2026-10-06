@@ -300,7 +300,7 @@ Measured (issue #16, binaryen 132):
 | fc-context-menu | 414.2 KB | 81.3 KB |
 | fc-grid | 363.4 KB | 35.1 KB |
 | fc-diff | 56.2 KB | 34.8 KB |
-| fc-select | 74.6 KB | 50.0 KB |
+| fc-select | 74.6 KB | 50.0 KB → **38.4 KB** |
 | fc-git | 45.0 KB | 25.9 KB |
 
 Two facts follow, and both matter:
@@ -312,11 +312,41 @@ Two facts follow, and both matter:
    before any optimizer runs — but the wire cost of the current `js-sys` modules
    is tens of KB, not hundreds.
 2. **The shipped basis re-prioritizes Phase A.** On what actually downloads,
-   `fc-context-menu` (81.3 KB) is the real outlier, then `fc-select` (50.0) and
+   `fc-context-menu` (81.3 KB) is the real outlier, then `fc-select` (50.0, since
+   cut to 38.4 — see below) and
    `fc-rich-text` (45.9); `fc-core` ships 18.3 KB and `fc-grid` 35.1. The
    budgets remain on the raw basis until Phase A decides whether to re-derive
    them against shipped bytes — deliberately, because moving the goalposts and
    measuring the result are two different changes.
+
+### Case folding belongs to JavaScript
+
+`fc-select` was the largest primitives-only module, and it had no `js-sys` to
+blame. Profiling the shipped module (`twiggy top` on a build with
+`CARGO_PROFILE_RELEASE_STRIP=false`) showed why: `str::to_lowercase` and the
+Unicode case tables behind it were about a fifth of the bytes, and `format!` —
+used once, to concatenate the typeahead buffer — pulled in more of the formatting
+machinery. JavaScript already ships the same tables as `toLowerCase()`.
+
+So the boundary now takes **pre-folded match keys**: the binding lowercases labels
+and values once, and lowercases (and trims) each query, and the crate matches them
+verbatim. Native Rust callers keep a case-insensitive model through
+`Select::new`; the boundary builds every model with `Select::prefolded`, and the
+two are selected by function pointer rather than an enum so the linker can drop
+the Unicode path entirely. Measured with rustc 1.97 and binaryen 132, before and
+after on the same toolchain: **48.9 KB → 38.4 KB shipped**, 73.0 → 61.9 KB raw.
+
+It is also a parity fix. Rust's `to_lowercase` and JavaScript's `toLowerCase`
+each follow their own Unicode version, so "case-insensitive" had two definitions
+that could disagree on a character one side had not learnt yet. Now there is
+one. The cost is that the typeahead buffer must be folded as a whole on the JS
+side — lowercasing is context-sensitive, and a final capital sigma folds
+differently from a medial one — so `selectTypeaheadFrom` takes the folded
+buffer as a needle and answers only the match. `tests/wasm.test.ts` drives the
+adapter and the JS twin through exactly those cases.
+
+The pattern generalises: any crate that folds, normalises, or segments text for
+matching should take the result from JavaScript rather than link the tables.
 
 `wasm-opt` is an optional system tool, like the `wasm-bindgen` CLI: install
 binaryen and the build uses it, skip it and the build is complete but the

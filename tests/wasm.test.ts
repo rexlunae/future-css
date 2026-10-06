@@ -305,7 +305,7 @@ describe("fc-select and the JS model agree", () => {
     ) => number;
     selectIndexOf: (values: string[], value: string) => number;
     selectLabelAt: (labels: string[], index: number) => string;
-    selectFilter: (labels: string[], values: string[], query: string) => Int32Array;
+    selectFilter: (labelKeys: string[], valueKeys: string[], needle: string) => Int32Array;
     selectMove: (
       values: string[], labels: string[], disabled: number[],
       committed: string, delta: number,
@@ -327,6 +327,11 @@ describe("fc-select and the JS model agree", () => {
   const LABELS = ["Claude Opus 5", "Claude Sonnet 5", "GPT-5", "o3", "Llama 4 (local)"];
   const GROUPS = ["Anthropic", "Anthropic", "OpenAI", "OpenAI", "Local"];
   const DISABLED = [0, 0, 0, 0, 1];
+  // Matching entry points take keys the binding has folded; see `Folding` in
+  // the crate. Passing raw labels would test a contract nobody calls.
+  const fold = (xs: string[]) => xs.map((x) => x.toLowerCase());
+  const LABEL_KEYS = fold(LABELS);
+  const VALUE_KEYS = fold(VALUES);
 
   describe("navigation", { skip: selectBuilt ? false : "run `npm run build:wasm` first" }, () => {
     it("opens on the committed value rather than the first option", () => {
@@ -364,18 +369,18 @@ describe("fc-select and the JS model agree", () => {
     it("matches substrings case-insensitively, which a prefix match would miss", () => {
       // The distinction that separates this from a menu's typeahead: "sonnet"
       // occurs inside "Claude Sonnet 5" but does not start it.
-      assert.deepEqual(Array.from(mod.selectFilter(LABELS, VALUES, "sonnet")), [1]);
-      assert.deepEqual(Array.from(mod.selectFilter(LABELS, VALUES, "GPT")), [2]);
-      assert.deepEqual(Array.from(mod.selectFilter(LABELS, VALUES, "local")), [4],
+      assert.deepEqual(Array.from(mod.selectFilter(LABEL_KEYS, VALUE_KEYS, "sonnet")), [1]);
+      assert.deepEqual(Array.from(mod.selectFilter(LABEL_KEYS, VALUE_KEYS, "gpt")), [2]);
+      assert.deepEqual(Array.from(mod.selectFilter(LABEL_KEYS, VALUE_KEYS, "local")), [4],
         "an unavailable option is still a real option and stays listed");
     });
 
     it("restores every option for an empty query", () => {
-      assert.equal(Array.from(mod.selectFilter(LABELS, VALUES, "")).length, LABELS.length);
+      assert.equal(Array.from(mod.selectFilter(LABEL_KEYS, VALUE_KEYS, "")).length, LABELS.length);
     });
 
     it("returns nothing rather than every option for a query that matches nothing", () => {
-      assert.deepEqual(Array.from(mod.selectFilter(LABELS, VALUES, "zzz")), []);
+      assert.deepEqual(Array.from(mod.selectFilter(LABEL_KEYS, VALUE_KEYS, "zzz")), []);
     });
   });
 
@@ -384,7 +389,7 @@ describe("fc-select and the JS model agree", () => {
       // "L" only prefixes "Llama 4 (local)", which is disabled. Selecting it
       // would move the user onto an option they cannot choose.
       const [active, matched] = Array.from(
-        mod.selectTypeahead(VALUES, LABELS, DISABLED, "", "L"),
+        mod.selectTypeahead(VALUES, LABEL_KEYS, DISABLED, "", "l"),
       );
       assert.equal(matched, 0, "must report no match");
       assert.equal(active, 0, "highlight stays where it was");
@@ -392,14 +397,14 @@ describe("fc-select and the JS model agree", () => {
 
     it("reports no match for a prefix that is absent", () => {
       const [, matched] = Array.from(
-        mod.selectTypeahead(VALUES, LABELS, DISABLED, "", "Z"),
+        mod.selectTypeahead(VALUES, LABEL_KEYS, DISABLED, "", "z"),
       );
       assert.equal(matched, 0, "a failed search must not report success");
     });
 
     it("finds a real prefix", () => {
       const [active, matched] = Array.from(
-        mod.selectTypeahead(VALUES, LABELS, DISABLED, "", "C"),
+        mod.selectTypeahead(VALUES, LABEL_KEYS, DISABLED, "", "c"),
       );
       assert.equal(matched, 1);
       assert.equal(LABELS[active], "Claude Sonnet 5");
@@ -676,6 +681,63 @@ describe("the shipped WasmSelectModel adapter and the JS twin agree", () => {
         (wasm as unknown as Record<string, (...a: unknown[]) => unknown>)[op](...args);
         assert.deepEqual(stateOf(wasm), stateOf(js), `diverged after ${op}(${args.join(", ")})`);
       }
+    },
+  );
+
+  // Folding moved from Rust into the adapter, so these are the cases where a
+  // fold done in the wrong place or by the wrong rule would show: non-ASCII
+  // case pairs, a dotted capital I that folds to two code units, a Greek word
+  // whose final sigma folds differently from a medial one, and a buffer whose
+  // keystrokes differ only in case.
+  const UNICODE_ITEMS: SelectOption[] = [
+    { value: "ärger", label: "Ärger" },
+    { value: "istanbul", label: "İstanbul" },
+    { value: "odos", label: "ΟΔΟΣ" },
+    { value: "osa", label: "ΟΣΑ" },
+    { value: "aardvark", label: "Aardvark" },
+    { value: "abacus", label: "ABACUS" },
+  ];
+  const UNICODE_OPS: Array<[string, ...unknown[]]> = [
+    ["open", undefined],
+    ["filter", "  ÄR "], // trimmed and folded on both sides
+    ["filter", "İST"],
+    ["filter", "οδος"], // ς at the end of the folded label, σ in the query
+    ["filter", "ΟΔΟΣ"], // the query folds its own final sigma to ς
+    ["filter", ""],
+    ["typeahead", "Ο"],
+    ["typeahead", "Σ"], // "ΟΣ" folds to "ος", which does not prefix "οσα"; folding
+                        // per keystroke would give "οσ" and wrongly match
+    ["close", false],
+    ["open", undefined],
+    ["typeahead", "A"],
+    ["typeahead", "a"], // differs only in case: not a repeat, so "aa" is searched
+    ["typeahead", "B"],
+  ];
+
+  it(
+    "agrees on case folding beyond ASCII",
+    { skip: adapterBuilt ? false : "run `npm run build:wasm` first" },
+    async () => {
+      const mod = (await import(join(wasmDir, "fc_select.js"))) as unknown as SelectWasmModule;
+      await mod.default({ module_or_path: await readFile(join(wasmDir, "fc_select_bg.wasm")) });
+
+      const js = new SelectModel(UNICODE_ITEMS);
+      const wasm = new WasmSelectModel(mod, UNICODE_ITEMS);
+      const stateOf = (m: SelectModel | WasmSelectModel) => ({
+        visible: [...m.visibleIndices()],
+        active: m.activeIndex,
+        committed: m.committedValue,
+      });
+
+      for (const [op, ...args] of UNICODE_OPS) {
+        const jsResult = (js as unknown as Record<string, (...a: unknown[]) => unknown>)[op](...args);
+        const wasmResult = (wasm as unknown as Record<string, (...a: unknown[]) => unknown>)[op](...args);
+        assert.deepEqual(wasmResult, jsResult, `return value diverged after ${op}(${args.join(", ")})`);
+        assert.deepEqual(stateOf(wasm), stateOf(js), `diverged after ${op}(${args.join(", ")})`);
+      }
+      // Pin the outcomes too, so both sides cannot agree on a wrong answer.
+      assert.deepEqual(js.filter("ΟΔΟΣ"), [2], "final sigma must fold to match");
+      assert.deepEqual(js.filter("  ÄR "), [0]);
     },
   );
 });

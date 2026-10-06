@@ -788,8 +788,11 @@ tree, and this is the most accessibility-sensitive component in the system.
 
 `fc-select` implements the navigation *model* — which option is active, how
 typeahead accumulates, which options survive a filter — behind a primitives-only
-boundary (flat arrays and strings, no `js-sys`), landing at 74.6 KB against
-414.2 KB for `fc-context-menu`.
+boundary (flat arrays and strings, no `js-sys`), shipping at 38.4 KB against
+79.8 KB for `fc-context-menu`. Matching keys cross pre-folded: the adapter
+lowercases labels, values and queries with `toLowerCase()`, so the module links
+no Unicode case tables and there is one definition of case-insensitive rather
+than two (see [WASM.md](WASM.md#case-folding-belongs-to-javascript)).
 
 **The binding opts into it** with `await select.useWasm(url)`. The boundary entry
 points are stateless — they rebuild the model on each call — so the adapter
@@ -803,8 +806,8 @@ covered equivalence.
 operation list — including the filtered cases — and requires identical state after
 every operation. What crosses: the open seed, the filter, the filtered move, and
 the typeahead match. What stays in JS: state writes, the trivial first/last-visible
-scans, the typeahead buffer concat, and the 600ms window, which is a clock rather
-than model logic.
+scans, the typeahead buffer and its case folding, and the 600ms window, which is a
+clock rather than model logic.
 
 WASM is never required: the component is complete and correct on the JS path, and
 a `useWasm` that returns false keeps it that way.

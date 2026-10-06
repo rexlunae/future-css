@@ -51,13 +51,15 @@ budget, and `fc-context-menu` is the largest by a wide margin:
 
 ```
 fc-context-menu    81.3 KB shipped   (raw 414.2 KB)   js-sys + serde
-fc-select          50.0 KB shipped   (raw  74.6 KB)   primitives only
+fc-select          38.4 KB shipped   (raw  61.9 KB)   primitives only, was 50.0
 fc-diff            34.8 KB shipped   (raw  56.2 KB)   primitives only
 ```
 
 The raw basis made `js-sys` look like the whole story; the shipped basis shows that
 bindgen strips most of it, and that two primitives-only modules are still over. Phase A
-now targets where the shipped bytes are, not where the raw ones were.
+now targets where the shipped bytes are, not where the raw ones were. `fc-select` lost
+a fifth of its size by leaving case folding to JavaScript, which already ships the
+Unicode tables; see [WASM.md](WASM.md#what-actually-ships).
 
 Verified: contrast contract enforced in both schemes · all ramps validated · linter
 verified against both violations and legitimate patterns · WASM modules instantiate and
@@ -252,7 +254,7 @@ Remaining:
 - Re-derive the budgets on the **shipped** basis. The raw (pre-bindgen) basis now
   overstates the wire by 2–18x — see the table in docs/WASM.md — and three
   modules exceed their budgets on shipped bytes (`fc-context-menu` 81.3 KB,
-  `fc-select` 50.0, `fc-diff` 34.8) while four are within them. Phase A's effort
+  `fc-select` 50.0, since cut to 38.4, `fc-diff` 34.8) while four are within them. Phase A's effort
   should go where the bytes are, which the raw basis gets wrong.
 - Replace `js_sys::Array` / `Vec<JsValue>` returns with flat primitives: numbers, strings,
   and typed arrays. A range crosses as four numbers, not an object.

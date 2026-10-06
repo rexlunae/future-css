@@ -1,0 +1,187 @@
+/*!
+ * future-css -- skeleton and progress
+ *
+ * Two answers to "something is happening" (the third, the spinner, has its
+ * own file -- spinner.css -- because it has a family of styles):
+ *
+ *   skeleton   content is coming, and its shape is known
+ *   progress   work is happening, and how much is done is known
+ *
+ * Neither is announced by itself. A skeleton's region
+ * carries `aria-busy="true"` until the content lands; progress is the native
+ * `<progress>` element, which assistive technology already understands.
+ */
+
+@layer fc.components {
+  /* ---- Skeleton -------------------------------------------------------- */
+
+  /*
+   * A placeholder in the shape of the content to come, so the layout does not
+   * jump when it arrives. The shimmer runs along the inline axis; the RTL
+   * branch reverses it, because a sweep against the reading direction reads
+   * as going backwards.
+   */
+  .fc-skeleton {
+    display: block;
+    block-size: 1lh;
+    background-color: var(--fc-color-bg-muted);
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in oklch, var(--fc-color-bg-surface) 60%, transparent) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    border-radius: var(--fc-radius-md);
+    animation: fc-loading-shimmer 1.6s ease-in-out infinite;
+  }
+
+  .fc-skeleton:dir(rtl) {
+    animation-direction: reverse;
+  }
+
+  /* Text lines are shorter than the line box, like real glyphs. */
+  .fc-skeleton--text {
+    block-size: 0.75lh;
+    margin-block: 0.125lh;
+  }
+
+  .fc-skeleton--text:last-child {
+    inline-size: 70%;
+  }
+
+  .fc-skeleton--circle {
+    inline-size: var(--fc-skeleton-size, 2.5rem);
+    block-size: var(--fc-skeleton-size, 2.5rem);
+    border-radius: var(--fc-radius-full);
+  }
+
+  .fc-skeleton--block {
+    block-size: var(--fc-skeleton-size, 8rem);
+    border-radius: var(--fc-radius-lg);
+  }
+
+  @keyframes fc-loading-shimmer {
+    from {
+      background-position: 150% 0;
+    }
+
+    to {
+      background-position: -50% 0;
+    }
+  }
+
+  /* ---- Progress -------------------------------------------------------- */
+
+  /*
+   * The native element, restyled through its vendor parts. It keeps its role,
+   * its value, and its announcements, which a div with a width would not.
+   */
+  .fc-progress {
+    appearance: none;
+    display: block;
+    inline-size: 100%;
+    block-size: var(--fc-progress-size, 0.5rem);
+    background-color: var(--fc-color-bg-muted);
+    color: var(--fc-color-accent-bg);
+    border: 0;
+    border-radius: var(--fc-radius-full);
+    overflow: hidden;
+  }
+
+  .fc-progress::-webkit-progress-bar {
+    background-color: var(--fc-color-bg-muted);
+  }
+
+  .fc-progress::-webkit-progress-value {
+    background-color: var(--fc-color-accent-bg);
+    border-radius: var(--fc-radius-full);
+    transition: inline-size var(--fc-duration-slow) var(--fc-easing-standard);
+  }
+
+  .fc-progress::-moz-progress-bar {
+    background-color: var(--fc-color-accent-bg);
+    border-radius: var(--fc-radius-full);
+  }
+
+  .fc-progress--sm {
+    --fc-progress-size: 0.25rem;
+  }
+
+  /*
+   * Indeterminate: a value-less <progress>. Drawn as a moving band, never as a
+   * bar frozen at some width, which would claim a percentage nobody knows.
+   */
+  .fc-progress:indeterminate {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--fc-color-accent-bg) 40%,
+      var(--fc-color-accent-bg) 60%,
+      transparent 100%
+    );
+    background-size: 40% 100%;
+    background-repeat: no-repeat;
+    animation: fc-loading-sweep 1.4s var(--fc-easing-standard) infinite;
+  }
+
+  .fc-progress:indeterminate::-webkit-progress-bar {
+    background-color: transparent;
+  }
+
+  .fc-progress:indeterminate::-moz-progress-bar {
+    background-color: transparent;
+  }
+
+  .fc-progress:indeterminate:dir(rtl) {
+    animation-direction: reverse;
+  }
+
+  @keyframes fc-loading-sweep {
+    from {
+      background-position: -60% 0;
+    }
+
+    to {
+      background-position: 160% 0;
+    }
+  }
+
+  /* ---- Reduced motion -------------------------------------------------- */
+
+  /*
+   * The shimmer and sweep are decoration on top of a shape that already says
+   * "loading", so they stop, and
+   * the indeterminate bar becomes a static, full-width hatch that cannot be read
+   * as a percentage.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .fc-skeleton {
+      animation: none;
+      background-image: none;
+    }
+
+    .fc-progress:indeterminate {
+      animation: none;
+      background-size: auto;
+      background-image: repeating-linear-gradient(
+        45deg,
+        var(--fc-color-accent-bg) 0 0.375rem,
+        transparent 0.375rem 0.75rem
+      );
+    }
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  @media (forced-colors: active) {
+    .fc-skeleton {
+      border: var(--fc-border-width-thin) dashed GrayText;
+    }
+
+    .fc-progress {
+      border: var(--fc-border-width-thin) solid CanvasText;
+    }
+  }
+}

@@ -1,0 +1,125 @@
+/*!
+ * future-css -- agent status
+ *
+ * The one-line "what is the agent doing right now" row in an agent chat:
+ *
+ *   <div class="fc-agent-status" data-fc-kind="agent-status" data-fc-state="running">
+ *     <span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"></span>
+ *     <span class="fc-agent-status__label" role="status">Searching 12 sources</span>
+ *     <span class="fc-agent-status__meta">14s</span>
+ *   </div>
+ *
+ * `role="status"` is on the LABEL, not the row. The elapsed time in `__meta`
+ * changes every second, and inside a live region it would be announced every
+ * second. The label changes at step boundaries ("Reading files" -> "Running
+ * tests"), which is exactly how often a screen reader user wants to hear it.
+ *
+ * The state attribute drives everything: while it is pending, running, or
+ * streaming the label shimmers and the spinner turns; once it is complete,
+ * error, aborted, or denied the spinner is hidden and a glyph states the
+ * outcome. The visual "still working" cue cannot outlive the state.
+ */
+
+@layer fc.components {
+  .fc-agent-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-2);
+    min-block-size: var(--fc-size-target-min);
+    max-inline-size: 100%;
+    font-size: var(--fc-font-size-sm);
+    color: var(--fc-color-text-muted);
+  }
+
+  .fc-agent-status__label {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fc-agent-status__meta {
+    flex-shrink: 0;
+    color: var(--fc-color-text-subtle);
+    font-size: var(--fc-font-size-xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* In progress: the label shimmers, like .fc-shimmer-text. */
+  .fc-agent-status:is([data-fc-state="pending"], [data-fc-state="running"], [data-fc-state="streaming"], [data-fc-state="queued"]) .fc-agent-status__label {
+    background-image: linear-gradient(
+      90deg,
+      var(--fc-color-text-muted) 0%,
+      var(--fc-color-text-muted) 35%,
+      var(--fc-color-text-default) 50%,
+      var(--fc-color-text-muted) 65%,
+      var(--fc-color-text-muted) 100%
+    );
+    background-size: 250% 100%;
+    background-clip: text;
+    color: transparent;
+    animation: fc-agent-status-shimmer 2s linear infinite;
+  }
+
+  .fc-agent-status:is([data-fc-state="pending"], [data-fc-state="running"], [data-fc-state="streaming"], [data-fc-state="queued"]):dir(rtl) .fc-agent-status__label {
+    animation-direction: reverse;
+  }
+
+  @keyframes fc-agent-status-shimmer {
+    from {
+      background-position: 100% 0;
+    }
+
+    to {
+      background-position: 0% 0;
+    }
+  }
+
+  /* Finished: the spinner goes, and a glyph says how it ended. */
+  .fc-agent-status:is([data-fc-state="complete"], [data-fc-state="error"], [data-fc-state="aborted"], [data-fc-state="denied"]) .fc-spinner {
+    display: none;
+  }
+
+  .fc-agent-status[data-fc-state="complete"]::before {
+    content: "\2713" / "";
+    color: var(--fc-color-success-text);
+    font-weight: var(--fc-font-weight-bold);
+  }
+
+  .fc-agent-status[data-fc-state="error"]::before,
+  .fc-agent-status[data-fc-state="denied"]::before {
+    content: "\2715" / "";
+    color: var(--fc-color-danger-text);
+    font-weight: var(--fc-font-weight-bold);
+  }
+
+  .fc-agent-status[data-fc-state="aborted"]::before {
+    content: "\25A0" / "";
+    color: var(--fc-color-warning-text);
+  }
+
+  .fc-agent-status[data-fc-state="error"] .fc-agent-status__label {
+    color: var(--fc-color-danger-text);
+  }
+
+  /* ---- Reduced motion -------------------------------------------------- */
+
+  @media (prefers-reduced-motion: reduce) {
+    .fc-agent-status:is([data-fc-state="pending"], [data-fc-state="running"], [data-fc-state="streaming"], [data-fc-state="queued"]) .fc-agent-status__label {
+      animation: none;
+      background-image: none;
+      color: var(--fc-color-text-muted);
+    }
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  /* Clipped-to-text backgrounds would leave the label invisible. */
+  @media (forced-colors: active) {
+    .fc-agent-status:is([data-fc-state="pending"], [data-fc-state="running"], [data-fc-state="streaming"], [data-fc-state="queued"]) .fc-agent-status__label {
+      background-image: none;
+      color: CanvasText;
+      animation: none;
+    }
+  }
+}

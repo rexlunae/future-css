@@ -1,0 +1,233 @@
+/*!
+ * future-css -- card
+ *
+ * A surface that groups related content. The element is whatever the content
+ * is: `<article>` for a self-contained item, `<section>` with a heading for a
+ * panel, `<li>` inside a list of cards.
+ *
+ * The card is a size container. Its parts respond to the width the card is
+ * given, not to the viewport, so the same card works in a three-column grid on
+ * a wide screen, a sidebar, and a phone without a breakpoint per placement. This
+ * is the first component in the system to use container queries, and the reason
+ * is exactly that: a card's width is decided by its parent, which the viewport
+ * says nothing about.
+ */
+
+@layer fc.components {
+  .fc-card {
+    container: fc-card / inline-size;
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+
+    background-color: var(--fc-color-bg-surface);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-xl);
+    /* `clip` rather than `hidden`: it rounds the media corners without creating
+       a scroll container, so sticky children and focus rings behave. */
+    overflow: clip;
+
+    transition:
+      box-shadow var(--fc-duration-normal) var(--fc-easing-standard),
+      border-color var(--fc-duration-normal) var(--fc-easing-standard),
+      translate var(--fc-duration-normal) var(--fc-easing-standard);
+  }
+
+  .fc-card--elevated {
+    border-color: transparent;
+    box-shadow: var(--fc-shadow-raised);
+  }
+
+  .fc-card--subtle {
+    background-color: var(--fc-color-bg-subtle);
+    border-color: transparent;
+  }
+
+  /* ---- Parts ----------------------------------------------------------- */
+
+  .fc-card__media {
+    display: block;
+    inline-size: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    background-color: var(--fc-color-bg-muted);
+  }
+
+  .fc-card__header,
+  .fc-card__body,
+  .fc-card__footer {
+    padding-inline: var(--fc-space-5);
+  }
+
+  .fc-card__header {
+    display: flex;
+    align-items: start;
+    gap: var(--fc-space-3);
+    padding-block-start: var(--fc-space-5);
+  }
+
+  .fc-card__heading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-1);
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  .fc-card__title {
+    margin: 0;
+    font-size: var(--fc-font-size-lg);
+    font-weight: var(--fc-font-weight-semibold);
+    line-height: var(--fc-line-height-snug);
+  }
+
+  .fc-card__subtitle {
+    margin: 0;
+    font-size: var(--fc-font-size-sm);
+    color: var(--fc-color-text-muted);
+  }
+
+  .fc-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-3);
+    flex: 1;
+    padding-block: var(--fc-space-4);
+    font-size: var(--fc-font-size-sm);
+    color: var(--fc-color-text-muted);
+  }
+
+  /* Base prose rhythm would double the gap the body already sets. */
+  .fc-card__body > * {
+    margin-block: 0;
+  }
+
+  .fc-card__footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fc-space-2);
+    padding-block: var(--fc-space-3) var(--fc-space-5);
+  }
+
+  /* A footer separated by a rule, for cards whose actions are a distinct zone. */
+  .fc-card__footer--divided {
+    border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    padding-block-start: var(--fc-space-4);
+  }
+
+  /* ---- Container-driven layout ----------------------------------------- */
+
+  /*
+   * Optional wrapper that puts the media beside the content once the card is
+   * wide enough to afford it. Below that, it stacks. The threshold is the
+   * card's own width, so a "horizontal" card inside a narrow sidebar correctly
+   * stays vertical.
+   */
+  .fc-card__layout {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  @container fc-card (inline-size >= 34rem) {
+    .fc-card__layout {
+      grid-template-columns: minmax(12rem, 2fr) 3fr;
+    }
+
+    .fc-card__layout > .fc-card__media {
+      block-size: 100%;
+      aspect-ratio: auto;
+    }
+  }
+
+  /* Tight cards: less padding, so the content keeps its measure. */
+  @container fc-card (inline-size < 18rem) {
+    .fc-card__header,
+    .fc-card__body,
+    .fc-card__footer {
+      padding-inline: var(--fc-space-3);
+    }
+
+    .fc-card__header {
+      padding-block-start: var(--fc-space-3);
+    }
+
+    .fc-card__title {
+      font-size: var(--fc-font-size-md);
+    }
+  }
+
+  /* ---- Interactive card ------------------------------------------------ */
+
+  /*
+   * The whole card is clickable, but only one element is the link: the title.
+   * Its ::after stretches over the card, so the hit area is large while the
+   * accessible name is just the title -- not the entire card's text read as one
+   * run-on link. Other controls inside the card sit above the overlay.
+   */
+  .fc-card__link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .fc-card__link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: var(--fc-z-base);
+  }
+
+  /*
+   * Focus stays on the title's own ring rather than moving to the card: the
+   * ring then marks exactly what has focus, and what Enter will follow.
+   */
+  .fc-card:has(.fc-card__link:focus-visible) {
+    border-color: var(--fc-color-accent-border);
+  }
+
+  .fc-card:has(.fc-card__link):hover {
+    border-color: var(--fc-color-border-default);
+    box-shadow: var(--fc-shadow-overlay);
+  }
+
+  .fc-card:has(.fc-card__link):active {
+    translate: 0 var(--fc-space-px);
+    box-shadow: var(--fc-shadow-raised);
+  }
+
+  .fc-card__footer :is(a, button) {
+    position: relative;
+    z-index: var(--fc-z-raised);
+  }
+
+  /*
+   * Selected, for cards used as large radio or checkbox options. Driven by the
+   * state of a real input inside the card, so the visual and the form value
+   * cannot disagree.
+   */
+  .fc-card:has(:checked) {
+    border-color: var(--fc-color-accent-border);
+    background-color: var(--fc-color-accent-bg-subtle);
+  }
+
+  .fc-card:has(:disabled) {
+    opacity: var(--fc-opacity-disabled);
+    cursor: not-allowed;
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  @media (forced-colors: active) {
+    .fc-card {
+      border-color: CanvasText;
+    }
+
+    .fc-card:has(:checked) {
+      border-color: Highlight;
+      border-width: var(--fc-border-width-thick);
+    }
+  }
+}

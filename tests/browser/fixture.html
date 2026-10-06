@@ -213,6 +213,66 @@
     <div class="fc-git__files" role="listbox" aria-label="Changed files"></div>
   </div>
 
+  <!--
+    Tabs. The middle tab is aria-disabled so the arrow tests can prove it is
+    skipped; the panels are paired by aria-controls.
+  -->
+  <div class="fc-tabs" id="tabs-root">
+    <div class="fc-tabs__list" role="tablist" aria-label="Fixture tabs">
+      <button type="button" class="fc-tabs__tab" role="tab" id="tab-a" aria-controls="panel-a" aria-selected="true">Alpha</button>
+      <button type="button" class="fc-tabs__tab" role="tab" id="tab-b" aria-controls="panel-b" aria-disabled="true">Beta</button>
+      <button type="button" class="fc-tabs__tab" role="tab" id="tab-c" aria-controls="panel-c">Gamma</button>
+      <button type="button" class="fc-tabs__tab" role="tab" id="tab-d" aria-controls="panel-d">Delta</button>
+    </div>
+    <div class="fc-tabs__panel" id="panel-a">Alpha panel</div>
+    <div class="fc-tabs__panel" id="panel-b">Beta panel</div>
+    <div class="fc-tabs__panel" id="panel-c">Gamma panel</div>
+    <div class="fc-tabs__panel" id="panel-d">Delta panel</div>
+  </div>
+
+  <span class="fc-tooltip" id="tip-root">
+    <button type="button" id="tip-trigger">Copy</button>
+    <span class="fc-tooltip__bubble">Copy to clipboard</span>
+  </span>
+
+  <section class="fc-toaster" id="toaster" aria-label="Notifications"></section>
+
+  <dialog class="fc-dialog" id="dlg" aria-labelledby="dlg-title">
+    <header class="fc-dialog__header"><h2 class="fc-dialog__title" id="dlg-title">Fixture dialog</h2></header>
+    <div class="fc-dialog__body">Body</div>
+    <footer class="fc-dialog__footer"><button type="button" id="dlg-close">Close</button></footer>
+  </dialog>
+
+  <!-- Two cards with identical markup at different widths, for the container query. -->
+  <div style="inline-size: 16rem"><article class="fc-card" id="card-narrow">
+    <div class="fc-card__layout"><div class="fc-card__media"></div><div class="fc-card__body">Narrow</div></div>
+  </article></div>
+  <div style="inline-size: 40rem"><article class="fc-card" id="card-wide">
+    <div class="fc-card__layout"><div class="fc-card__media"></div><div class="fc-card__body">Wide</div></div>
+  </article></div>
+
+  <label class="fc-switch-row" id="switch-row">
+    <span class="fc-switch-row__label">Switch</span>
+    <input type="checkbox" role="switch" class="fc-switch" id="switch">
+  </label>
+
+  <span class="fc-spinner" id="spinner"></span>
+
+  <div id="spinners">
+    <span class="fc-spinner fc-spinner--arc" data-variant="arc"></span>
+    <span class="fc-spinner fc-spinner--dots" data-variant="dots"><span></span><span></span><span></span></span>
+    <span class="fc-spinner fc-spinner--pulse" data-variant="pulse"></span>
+    <span class="fc-spinner fc-spinner--bars" data-variant="bars"><span></span><span></span><span></span><span></span></span>
+    <span class="fc-spinner fc-spinner--orbit" data-variant="orbit"></span>
+    <span class="fc-spinner fc-spinner--sparkle" data-variant="sparkle"></span>
+  </div>
+
+  <div class="fc-agent-status" id="agent-status" data-fc-state="running">
+    <span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"></span>
+    <span class="fc-agent-status__label" role="status">Searching</span>
+    <span class="fc-agent-status__meta">3s</span>
+  </div>
+
 </div>
 </body>
 </html>

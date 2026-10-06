@@ -1,0 +1,103 @@
+/*!
+ * future-css -- suggested prompts
+ *
+ * Starter prompts on an empty chat, and follow-up suggestions under an answer.
+ * Each one is a button whose label is the prompt itself, so the accessible
+ * name is exactly what will be sent.
+ *
+ *   <ul class="fc-suggestions" aria-label="Suggested prompts">
+ *     <li><button class="fc-suggestion" type="button">
+ *       <span class="fc-suggestion__title">Summarise this thread</span>
+ *       <span class="fc-suggestion__hint">in three bullet points</span>
+ *     </button></li>
+ *   </ul>
+ *
+ * A list, so a screen reader announces how many there are before reading
+ * them, and so a consumer reading the DOM can enumerate them without guessing.
+ */
+
+@layer fc.components {
+  .fc-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fc-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* A two-column grid of larger cards, for the empty-chat starter set. */
+  .fc-suggestions--grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  }
+
+  .fc-suggestion {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--fc-space-0-5);
+    inline-size: 100%;
+    min-block-size: var(--fc-size-target-comfortable);
+    padding-block: var(--fc-space-2);
+    padding-inline: var(--fc-space-3);
+
+    background-color: var(--fc-color-bg-surface);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+    border-radius: var(--fc-radius-lg);
+
+    font: inherit;
+    font-size: var(--fc-font-size-sm);
+    text-align: start;
+    cursor: pointer;
+
+    transition:
+      background-color var(--fc-duration-fast) var(--fc-easing-standard),
+      border-color var(--fc-duration-fast) var(--fc-easing-standard),
+      translate var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-suggestion:hover {
+    background-color: var(--fc-color-bg-subtle);
+    border-color: var(--fc-color-border-strong);
+  }
+
+  .fc-suggestion:active {
+    translate: 0 var(--fc-space-px);
+    background-color: var(--fc-color-bg-muted);
+  }
+
+  .fc-suggestion:disabled,
+  .fc-suggestion[aria-disabled="true"] {
+    color: var(--fc-color-text-subtle);
+    border-color: var(--fc-color-border-subtle);
+    background-color: transparent;
+    cursor: not-allowed;
+  }
+
+  .fc-suggestion__title {
+    font-weight: var(--fc-font-weight-medium);
+  }
+
+  .fc-suggestion__hint {
+    font-size: var(--fc-font-size-xs);
+    color: var(--fc-color-text-muted);
+  }
+
+  /* Follow-ups under an answer are pills, quieter than the starter cards. */
+  .fc-suggestion--pill {
+    flex-direction: row;
+    align-items: center;
+    inline-size: auto;
+    min-block-size: 2rem;
+    padding-block: var(--fc-space-1);
+    border-radius: var(--fc-radius-full);
+  }
+
+  @media (forced-colors: active) {
+    .fc-suggestion {
+      border-color: ButtonText;
+    }
+  }
+}

@@ -1,0 +1,198 @@
+/*!
+ * future-css -- popover and tooltip
+ *
+ * POPOVER. Non-modal floating content on the native popover API:
+ *
+ *   <button popovertarget="filters">Filters</button>
+ *   <div class="fc-popover" id="filters" popover>…</div>
+ *
+ * The platform provides the top layer, light dismiss, Escape, and returning
+ * focus to the invoker. Where CSS anchor positioning is supported, the popover
+ * sits against its invoker and flips when it runs out of room; elsewhere it
+ * falls back to the UA's centred placement, which is usable rather than broken.
+ *
+ * TOOLTIP. A short, supplementary label for a control:
+ *
+ *   <span class="fc-tooltip">
+ *     <button aria-describedby="tip-copy">Copy</button>
+ *     <span class="fc-tooltip__bubble" role="tooltip" id="tip-copy">Copy to clipboard</span>
+ *   </span>
+ *
+ * Shown on hover AND keyboard focus, never hover alone. Never the only place
+ * information lives: the bubble repeats or clarifies a name, so a user who
+ * never sees it loses nothing. The `tooltip` binding adds the one behaviour CSS
+ * cannot: Escape dismisses it without moving focus (WCAG 1.4.13).
+ */
+
+@layer fc.components {
+  .fc-popover {
+    inline-size: max-content;
+    max-inline-size: min(22rem, 100vi - 2 * var(--fc-space-4));
+    padding: var(--fc-space-4);
+    margin: var(--fc-space-1);
+
+    background-color: var(--fc-color-bg-raised);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-xl);
+    box-shadow: var(--fc-shadow-overlay);
+    font-size: var(--fc-font-size-sm);
+
+    /*
+     * Anchored below the invoker, aligned to its inline-start edge, flipping to
+     * the other side of either axis when there is no room. All logical, so the
+     * alignment mirrors in RTL.
+     */
+    position-area: block-end span-inline-end;
+    position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+
+    opacity: 0;
+    translate: 0 calc(var(--fc-space-1) * -1);
+    transition:
+      opacity var(--fc-duration-fast) var(--fc-easing-decelerate),
+      translate var(--fc-duration-fast) var(--fc-easing-decelerate),
+      overlay var(--fc-duration-fast) allow-discrete,
+      display var(--fc-duration-fast) allow-discrete;
+  }
+
+  .fc-popover:popover-open {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  @starting-style {
+    .fc-popover:popover-open {
+      opacity: 0;
+      translate: 0 calc(var(--fc-space-1) * -1);
+    }
+  }
+
+  .fc-popover__title {
+    margin: 0;
+    margin-block-end: var(--fc-space-2);
+    font-size: var(--fc-font-size-sm);
+    font-weight: var(--fc-font-weight-semibold);
+  }
+
+  .fc-popover__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--fc-space-2);
+    margin-block-start: var(--fc-space-3);
+  }
+
+  /* ---- Tooltip --------------------------------------------------------- */
+
+  .fc-tooltip {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .fc-tooltip__bubble {
+    position: absolute;
+    inset-block-end: calc(100% + var(--fc-space-1-5));
+    inset-inline-start: 50%;
+    z-index: var(--fc-z-popover);
+
+    inline-size: max-content;
+    max-inline-size: 16rem;
+    padding-block: var(--fc-space-1);
+    padding-inline: var(--fc-space-2);
+
+    background-color: var(--fc-color-bg-inverse);
+    color: var(--fc-color-text-inverse);
+    border-radius: var(--fc-radius-md);
+    font-size: var(--fc-font-size-xs);
+    font-weight: var(--fc-font-weight-medium);
+    line-height: var(--fc-line-height-snug);
+    text-align: center;
+
+    /*
+     * Hidden with visibility, not display: the bubble stays in the
+     * accessibility tree so aria-describedby can still read it when it is not
+     * shown. `translate` is physical, so RTL reverses it below.
+     */
+    visibility: hidden;
+    opacity: 0;
+    translate: -50% var(--fc-space-1);
+    transition:
+      opacity var(--fc-duration-fast) var(--fc-easing-standard),
+      translate var(--fc-duration-fast) var(--fc-easing-standard),
+      visibility 0s linear var(--fc-duration-fast);
+  }
+
+  /*
+   * Bridges the gap between control and bubble. The bubble is a child of the
+   * wrapper, so while the pointer is over it the wrapper stays hovered -- which
+   * is what lets a user move onto the bubble to read it without it vanishing
+   * (WCAG 1.4.13, "hoverable"). Without the bridge, crossing the gap would end
+   * the hover.
+   */
+  .fc-tooltip__bubble::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 100%;
+    block-size: var(--fc-space-1-5);
+  }
+
+  .fc-tooltip__bubble:dir(rtl) {
+    translate: 50% var(--fc-space-1);
+  }
+
+  /*
+   * A short delay before showing, so the bubble does not flash while the
+   * pointer merely crosses the control. Keyboard focus shows it immediately:
+   * a keyboard user arrived on purpose.
+   */
+  .fc-tooltip:hover .fc-tooltip__bubble {
+    visibility: visible;
+    opacity: 1;
+    translate: -50% 0;
+    transition-delay: 400ms, 400ms, 0s;
+  }
+
+  .fc-tooltip:has(:focus-visible) .fc-tooltip__bubble {
+    visibility: visible;
+    opacity: 1;
+    translate: -50% 0;
+    transition-delay: 0s;
+  }
+
+  .fc-tooltip:hover .fc-tooltip__bubble:dir(rtl),
+  .fc-tooltip:has(:focus-visible) .fc-tooltip__bubble:dir(rtl) {
+    translate: 50% 0;
+  }
+
+  /* Escape was pressed: hidden until the pointer leaves or focus moves. */
+  .fc-tooltip[data-fc-dismissed="true"] .fc-tooltip__bubble {
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  /* Below the control, for controls at the top edge of a scroll container.
+     A bubble modifier rather than a wrapper one, so it stays a single class. */
+  .fc-tooltip__bubble--below {
+    inset-block-end: auto;
+    inset-block-start: calc(100% + var(--fc-space-1-5));
+  }
+
+  .fc-tooltip__bubble--below::before {
+    inset-block-start: auto;
+    inset-block-end: 100%;
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  @media (forced-colors: active) {
+    .fc-popover {
+      border: var(--fc-border-width-thick) solid CanvasText;
+    }
+
+    .fc-tooltip__bubble {
+      background-color: Canvas;
+      color: CanvasText;
+      border: var(--fc-border-width-thin) solid CanvasText;
+    }
+  }
+}

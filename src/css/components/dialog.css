@@ -1,0 +1,276 @@
+/*!
+ * future-css -- dialog and sheet
+ *
+ * Built on the native `<dialog>` element, opened with `showModal()`. That one
+ * call provides what hand-rolled modals spend hundreds of lines approximating
+ * and still get wrong: the top layer (no z-index war), an inert background (no
+ * focus trap to write), Escape to close, focus moved in on open and returned on
+ * close, and a `::backdrop`.
+ *
+ *   <button type="button" commandfor="confirm" command="show-modal">Delete</button>
+ *   <dialog class="fc-dialog" id="confirm" aria-labelledby="confirm-title" closedby="any">
+ *     <header class="fc-dialog__header">
+ *       <h2 class="fc-dialog__title" id="confirm-title">Delete this chat?</h2>
+ *     </header>
+ *     <div class="fc-dialog__body">…</div>
+ *     <footer class="fc-dialog__footer">
+ *       <button commandfor="confirm" command="close">Cancel</button>
+ *       …
+ *     </footer>
+ *   </dialog>
+ *
+ * `commandfor`/`command` open and close it without a line of script where they
+ * are supported; elsewhere, `dialog.showModal()` and `dialog.close()` are the
+ * whole API. `closedby="any"` adds light dismiss on a backdrop click.
+ *
+ * Motion uses `@starting-style` and discrete transitions of `display` and
+ * `overlay`, so the dialog animates in AND out with no JavaScript. Browsers
+ * that lack either simply show and hide it instantly, which is the correct
+ * fallback.
+ */
+
+@layer fc.components {
+  .fc-dialog {
+    --fc-dialog-size: 32rem;
+
+    flex-direction: column;
+    inline-size: min(100% - 2 * var(--fc-space-4), var(--fc-dialog-size));
+    max-inline-size: none;
+    max-block-size: min(100dvh - 2 * var(--fc-space-4), 48rem);
+    padding: 0;
+
+    background-color: var(--fc-color-bg-raised);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-2xl);
+    box-shadow: var(--fc-shadow-modal);
+    overflow: hidden;
+
+    opacity: 0;
+    scale: 0.96;
+    transition:
+      opacity var(--fc-duration-normal) var(--fc-easing-decelerate),
+      scale var(--fc-duration-normal) var(--fc-easing-decelerate),
+      translate var(--fc-duration-slow) var(--fc-easing-decelerate),
+      overlay var(--fc-duration-normal) allow-discrete,
+      display var(--fc-duration-normal) allow-discrete;
+  }
+
+  /*
+   * `display` is only set while open. Setting it unconditionally would override
+   * the UA's `dialog:not([open]) { display: none }` and show every closed
+   * dialog on the page.
+   */
+  .fc-dialog[open] {
+    display: flex;
+    opacity: 1;
+    scale: 1;
+  }
+
+  @starting-style {
+    .fc-dialog[open] {
+      opacity: 0;
+      scale: 0.96;
+    }
+  }
+
+  /*
+   * The backdrop dims the page in both schemes. light-dark() picks a dark wash
+   * in each -- bg-inverse is near-black in light mode and bg-sunken is black in
+   * dark mode -- so the backdrop never turns into a white fog over a dark page.
+   */
+  .fc-dialog::backdrop {
+    background-color: color-mix(
+      in oklch,
+      light-dark(var(--fc-color-bg-inverse), var(--fc-color-bg-sunken)) 50%,
+      transparent
+    );
+    backdrop-filter: blur(var(--fc-space-0-5));
+    opacity: 0;
+    transition:
+      opacity var(--fc-duration-normal) var(--fc-easing-standard),
+      overlay var(--fc-duration-normal) allow-discrete,
+      display var(--fc-duration-normal) allow-discrete;
+  }
+
+  .fc-dialog[open]::backdrop {
+    opacity: 1;
+  }
+
+  @starting-style {
+    .fc-dialog[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  /* ---- Parts ----------------------------------------------------------- */
+
+  .fc-dialog__header {
+    display: flex;
+    align-items: start;
+    gap: var(--fc-space-3);
+    padding-block: var(--fc-space-5) var(--fc-space-2);
+    padding-inline: var(--fc-space-6);
+  }
+
+  .fc-dialog__title {
+    margin: 0;
+    flex: 1;
+    min-inline-size: 0;
+    font-size: var(--fc-font-size-lg);
+    font-weight: var(--fc-font-weight-semibold);
+    line-height: var(--fc-line-height-snug);
+  }
+
+  .fc-dialog__description {
+    margin: 0;
+    margin-block-start: var(--fc-space-1);
+    font-size: var(--fc-font-size-sm);
+    color: var(--fc-color-text-muted);
+  }
+
+  .fc-dialog__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    inline-size: 2rem;
+    block-size: 2rem;
+    margin-block-start: calc(var(--fc-space-1) * -1);
+    margin-inline-end: calc(var(--fc-space-2) * -1);
+    padding: 0;
+    background-color: transparent;
+    color: var(--fc-color-text-muted);
+    border: 0;
+    border-radius: var(--fc-radius-md);
+    font-size: var(--fc-font-size-lg);
+    cursor: pointer;
+  }
+
+  .fc-dialog__close:hover {
+    background-color: var(--fc-color-bg-muted);
+    color: var(--fc-color-text-default);
+  }
+
+  /*
+   * Only the body scrolls, so the title and the actions stay visible however
+   * long the content is. `overscroll-behavior` keeps a scroll that reaches the
+   * end from chaining to the page behind.
+   */
+  .fc-dialog__body {
+    flex: 1;
+    min-block-size: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-block: var(--fc-space-2) var(--fc-space-4);
+    padding-inline: var(--fc-space-6);
+    font-size: var(--fc-font-size-sm);
+    color: var(--fc-color-text-muted);
+  }
+
+  .fc-dialog__body > :last-child {
+    margin-block-end: 0;
+  }
+
+  .fc-dialog__footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--fc-space-2);
+    padding-block: var(--fc-space-4);
+    padding-inline: var(--fc-space-6);
+    background-color: var(--fc-color-bg-subtle);
+    border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  }
+
+  /* ---- Sizes ----------------------------------------------------------- */
+
+  .fc-dialog--sm {
+    --fc-dialog-size: 24rem;
+  }
+
+  .fc-dialog--lg {
+    --fc-dialog-size: 48rem;
+  }
+
+  .fc-dialog--fullscreen {
+    --fc-dialog-size: 100%;
+    max-block-size: 100dvh;
+    block-size: 100dvh;
+    inline-size: 100%;
+    border-radius: 0;
+  }
+
+  /* ---- Sheet ----------------------------------------------------------- */
+
+  /*
+   * A side sheet docked to the inline-end edge: settings, a run inspector, the
+   * sources behind an answer. Same element, same focus behaviour, different
+   * geometry. `margin-inline-start: auto` docks it to the correct side in RTL
+   * with no extra rule; the slide direction is a physical translate and does
+   * need one.
+   */
+  .fc-dialog--sheet {
+    --fc-dialog-size: 28rem;
+    --fc-sheet-from: 100%;
+
+    block-size: 100dvh;
+    max-block-size: 100dvh;
+    margin-block: 0;
+    margin-inline: auto 0;
+    border-radius: 0;
+    border-block-width: 0;
+    border-inline-end-width: 0;
+    translate: var(--fc-sheet-from) 0;
+    opacity: 1;
+    scale: 1;
+  }
+
+  .fc-dialog--sheet:dir(rtl) {
+    --fc-sheet-from: -100%;
+  }
+
+  .fc-dialog--sheet[open] {
+    translate: 0 0;
+  }
+
+  @starting-style {
+    .fc-dialog--sheet[open] {
+      translate: var(--fc-sheet-from) 0;
+      opacity: 1;
+      scale: 1;
+    }
+  }
+
+  /* On a phone the sheet is the whole screen; a 28rem panel would not fit. */
+  @media (width < 36rem) {
+    .fc-dialog--sheet {
+      inline-size: 100%;
+    }
+
+    /* A centred dialog becomes a bottom sheet, within thumb reach. */
+    .fc-dialog:not(.fc-dialog--sheet, .fc-dialog--fullscreen) {
+      inline-size: 100%;
+      margin-block-end: 0;
+      border-end-start-radius: 0;
+      border-end-end-radius: 0;
+    }
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  /*
+   * The shadow and the backdrop wash are both suppressed, which would leave a
+   * borderless box floating on an identical canvas. The border restates the
+   * edge.
+   */
+  @media (forced-colors: active) {
+    .fc-dialog {
+      border: var(--fc-border-width-thick) solid CanvasText;
+    }
+
+    .fc-dialog__footer {
+      border-block-start-color: CanvasText;
+    }
+  }
+}

@@ -104,8 +104,8 @@ leaks into your application** — that is the point of the abstraction.
 One workspace, one published module per *opt-in unit*. Boundaries follow *what a
 consumer opts into*, and the dependency arrow points strictly downward.
 
-Six crates produce four `.wasm` modules: `fc-core` is linked into the `fc-model` module
-rather than published on its own, and `fc-diff` is Rust-only so far.
+Eight crates produce seven importable modules: `fc-core` is emitted into the `fc-model`
+module directory rather than published on its own.
 
 ```
 crates/
@@ -114,7 +114,9 @@ crates/
   fc-rich-text/      inline formatting model      -> core, model
   fc-context-menu/   menu model + keyboard nav    (primitives only, no core)
   fc-grid/           grid, cells, selection       -> core
-  fc-diff/           Myers line diff + stats      -> core  (no module yet)
+  fc-diff/           Myers line diff + stats      -> core
+  fc-select/         option list + typeahead      (no deps; primitives only)
+  fc-git/            working-tree summary         (no deps; primitives only)
 ```
 
 Measured release sizes when the workspace was first built (historical; the
@@ -299,7 +301,7 @@ Measured (issue #16, binaryen 132):
 | fc-context-menu | 40.2 KB | 21.7 KB |
 | fc-grid | 363.4 KB | 35.1 KB |
 | fc-diff | 56.2 KB | 34.8 KB |
-| fc-select | 74.6 KB | 50.0 KB |
+| fc-select | 74.6 KB | 50.0 KB → **38.4 KB** |
 | fc-git | 45.0 KB | 25.9 KB |
 
 Two facts follow, and both matter:
@@ -317,10 +319,40 @@ Two facts follow, and both matter:
    row above is re-measured (411.6 KB raw / 79.8 KB shipped before, on the same
    toolchain), and it is the second module under its raw budget. A third of what
    was left was Unicode case-folding tables, so the binding lowercases labels in
-   JavaScript, where `toLowerCase` is free, and the crate takes folded text. The
+   JavaScript, where `toLowerCase` is free, and the crate takes folded text.
+   `fc-select` got the same treatment (see below). The
    budgets remain on the raw basis until Phase A decides whether to re-derive
    them against shipped bytes — deliberately, because moving the goalposts and
    measuring the result are two different changes.
+
+### Case folding belongs to JavaScript
+
+`fc-select` was the largest primitives-only module, and it had no `js-sys` to
+blame. Profiling the shipped module (`twiggy top` on a build with
+`CARGO_PROFILE_RELEASE_STRIP=false`) showed why: `str::to_lowercase` and the
+Unicode case tables behind it were about a fifth of the bytes, and `format!` —
+used once, to concatenate the typeahead buffer — pulled in more of the formatting
+machinery. JavaScript already ships the same tables as `toLowerCase()`.
+
+So the boundary now takes **pre-folded match keys**: the binding lowercases labels
+and values once, and lowercases (and trims) each query, and the crate matches them
+verbatim. Native Rust callers keep a case-insensitive model through
+`Select::new`; the boundary builds every model with `Select::prefolded`, and the
+two are selected by function pointer rather than an enum so the linker can drop
+the Unicode path entirely. Measured with rustc 1.97 and binaryen 132, before and
+after on the same toolchain: **48.9 KB → 38.4 KB shipped**, 73.0 → 61.9 KB raw.
+
+It is also a parity fix. Rust's `to_lowercase` and JavaScript's `toLowerCase`
+each follow their own Unicode version, so "case-insensitive" had two definitions
+that could disagree on a character one side had not learnt yet. Now there is
+one. The cost is that the typeahead buffer must be folded as a whole on the JS
+side — lowercasing is context-sensitive, and a final capital sigma folds
+differently from a medial one — so `selectTypeaheadFrom` takes the folded
+buffer as a needle and answers only the match. `tests/wasm.test.ts` drives the
+adapter and the JS twin through exactly those cases.
+
+The pattern generalises: any crate that folds, normalises, or segments text for
+matching should take the result from JavaScript rather than link the tables.
 
 `wasm-opt` is an optional system tool, like the `wasm-bindgen` CLI: install
 binaryen and the build uses it, skip it and the build is complete but the

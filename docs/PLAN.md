@@ -19,7 +19,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | 1. Token system | Complete | Palette, semantic layer, contrast contract, compiler |
 | 2. Core CSS | Nearly complete | Reset, base, layout, utilities, and every Phase 2 component; fixture page remains |
 | 3. Component set | Mostly delivered | Forms, overlays, tabs, breadcrumb, pagination, loading, cards; axe-core pass remains |
-| A. WASM foundations | Started | Rust workspace, 6 crates, accelerator abstraction |
+| A. WASM foundations | Started | Rust workspace, 8 crates, accelerator abstraction |
 | B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
 | C. Token roles and themes | Not started | State tokens, override points, theme tier, type roles |
 | 4. Verification | Not started | Visual regression, browser matrix, docs site |
@@ -28,36 +28,41 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 
 ### Working now
 
+Measured on 2026-10-06 against `main` at `bd5ed5d` (after #24 and #25), with the WASM modules built and
+headless Chrome present (without either, the WASM and browser suites skip):
+
 ```
-npm run build        167 tokens (91 theme-aware) + 39-file bundle, 276 KB
-                     7 Rust crates, 7 .wasm files in 6 modules (over budget — see Phase A)
+npm run build        167 tokens (91 theme-aware) + 39-file bundle, 276.2 KB
+                     8 Rust crates, 8 .wasm files in 7 modules (over budget — see Phase A)
 npm run lint         15 rules, 0 violations across 39 files
-npm test             388 tests passing (incl. WASM/JS parity, bundle integrity, 116 in Chrome)
-cargo test           96 tests passing
+npm test             416 tests passing (incl. WASM/JS parity, bundle integrity, Chrome)
+cargo test           132 tests passing
 ```
 
 The bundle figure is uncompressed and unminified, which is the shipped form: the CSS is
 deliberately readable so engineers can debug it in devtools, and consumers minify at
 their own boundary. It exceeds the < 60 KB uncompressed budget in the performance
-section below. That budget has never been enforced — it is scheduled for Phase 4 — so the
-number above is stated as measured rather than as met. See
-[Semantic coverage](SEMANTIC-COVERAGE.md) §"Docs that disagree with the code".
+section below, which has never been enforced. See
+[Performance budget](#performance-budget) for the measured minified figures and the
+decision that is still open.
 
-**Six crates, six `.wasm` files, five importable modules.** `fc-core` and `fc-model`
-both emit into the `fc-model` module, so six build entries produce five modules that
-JavaScript can import. `fc-diff` is now among them, and it is the one that shows the
-workspace what it should be aiming for:
+**Eight crates, eight `.wasm` files, seven importable modules.** `fc-core` and
+`fc-model` both emit into the `fc-model` module, so eight build entries produce seven
+modules that JavaScript can import. On the shipped basis (post-bindgen, the bytes a
+consumer downloads; see [WASM.md](WASM.md#what-actually-ships)) two modules are still
+over budget. `fc-context-menu` was the largest by a wide margin until #25:
 
 ```
-[OVER] fc-context-menu      414.2 KB   (budget  44 KB)
-[OVER] fc-grid              363.4 KB   (budget  44 KB)
-[OVER] fc-diff               56.2 KB   (budget  35 KB)   <- no js-sys
+fc-context-menu    21.7 KB shipped   (raw  40.2 KB)   primitives only, was 81.3
+fc-select          38.4 KB shipped   (raw  62.1 KB)   primitives only, was 50.0
+fc-diff            33.7 KB shipped   (raw  54.4 KB)   primitives only
 ```
 
-336 KB smaller than the next module for the same algorithm class. That gap is not the
-algorithm; it is `js-sys`, linked for a handful of `Vec<JsValue>` returns that could
-have been flat typed arrays. Phase A is mostly the work of making the other five look
-like `fc-diff`.
+The raw basis made `js-sys` look like the whole story; the shipped basis shows that
+bindgen strips most of it, and that two primitives-only modules are still over. Phase A
+now targets where the shipped bytes are, not where the raw ones were. `fc-context-menu` and
+`fc-select` both cut size by leaving case folding to JavaScript, which already ships the
+Unicode tables; see [WASM.md](WASM.md#what-actually-ships).
 
 Verified: contrast contract enforced in both schemes · all ramps validated · linter
 verified against both violations and legitimate patterns · WASM modules instantiate and
@@ -243,12 +248,10 @@ a trade anyone accepts.
 
 Delivered:
 
-- Rust workspace with six crates, each a `cdylib`. `fc-core` is emitted into the
-  `fc-model` module directory rather than getting one of its own, and `fc-diff` has
-  no `wasm_bindgen` layer at all. So six crates produce **five** `.wasm` files
-  across **four** importable modules, and only four of the six crates are reachable
-  from JavaScript today.
-- 75 unit tests covering the algorithms.
+- Rust workspace with eight crates, each a `cdylib`. `fc-core` is emitted into the
+  `fc-model` module directory rather than getting one of its own, so eight crates
+  produce **eight** `.wasm` files across **seven** importable modules.
+- 132 unit tests covering the algorithms.
 - A JS accelerator abstraction with a pure-JS fallback, so the modules are optional.
 - **`fc-context-menu` off `js-sys`**: 411.6 KB to 40.2 KB raw (79.8 to 21.7 KB
   shipped), under budget. It no longer depends on `fc-core` or serde, folds case
@@ -272,9 +275,10 @@ than tree-shaking to the used subset.
 Remaining:
 
 - Re-derive the budgets on the **shipped** basis. The raw (pre-bindgen) basis now
-  overstates the wire by 2–18x — see the table in docs/WASM.md — and two
-  modules exceed their budgets on shipped bytes (`fc-select` 50.0 KB,
-  `fc-diff` 34.8) while the rest are within them. Phase A's effort
+  overstates the wire by 2–18x — see the table in docs/WASM.md — and three
+  modules exceeded their budgets on shipped bytes (`fc-context-menu` 81.3 KB,
+  `fc-select` 50.0, `fc-diff` 34.8). `fc-context-menu` is now at 21.7 and
+  `fc-select` at 38.4, so `fc-select` and `fc-diff` remain over. Phase A's effort
   should go where the bytes are, which the raw basis gets wrong.
 - Replace `js_sys::Array` / `Vec<JsValue>` returns with flat primitives: numbers, strings,
   and typed arrays. A range crosses as four numbers, not an object.
@@ -559,27 +563,53 @@ describes. Documentation that drifts is worse than none, because it is trusted.
 
 | Budget | Target | Measured |
 | --- | --- | --- |
-| Full bundle, uncompressed | < 60 KB | **276 KB — over by 4.6x** |
-| Full bundle, minified | < 15 KB | not measured |
-| Tokens + base only | < 10 KB minified | not measured |
-| CSS applied to a typical page | < 30 KB | not measured |
+| Full bundle, uncompressed | < 60 KB | **276.2 KB — over by 4.6x** |
+| Full bundle, minified | < 15 KB | **158.3 KB — over by 10.6x** |
+| Full bundle, minified + gzip | — | 33.0 KB |
+| Tokens + base only (layers, reset, tokens, base) | < 10 KB minified | **14.6 KB — over** |
+| CSS applied to a typical page | < 30 KB | **36.9 KB — over** |
+
+Measured on 2026-10-06 at `e96b06a` (34 components). The minified figures come from an
+external minifier (esbuild 0.25, `--minify`) run outside the repo; nothing was added to
+the toolchain. "Typical page" is tokens + base + layout + utilities plus the three
+components a chat page uses (button, chat, composer). Each component costs 2–7 KB
+minified, so the full bundle grows by roughly 5 KB per component.
 
 Enforced in CI from Phase 4. Exceeding the budget requires a written justification.
 
-**The uncompressed target is currently missed and always has been.** It was written
-before the bundle had a terminal, a syntax palette, a diff family and seven more
-components, and nothing has re-checked it since. Two honest options, and the choice
-belongs to whoever picks this up:
+**Every target is currently missed, and the gap is growing.** The targets were written
+before the bundle had a terminal, a syntax palette, a diff family and twenty more
+components, and nothing has re-checked them since. #24 took the system from 14 to 34
+components and the minified bundle from 84 KB to 158 KB. The < 15 KB minified target for
+the *full* bundle is not reachable for a 34-component system by trimming; it was a
+target for a much smaller library.
 
-1. **Restate the budget against the minified figure.** The shipped CSS is deliberately
-   unminified — comments and readable structure are worth more to an engineer debugging
-   in devtools than the last few kilobytes — so an uncompressed budget measures the wrong
-   thing. That requires a minifier, which the zero-dependency constraint currently
-   forbids. Phase 4 would have to add one, or measure with an external tool.
-2. **Raise the uncompressed budget to what the system actually needs**, with the
-   reasoning written down, and keep the minified number as the real target.
+**What a budget can usefully constrain** is not the full bundle, which nobody should
+ship whole, but what one page pays. The per-layer outputs in `dist/` already let a
+consumer load tokens + base + only the components they use. So the decision is really
+which number to hold the line on, and it belongs to the maintainer.
+**Status: pending the maintainer's choice; nothing below is adopted yet.**
 
-Leaving a target the build contradicts is the one option that is not available: it is
+
+1. **Budget per layer and per component, minified (recommended).** Tokens + base
+   < 16 KB, any single component < 7 KB, a typical page < 40 KB. Drop the full-bundle
+   targets, or keep them as reported numbers rather than gates. This measures what a
+   consumer actually downloads and stays meaningful as the component count grows. It
+   needs a minifier in the measurement path: either a dev-only dependency used only by
+   the budget check (the shipped CSS stays unminified and dependency-free), or a small
+   in-repo comment-and-whitespace stripper, which gets within a few percent of a real
+   minifier on this codebase's style.
+2. **Restate the full-bundle targets against minified + gzip.** Today's bundle is
+   33.0 KB gzipped, so a target would have to start near 40 KB and keep rising with
+   every component. It is the number closest to wire cost, but it hides per-page
+   waste: a page using one component would still "pass" while paying for thirty-three
+   it never renders.
+3. **Raise the uncompressed targets to what the system needs**, with the reasoning
+   written down. Cheapest to adopt and needs no minifier, but uncompressed size
+   tracks comment density as much as shipped cost, so it would penalise exactly the
+   explanatory comments `AGENTS.md` asks for.
+
+Leaving targets the build contradicts is the one option that is not available: it is
 precisely the class of error this system is built to prevent everywhere else.
 
 ### Open questions

@@ -13,7 +13,7 @@
  */
 
 import { execFile } from "node:child_process";
-import { mkdir, readdir, rename, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -97,6 +97,12 @@ async function main(): Promise<void> {
   } catch {
     // Absent is a normal configuration, not an error.
   }
+  // Set when an installed wasm-opt rejects a module at validation. Older binaryen releases
+  // (Ubuntu's apt ships 108) predate features rustc now emits by default, such
+  // as sign-ext, and fail validation the same way the bulk-memory case does.
+  // An optional pass must not be able to fail the build, so the module ships
+  // unoptimized and the report says why.
+  let wasmOptFailure: string | null = null;
 
   try {
     await execFileAsync(cargo, ["build", "--release", "--target", "wasm32-unknown-unknown"], {
@@ -152,8 +158,19 @@ async function main(): Promise<void> {
         // path is undefined behavior on some filesystems, and a half-written
         // module would fail at instantiate time, far from the cause.
         const bg = resolve(targetOut, `${stem}_bg.wasm`);
-        await execFileAsync(wasmOpt, ["-Oz", "--enable-bulk-memory", bg, "-o", `${bg}.opt`]);
-        await rename(`${bg}.opt`, bg);
+        try {
+          await execFileAsync(wasmOpt, ["-Oz", "--enable-bulk-memory", bg, "-o", `${bg}.opt`]);
+          await rename(`${bg}.opt`, bg);
+        } catch (err) {
+          await rm(`${bg}.opt`, { force: true });
+          const stderr = String((err as { stderr?: string }).stderr ?? "");
+          // Only a validation rejection means "this binaryen is too old for the
+          // module"; anything else (a crash, a full disk, a missing file) is a
+          // real fault and must stop the build rather than hide in a footnote.
+          if (!/validat/i.test(stderr)) throw err;
+          const detail = stderr.split("\n").find((l) => l.trim()) ?? "";
+          wasmOptFailure ??= `${stem}: ${detail.trim()}`;
+        }
       }
     }
 
@@ -194,6 +211,11 @@ async function main(): Promise<void> {
     console.log("\n  wasm-opt not found; shipped sizes are unoptimized. Install binaryen");
     console.log("  for ~10% smaller modules -- measured, not a guess. The build is");
     console.log("  complete without it.");
+  } else if (wasmOptFailure) {
+    console.log("\n  wasm-opt is installed but rejected a module, so shipped sizes are");
+    console.log("  unoptimized. This usually means binaryen is older than the features");
+    console.log("  rustc emits; a current release fixes it. First failure:");
+    console.log(`    ${wasmOptFailure}`);
   }
   const over = reports.filter((r) => !r.withinBudget);
   if (over.length > 0) {

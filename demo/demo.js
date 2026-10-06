@@ -20,6 +20,7 @@ import { FutureCssSelect } from "/src/js/select.js";
 import { FutureCssComposer } from "/src/js/composer.js";
 import { FutureCssContextStrip } from "/src/js/context-strip.js";
 import { FutureCssGitSurface } from "/src/js/git.js";
+import { bindNavs } from "/src/js/nav.js";
 import { bindTables } from "/src/js/table.js";
 import { bindTabs } from "/src/js/tabs.js";
 import { FutureCssToaster } from "/src/js/toast.js";
@@ -837,6 +838,9 @@ for (const button of document.querySelectorAll("[data-demo-toast]")) {
 }
 
 bindTabs(document);
+bindNavs(document, {
+  onToggle: (expanded) => status("#nav-status", expanded ? "Sidebar expanded." : "Sidebar collapsed to icons."),
+});
 bindTables(document, {
   onSort: (column, direction) => {
     const name = document.querySelectorAll("#demo-table thead th")[column]?.textContent.trim();

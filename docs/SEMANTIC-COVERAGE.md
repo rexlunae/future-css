@@ -634,10 +634,10 @@ tokens — but they are the other half of "semantic" and belong in the same comp
 | | Scroll region | Shipped | `scroll-x` |
 | | RTL by construction | Shipped | logical properties only |
 | | `min-inline-size: 0` overflow fix | Shipped | applied to all 3 primitives |
-| **Components** | 36 shipped | Shipped | see `docs/COMPONENTS.md` |
+| **Components** | 37 shipped | Shipped | see `docs/COMPONENTS.md` |
 | | Form controls | Shipped | field, input group, select, checkbox, radio, switch, error summary |
 | | Overlays (dialog, popover, tooltip, toast) | Shipped | native `<dialog>` / popover, `@starting-style` motion |
-| | Navigation (tabs, breadcrumb, pagination) | Shipped | tabs binding with RTL-aware arrows |
+| | Navigation (tabs, breadcrumb, pagination, sidebar) | Shipped | tabs binding with RTL-aware arrows; sidebar rail driven by `aria-expanded` |
 | | Data display (table, description list) | Shipped | sortable table binding; `aria-sort` is the only state |
 | | Container queries | Shipped | `fc-card` |
 | **Accessibility** | Keyboard, focus-visible, skip link | Shipped | base + `.fc-u-visually-hidden` |
@@ -647,7 +647,7 @@ tokens — but they are the other half of "semantic" and belong in the same comp
 | | `prefers-reduced-motion` | Shipped | reset + 6 components |
 | | Live-region politeness | Shipped | toast binding: polite and assertive regions created up front |
 | | APCA alongside WCAG | Absent | open question 2, `PLAN.md` |
-| **Behaviour** | JS bindings | Shipped | `src/js/`, 18 modules |
+| **Behaviour** | JS bindings | Shipped | `src/js/`, 19 modules |
 | | Optional WASM accelerator | Shipped | 6 crates, WASM/JS parity tested |
 | | highlight / diff / markdown | Shipped | 6 languages, Myers, round-trip |
 

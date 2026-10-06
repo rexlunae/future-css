@@ -153,8 +153,11 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       awaitPromise: true,
       returnByValue: true,
     });
-    if (res.exceptionDetails) {
-      const detail = res.exceptionDetails.exception?.description ?? res.exceptionDetails.text;
+    // A thrown error is reported beside the value, at the same depth. Checked
+    // one level up, it was missed: the test saw `undefined` instead of the error.
+    const thrown = res.result?.exceptionDetails ?? res.exceptionDetails;
+    if (thrown) {
+      const detail = thrown.exception?.description ?? thrown.text;
       throw new Error(detail.split("\n")[0]);
     }
     // CDP nests the remote-object: { result: { result: { value } } }. The inner
@@ -180,11 +183,12 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         import('/src/js/toast.js'),
         import('/src/js/tooltip.js'),
         import('/src/js/table.js'),
-      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt, tl]) => {
+        import('/src/js/nav.js'),
+      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt, tl, nv]) => {
         globalThis.E = e; globalThis.M = m; globalThis.G = g; globalThis.W = w;
         globalThis.H = h; globalThis.D = d; globalThis.S = s;
         globalThis.C = c; globalThis.K = k; globalThis.IT = it;
-        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt; globalThis.TL = tl;
+        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt; globalThis.TL = tl; globalThis.NV = nv;
         return 'ok';
       })
     `);
@@ -210,13 +214,13 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         typeof S.FutureCssSelect, typeof C.FutureCssComposer,
         typeof K.FutureCssContextStrip, typeof IT.FutureCssGitSurface,
         typeof TB.FutureCssTabs, typeof TS.FutureCssToaster, typeof TT.bindTooltips,
-        typeof TL.FutureCssTable,
+        typeof TL.FutureCssTable, typeof NV.FutureCssNav,
       ]`,
     );
     assert.deepEqual(names, [
       "function", "function", "function", "function", "function", "function",
       "function", "function", "function", "function",
-      "function", "function", "function", "function",
+      "function", "function", "function", "function", "function",
     ]);
   });
   // ---------------------------------------------------------------- editor
@@ -2981,6 +2985,165 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(result.narrow, true, "the value wraps under its term when they no longer fit");
     assert.equal(result.stacked, true);
     assert.equal(result.ddMargin, "0px", "the UA indent on <dd> is removed");
+  });
+
+  // ------------------------------------------------------------------- nav
+
+  it("collapses the sidebar to a rail from aria-expanded, keeping link names", async () => {
+    await loadBindings();
+    const result = await evaluate(`
+      globalThis.nav = new NV.FutureCssNav('#nav');
+      const root = document.getElementById('nav');
+      const toggle = document.getElementById('nav-toggle');
+      const label = root.querySelector('#nav-chats .fc-nav__label');
+      const read = () => ({
+        width: root.getBoundingClientRect().width,
+        labelClip: getComputedStyle(label).clipPath,
+        labelWidth: label.getBoundingClientRect().width,
+        meta: getComputedStyle(root.querySelector('.fc-nav__meta')).display,
+        nested: getComputedStyle(root.querySelector('.fc-nav__list--nested')).display,
+        group: getComputedStyle(document.getElementById('nav-group')).display,
+        turn: getComputedStyle(toggle, '::before').rotate,
+        glyphBox: getComputedStyle(toggle, '::before').display,
+      });
+      const wired = { controls: toggle.getAttribute('aria-controls'), expanded: toggle.getAttribute('aria-expanded') };
+      const open = read();
+      document.getElementById('nav-nested').focus();
+      toggle.click();
+      // The width is transitioned; read it once the transition has finished.
+      await Promise.all(root.getAnimations({ subtree: true }).map((a) => a.finished));
+      const rail = read();
+      const focusAfter = document.activeElement.id;
+      const name = document.getElementById('nav-chats').textContent.trim();
+      toggle.click();
+      nav.destroy();
+      // The first instance was constructed directly, so it never owned a marker.
+      const [owned] = NV.bindNavs(document);
+      owned.destroy();
+      const navs = NV.bindNavs(document);
+      const rebound = navs.filter((n) => n instanceof NV.FutureCssNav).length;
+      owned.destroy();
+      const marker = root.dataset.fcBound;
+      // A host that handed the element to another binding keeps that marker.
+      root.dataset.fcBound = 'other';
+      navs.forEach((n) => n.destroy());
+      const foreign = root.dataset.fcBound;
+      delete root.dataset.fcBound;
+      return { wired, open, rail, focusAfter, name, expanded: nav.expanded, rebound, marker, foreign };
+    `);
+    assert.deepEqual(result.wired, { controls: "nav", expanded: "true" });
+    assert.ok(result.rail.width < result.open.width / 2, `rail ${result.rail.width} vs ${result.open.width}`);
+    assert.equal(result.open.labelClip, "none");
+    assert.match(result.rail.labelClip, /inset\(50%\)/, "labels are visually hidden, not removed");
+    assert.ok(result.rail.labelWidth <= 1);
+    assert.equal(result.rail.meta, "none");
+    assert.equal(result.rail.nested, "none");
+    assert.equal(result.rail.group, "none");
+    assert.match(result.open.turn, /^(none|0deg)$/);
+    // The glyph turns to point outward. An inline ::before reports the rotation
+    // but does not draw it, which is how this once showed one arrow for both states.
+    assert.equal(result.rail.turn, "180deg", "the toggle glyph turns when collapsed");
+    assert.notEqual(result.rail.glyphBox, "inline", "rotate only applies to a transformable box");
+    assert.equal(result.focusAfter, "nav-toggle", "focus leaves a link the rail hides");
+    assert.match(result.name, /^Chats/, "the link keeps its name in the rail");
+    assert.equal(result.expanded, true);
+    assert.equal(result.rebound, 1, "destroy releases the bound marker");
+    assert.equal(result.marker, "nav", "a stale instance destroyed again keeps the live binding's marker");
+    assert.equal(result.foreign, "other", "destroy never removes another binding's marker");
+  });
+
+  it("marks the current page and its section, and mirrors the toggle in RTL", async () => {
+    const result = await evaluate(`
+      const cs = (id) => getComputedStyle(document.getElementById(id));
+      const toggle = document.getElementById('nav-toggle');
+      const ltr = getComputedStyle(toggle, '::before').content;
+      document.getElementById('nav').setAttribute('dir', 'rtl');
+      const rtl = getComputedStyle(toggle, '::before').content;
+      const bar = cs('nav-chats').borderRightColor;
+      document.getElementById('nav').removeAttribute('dir');
+      return {
+        current: cs('nav-chats').borderLeftColor,
+        plain: cs('nav-nested').borderLeftColor,
+        sectionWeight: cs('nav-projects').fontWeight,
+        disabledCursor: cs('nav-off').cursor,
+        ltr, rtl, bar,
+      };
+    `);
+    assert.notEqual(result.current, "rgba(0, 0, 0, 0)", "the current page draws its bar");
+    assert.equal(result.plain, "rgba(0, 0, 0, 0)");
+    assert.equal(result.bar, result.current, "the bar moves to the right edge in RTL");
+    assert.equal(result.sectionWeight, "500", "the section holding the current page is emphasised");
+    assert.equal(result.disabledCursor, "not-allowed");
+    assert.match(result.ltr, /«/);
+    assert.match(result.rtl, /»/);
+  });
+
+  it("titles links only in the rail, ignores an aria-disabled toggle, and mirrors group chevrons", async () => {
+    await loadBindings();
+    const result = await evaluate(`
+      const root = document.getElementById('nav');
+      const toggle = document.getElementById('nav-toggle');
+      const chats = document.getElementById('nav-chats');
+      const projects = document.getElementById('nav-projects');
+      projects.title = 'Authored title';
+      const nav = new NV.FutureCssNav(root);
+      const before = chats.hasAttribute('title');
+      nav.setExpanded(false);
+      const rail = { chats: chats.title, projects: projects.title };
+      // While collapsed: the app titles a link, renames a label, and adds a link.
+      const nested = document.getElementById('nav-nested');
+      nested.title = '3 unread';
+      chats.querySelector('.fc-nav__label').textContent = 'Threads';
+      const added = document.createElement('li');
+      added.innerHTML = '<a class="fc-nav__link" id="nav-added" href="#r"><span class="fc-nav__label">Reports</span></a>';
+      root.querySelector('.fc-nav__list').append(added);
+      const reach = (el) => el.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));
+      reach(chats);
+      reach(document.getElementById('nav-added'));
+      const live = { chats: chats.title, added: document.getElementById('nav-added').title };
+      nav.setExpanded(true);
+      const after = { chats: chats.hasAttribute('title'), projects: projects.title, nested: nested.title };
+      projects.removeAttribute('title');
+      nested.removeAttribute('title');
+      added.remove();
+      chats.querySelector('.fc-nav__label').textContent = 'Chats';
+
+      toggle.setAttribute('aria-disabled', 'true');
+      toggle.click();
+      const disabledStays = nav.expanded;
+      toggle.removeAttribute('aria-disabled');
+      nav.destroy();
+
+      const group = document.getElementById('nav-group');
+      const details = group.parentElement;
+      // The chevron's turn is transitioned; finish it so the end state is read.
+      const turn = () => {
+        // Transitions only: finishing the page's infinite spinner animations throws.
+        document.getAnimations().filter((a) => a instanceof CSSTransition).forEach((a) => a.finish());
+        return getComputedStyle(group, '::after').rotate;
+      };
+      details.open = true;
+      const ltrOpen = turn();
+      root.setAttribute('dir', 'rtl');
+      const rtlOpen = turn();
+      details.open = false;
+      const rtlClosed = turn();
+      root.removeAttribute('dir');
+      const ltrClosed = turn();
+      details.open = true;
+      return { before, rail, live, after, disabledStays, ltrOpen, rtlOpen, rtlClosed, ltrClosed };
+    `);
+    assert.equal(result.before, false, "an expanded sidebar adds no titles");
+    assert.equal(result.rail.chats, "Chats", "the rail names each icon for mouse users");
+    assert.equal(result.rail.projects, "Authored title", "an authored title is kept");
+    assert.deepEqual(result.live, { chats: "Threads", added: "Reports" }, "titles follow the links as they change");
+    assert.deepEqual(result.after, { chats: false, projects: "Authored title", nested: "3 unread" },
+      "expanding removes only the binding's own titles");
+    assert.equal(result.disabledStays, true, "an aria-disabled toggle does not collapse");
+    assert.equal(result.ltrOpen, "45deg");
+    assert.equal(result.rtlOpen, "-45deg", "open points down in RTL too");
+    assert.equal(result.rtlClosed, "45deg");
+    assert.equal(result.ltrClosed, "-45deg");
   });
 
 });

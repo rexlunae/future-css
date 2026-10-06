@@ -300,5 +300,24 @@
     <div class="fc-dl__item"><dt>Duration</dt><dd class="fc-dl__num">14.2 s</dd></div>
   </dl>
 
+  <nav class="fc-nav" id="nav" aria-label="Main" style="block-size: 24rem">
+    <div class="fc-nav__header">
+      <span class="fc-nav__title">Workspace</span>
+      <button class="fc-nav__toggle" id="nav-toggle" type="button" aria-label="Sidebar"></button>
+    </div>
+    <ul class="fc-nav__list">
+      <li><a class="fc-nav__link" id="nav-chats" href="#chats" aria-current="page"><span class="fc-nav__icon" aria-hidden="true"></span><span class="fc-nav__label">Chats</span><span class="fc-nav__meta">3</span></a></li>
+      <li>
+        <a class="fc-nav__link" id="nav-projects" href="#projects" aria-current="true"><span class="fc-nav__icon" aria-hidden="true"></span><span class="fc-nav__label">Projects</span></a>
+        <ul class="fc-nav__list fc-nav__list--nested"><li><a class="fc-nav__link" id="nav-nested" href="#p1"><span class="fc-nav__label">Future CSS</span></a></li></ul>
+      </li>
+      <li><a class="fc-nav__link" id="nav-off" aria-disabled="true"><span class="fc-nav__label">Billing</span></a></li>
+    </ul>
+    <details class="fc-nav__group" open>
+      <summary class="fc-nav__group-label" id="nav-group">Recent</summary>
+      <ul class="fc-nav__list"><li><a class="fc-nav__link" href="#r1"><span class="fc-nav__label">Release notes</span></a></li></ul>
+    </details>
+  </nav>
+
 </body>
 </html>

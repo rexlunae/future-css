@@ -951,6 +951,64 @@ alternative text, so they are not read. Long names truncate. The current page is
 `pagination.css`: links, not buttons, so every page has a URL. The disabled "Previous"
 is an anchor with no `href` and `aria-disabled`. Arrows are generated and mirror in RTL.
 
+## Navigation sidebar (implemented)
+
+`nav.css` plus the `nav` binding (`FutureCssNav`, `bindNavs`). The app's primary
+navigation: links in a column, optionally grouped, that can collapse to an icon rail.
+`.fc-sidebar` is the two-column *layout* primitive; this is `.fc-nav`.
+
+```html
+<nav class="fc-nav" id="app-nav" aria-label="Main">
+  <div class="fc-nav__header">
+    <span class="fc-nav__title">Workspace</span>
+    <button class="fc-nav__toggle" type="button" aria-label="Sidebar"
+            aria-expanded="true" aria-controls="app-nav"></button>
+  </div>
+  <ul class="fc-nav__list">
+    <li>
+      <a class="fc-nav__link" href="/chats" aria-current="page">
+        <svg class="fc-nav__icon" aria-hidden="true">…</svg>
+        <span class="fc-nav__label">Chats</span>
+        <span class="fc-nav__meta">3</span>
+      </a>
+    </li>
+  </ul>
+  <details class="fc-nav__group" open>
+    <summary class="fc-nav__group-label">Projects</summary>
+    <ul class="fc-nav__list">…</ul>
+  </details>
+  <div class="fc-nav__footer">…</div>
+</nav>
+```
+
+- **Links, not a tree or a menu.** Tab walks them, they appear in a screen reader's
+  link list, and every destination has a URL. `role="tree"` would demand arrow-key
+  navigation nobody expects from a sidebar.
+- **Current page:** `aria-current="page"`, drawn as a tinted row with an inline-start
+  bar (a border, so forced colours keep it). The section holding the current page is
+  `aria-current="true"` and is emphasised, so the path stays visible.
+- **States:** hover, active, focus (base ring), and `aria-disabled="true"` on an
+  anchor with no `href` for a destination that exists but cannot be opened.
+- **Structure:** `.fc-nav__heading` for a static section label, `<details
+  class="fc-nav__group">` for one that folds (no script), `.fc-nav__list--nested` for a
+  second level, `.fc-nav__meta` for a count, `.fc-nav__footer` pinned to the bottom.
+- **Labels wrap rather than truncate**, so a long name is never clipped without a
+  `data-fc-truncated` declaration.
+- **Collapsing** is the toggle's `aria-expanded`, and only that: `.fc-nav` reads it
+  through `:has()` and sets custom properties its parts read. The rail visually hides
+  labels but keeps them as each link's accessible name, and hides headings, group labels,
+  counts and nested lists. The binding flips the attribute, wires `aria-controls`, and
+  moves focus to the toggle if it was on something the rail hides. In the rail it
+  also gives each link its label as a `title`, so mouse users can read the names. Each
+  title is refreshed as the pointer or focus reaches the link, so renamed and added links
+  stay current. On expand the binding removes only titles that still hold the value it
+  set. An `fc-tooltip` would be clipped by the sidebar's
+  scroll container. Without the binding the sidebar stays expanded.
+- **RTL:** the bar, the border and the toggle's chevrons move to the other edge.
+  **Reduced motion:** the width, toggle and chevron transitions are zeroed by the reset,
+  so collapsing is instant. On small screens, put the same markup in a side sheet
+  (`fc-dialog--sheet`) rather than shrinking it.
+
 ## Data table (implemented)
 
 `table.css` plus the `table` binding (`FutureCssTable`, `bindTables`). A real `<table>`
@@ -1113,7 +1171,6 @@ each component is built.
 | Component | Element | Notes |
 | --- | --- | --- |
 | Link | `<a href>` | Underline always; focus from base layer (styled in base today) |
-| Navigation sidebar | `<nav>` + list | Collapsible, with `aria-current` |
 | Combobox with free text | ARIA combobox | Builds on `fc-select` |
 
 ### One component that is not a component

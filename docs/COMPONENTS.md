@@ -409,6 +409,13 @@ the top of the document.
 `Tab` is deliberately not trapped — a menu is a single stop, and trapping it is the
 most common way menus become keyboard traps.
 
+Arrows reach every `menuitem`, `menuitemcheckbox`, and `menuitemradio`, skipping
+separators and `aria-disabled` items. Typeahead accumulates characters typed within
+500 ms ("dep" reaches *Deploy* past *Delete*), repeats of one letter cycle, and
+labels exclude `aria-hidden` content, so a check glyph or shortcut never blocks a
+match. `await menu.useWasm(url)` moves this traversal onto the `fc-context-menu`
+crate (21.6 KB shipped); it returns `false` and keeps the JS model on any failure.
+
 ### Grid
 
 Roving tabindex: **one** tab stop, arrows to move. A grid where every cell is a tab
@@ -789,7 +796,7 @@ tree, and this is the most accessibility-sensitive component in the system.
 `fc-select` implements the navigation *model* — which option is active, how
 typeahead accumulates, which options survive a filter — behind a primitives-only
 boundary (flat arrays and strings, no `js-sys`), landing at 74.6 KB against
-414.2 KB for `fc-context-menu`.
+414.2 KB for `fc-context-menu` before that crate got the same treatment.
 
 **The binding opts into it** with `await select.useWasm(url)`. The boundary entry
 points are stateless — they rebuild the model on each call — so the adapter

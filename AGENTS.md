@@ -120,9 +120,9 @@ So:
   numbers.
 - **Never add `js-sys` to a crate** without measuring the result first.
 - `npm run build:wasm` prints a size report and the budgets in
-  `src/build/build-wasm.ts`. Seven modules are over budget on the report's raw
+  `src/build/build-wasm.ts`. Six modules are over budget on the report's raw
   basis; on the **shipped** basis (what actually downloads, post-bindgen and
-  post-opt — see docs/WASM.md) three exceed theirs. Phase A in `docs/PLAN.md` is
+  post-opt — see docs/WASM.md) two exceed theirs. Phase A in `docs/PLAN.md` is
   the work to fix that. Do not raise a budget to make the report green.
 - **Never run `git push -u origin HEAD:<branch>` while checked out on `main`.**
   The `-u` rewrites main's upstream to the feature branch, and when that branch
@@ -296,11 +296,12 @@ one provider selected under another. That is a request nobody can fulfil.
 Form controls and dialogs are not yet written. The fixture-driven git surface
 (branch, status counts, file list, per-file line stats) is complete and reuses
 `fc-diff`; its Rust crate is the **first module in the workspace under its size
-budget** at 44.7 KB, which is the Phase A pattern working. The Rust/WASM layer has seven crates with 96 passing tests and a working JS-only fallback,
-but **every module except `fc-git` is still over its size budget** — see the WASM
-section above and Phase A in `docs/PLAN.md`. The rich text, context menu, and
-grid models exist in Rust and are covered by a JS parity test, but only the
-editor's browser binding is wired.
+budget** at 44.7 KB, which is the Phase A pattern working. The Rust/WASM layer has eight crates with 124 passing tests and a working JS-only fallback,
+but **every module except `fc-git` and `fc-context-menu` is still over its size
+budget** — see the WASM section above and Phase A in `docs/PLAN.md`. The select
+and context menu bindings opt into their Rust models with `useWasm`; the rich
+text and grid models exist in Rust and are covered by a JS parity test but are
+not wired.
 
 Form controls, overlays, and navigation are planned but not written. See
 `docs/PLAN.md` for the current phase and what is deliberately out of scope.

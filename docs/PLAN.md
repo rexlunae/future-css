@@ -231,6 +231,10 @@ Delivered:
   from JavaScript today.
 - 75 unit tests covering the algorithms.
 - A JS accelerator abstraction with a pure-JS fallback, so the modules are optional.
+- **`fc-context-menu` off `js-sys`**: 411.6 KB to 40.1 KB raw (79.8 to 21.6 KB
+  shipped), under budget. It no longer depends on `fc-core` or serde, folds case
+  in JS rather than linking Unicode tables, and is wired into the menu binding
+  behind `useWasm` with a parity test (`tests/menu.test.ts`).
 - **A measured size report in the build output**, because the dominant cost is invisible
   in source and only obvious in the numbers.
 
@@ -249,9 +253,9 @@ than tree-shaking to the used subset.
 Remaining:
 
 - Re-derive the budgets on the **shipped** basis. The raw (pre-bindgen) basis now
-  overstates the wire by 2–18x — see the table in docs/WASM.md — and three
-  modules exceed their budgets on shipped bytes (`fc-context-menu` 81.3 KB,
-  `fc-select` 50.0, `fc-diff` 34.8) while four are within them. Phase A's effort
+  overstates the wire by 2–18x — see the table in docs/WASM.md — and two
+  modules exceed their budgets on shipped bytes (`fc-select` 50.0 KB,
+  `fc-diff` 34.8) while the rest are within them. Phase A's effort
   should go where the bytes are, which the raw basis gets wrong.
 - Replace `js_sys::Array` / `Vec<JsValue>` returns with flat primitives: numbers, strings,
   and typed arrays. A range crosses as four numbers, not an object.

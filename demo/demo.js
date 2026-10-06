@@ -165,6 +165,10 @@ const menu = new FutureCssMenu({
 
 trigger?.addEventListener("click", () => menu.open(trigger));
 
+// Same opt-in as the select below: traversal moves onto the Rust model when the
+// module is served, and stays on the JS model, with identical behavior, when not.
+menu.useWasm("/dist/wasm/fc-context-menu/web/fc_context_menu.js");
+
 $("#menu-surface")?.addEventListener("contextmenu", (event) => {
   event.preventDefault();
   // Opens at the pointer. Focus still returns to the invoker captured at

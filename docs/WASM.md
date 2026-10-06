@@ -112,7 +112,7 @@ crates/
   fc-core/           ABI version, panic hook, structured errors
   fc-model/          UTF-16 text buffer primitives
   fc-rich-text/      inline formatting model      -> core, model
-  fc-context-menu/   menu model + keyboard nav    -> core
+  fc-context-menu/   menu model + keyboard nav    (primitives only, no core)
   fc-grid/           grid, cells, selection       -> core
   fc-diff/           Myers line diff + stats      -> core  (no module yet)
 ```
@@ -295,7 +295,7 @@ Measured (issue #16, binaryen 132):
 | fc-core | 336.4 KB | 18.3 KB |
 | fc-model | 360.9 KB | 36.3 KB |
 | fc-rich-text | 374.3 KB | 45.9 KB |
-| fc-context-menu | 414.2 KB | 81.3 KB |
+| fc-context-menu | 40.1 KB | 21.6 KB |
 | fc-grid | 363.4 KB | 35.1 KB |
 | fc-diff | 56.2 KB | 34.8 KB |
 | fc-select | 74.6 KB | 50.0 KB |
@@ -310,8 +310,13 @@ Two facts follow, and both matter:
    before any optimizer runs — but the wire cost of the current `js-sys` modules
    is tens of KB, not hundreds.
 2. **The shipped basis re-prioritizes Phase A.** On what actually downloads,
-   `fc-context-menu` (81.3 KB) is the real outlier, then `fc-select` (50.0) and
-   `fc-rich-text` (45.9); `fc-core` ships 18.3 KB and `fc-grid` 35.1. The
+   `fc-context-menu` (81.3 KB) was the real outlier, then `fc-select` (50.0) and
+   `fc-rich-text` (45.9); `fc-core` ships 18.3 KB and `fc-grid` 35.1.
+   `fc-context-menu` has since been rewritten to a primitives-only boundary: its
+   row above is re-measured (411.6 KB raw / 79.8 KB shipped before, on the same
+   toolchain), and it is the second module under its raw budget. A third of what
+   was left was Unicode case-folding tables, so the binding lowercases labels in
+   JavaScript, where `toLowerCase` is free, and the crate takes folded text. The
    budgets remain on the raw basis until Phase A decides whether to re-derive
    them against shipped bytes — deliberately, because moving the goalposts and
    measuring the result are two different changes.

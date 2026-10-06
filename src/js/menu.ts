@@ -22,10 +22,261 @@
  * `overflow: hidden` ancestor), light-dismiss, and Escape handling from the
  * platform. The fallback matters: a context menu that simply does not open on an
  * older browser is worse than one that opens without light-dismiss.
+ *
+ * # What is delegated to WASM
+ *
+ * Opt-in via `useWasm`, the same arrangement as `select.ts`. Traversal -- the
+ * arrow walk, Home/End, and typeahead -- is a pure computation over the item
+ * list, so it can run in the `fc-context-menu` crate. Everything that asks the
+ * browser something (focus, positioning, dismissal) stays here. Without WASM the
+ * identical computations run in `MenuModel` below, and `tests/wasm.test.ts`
+ * drives both over the same operations and requires identical answers.
  */
 
-/** Items a roving-focus menu can move between. */
-const ITEM_SELECTOR = "[role='menuitem']:not([aria-disabled='true'])";
+/**
+ * Every item a menu contains, focusable or not.
+ *
+ * All three item roles, not just `menuitem`: the checkbox items in the demo
+ * were unreachable by arrows because the selector named one role. Disabled
+ * items are included and marked unfocusable rather than filtered out, so model
+ * indices stay stable whichever items are currently available.
+ */
+const ITEM_SELECTOR = "[role='menuitem'], [role='menuitemcheckbox'], [role='menuitemradio']";
+
+/**
+ * How long typed characters accumulate into one typeahead search. Matches the
+ * listbox; long enough to type "de" deliberately, short enough that a later "d"
+ * starts over.
+ */
+const TYPEAHEAD_RESET_MS = 500;
+
+/**
+ * The model surface the binding uses. Two implementations: `MenuModel` (the JS
+ * twin, always available) and `WasmMenuModel` (the Rust model, opt-in). The
+ * binding must not be able to tell which one it has.
+ */
+export interface MenuModelLike {
+  readonly activeIndex: number;
+  setActive(index: number): void;
+  move(delta: number): void;
+  focusFirst(): void;
+  focusLast(): void;
+  typeahead(query: string): boolean;
+  resetTypeahead(): void;
+}
+
+/**
+ * The first code point of `s`, or undefined.
+ *
+ * Not `s[0]`: that is a UTF-16 code unit, and Rust's `chars().next()` is a code
+ * point. For an astral character the two disagree, and the repeating-character
+ * rule would diverge between the two paths.
+ */
+function firstCodePoint(s: string): string | undefined {
+  for (const c of s) return c;
+  return undefined;
+}
+
+/**
+ * The buffer after a keystroke, before matching. Shared by both models.
+ *
+ * `query` arrives already lowercased, so "A" then "a" cycles exactly as "a"
+ * then "a" does: holding Shift must not turn a cycle into a search.
+ */
+function extendBuffer(buffer: string, query: string, first: string): string {
+  // Repeating one character cycles through items starting with it, rather than
+  // searching for a doubled letter that matches nothing.
+  const repeating = [...buffer].every((c) => c === first);
+  return repeating ? query : buffer + query;
+}
+
+/**
+ * The JS twin of the `fc-context-menu` model.
+ *
+ * Duplicated deliberately, for the reason `SelectModel` is: WASM is never
+ * required, so this path has to be complete, and a parity test keeps the two
+ * honest.
+ */
+export class MenuModel implements MenuModelLike {
+  private readonly labels: readonly string[];
+  private readonly focusable: readonly boolean[];
+  private active = -1;
+  private buffer = "";
+
+  constructor(labels: readonly string[], focusable: readonly boolean[]) {
+    // Folded once here rather than per keystroke; the WASM path needs them
+    // folded anyway (see `WasmMenuModel`).
+    this.labels = labels.map((l) => l.toLowerCase());
+    this.focusable = focusable;
+  }
+
+  get activeIndex(): number {
+    return this.active;
+  }
+
+  setActive(index: number): void {
+    this.active = index >= 0 && index < this.focusable.length ? index : -1;
+  }
+
+  focusableIndices(): number[] {
+    const out: number[] = [];
+    this.focusable.forEach((f, i) => {
+      if (f) out.push(i);
+    });
+    return out;
+  }
+
+  /** Wraps at both ends and skips separators and disabled items. */
+  move(delta: number): void {
+    const focusable = this.focusableIndices();
+    if (focusable.length === 0) {
+      this.active = -1;
+      return;
+    }
+    const pos = Math.max(0, focusable.indexOf(this.active));
+    const len = focusable.length;
+    // The double modulo is Rust's `rem_euclid`: a large negative delta must land
+    // in range rather than produce a negative index.
+    this.active = focusable[(((pos + delta) % len) + len) % len]!;
+  }
+
+  focusFirst(): void {
+    this.active = this.focusableIndices()[0] ?? -1;
+  }
+
+  focusLast(): void {
+    this.active = this.focusableIndices().at(-1) ?? -1;
+  }
+
+  /**
+   * Moves to the next focusable item whose label starts with the buffer,
+   * searching from the item after the current one.
+   */
+  typeahead(raw: string): boolean {
+    const query = raw.toLowerCase();
+    const first = firstCodePoint(query);
+    if (first === undefined) return false;
+    this.buffer = extendBuffer(this.buffer, query, first);
+
+    const needle = this.buffer;
+    const n = this.labels.length;
+    const start = this.active >= 0 ? this.active + 1 : 0;
+    for (let step = 0; step < n; step += 1) {
+      const index = (start + step) % n;
+      if (this.focusable[index] && this.labels[index]!.toLowerCase().startsWith(needle)) {
+        this.active = index;
+        return true;
+      }
+    }
+    // A dead prefix would swallow every later keystroke, so drop it.
+    this.buffer = "";
+    return false;
+  }
+
+  resetTypeahead(): void {
+    this.buffer = "";
+  }
+}
+
+/** The compiled `fc-context-menu` module, as the binding consumes it. */
+export interface MenuWasmModule {
+  default: (init?: { module_or_path?: string | Uint8Array }) => Promise<void>;
+  menuMove: (focusable: number[], active: number, delta: number) => number;
+  menuFocusFirst: (focusable: number[]) => number;
+  menuFocusLast: (focusable: number[]) => number;
+  menuTypeahead: (labels: string[], focusable: number[], active: number, buffer: string, query: string) => Int32Array | number[];
+}
+
+/**
+ * The Rust model behind the stateless boundary.
+ *
+ * Holds the item arrays once and the view state (active index, typeahead
+ * buffer) between calls; every decision delegates.
+ *
+ * Labels and queries are lowercased here, before they cross. Unicode case
+ * folding is ~17 KB of tables inside the module and free in JavaScript, so the
+ * crate's boundary takes folded text and never links the tables.
+ */
+export class WasmMenuModel implements MenuModelLike {
+  private readonly mod: MenuWasmModule;
+  private readonly labels: string[];
+  private readonly flags: number[];
+  private active = -1;
+  private buffer = "";
+
+  constructor(mod: MenuWasmModule, labels: readonly string[], focusable: readonly boolean[]) {
+    this.mod = mod;
+    this.labels = labels.map((l) => l.toLowerCase());
+    this.flags = focusable.map((f) => (f ? 1 : 0));
+  }
+
+  get activeIndex(): number {
+    return this.active;
+  }
+
+  setActive(index: number): void {
+    this.active = index >= 0 && index < this.flags.length ? index : -1;
+  }
+
+  move(delta: number): void {
+    this.active = this.mod.menuMove(this.flags, this.active, delta);
+  }
+
+  focusFirst(): void {
+    this.active = this.mod.menuFocusFirst(this.flags);
+  }
+
+  focusLast(): void {
+    this.active = this.mod.menuFocusLast(this.flags);
+  }
+
+  typeahead(raw: string): boolean {
+    const query = raw.toLowerCase();
+    const first = firstCodePoint(query);
+    if (first === undefined) return false;
+    const [active, matched] = Array.from(
+      this.mod.menuTypeahead(this.labels, this.flags, this.active, this.buffer, query),
+    );
+    this.active = active!;
+    // The concat is the same rule the crate applies internally; only whether it
+    // matched decides the buffer's fate.
+    this.buffer = matched === 1 ? extendBuffer(this.buffer, query, first) : "";
+    return matched === 1;
+  }
+
+  resetTypeahead(): void {
+    this.buffer = "";
+  }
+}
+
+/** Builds a model over a menu's current items. */
+type ModelFactory = (labels: readonly string[], focusable: readonly boolean[]) => MenuModelLike;
+
+/**
+ * The text a user would type to reach an item.
+ *
+ * `textContent` included the check glyph and the shortcut, so a checked item's
+ * label began with "✓" and typeahead could never reach it. Anything marked
+ * `aria-hidden` is decoration by the same definition a screen reader uses, so
+ * it is excluded here too.
+ */
+function itemLabel(el: Element): string {
+  const aria = el.getAttribute("aria-label");
+  if (aria) return aria.trim();
+  let text = "";
+  const walk = (node: Node): void => {
+    for (const child of node.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) text += child.textContent ?? "";
+      else if (child instanceof Element && child.getAttribute("aria-hidden") !== "true") walk(child);
+    }
+  };
+  walk(el);
+  return text.trim();
+}
+
+function isFocusableItem(el: Element): boolean {
+  return el.getAttribute("aria-disabled") !== "true" && !el.hasAttribute("disabled");
+}
 
 export interface MenuOptions {
   /** The menu element. */
@@ -44,8 +295,10 @@ export class FutureCssMenu {
   private readonly options: MenuOptions;
 
   private opened = false;
-  /** The index focus was at when the menu opened, restored on close. */
-  private previousIndex = 0;
+  private factory: ModelFactory = (labels, focusable) => new MenuModel(labels, focusable);
+  /** Rebuilt on open, so items re-rendered between openings are seen. */
+  private model: MenuModelLike = new MenuModel([], []);
+  private typeaheadTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(options: MenuOptions) {
     this.menu = options.menu;
@@ -87,6 +340,7 @@ export class FutureCssMenu {
 
     this.opened = true;
     this.menu.dataset.fcState = "open";
+    this.rebuildModel();
 
     // `showPopover` is the top-layer path; the attribute is the fallback. Both are
     // attempted because a browser may support one and not the other.
@@ -128,6 +382,30 @@ export class FutureCssMenu {
     this.restoreFocus();
     this.options.onClose?.(this.menu);
   }
+
+  /**
+   * Swaps the JS traversal model for the Rust one, when the module loads.
+   *
+   * Returns false -- and keeps the JS model -- on any failure: a menu that lost
+   * its keyboard navigation because a fetch failed is worse than one that never
+   * got the accelerator. Never swaps while open, where it would replace view
+   * state under an active interaction.
+   *
+   * `init` passes through to the bindgen glue. Browsers omit it; Node passes
+   * `module_or_path`.
+   */
+  async useWasm(url: string, init?: { module_or_path?: string | Uint8Array }): Promise<boolean> {
+    if (this.opened) return false;
+    try {
+      const mod = (await import(url)) as MenuWasmModule;
+      await mod.default(init);
+      this.factory = (labels, focusable) => new WasmMenuModel(mod, labels, focusable);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   // ---- internals --------------------------------------------------------
 
   /**
@@ -150,31 +428,31 @@ export class FutureCssMenu {
     return Array.from(this.menu.querySelectorAll<HTMLElement>(ITEM_SELECTOR));
   }
 
-  /**
-   * Focuses an item by index, wrapping at both ends.
-   *
-   * Wrapping matters: a menu that cannot be arrowed past its last item leaves a
-   * keyboard user stuck.
-   */
-  private focusItem(index: number): void {
+  private rebuildModel(): void {
     const items = this.items;
-    if (items.length === 0) return;
-    const wrapped = ((index % items.length) + items.length) % items.length;
+    this.model = this.factory(items.map(itemLabel), items.map(isFocusableItem));
+  }
+
+  /** Moves roving focus to whatever the model now says is active. */
+  private focusActive(): void {
+    const index = this.model.activeIndex;
+    const items = this.items;
+    const target = items[index];
+    if (!target) return;
     for (const item of items) item.setAttribute("tabindex", "-1");
-    const target = items[wrapped]!;
     target.setAttribute("tabindex", "0");
     target.focus();
-    this.previousIndex = wrapped;
   }
 
   private focusFirstItem(): void {
+    this.model.focusFirst();
     // A menu with no actionable items is misconfigured, but focusing the menu is
     // better than leaving focus on the trigger behind an open menu.
-    if (this.items.length === 0) {
+    if (this.model.activeIndex < 0) {
       this.menu.focus();
       return;
     }
-    this.focusItem(0);
+    this.focusActive();
   }
 
   private restoreFocus(): void {
@@ -215,25 +493,31 @@ export class FutureCssMenu {
    */
   private wireKeyboard(): void {
     this.menu.addEventListener("keydown", (event) => {
-      const items = this.items;
-      const current = items.findIndex((item) => item === document.activeElement);
+      // Re-seed from the DOM: a pointer hover or a programmatic focus can move
+      // focus without passing through the model.
+      this.model.setActive(this.items.findIndex((item) => item === document.activeElement));
+
+      const navigate = (step: () => void): void => {
+        event.preventDefault();
+        // Any navigation other than typing ends the search, so a later "b" is
+        // not appended to a stale prefix.
+        this.model.resetTypeahead();
+        step();
+        this.focusActive();
+      };
 
       switch (event.key) {
         case "ArrowDown":
-          event.preventDefault();
-          this.focusItem(current + 1);
+          navigate(() => this.model.move(1));
           break;
         case "ArrowUp":
-          event.preventDefault();
-          this.focusItem(current - 1);
+          navigate(() => this.model.move(-1));
           break;
         case "Home":
-          event.preventDefault();
-          this.focusItem(0);
+          navigate(() => this.model.focusFirst());
           break;
         case "End":
-          event.preventDefault();
-          this.focusItem(items.length - 1);
+          navigate(() => this.model.focusLast());
           break;
         case "Escape":
           event.preventDefault();
@@ -257,24 +541,14 @@ export class FutureCssMenu {
   }
 
   /**
-   * Moves focus to the next item starting with `char`.
-   *
-   * The standard menu typeahead: searching continues from the current item, so
-   * pressing "n" twice cycles through items starting with "n".
+   * Moves focus by typeahead. Characters typed within `TYPEAHEAD_RESET_MS` of
+   * each other form one search, so "dep" reaches "Deploy" past "Delete", while
+   * pressing "d" twice cycles through the items starting with "d".
    */
   private typeahead(char: string): void {
-    const items = this.items;
-    const needle = char.toLowerCase();
-    const start = this.previousIndex;
-
-    for (let offset = 1; offset <= items.length; offset += 1) {
-      const index = (start + offset) % items.length;
-      const label = items[index]!.textContent?.trim().toLowerCase() ?? "";
-      if (label.startsWith(needle)) {
-        this.focusItem(index);
-        return;
-      }
-    }
+    clearTimeout(this.typeaheadTimer);
+    if (this.model.typeahead(char)) this.focusActive();
+    this.typeaheadTimer = setTimeout(() => this.model.resetTypeahead(), TYPEAHEAD_RESET_MS);
   }
 }
 

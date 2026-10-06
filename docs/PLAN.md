@@ -27,15 +27,15 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 
 ### Working now
 
-Measured on 2026-10-06 against `main` at `e96b06a` (after #24), with the WASM modules built and
+Measured on 2026-10-06 against `main` at `bd5ed5d` (after #24 and #25), with the WASM modules built and
 headless Chrome present (without either, the WASM and browser suites skip):
 
 ```
 npm run build        167 tokens (91 theme-aware) + 39-file bundle, 276.2 KB
                      8 Rust crates, 8 .wasm files in 7 modules (over budget — see Phase A)
 npm run lint         15 rules, 0 violations across 39 files
-npm test             390 tests passing (incl. WASM/JS parity, bundle integrity, Chrome)
-cargo test           125 tests passing
+npm test             416 tests passing (incl. WASM/JS parity, bundle integrity, Chrome)
+cargo test           132 tests passing
 ```
 
 The bundle figure is uncompressed and unminified, which is the shipped form: the CSS is
@@ -48,19 +48,19 @@ decision that is still open.
 **Eight crates, eight `.wasm` files, seven importable modules.** `fc-core` and
 `fc-model` both emit into the `fc-model` module, so eight build entries produce seven
 modules that JavaScript can import. On the shipped basis (post-bindgen, the bytes a
-consumer downloads; see [WASM.md](WASM.md#what-actually-ships)) three modules are over
-budget, and `fc-context-menu` is the largest by a wide margin:
+consumer downloads; see [WASM.md](WASM.md#what-actually-ships)) two modules are still
+over budget. `fc-context-menu` was the largest by a wide margin until #25:
 
 ```
-fc-context-menu    81.3 KB shipped   (raw 414.2 KB)   js-sys + serde
-fc-select          38.4 KB shipped   (raw  61.9 KB)   primitives only, was 50.0
-fc-diff            34.8 KB shipped   (raw  56.2 KB)   primitives only
+fc-context-menu    21.7 KB shipped   (raw  40.2 KB)   primitives only, was 81.3
+fc-select          38.4 KB shipped   (raw  62.1 KB)   primitives only, was 50.0
+fc-diff            33.7 KB shipped   (raw  54.4 KB)   primitives only
 ```
 
 The raw basis made `js-sys` look like the whole story; the shipped basis shows that
 bindgen strips most of it, and that two primitives-only modules are still over. Phase A
-now targets where the shipped bytes are, not where the raw ones were. `fc-select` lost
-a fifth of its size by leaving case folding to JavaScript, which already ships the
+now targets where the shipped bytes are, not where the raw ones were. `fc-context-menu` and
+`fc-select` both cut size by leaving case folding to JavaScript, which already ships the
 Unicode tables; see [WASM.md](WASM.md#what-actually-ships).
 
 Verified: contrast contract enforced in both schemes · all ramps validated · linter
@@ -250,8 +250,12 @@ Delivered:
 - Rust workspace with eight crates, each a `cdylib`. `fc-core` is emitted into the
   `fc-model` module directory rather than getting one of its own, so eight crates
   produce **eight** `.wasm` files across **seven** importable modules.
-- 125 unit tests covering the algorithms.
+- 132 unit tests covering the algorithms.
 - A JS accelerator abstraction with a pure-JS fallback, so the modules are optional.
+- **`fc-context-menu` off `js-sys`**: 411.6 KB to 40.2 KB raw (79.8 to 21.7 KB
+  shipped), under budget. It no longer depends on `fc-core` or serde, folds case
+  in JS rather than linking Unicode tables, and is wired into the menu binding
+  behind `useWasm` with a parity test (`tests/menu.test.ts`).
 - **A measured size report in the build output**, because the dominant cost is invisible
   in source and only obvious in the numbers.
 
@@ -271,8 +275,9 @@ Remaining:
 
 - Re-derive the budgets on the **shipped** basis. The raw (pre-bindgen) basis now
   overstates the wire by 2–18x — see the table in docs/WASM.md — and three
-  modules exceed their budgets on shipped bytes (`fc-context-menu` 81.3 KB,
-  `fc-select` 50.0, since cut to 38.4, `fc-diff` 34.8) while four are within them. Phase A's effort
+  modules exceeded their budgets on shipped bytes (`fc-context-menu` 81.3 KB,
+  `fc-select` 50.0, `fc-diff` 34.8). `fc-context-menu` is now at 21.7 and
+  `fc-select` at 38.4, so `fc-select` and `fc-diff` remain over. Phase A's effort
   should go where the bytes are, which the raw basis gets wrong.
 - Replace `js_sys::Array` / `Vec<JsValue>` returns with flat primitives: numbers, strings,
   and typed arrays. A range crosses as four numbers, not an object.

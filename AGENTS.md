@@ -120,9 +120,9 @@ So:
   numbers.
 - **Never add `js-sys` to a crate** without measuring the result first.
 - `npm run build:wasm` prints a size report and the budgets in
-  `src/build/build-wasm.ts`. Seven modules are over budget on the report's raw
+  `src/build/build-wasm.ts`. Six modules are over budget on the report's raw
   basis; on the **shipped** basis (what actually downloads, post-bindgen and
-  post-opt — see docs/WASM.md) three exceed theirs. Phase A in `docs/PLAN.md` is
+  post-opt — see docs/WASM.md) two exceed theirs. Phase A in `docs/PLAN.md` is
   the work to fix that. Do not raise a budget to make the report green.
 - **Never run `git push -u origin HEAD:<branch>` while checked out on `main`.**
   The `-u` rewrites main's upstream to the feature branch, and when that branch
@@ -310,13 +310,14 @@ one provider selected under another. That is a request nobody can fulfil.
 The fixture-driven git surface
 (branch, status counts, file list, per-file line stats) is complete and reuses
 `fc-diff`; its Rust crate is the **first module in the workspace under its size
-budget** at 44.7 KB, which is the Phase A pattern working. The Rust/WASM layer has eight crates with 125 passing tests and a working JS-only fallback,
-but **every module except `fc-git` is still over its size budget** on the raw
-basis, and three are over on the shipped basis — see the WASM section above and
-Phase A in `docs/PLAN.md`. The rich text, context menu, and grid models exist in
-Rust but have no JS parity test yet; `fc-model`, `fc-diff`, `fc-select` and
-`fc-git` do. `fc-select` is the only module wired into a browser binding, as an
-opt-in with the JS model as the default.
+budget** at 44.7 KB, which is the Phase A pattern working. The Rust/WASM layer has eight crates with 132 passing tests and a working JS-only fallback,
+but **every module except `fc-git` and `fc-context-menu` is still over its size
+budget** on the raw basis, and two are over on the shipped basis — see the WASM
+section above and Phase A in `docs/PLAN.md`. The select and context menu bindings
+opt into their Rust models with `useWasm`, and both fold case in JavaScript so the
+modules link no Unicode tables. The rich text and grid models exist in Rust but
+are not wired; `fc-model`, `fc-diff`, `fc-select`, `fc-context-menu` and `fc-git`
+have JS parity tests.
 
 A navigation sidebar, data table with sorting, and description list are planned but
 not written. See `docs/PLAN.md` for the current phase and what is deliberately out of

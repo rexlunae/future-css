@@ -31,6 +31,7 @@ const chromePath = await findChrome();
 // and every WASM test then skips for a reason that has nothing to do with WASM.
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const selectWasmBuilt = existsSync(join(repoRoot, "dist", "wasm", "fc-select", "web", "fc_select.js"));
+const menuWasmBuilt = existsSync(join(repoRoot, "dist", "wasm", "fc-context-menu", "web", "fc_context_menu.js"));
 
 describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome found" }, () => {
   let server: Awaited<ReturnType<typeof startServer>>;
@@ -547,6 +548,183 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       return label;
     `);
     assert.equal(focused, "Delete");
+  });
+
+  /**
+   * A menu shaped like the demo's: decoration in aria-hidden spans, a
+   * separator, a disabled item, and checkbox items. Built per test so no stale
+   * controller from an earlier test is listening on it.
+   */
+  const RICH_MENU = `
+    const menu = document.createElement('div');
+    menu.className = 'fc-menu';
+    menu.setAttribute('popover', 'manual');
+    menu.innerHTML = \`
+      <button type="button" class="fc-menu__item" role="menuitem"><span aria-hidden="true"></span>Cut<span aria-hidden="true">X</span></button>
+      <button type="button" class="fc-menu__item" role="menuitem" aria-disabled="true"><span aria-hidden="true"></span>Paste</button>
+      <hr class="fc-menu__separator" role="separator">
+      <button type="button" class="fc-menu__item" role="menuitemcheckbox" aria-checked="true"><span aria-hidden="true">&#10003;</span>Wrap lines</button>
+      <button type="button" class="fc-menu__item" role="menuitemcheckbox" aria-checked="false"><span aria-hidden="true">&#10003;</span>Line numbers</button>
+      <button type="button" class="fc-menu__item" role="menuitem"><span aria-hidden="true"></span>Delete</button>
+      <button type="button" class="fc-menu__item" role="menuitem"><span aria-hidden="true"></span>Deploy</button>\`;
+    document.body.appendChild(menu);
+    // Own text nodes only: the check glyph and shortcut are decoration.
+    const label = () => [...document.activeElement.childNodes]
+      .filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim();
+    const key = (k) => menu.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
+  `;
+
+  it("reaches checkbox items by arrow and by typeahead", async () => {
+    // The selector used to name only role=menuitem, so arrows skipped both
+    // checkbox items; and textContent began with the check glyph, so typeahead
+    // could never match a checked one.
+    await loadBindings();
+    const seen = await evaluate(`
+      ${RICH_MENU}
+      const m = new M.FutureCssMenu({ menu, invoker: document.querySelector('#trigger') });
+      m.open({ x: 0, y: 0 });
+      const out = [label()];
+      for (let i = 0; i < 4; i += 1) { key('ArrowDown'); out.push(label()); }
+      key('w'); out.push(label());
+      m.close();
+      return out;
+    `);
+    assert.deepEqual(seen, ["Cut", "Wrap lines", "Line numbers", "Delete", "Deploy", "Wrap lines"]);
+  });
+
+  it("accumulates typed characters into one typeahead search", async () => {
+    await loadBindings();
+    const seen = await evaluate(`
+      ${RICH_MENU}
+      const m = new M.FutureCssMenu({ menu, invoker: document.querySelector('#trigger') });
+      m.open({ x: 0, y: 0 });
+      key('d'); const afterD = label();
+      key('e'); key('p'); const afterDep = label();
+      m.close();
+      return [afterD, afterDep];
+    `);
+    assert.deepEqual(seen, ["Delete", "Deploy"], "'dep' must extend the search, not restart at 'p'");
+  });
+
+  it("lands the first ArrowDown on the first item when the menu itself has focus", async () => {
+    await loadBindings();
+    const seen = await evaluate(`
+      ${RICH_MENU}
+      const m = new M.FutureCssMenu({ menu, invoker: document.querySelector('#trigger') });
+      m.open({ x: 0, y: 0 });
+      menu.tabIndex = -1;
+      menu.focus();
+      key('ArrowDown');
+      const down = label();
+      menu.focus();
+      key('ArrowUp');
+      const up = label();
+      m.close();
+      return [down, up];
+    `);
+    assert.deepEqual(seen, ["Cut", "Deploy"]);
+  });
+
+  it("navigates items added or disabled while the menu is open", async () => {
+    // The model is rebuilt per keystroke; one built at open answered with
+    // indices into a list that no longer matched the DOM.
+    await loadBindings();
+    const seen = await evaluate(`
+      ${RICH_MENU}
+      const m = new M.FutureCssMenu({ menu, invoker: document.querySelector('#trigger') });
+      m.open({ x: 0, y: 0 });
+      const extra = document.createElement('button');
+      extra.className = 'fc-menu__item';
+      extra.setAttribute('role', 'menuitem');
+      extra.textContent = 'Archive';
+      menu.appendChild(extra);
+      key('End');
+      const end = label();
+      extra.setAttribute('aria-disabled', 'true');
+      key('Home'); key('End');
+      const afterDisable = label();
+      m.close();
+      return [end, afterDisable];
+    `);
+    assert.deepEqual(seen, ["Archive", "Deploy"]);
+  });
+
+  it("moves on from an item disabled while it has focus", async () => {
+    await loadBindings();
+    const seen = await evaluate(`
+      ${RICH_MENU}
+      const m = new M.FutureCssMenu({ menu, invoker: document.querySelector('#trigger') });
+      m.open({ x: 0, y: 0 });
+      key('ArrowDown'); key('ArrowDown');
+      const before = label();
+      document.activeElement.setAttribute('aria-disabled', 'true');
+      key('ArrowDown');
+      const after = label();
+      m.close();
+      return [before, after];
+    `);
+    assert.deepEqual(seen, ["Line numbers", "Delete"], "must advance, not jump back to the top");
+  });
+
+  it("does not let the previous opening's typeahead timer cut a new search short", async () => {
+    // Guards the reopen path: a 500 ms expiry left over from the last opening
+    // must never fire into the next one and turn "de" into a lone "e".
+    await loadBindings();
+    const seen = await evaluate(`
+      ${RICH_MENU}
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const m = new M.FutureCssMenu({ menu, invoker: document.querySelector('#trigger') });
+      m.open({ x: 0, y: 0 });
+      key('d');
+      m.close();
+      m.open({ x: 0, y: 0 });
+      await wait(400);
+      key('d');
+      await wait(200);
+      key('e');
+      const after = label();
+      m.close();
+      return after;
+    `);
+    assert.equal(seen, "Deploy", "'de' must still be one search");
+  });
+
+  it("runs menu traversal on the Rust model when WASM is served", { skip: menuWasmBuilt ? false : "run `npm run build:wasm` first" }, async () => {
+    // Same keystrokes and the same expected answers as the JS-path tests above:
+    // identical results on both models is the point of the wiring.
+    await loadBindings();
+    const result = await evaluate(`
+      ${RICH_MENU}
+      const m = new M.FutureCssMenu({ menu, invoker: document.querySelector('#trigger') });
+      const loaded = await m.useWasm('${server.origin}/dist/wasm/fc-context-menu/web/fc_context_menu.js');
+      m.open({ x: 0, y: 0 });
+      const seen = [label()];
+      key('ArrowDown'); seen.push(label());
+      key('End'); seen.push(label());
+      key('ArrowDown'); seen.push(label());
+      key('d'); key('e'); key('p'); seen.push(label());
+      key('Home'); key('L'); seen.push(label());
+      m.close();
+      return { loaded, seen };
+    `);
+    assert.equal(result.loaded, true, "the Rust model should load over HTTP");
+    assert.deepEqual(result.seen, ["Cut", "Wrap lines", "Deploy", "Cut", "Deploy", "Line numbers"]);
+  });
+
+  it("keeps the JS menu model when the WASM module is missing", async () => {
+    await loadBindings();
+    const result = await evaluate(`
+      ${RICH_MENU}
+      const m = new M.FutureCssMenu({ menu, invoker: document.querySelector('#trigger') });
+      const loaded = await m.useWasm('${server.origin}/dist/wasm/does-not-exist.js');
+      m.open({ x: 0, y: 0 });
+      key('ArrowDown');
+      const after = label();
+      m.close();
+      return { loaded, after };
+    `);
+    assert.equal(result.loaded, false, "a missing module must report failure, not throw");
+    assert.equal(result.after, "Wrap lines", "navigation must keep working on the JS model");
   });
 
   // -------------------------------------------------------------- webview

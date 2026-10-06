@@ -6,8 +6,9 @@
 # Rust is the part that is pure logic and easy to get subtly wrong in JS:
 # roving-tabindex traversal, typeahead matching, and separator grouping.
 #
-# This crate therefore depends on fc-core only. A consumer using the context menu
-# pays nothing for the text model or the grid model.
+# The boundary crosses primitives only, so this crate depends on wasm-bindgen
+# alone. Not fc-core: its JsValue error conversion links js-sys (~302 KB), and a
+# menu has no error worth a structured type -- an empty list answers -1.
 
 [package]
 name = "fc-context-menu"
@@ -23,8 +24,4 @@ authors.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-fc-core = { path = "../fc-core" }
 wasm-bindgen = { workspace = true }
-js-sys = { workspace = true }
-serde-wasm-bindgen = { workspace = true }
-serde = { workspace = true }

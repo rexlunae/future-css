@@ -409,6 +409,13 @@ the top of the document.
 `Tab` is deliberately not trapped — a menu is a single stop, and trapping it is the
 most common way menus become keyboard traps.
 
+Arrows reach every `menuitem`, `menuitemcheckbox`, and `menuitemradio`, skipping
+separators and `aria-disabled` items. Typeahead accumulates characters typed within
+500 ms ("dep" reaches *Deploy* past *Delete*), repeats of one letter cycle, and
+labels exclude `aria-hidden` content, so a check glyph or shortcut never blocks a
+match. `await menu.useWasm(url)` moves this traversal onto the `fc-context-menu`
+crate (21.7 KB shipped); it returns `false` and keeps the JS model on any failure.
+
 ### Grid
 
 Roving tabindex: **one** tab stop, arrows to move. A grid where every cell is a tab
@@ -788,14 +795,14 @@ tree, and this is the most accessibility-sensitive component in the system.
 
 `fc-select` implements the navigation *model* — which option is active, how
 typeahead accumulates, which options survive a filter — behind a primitives-only
-boundary (flat arrays and strings, no `js-sys`), shipping at 38.4 KB against
-79.8 KB for `fc-context-menu`. Matching keys cross pre-folded: the adapter
-lowercases labels, values and queries with `toLowerCase()`, so the module links
-no Unicode case tables and there is one definition of case-insensitive rather
-than two (see [WASM.md](WASM.md#case-folding-belongs-to-javascript)). The module exports
-`selectAbi()`, and `useWasm` refuses any module whose version differs from the
-adapter's, so a cached module from an older wire format keeps the JS model rather
-than failing on the first keystroke.
+boundary (flat arrays and strings, no `js-sys`), shipping at 38.4 KB. Matching
+keys cross pre-folded: the adapter lowercases labels, values and queries with
+`toLowerCase()`, so the module links no Unicode case tables and there is one
+definition of case-insensitive rather than two (see
+[WASM.md](WASM.md#case-folding-belongs-to-javascript)); `fc-context-menu` does the
+same. The module exports `selectAbi()`, and `useWasm` refuses any module whose
+version differs from the adapter's, so a cached module from an older wire format
+keeps the JS model rather than failing on the first keystroke.
 
 **The binding opts into it** with `await select.useWasm(url)`. The boundary entry
 points are stateless — they rebuild the model on each call — so the adapter

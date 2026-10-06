@@ -388,8 +388,10 @@ without them encodes the workaround.
   destructive button), but stops being the only mechanism, so the disabled state can be
   stated rather than only composited
 - [ ] Hover and active steps for each status family -- success, warning, danger, info --
-  so the four families match accent's shape. Sixteen tokens, all derived from the
-  existing ramps
+  so the four families match accent's shape: `<family>-bg-hover` and
+  `<family>-bg-active`, eight tokens derived from the existing ramps. The coverage
+  document estimates sixteen, which would also give `-bg-subtle` its own hover and
+  active steps; add those only if a component needs them
 - [ ] Re-try `warning-text` on `warning-bg` as a declared pair while the warning ramp is
   being touched. It failed in Phase 1, and components work around it; if it still cannot
   pass, record why in `color.ts`
@@ -465,6 +467,9 @@ scale-step-as-semantics (Radix) trades verifiability for brevity.
 
 - Every Absent and Partial row in the coverage scorecard is Shipped, or Divergent with
   its reason recorded in the same edit
+- The gap-list items with no Absent or Partial row of their own are closed too: theme
+  sets (gap 4, which sits under the Shipped entry 12), elevation depth (gap 6) and bidi
+  isolation (gap 8)
 - The contrast contract covers every new colour token in every theme set
 - A consumer can switch brand and contrast level without writing CSS
 

@@ -89,23 +89,34 @@ export class FutureCssTable {
     this.options.onSort?.(column, dir);
   }
 
-  /** Removes listeners. Rows stay in their last sorted order. */
+  /** Removes listeners and the bound marker, so `bindTables` can bind it again. Rows stay in their last sorted order. */
   destroy(): void {
     this.table.tHead?.removeEventListener("click", this.onClick);
+    if (this.table.getAttribute("data-fc-bound") === "table") this.table.removeAttribute("data-fc-bound");
   }
 
   private reorder(cellIndex: number, direction: SortDirection): void {
     const collator = new Intl.Collator(this.lang(), { numeric: true, sensitivity: "base" });
     const sign = direction === "ascending" ? 1 : -1;
+    // Moving a node blurs whatever is focused inside it, which would drop a
+    // keyboard user who sorted from a row control (or a script that sorted
+    // while they were in one). Focus is restored once the rows are in place.
+    const active = this.table.ownerDocument.activeElement as HTMLElement | null;
+    const restore = active && active !== this.table.ownerDocument.body && this.table.contains(active) ? active : null;
     for (const body of this.table.tBodies) {
       const rows = [...body.rows];
       // A body that holds only the "no rows" cell has nothing to order.
       if (rows.length < 2) continue;
       const keyed = rows.map((row) => ({ row, key: sortKey(row.cells[cellIndex]) }));
       keyed.sort((a, b) => sign * compare(a.key, b.key, collator));
-      // appendChild moves the existing nodes, so listeners, focus and any
-      // binding state on a row survive the reorder.
-      for (const { row } of keyed) body.appendChild(row);
+      // Only rows out of place are moved. Moving keeps the existing nodes, so
+      // listeners and any binding state on a row survive the reorder.
+      keyed.forEach(({ row }, i) => {
+        if (body.rows[i] !== row) body.insertBefore(row, body.rows[i] ?? null);
+      });
+    }
+    if (restore?.isConnected && this.table.ownerDocument.activeElement !== restore) {
+      restore.focus({ preventScroll: true });
     }
   }
 

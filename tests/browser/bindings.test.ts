@@ -2846,7 +2846,7 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     await loadBindings();
     const result = await evaluate(`
       globalThis.table = new TL.FutureCssTable('#table-root');
-      const ids = () => [...document.querySelectorAll('#table-root tbody tr')].map((r) => r.id.slice(4));
+      const ids = () => [...document.querySelectorAll('#table-root tbody tr[id]')].map((r) => r.id.slice(4));
       const sorts = () => [...document.querySelectorAll('#table-root thead th')].map((th) => th.getAttribute('aria-sort'));
       const buttons = document.querySelectorAll('#table-root .fc-table__sort');
       buttons[0].click();
@@ -2915,6 +2915,39 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(result.wrapScrolls, true, "the wrapper scrolls, not the page");
     assert.equal(result.numAlign, "end");
     assert.equal(result.numFlow, "row-reverse");
+  });
+
+  it("keeps focus on a row control through a sort, and rebinds after destroy", async () => {
+    await loadBindings();
+    const result = await evaluate(`
+      const open = document.getElementById('row-zeta-open');
+      const [bound] = TL.bindTables(document.getElementById('table-wrap'));
+      open.focus();
+      bound.sort(0, 'descending');
+      bound.sort(0, 'ascending');
+      const focused = document.activeElement === open;
+      bound.destroy();
+      const marker = document.getElementById('table-root').hasAttribute('data-fc-bound');
+      const rebound = TL.bindTables(document.getElementById('table-wrap'));
+      rebound.forEach((t) => t.destroy());
+      return { focused, marker, rebound: rebound.length };
+    `);
+    assert.equal(result.focused, true, "moving the row must not drop the user's focus");
+    assert.equal(result.marker, false, "destroy releases the bound marker");
+    assert.equal(result.rebound, 1);
+  });
+
+  it("centres and pads the empty-table cell, and gives short sort headers a full target", async () => {
+    const result = await evaluate(`
+      const empty = getComputedStyle(document.getElementById('table-empty'));
+      const cell = getComputedStyle(document.querySelector('#table-root tbody td'));
+      const sort = document.querySelector('#table-root .fc-table__sort').getBoundingClientRect();
+      const target = parseFloat(getComputedStyle(document.documentElement).fontSize) * 1.5;
+      return { align: empty.textAlign, pad: parseFloat(empty.paddingTop), cellPad: parseFloat(cell.paddingTop), width: sort.width, target };
+    `);
+    assert.equal(result.align, "center");
+    assert.ok(result.pad > result.cellPad * 2, `empty cell padding ${result.pad} vs ${result.cellPad}`);
+    assert.ok(result.width >= result.target - 0.5, `sort target ${result.width} < ${result.target}`);
   });
 
   it("lays a description list out side by side when wide and stacked when narrow", async () => {

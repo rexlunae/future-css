@@ -51,6 +51,7 @@
     flex: 0 0 var(--fc-dl-term-size, 10rem);
     /* A long term wraps inside its column rather than pushing the value off. */
     min-inline-size: 0;
+    overflow-wrap: anywhere;
     color: var(--fc-color-text-muted);
     font-weight: var(--fc-font-weight-medium);
   }

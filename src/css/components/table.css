@@ -134,9 +134,10 @@
 
   /* The full-width cell for "no rows" and "failed to load". */
   .fc-table__empty {
-    padding-block: var(--fc-space-8);
+    /* Through the cell properties, for the same specificity reason as above. */
+    --fc-table-cell-pad-block: var(--fc-space-8);
+    --fc-table-cell-align: center;
     color: var(--fc-color-text-muted);
-    text-align: center;
   }
 
   /* ---- Sort control ---------------------------------------------------- */
@@ -168,6 +169,8 @@
     align-items: center;
     gap: var(--fc-space-1);
     min-block-size: var(--fc-size-target-min);
+    /* A two-letter header ("ID") would otherwise be a sliver of a target. */
+    min-inline-size: var(--fc-size-target-min);
     margin-block: calc(var(--fc-space-1) * -1);
     margin-inline: calc(var(--fc-space-1-5) * -1);
     padding-block: var(--fc-space-1);

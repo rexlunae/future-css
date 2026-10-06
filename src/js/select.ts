@@ -277,14 +277,35 @@ export class SelectModel implements SelectModelLike {
   }
 }
 
+/**
+ * The `fc-select` wire format this adapter speaks. Must equal `SELECT_ABI` in
+ * the crate; `tests/wasm.test.ts` asserts it does.
+ */
+export const SELECT_WASM_ABI = 2;
+
 /** The compiled `fc-select` module, as the binding consumes it. */
 export interface SelectWasmModule {
   default: (init?: { module_or_path?: string | Uint8Array }) => Promise<void>;
+  /** Absent before version 2, which is itself the answer: incompatible. */
+  selectAbi?: () => number;
   selectOpen: (values: string[], labels: string[], groups: string[], disabled: number[], current: string) => number;
   selectIndexOf: (values: string[], value: string) => number;
   selectFilter: (labelKeys: string[], valueKeys: string[], needle: string) => Int32Array | number[];
   selectMoveFrom: (values: string[], labels: string[], disabled: number[], visible: number[], active: number, delta: number) => number;
   selectTypeaheadFrom: (labelKeys: string[], disabled: number[], visible: number[], active: number, needle: string) => Int32Array | number[];
+}
+
+/**
+ * True when an initialized module speaks this adapter's wire format.
+ *
+ * A stale module is the realistic way to get a mismatch: a service worker or
+ * CDN serves yesterday's `fc_select.js` to today's binding. Instantiation
+ * succeeds either way, so without this check the swap reports success and the
+ * failure surfaces later, as a thrown keystroke or a filter that quietly turned
+ * case-sensitive.
+ */
+export function isCompatibleSelectModule(mod: Pick<SelectWasmModule, "selectAbi">): boolean {
+  return typeof mod.selectAbi === "function" && mod.selectAbi() === SELECT_WASM_ABI;
 }
 
 /**
@@ -849,7 +870,8 @@ export class FutureCssSelect {
   /**
    * Swaps the JS model for the Rust one, when the module loads.
    *
-   * Returns false -- and keeps the JS model -- on any failure: a listbox that
+   * Returns false -- and keeps the JS model -- on any failure, including a module
+ * built for a different wire format (see `isCompatibleSelectModule`): a listbox that
    * silently lost its navigation because a fetch failed is worse than one that
    * never got the accelerator. Never swaps while the list is open; the swap
    * would replace view state under an active interaction.
@@ -862,6 +884,7 @@ export class FutureCssSelect {
     try {
       const mod = (await import(url)) as SelectWasmModule;
       await mod.default(init);
+      if (!isCompatibleSelectModule(mod)) return false;
       const committed = this.model.committedValue;
       this.model = new WasmSelectModel(mod, this.items);
       this.model.setCommitted(committed);

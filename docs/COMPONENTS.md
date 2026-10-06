@@ -792,7 +792,10 @@ boundary (flat arrays and strings, no `js-sys`), shipping at 38.4 KB against
 79.8 KB for `fc-context-menu`. Matching keys cross pre-folded: the adapter
 lowercases labels, values and queries with `toLowerCase()`, so the module links
 no Unicode case tables and there is one definition of case-insensitive rather
-than two (see [WASM.md](WASM.md#case-folding-belongs-to-javascript)).
+than two (see [WASM.md](WASM.md#case-folding-belongs-to-javascript)). The module exports
+`selectAbi()`, and `useWasm` refuses any module whose version differs from the
+adapter's, so a cached module from an older wire format keeps the JS model rather
+than failing on the first keystroke.
 
 **The binding opts into it** with `await select.useWasm(url)`. The boundary entry
 points are stateless — they rebuild the model on each call — so the adapter

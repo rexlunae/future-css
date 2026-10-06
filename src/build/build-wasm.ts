@@ -97,7 +97,7 @@ async function main(): Promise<void> {
   } catch {
     // Absent is a normal configuration, not an error.
   }
-  // Set when an installed wasm-opt rejects a module. Older binaryen releases
+  // Set when an installed wasm-opt rejects a module at validation. Older binaryen releases
   // (Ubuntu's apt ships 108) predate features rustc now emits by default, such
   // as sign-ext, and fail validation the same way the bulk-memory case does.
   // An optional pass must not be able to fail the build, so the module ships
@@ -163,7 +163,12 @@ async function main(): Promise<void> {
           await rename(`${bg}.opt`, bg);
         } catch (err) {
           await rm(`${bg}.opt`, { force: true });
-          const detail = String((err as { stderr?: string }).stderr ?? err).split("\n").find((l) => l.trim()) ?? "";
+          const stderr = String((err as { stderr?: string }).stderr ?? "");
+          // Only a validation rejection means "this binaryen is too old for the
+          // module"; anything else (a crash, a full disk, a missing file) is a
+          // real fault and must stop the build rather than hide in a footnote.
+          if (!/validat/i.test(stderr)) throw err;
+          const detail = stderr.split("\n").find((l) => l.trim()) ?? "";
           wasmOptFailure ??= `${stem}: ${detail.trim()}`;
         }
       }

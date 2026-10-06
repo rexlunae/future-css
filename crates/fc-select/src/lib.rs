@@ -426,6 +426,21 @@ impl Select {
 // fix rather than only a size one.
 
 
+/// Wire-format version of this module's exports.
+///
+/// Bumped whenever an export changes meaning or arity, so a cached module from
+/// before the change is refused instead of half-working. Version 1 (never
+/// exported) took raw labels and folded them here; version 2 takes keys the
+/// binding has already folded, and `selectTypeaheadFrom` lost two arguments.
+/// A v1 module behind a v2 adapter would filter case-sensitively and throw on
+/// the first typeahead keystroke, both after `useWasm` had reported success.
+pub const SELECT_ABI: u32 = 2;
+
+#[wasm_bindgen(js_name = selectAbi)]
+pub fn js_select_abi() -> u32 {
+    SELECT_ABI
+}
+
 #[wasm_bindgen(js_name = selectOpen)]
 pub fn js_select_open(values: Vec<String>, labels: Vec<String>, groups: Vec<String>, disabled: Vec<i32>, current: String) -> i32 {
     let n = values.len().min(labels.len());

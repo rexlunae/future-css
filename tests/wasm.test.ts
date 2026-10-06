@@ -24,7 +24,7 @@ import { before, describe, it } from "node:test";
 import { JsAccelerator } from "../src/js/accelerator.ts";
 import { diffLines, diffStats } from "../src/js/diff.ts";
 import { summarizeStatus, orderEntries, diffCounts } from "../src/js/git.ts";
-import { SelectModel, WasmSelectModel } from "../src/js/select.ts";
+import { SELECT_WASM_ABI, SelectModel, WasmSelectModel, isCompatibleSelectModule } from "../src/js/select.ts";
 import type { SelectOption, SelectWasmModule } from "../src/js/select.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -681,6 +681,21 @@ describe("the shipped WasmSelectModel adapter and the JS twin agree", () => {
         (wasm as unknown as Record<string, (...a: unknown[]) => unknown>)[op](...args);
         assert.deepEqual(stateOf(wasm), stateOf(js), `diverged after ${op}(${args.join(", ")})`);
       }
+    },
+  );
+
+  it(
+    "accepts only a module built for the adapter's wire format",
+    { skip: adapterBuilt ? false : "run `npm run build:wasm` first" },
+    async () => {
+      const mod = (await import(join(wasmDir, "fc_select.js"))) as unknown as SelectWasmModule;
+      await mod.default({ module_or_path: await readFile(join(wasmDir, "fc_select_bg.wasm")) });
+      assert.equal(mod.selectAbi?.(), SELECT_WASM_ABI, "crate SELECT_ABI and adapter SELECT_WASM_ABI must move together");
+      assert.ok(isCompatibleSelectModule(mod));
+      // A pre-v2 module exports no version at all; a future one exports another.
+      // Both must be refused so useWasm keeps the JS model.
+      assert.equal(isCompatibleSelectModule({}), false, "a cached v1 module must be refused");
+      assert.equal(isCompatibleSelectModule({ selectAbi: () => SELECT_WASM_ABI + 1 }), false);
     },
   );
 

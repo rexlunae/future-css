@@ -173,6 +173,8 @@ describe("bundle", { skip: hasBundle ? false : "run `npm run build` first" }, ()
       "fc-breadcrumb",
       "fc-pagination",
       "fc-spinner",
+      "fc-shimmer-text",
+      "fc-agent-status",
       "fc-skeleton",
       "fc-progress",
       "fc-avatar",

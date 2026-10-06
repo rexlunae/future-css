@@ -2429,7 +2429,7 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     `);
     await send("Emulation.setEmulatedMedia", { features: [] });
     assert.equal(result.count, "infinite", "the spinner must keep turning");
-    assert.equal(result.duration, "2s");
+    assert.ok(parseFloat(result.duration) >= 1.5, `expected a slowed spin, got ${result.duration}`);
   });
 
   // ------------------------------------------------------------------ tabs
@@ -2584,6 +2584,80 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(result.afterEscape, "hidden");
     assert.equal(result.focusKept, true, "Escape dismisses the tooltip without moving focus");
     assert.equal(result.reset, false, "leaving the trigger lets the tooltip show again next time");
+  });
+
+  // -------------------------------------------------------------- spinners
+
+  /*
+   * What animates in each variant: the element itself, or its children (the
+   * typing dots and the stream bars are child elements). Returns, per variant,
+   * the animation name, duration, and iteration count of the moving part.
+   */
+  const SPINNER_PROBE = `
+    return [...document.querySelectorAll('#spinners [data-variant]')].map((el) => {
+      const mover = el.firstElementChild ?? el;
+      const cs = getComputedStyle(mover);
+      const box = el.getBoundingClientRect();
+      return {
+        variant: el.dataset.variant,
+        name: cs.animationName,
+        duration: parseFloat(cs.animationDuration),
+        count: cs.animationIterationCount,
+        width: box.width,
+        height: box.height,
+      };
+    });
+  `;
+
+  it("animates every spinner variant, at a visible size", async () => {
+    const result = await evaluate(SPINNER_PROBE);
+    assert.equal(result.length, 6);
+    for (const s of result) {
+      assert.notEqual(s.name, "none", `${s.variant} should animate`);
+      assert.equal(s.count, "infinite", `${s.variant} should loop`);
+      assert.ok(s.width > 0 && s.height > 0, `${s.variant} should take up space`);
+    }
+  });
+
+  it("keeps every spinner variant moving under reduced motion, slower or as a fade", async () => {
+    const normal = await evaluate(SPINNER_PROBE);
+    await send("Emulation.setEmulatedMedia", {
+      features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+    });
+    const reduced = await evaluate(SPINNER_PROBE);
+    await send("Emulation.setEmulatedMedia", { features: [] });
+
+    for (const [i, s] of reduced.entries()) {
+      assert.equal(s.count, "infinite", `${s.variant} must not freeze under reduced motion`);
+      assert.ok(s.duration >= 0.5, `${s.variant} must not collapse to the reset's 0.01ms`);
+      if (["dots", "bars", "pulse", "sparkle"].includes(s.variant)) {
+        assert.equal(s.name, "fc-spinner-fade", `${s.variant} should fade instead of moving`);
+      } else {
+        assert.ok(s.duration > normal[i].duration, `${s.variant} should turn more slowly`);
+      }
+    }
+  });
+
+  it("drives the agent status row from data-fc-state", async () => {
+    const result = await evaluate(`
+      const row = document.getElementById('agent-status');
+      const spinner = row.querySelector('.fc-spinner');
+      const label = row.querySelector('.fc-agent-status__label');
+      const running = { spinner: getComputedStyle(spinner).display, shimmer: getComputedStyle(label).animationName };
+      row.dataset.fcState = 'complete';
+      const done = {
+        spinner: getComputedStyle(spinner).display,
+        shimmer: getComputedStyle(label).animationName,
+        glyph: getComputedStyle(row, '::before').content,
+      };
+      row.dataset.fcState = 'running';
+      return { running, done };
+    `);
+    assert.notEqual(result.running.spinner, "none");
+    assert.notEqual(result.running.shimmer, "none", "a running step's label shimmers");
+    assert.equal(result.done.spinner, "none", "a finished step hides its spinner");
+    assert.equal(result.done.shimmer, "none", "the shimmer cannot outlive the state");
+    assert.match(result.done.glyph, /✓/);
   });
 
 });

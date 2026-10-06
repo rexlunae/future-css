@@ -28,10 +28,10 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 ### Working now
 
 ```
-npm run build        167 tokens (91 theme-aware) + 37-file bundle, 262 KB
+npm run build        167 tokens (91 theme-aware) + 39-file bundle, 276 KB
                      7 Rust crates, 7 .wasm files in 6 modules (over budget — see Phase A)
-npm run lint         15 rules, 0 violations across 37 files
-npm test             385 tests passing (incl. WASM/JS parity, bundle integrity, 113 in Chrome)
+npm run lint         15 rules, 0 violations across 39 files
+npm test             388 tests passing (incl. WASM/JS parity, bundle integrity, 116 in Chrome)
 cargo test           96 tests passing
 ```
 
@@ -165,7 +165,7 @@ mechanisms work:
    was invalid at computed time -- not a parse error -- so menus and the select list
    rendered flat while every test passed. Fixed by wrapping each layer's colour instead;
    caught by a browser test that reads the computed `box-shadow`.
-5. **Spinners froze under reduced motion,** despite a component rule slowing them to 2s.
+5. **Spinners froze under reduced motion,** despite a component rule slowing them down.
    The reset's reduced-motion block is `!important` in the earliest layer, and an
    important declaration in an earlier layer beats everything in later ones. Spinners
    are now excluded from that block by name.
@@ -217,7 +217,9 @@ The components needed for a real application, prioritized by frequency of use.
 - [ ] Table with sorting affordances
 - [ ] Description list
 - [x] Empty state and error state patterns
-- [x] Avatar, disclosure / accordion, spinner, skeleton, progress
+- [x] Avatar, disclosure / accordion, skeleton, progress
+- [x] A spinner family (ring, arc, typing dots, pulse, stream bars, orbit, sparkle) and an
+  agent status row driven by `data-fc-state`
 
 **Exit criteria**
 
@@ -444,7 +446,7 @@ describes. Documentation that drifts is worse than none, because it is trusted.
 
 | Budget | Target | Measured |
 | --- | --- | --- |
-| Full bundle, uncompressed | < 60 KB | **262 KB — over by 4.4x** |
+| Full bundle, uncompressed | < 60 KB | **276 KB — over by 4.6x** |
 | Full bundle, minified | < 15 KB | not measured |
 | Tokens + base only | < 10 KB minified | not measured |
 | CSS applied to a typical page | < 30 KB | not measured |

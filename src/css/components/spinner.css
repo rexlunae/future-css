@@ -1,0 +1,395 @@
+/*!
+ * future-css -- spinners
+ *
+ * "Working, extent unknown." One block, several drawings, chosen by what the
+ * work is rather than by taste:
+ *
+ *   ring       (default) generic loading: a page, a request, a save
+ *   --arc      the same, drawn as a tapering arc; a softer default
+ *   --dots     someone is composing a reply: the typing indicator
+ *   --pulse    something is live and listening: a connected agent, a recording
+ *   --bars     a stream is flowing: tokens arriving, audio playing
+ *   --orbit    background work with several parts: indexing, syncing
+ *   --sparkle  a model is thinking: the AI "working on it" mark
+ *
+ *   <span role="status">
+ *     <span class="fc-spinner fc-spinner--dots" aria-hidden="true">
+ *       <span></span><span></span><span></span>
+ *     </span>
+ *     <span class="fc-u-visually-hidden">Assistant is typing</span>
+ *   </span>
+ *
+ * --dots takes three child spans and --bars takes four; the others are a
+ * single empty element. A spinner is always aria-hidden: what is happening is
+ * said in words, by the status text beside it, never by the animation.
+ *
+ * Every drawing is built from `currentColor`, so `color` restyles any of them,
+ * and sized from one property, `--fc-spinner-size`.
+ *
+ * REDUCED MOTION. A spinner is the only cue that work is in progress, so it
+ * never stops outright -- a frozen spinner reads as a hung page. Rotating ones
+ * slow to a third of their speed; the ones that bounce, scale, or ripple swap
+ * to an opacity-only fade, which carries "still working" without movement.
+ * Spinners are excluded from the reset's reduced-motion block by name, because
+ * that block is `!important` in the earliest layer and nothing later can
+ * loosen it.
+ */
+
+@layer fc.components {
+  .fc-spinner {
+    --fc-spinner-size: 1.25rem;
+    --fc-spinner-stroke: max(var(--fc-border-width-thick), calc(var(--fc-spinner-size) / 10));
+    /* 1 normally, 3 under reduced motion: every duration is multiplied by it. */
+    --fc-spinner-slow: 1;
+
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+    inline-size: var(--fc-spinner-size);
+    block-size: var(--fc-spinner-size);
+    vertical-align: middle;
+    color: var(--fc-color-accent-text);
+
+    /* The default drawing: a ring with one solid quarter. */
+    border: var(--fc-spinner-stroke) solid color-mix(in oklch, currentColor 20%, transparent);
+    border-block-start-color: currentColor;
+    border-radius: var(--fc-radius-full);
+    animation: fc-spinner-rotate calc(0.7s * var(--fc-spinner-slow)) linear infinite;
+  }
+
+  /* ---- Sizes and tones ------------------------------------------------- */
+
+  .fc-spinner--xs {
+    --fc-spinner-size: 0.75rem;
+  }
+
+  .fc-spinner--sm {
+    --fc-spinner-size: 1rem;
+  }
+
+  .fc-spinner--lg {
+    --fc-spinner-size: 2rem;
+  }
+
+  .fc-spinner--xl {
+    --fc-spinner-size: 3rem;
+  }
+
+  .fc-spinner--muted {
+    color: var(--fc-color-text-muted);
+  }
+
+  /* Takes the colour of the text around it, e.g. inside a button or a badge. */
+  .fc-spinner--current {
+    color: inherit;
+  }
+
+  /* ---- Arc ------------------------------------------------------------- */
+
+  /*
+   * A conic gradient fading from transparent to the full colour, cut to a ring
+   * by a radial mask. The mask uses currentColor rather than a colour literal:
+   * only its alpha matters.
+   */
+  .fc-spinner--arc {
+    border: 0;
+    background-image: conic-gradient(transparent 10%, currentColor);
+    mask-image: radial-gradient(
+      farthest-side,
+      transparent calc(100% - var(--fc-spinner-stroke) - 0.03rem),
+      currentColor calc(100% - var(--fc-spinner-stroke))
+    );
+    animation-duration: calc(0.9s * var(--fc-spinner-slow));
+  }
+
+  /* ---- Dots: the typing indicator --------------------------------------- */
+
+  .fc-spinner--dots {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    inline-size: calc(var(--fc-spinner-size) * 1.6);
+    border: 0;
+    border-radius: 0;
+    animation: none;
+  }
+
+  .fc-spinner--dots > * {
+    inline-size: calc(var(--fc-spinner-size) * 0.32);
+    block-size: calc(var(--fc-spinner-size) * 0.32);
+    background-color: currentColor;
+    border-radius: var(--fc-radius-full);
+    animation: fc-spinner-bounce calc(1.2s * var(--fc-spinner-slow)) var(--fc-easing-standard) infinite;
+  }
+
+  /* Staggered, so the dots read as a wave moving in the reading direction. */
+  .fc-spinner--dots > :nth-child(2) {
+    animation-delay: calc(0.15s * var(--fc-spinner-slow));
+  }
+
+  .fc-spinner--dots > :nth-child(3) {
+    animation-delay: calc(0.3s * var(--fc-spinner-slow));
+  }
+
+  /* ---- Pulse ----------------------------------------------------------- */
+
+  /*
+   * A dot with a ripple. The ripple is a spread shadow that grows and fades,
+   * so it needs no extra element and never affects layout.
+   */
+  .fc-spinner--pulse {
+    border: 0;
+    background-color: currentColor;
+    scale: 0.5;
+    animation: fc-spinner-pulse calc(1.6s * var(--fc-spinner-slow)) var(--fc-easing-decelerate) infinite;
+  }
+
+  /* ---- Bars: a stream flowing ------------------------------------------ */
+
+  .fc-spinner--bars {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 0;
+    border-radius: 0;
+    animation: none;
+  }
+
+  .fc-spinner--bars > * {
+    inline-size: 18%;
+    block-size: 100%;
+    background-color: currentColor;
+    border-radius: var(--fc-radius-full);
+    scale: 1 0.35;
+    animation: fc-spinner-bars calc(1s * var(--fc-spinner-slow)) ease-in-out infinite;
+  }
+
+  .fc-spinner--bars > :nth-child(2) {
+    animation-delay: calc(-0.8s * var(--fc-spinner-slow));
+  }
+
+  .fc-spinner--bars > :nth-child(3) {
+    animation-delay: calc(-0.6s * var(--fc-spinner-slow));
+  }
+
+  .fc-spinner--bars > :nth-child(4) {
+    animation-delay: calc(-0.4s * var(--fc-spinner-slow));
+  }
+
+  /* ---- Orbit ----------------------------------------------------------- */
+
+  /*
+   * Two satellites, one full strength and one faint, drawn as radial gradients
+   * on the element itself and turned with it. No pseudo-elements, so nothing
+   * here depends on the reset's handling of ::before and ::after.
+   */
+  .fc-spinner--orbit {
+    border: 0;
+    background-image:
+      radial-gradient(circle at 50% 14%, currentColor 0 13%, transparent 14%),
+      radial-gradient(
+        circle at 50% 86%,
+        color-mix(in oklch, currentColor 40%, transparent) 0 11%,
+        transparent 12%
+      ),
+      radial-gradient(
+        circle,
+        transparent 0 46%,
+        color-mix(in oklch, currentColor 15%, transparent) 47% 50%,
+        transparent 51%
+      );
+    animation-duration: calc(1.4s * var(--fc-spinner-slow));
+    animation-timing-function: var(--fc-easing-standard);
+  }
+
+  /* ---- Sparkle: a model is thinking ------------------------------------ */
+
+  /*
+   * A four-point star that turns and breathes. The fill is a gradient across
+   * two theme tokens, which a product can replace through
+   * `--fc-spinner-fill` with its own brand gradient.
+   */
+  .fc-spinner--sparkle {
+    border: 0;
+    border-radius: 0;
+    background-image: var(
+      --fc-spinner-fill,
+      linear-gradient(135deg, var(--fc-color-accent-bg), var(--fc-color-info-bg))
+    );
+    clip-path: polygon(
+      50% 0%, 61% 39%, 100% 50%, 61% 61%,
+      50% 100%, 39% 61%, 0% 50%, 39% 39%
+    );
+    animation: fc-spinner-sparkle calc(1.6s * var(--fc-spinner-slow)) var(--fc-easing-standard) infinite;
+  }
+
+  /* ---- Keyframes ------------------------------------------------------- */
+
+  @keyframes fc-spinner-rotate {
+    to {
+      rotate: 1turn;
+    }
+  }
+
+  @keyframes fc-spinner-bounce {
+    0%, 70%, 100% {
+      translate: 0 0;
+      opacity: 0.35;
+    }
+
+    35% {
+      translate: 0 -45%;
+      opacity: 1;
+    }
+  }
+
+  @keyframes fc-spinner-pulse {
+    0% {
+      scale: 0.45;
+      box-shadow: 0 0 0 0 color-mix(in oklch, currentColor 50%, transparent);
+    }
+
+    60% {
+      scale: 0.55;
+      box-shadow: 0 0 0 calc(var(--fc-spinner-size) * 0.45) transparent;
+    }
+
+    100% {
+      scale: 0.45;
+      box-shadow: 0 0 0 0 transparent;
+    }
+  }
+
+  @keyframes fc-spinner-bars {
+    0%, 100% {
+      scale: 1 0.35;
+    }
+
+    50% {
+      scale: 1 1;
+    }
+  }
+
+  /* A star with four-fold symmetry repeats every quarter turn. */
+  @keyframes fc-spinner-sparkle {
+    0% {
+      rotate: 0deg;
+      scale: 0.7;
+    }
+
+    50% {
+      rotate: 45deg;
+      scale: 1;
+    }
+
+    100% {
+      rotate: 90deg;
+      scale: 0.7;
+    }
+  }
+
+  /* Reduced-motion replacement for anything that moves rather than turns. */
+  @keyframes fc-spinner-fade {
+    0%, 100% {
+      opacity: 0.35;
+    }
+
+    50% {
+      opacity: 1;
+    }
+  }
+
+  /* ---- Shimmering status text ------------------------------------------ */
+
+  /*
+   * Text that says "in progress" by shimmering: "Searching 12 sources",
+   * "Running tests". The gradient runs between two text tokens that both pass
+   * contrast on a surface, so the words are legible at every frame, not only at
+   * the bright one. The sweep follows the reading direction.
+   */
+  .fc-shimmer-text {
+    background-image: linear-gradient(
+      90deg,
+      var(--fc-color-text-muted) 0%,
+      var(--fc-color-text-muted) 35%,
+      var(--fc-color-text-default) 50%,
+      var(--fc-color-text-muted) 65%,
+      var(--fc-color-text-muted) 100%
+    );
+    background-size: 250% 100%;
+    background-clip: text;
+    color: transparent;
+    animation: fc-spinner-shimmer 2s linear infinite;
+  }
+
+  .fc-shimmer-text:dir(rtl) {
+    animation-direction: reverse;
+  }
+
+  @keyframes fc-spinner-shimmer {
+    from {
+      background-position: 100% 0;
+    }
+
+    to {
+      background-position: 0% 0;
+    }
+  }
+
+  /* ---- Reduced motion -------------------------------------------------- */
+
+  @media (prefers-reduced-motion: reduce) {
+    .fc-spinner {
+      --fc-spinner-slow: 3;
+    }
+
+    .fc-spinner--dots > *,
+    .fc-spinner--bars > * {
+      translate: none;
+      scale: none;
+      animation-name: fc-spinner-fade;
+    }
+
+    .fc-spinner--pulse {
+      scale: 0.5;
+      animation-name: fc-spinner-fade;
+    }
+
+    .fc-spinner--sparkle {
+      scale: 0.85;
+      animation-name: fc-spinner-fade;
+    }
+
+    /* Shimmer is emphasis on words that already say "working"; it stops. */
+    .fc-shimmer-text {
+      animation: none;
+      background-image: none;
+      color: var(--fc-color-text-muted);
+    }
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  /*
+   * Forced colours replace background colours, which would erase every drawing
+   * here except the ring. The spinners opt out of the adjustment and draw in
+   * CanvasText, so they stay visible -- and in the user's chosen colour.
+   */
+  @media (forced-colors: active) {
+    .fc-spinner {
+      forced-color-adjust: none;
+      color: CanvasText;
+    }
+
+    .fc-spinner--sparkle {
+      background-image: none;
+      background-color: CanvasText;
+    }
+
+    .fc-shimmer-text {
+      background-image: none;
+      color: CanvasText;
+      animation: none;
+    }
+  }
+}

@@ -872,3 +872,30 @@ for (const tag of document.querySelectorAll("button.fc-tag[aria-pressed]")) {
     tag.setAttribute("aria-pressed", String(tag.getAttribute("aria-pressed") !== "true"));
   });
 }
+
+// Agent steps: each click completes the live step and starts the next one. The
+// row's look follows data-fc-state alone -- the script never touches a class.
+const STEPS = ["Searching 12 sources", "Reading 4 pages", "Drafting the answer", "Checking citations"];
+let step = 0;
+let stepStarted = Date.now();
+const live = $("#demo-agent-live");
+const elapsed = live?.querySelector("[data-demo-elapsed]");
+setInterval(() => {
+  if (elapsed && live.dataset.fcState === "running") {
+    elapsed.textContent = `${Math.round((Date.now() - stepStarted) / 1000)}s`;
+  }
+}, 1000);
+$("#demo-agent-next")?.addEventListener("click", () => {
+  if (!live) return;
+  const done = live.cloneNode(true);
+  done.removeAttribute("id");
+  done.dataset.fcState = "complete";
+  // Only the live step is a live region; finished ones are history.
+  done.querySelector("[role='status']")?.removeAttribute("role");
+  done.querySelector("[data-demo-elapsed]")?.removeAttribute("data-demo-elapsed");
+  live.before(done);
+  step = (step + 1) % STEPS.length;
+  live.querySelector(".fc-agent-status__label").textContent = STEPS[step];
+  stepStarted = Date.now();
+  elapsed.textContent = "0s";
+});

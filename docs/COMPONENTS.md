@@ -938,13 +938,57 @@ alternative text, so they are not read. Long names truncate. The current page is
 `pagination.css`: links, not buttons, so every page has a URL. The disabled "Previous"
 is an anchor with no `href` and `aria-disabled`. Arrows are generated and mirror in RTL.
 
-## Spinner, skeleton, and progress (implemented)
+## Spinners (implemented)
 
-`loading.css`. `.fc-spinner` (inside a `role="status"` with a visually hidden label),
-`.fc-skeleton` (`--text`, `--circle`, `--block`; shimmer reverses in RTL), and
-`.fc-progress` on the native `<progress>`, with an indeterminate sweep. Under reduced
-motion the skeleton and sweep stop and the spinner slows to 2s; see TOKENS.md for why
-the spinner is excluded from the reset's reduced-motion block.
+`spinner.css`. One block, `.fc-spinner`, with a drawing chosen by what the work is:
+
+| Modifier | Drawing | Use it for |
+| --- | --- | --- |
+| (none) | ring with one solid quarter | generic loading: a page, a request, a save |
+| `--arc` | tapering conic arc | the same, softer |
+| `--dots` | three bouncing dots (3 child spans) | someone is composing a reply: the typing indicator |
+| `--pulse` | a dot with a ripple | something live and listening: a connected agent, a recording |
+| `--bars` | four bars (4 child spans) | a stream flowing: tokens arriving, audio playing |
+| `--orbit` | two satellites | background work with several parts: indexing, syncing |
+| `--sparkle` | a turning four-point star | a model is thinking |
+
+Sizes `--xs` to `--xl` (or set `--fc-spinner-size`); tones `--muted` and `--current`
+(inherit the text colour). Every drawing uses `currentColor`; the sparkle's gradient
+can be replaced with `--fc-spinner-fill`. A spinner is always `aria-hidden`, beside a
+`role="status"` text that says what is happening.
+
+**Reduced motion:** spinners never stop, because a frozen spinner reads as a hung page.
+Rotating ones slow to a third of their speed; dots, bars, pulse, and sparkle switch to an
+opacity-only fade. **Forced colours:** they opt out of the adjustment and draw in
+`CanvasText`, since forced colours would otherwise erase every drawing but the ring.
+
+`.fc-shimmer-text` is the companion for status words ("Searching 12 sources"): a sweep
+between two text tokens that both pass contrast, so it is legible at every frame.
+
+## Agent status (implemented)
+
+`agent-status.css`. The "what is the agent doing now" row: a spinner, a label, and an
+elapsed time, all driven by `data-fc-state`. While `pending`, `queued`, `running`, or
+`streaming`, the label shimmers and the spinner turns; on `complete`, `error`,
+`aborted`, or `denied` the spinner is hidden and a glyph states the outcome.
+
+```html
+<div class="fc-agent-status" data-fc-kind="agent-status" data-fc-state="running">
+  <span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"></span>
+  <span class="fc-agent-status__label" role="status">Searching 12 sources</span>
+  <span class="fc-agent-status__meta">14s</span>
+</div>
+```
+
+`role="status"` goes on the label, not the row: the timer changes every second and
+would be announced every second; the label changes at step boundaries.
+
+## Skeleton and progress (implemented)
+
+`loading.css`. `.fc-skeleton` (`--text`, `--circle`, `--block`; the shimmer reverses
+in RTL) and `.fc-progress` on the native `<progress>`, with an indeterminate sweep. Under
+reduced motion the shimmer and sweep stop, and the indeterminate bar becomes a static
+hatch that cannot be read as a percentage.
 
 ## Avatar, empty state, and disclosure (implemented)
 

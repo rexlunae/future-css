@@ -1,49 +1,18 @@
 /*!
- * future-css -- spinner, skeleton, and progress
+ * future-css -- skeleton and progress
  *
- * Three answers to "something is happening", in order of how much is known:
+ * Two answers to "something is happening" (the third, the spinner, has its
+ * own file -- spinner.css -- because it has a family of styles):
  *
- *   spinner    work is happening, extent unknown, nothing to show yet
  *   skeleton   content is coming, and its shape is known
  *   progress   work is happening, and how much is done is known
  *
- * None of them is announced by itself. A spinner sits inside a `role="status"`
- * element with a visually hidden label ("Loading results"); a skeleton's region
+ * Neither is announced by itself. A skeleton's region
  * carries `aria-busy="true"` until the content lands; progress is the native
  * `<progress>` element, which assistive technology already understands.
  */
 
 @layer fc.components {
-  /* ---- Spinner --------------------------------------------------------- */
-
-  .fc-spinner {
-    display: inline-block;
-    flex-shrink: 0;
-    inline-size: var(--fc-spinner-size, 1.25rem);
-    block-size: var(--fc-spinner-size, 1.25rem);
-    border: var(--fc-border-width-thick) solid color-mix(in oklch, currentColor 20%, transparent);
-    border-block-start-color: currentColor;
-    border-radius: var(--fc-radius-full);
-    color: var(--fc-color-accent-text);
-    animation: fc-loading-spin 0.7s linear infinite;
-    vertical-align: middle;
-  }
-
-  .fc-spinner--sm {
-    --fc-spinner-size: 1rem;
-  }
-
-  .fc-spinner--lg {
-    --fc-spinner-size: 2rem;
-    border-width: 0.1875rem;
-  }
-
-  @keyframes fc-loading-spin {
-    to {
-      rotate: 1turn;
-    }
-  }
-
   /* ---- Skeleton -------------------------------------------------------- */
 
   /*
@@ -182,17 +151,12 @@
   /* ---- Reduced motion -------------------------------------------------- */
 
   /*
-   * The spinner is the only cue that work is happening, so it slows rather than
-   * stops (the same reasoning as the button spinner). The shimmer and sweep are
-   * decoration on top of a shape that already says "loading", so they stop, and
+   * The shimmer and sweep are decoration on top of a shape that already says
+   * "loading", so they stop, and
    * the indeterminate bar becomes a static, full-width hatch that cannot be read
    * as a percentage.
    */
   @media (prefers-reduced-motion: reduce) {
-    .fc-spinner {
-      animation-duration: 2s;
-    }
-
     .fc-skeleton {
       animation: none;
       background-image: none;
@@ -212,11 +176,6 @@
   /* ---- Forced colors --------------------------------------------------- */
 
   @media (forced-colors: active) {
-    .fc-spinner {
-      border-color: GrayText;
-      border-block-start-color: CanvasText;
-    }
-
     .fc-skeleton {
       border: var(--fc-border-width-thin) dashed GrayText;
     }

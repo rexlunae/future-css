@@ -23,11 +23,11 @@ an opaque blob — it is readable CSS you can debug in devtools.
 architecture, the reset and base layers, the layout primitives, the linter, the
 accessibility contract, and an optional Rust/WASM layer.
 
-Thirty-two components have their CSS. The general set: button, form field and input
+Thirty-four components have their CSS. The general set: button, form field and input
 group, checkbox / radio / switch, card, badge and tag, alert, dialog and side sheet,
-popover and tooltip, toast, tabs, breadcrumb, pagination, spinner / skeleton /
-progress, avatar, empty state, and disclosure. The AI-chat set: chat surface, message
-actions, reasoning trace, citations and sources, suggested prompts, tool call / step
+popover and tooltip, toast, tabs, breadcrumb, pagination, spinners (ring, arc,
+typing dots, pulse, stream bars, orbit, sparkle), skeleton, progress, avatar, empty state, and disclosure. The AI-chat set: chat surface, message
+actions, agent status row, reasoning trace, citations and sources, suggested prompts, tool call / step
 trace, composer, context strip, select/listbox, code block, diff viewer, git surface,
 terminal, rich text editor, context menu, data grid, and embedded browser chrome.
 

@@ -68,6 +68,8 @@ const BUNDLE_ORDER: ReadonlyArray<readonly [source: string, publishedAs: string]
   ["components/tabs.css", "components/tabs.css"],
   ["components/breadcrumb.css", "components/breadcrumb.css"],
   ["components/pagination.css", "components/pagination.css"],
+  ["components/spinner.css", "components/spinner.css"],
+  ["components/agent-status.css", "components/agent-status.css"],
   ["components/loading.css", "components/loading.css"],
   ["components/avatar.css", "components/avatar.css"],
   ["components/empty-state.css", "components/empty-state.css"],

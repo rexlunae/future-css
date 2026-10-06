@@ -300,7 +300,8 @@ Easing is split by intent: `decelerate` for entering (motion settles into place)
 All durations collapse under `prefers-reduced-motion`, handled once in the reset layer.
 Spinners are the one exception, excluded from that block by name: the block is
 `!important` in the earliest layer, which no later layer can loosen, and a frozen spinner
-reads as a hung page. Each spinner slows itself to 2s instead.
+reads as a hung page. Each spinner slows itself instead: rotating ones to a third of
+their speed, bouncing and pulsing ones to an opacity-only fade.
 
 Stacking is a closed scale: `base, raised, sticky, dropdown, overlay, modal, popover,
 toast`. A new layer gets a named step and a review, not `z-index: 9999`.

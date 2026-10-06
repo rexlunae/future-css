@@ -135,6 +135,13 @@
   .fc-composer__attachment {
     display: inline-flex;
     align-items: center;
+    /*
+     * The name's 14rem cap plus the remove button is wider than a 320px
+     * composer, so the chip is also capped at its row; the name then truncates
+     * further instead of pushing the page sideways. Found by the fixture page.
+     */
+    max-inline-size: 100%;
+    min-inline-size: 0;
     gap: var(--fc-space-1);
     padding-block: var(--fc-space-1);
     padding-inline: var(--fc-space-2);

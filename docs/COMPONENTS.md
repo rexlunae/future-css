@@ -1206,7 +1206,10 @@ APG keyboard contract, `aria-activedescendant`, and browser tests for every key.
    keyboard interaction, the state announcements?
 3. **Define the state matrix.** Every state in the table above.
 4. **Implement the CSS** in `src/css/components/<name>.css`, inside `@layer fc.components`.
-5. **Add fixtures** -- default, every variant, every state, RTL, long text, empty, loading.
+5. **Add fixtures** -- default, every variant, every state, RTL, long text, empty, loading,
+   as a `data-fixture="<file name>"` section in `demo/fixtures.html`. `tests/bundle.test.ts`
+   fails until the section exists, and the browser suite loads the page at 320px in both
+   directions and schemes.
 6. **Add to `BUNDLE_ORDER`** in `src/build/build.ts`.
 7. **Run `npm run check`.** Lint and tests must pass.
 8. **Run the review checklist.** Accessibility and i18n gates.

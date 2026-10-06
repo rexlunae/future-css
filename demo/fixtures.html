@@ -1,0 +1,1498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>future-css &mdash; fixtures</title>
+<link rel="stylesheet" href="/dist/future-css.css">
+<link rel="stylesheet" href="/demo/fixtures.css">
+<!--
+  Applied before first paint, so a screenshot or a test never sees the page in
+  the wrong scheme or direction for a frame.
+-->
+<script>
+  (() => {
+    const q = new URLSearchParams(location.search);
+    const root = document.documentElement;
+    if (q.get("dir") === "rtl") root.dir = "rtl";
+    const theme = q.get("theme");
+    if (theme === "dark" || theme === "light") root.dataset.fcTheme = theme;
+  })();
+</script>
+</head>
+<body>
+
+<!--
+  Every component in every state the markup can express. Hover, active and
+  focus-visible are pseudo-classes and cannot be written into markup, so the
+  browser suite forces them on every control here and checks each one is drawn.
+
+  This page is a test. The browser suite loads it in both directions and both
+  schemes at 320px and fails on horizontal page overflow or a blank fixture, and
+  tests/bundle.test.ts fails if a component in the bundle has no fixture here.
+-->
+
+<header class="fx-head">
+  <h1 class="fx-head__title">future-css fixtures</h1>
+  <p class="fx-head__lede">Every component, every state. Load with <code>?dir=rtl</code> and
+    <code>?theme=dark</code> for the other direction and scheme.</p>
+  <nav class="fx-head__modes" aria-label="Direction and scheme">
+    <a class="fc-btn fc-btn--secondary fc-btn--sm" href="?dir=ltr&amp;theme=light">LTR, light</a>
+    <a class="fc-btn fc-btn--secondary fc-btn--sm" href="?dir=rtl&amp;theme=light">RTL, light</a>
+    <a class="fc-btn fc-btn--secondary fc-btn--sm" href="?dir=ltr&amp;theme=dark">LTR, dark</a>
+    <a class="fc-btn fc-btn--secondary fc-btn--sm" href="?dir=rtl&amp;theme=dark">RTL, dark</a>
+  </nav>
+</header>
+
+<main class="fx-main">
+
+  <section class="fx" id="fx-button" data-fixture="button" aria-labelledby="fx-button-h">
+    <h2 class="fx__title" id="fx-button-h">Button <code class="fx__file">button.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="rest, every variant">
+        <figcaption class="fx__caption">rest, every variant</figcaption>
+        <div class="fx__body">
+          <button type="button" class="fc-btn fc-btn--primary">primary</button> <button type="button" class="fc-btn fc-btn--secondary">secondary</button> <button type="button" class="fc-btn fc-btn--ghost">ghost</button> <button type="button" class="fc-btn fc-btn--subtle">subtle</button> <button type="button" class="fc-btn fc-btn--danger">danger</button>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="sizes">
+        <figcaption class="fx__caption">sizes</figcaption>
+        <div class="fx__body">
+          <button type="button" class="fc-btn fc-btn--primary fc-btn--sm">Small</button> <button type="button" class="fc-btn fc-btn--primary">Default</button> <button type="button" class="fc-btn fc-btn--primary fc-btn--lg">Large</button> <button type="button" class="fc-btn fc-btn--secondary fc-btn--icon" aria-label="Refresh">&#8635;</button>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="disabled">
+        <figcaption class="fx__caption">disabled</figcaption>
+        <div class="fx__body">
+          <button type="button" class="fc-btn fc-btn--primary" disabled>primary</button> <button type="button" class="fc-btn fc-btn--secondary" disabled>secondary</button> <button type="button" class="fc-btn fc-btn--ghost" disabled>ghost</button> <button type="button" class="fc-btn fc-btn--subtle" disabled>subtle</button> <button type="button" class="fc-btn fc-btn--danger" disabled>danger</button>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="aria-disabled">
+        <figcaption class="fx__caption">aria-disabled</figcaption>
+        <div class="fx__body">
+          <button type="button" class="fc-btn fc-btn--primary" aria-disabled="true">primary</button> <button type="button" class="fc-btn fc-btn--secondary" aria-disabled="true">secondary</button> <button type="button" class="fc-btn fc-btn--danger" aria-disabled="true">danger</button>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="busy">
+        <figcaption class="fx__caption">busy</figcaption>
+        <div class="fx__body">
+          <button type="button" class="fc-btn fc-btn--primary" aria-busy="true"><span class="fc-btn__spinner" aria-hidden="true"></span><span>Saving&hellip;</span></button> <button type="button" class="fc-btn fc-btn--secondary" aria-busy="true"><span class="fc-btn__spinner" aria-hidden="true"></span><span>Loading</span></button>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="block">
+        <figcaption class="fx__caption">block</figcaption>
+        <div class="fx__body">
+          <button type="button" class="fc-btn fc-btn--primary fc-btn--block">Full width</button>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-field" data-fixture="field" aria-labelledby="fx-field-h">
+    <h2 class="fx__title" id="fx-field-h">Form field and input group <code class="fx__file">field.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="rest, hint, optional">
+        <figcaption class="fx__caption">rest, hint, optional</figcaption>
+        <div class="fx__body">
+          <div class="fc-field">
+            <label class="fc-field__label" for="fx-in-1">Display name<span class="fc-field__optional">(optional)</span></label>
+            <p class="fc-field__hint" id="fx-in-1-hint">Shown on your messages.</p>
+            <input class="fc-input" id="fx-in-1" aria-describedby="fx-in-1-hint" value="Ada">
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="required, placeholder">
+        <figcaption class="fx__caption">required, placeholder</figcaption>
+        <div class="fx__body">
+          <div class="fc-field">
+            <label class="fc-field__label" for="fx-in-2">Email<span class="fc-field__required" aria-hidden="true">*</span></label>
+            <input class="fc-input" id="fx-in-2" type="email" required placeholder="ada@example.com">
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="invalid">
+        <figcaption class="fx__caption">invalid</figcaption>
+        <div class="fx__body">
+          <div class="fc-field">
+            <label class="fc-field__label" for="fx-in-3">Email</label>
+            <input class="fc-input" id="fx-in-3" type="email" aria-invalid="true" aria-describedby="fx-in-3-err" value="ada@">
+            <p class="fc-field__error" id="fx-in-3-err">Enter an email address, like ada@example.com</p>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="disabled and read-only">
+        <figcaption class="fx__caption">disabled and read-only</figcaption>
+        <div class="fx__body">
+          <div class="fc-field">
+            <label class="fc-field__label" for="fx-in-4">Workspace id</label>
+            <input class="fc-input" id="fx-in-4" disabled value="ws_01H8">
+          </div>
+          <div class="fc-field">
+            <label class="fc-field__label" for="fx-in-5">Plan</label>
+            <input class="fc-input" id="fx-in-5" readonly value="Team">
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="sizes, select, textarea">
+        <figcaption class="fx__caption">sizes, select, textarea</figcaption>
+        <div class="fx__body">
+          <input class="fc-input fc-input--sm" aria-label="Small input" value="Small">
+          <input class="fc-input fc-input--lg" aria-label="Large input" value="Large">
+          <select class="fc-input" aria-label="Model"><option>Balanced</option><option>Fast</option></select>
+          <select class="fc-input" aria-label="Disabled select" disabled><option>Unavailable</option></select>
+          <textarea class="fc-input fc-input--autosize" aria-label="System prompt">Grows as you type.</textarea>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="input group">
+        <figcaption class="fx__caption">input group</figcaption>
+        <div class="fx__body">
+          <div class="fc-input-group">
+            <span class="fc-input-group__addon" aria-hidden="true">$</span>
+            <input class="fc-input-group__control" aria-label="Budget" inputmode="decimal" value="40">
+            <span class="fc-input-group__addon">USD</span>
+          </div>
+          <div class="fc-input-group">
+            <span class="fc-input-group__addon">https://</span>
+            <input class="fc-input-group__control" aria-label="Domain" aria-invalid="true" value="exa mple.com">
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state fx__state--wide" data-fx-state="error summary">
+        <figcaption class="fx__caption">error summary</figcaption>
+        <div class="fx__body">
+          <div class="fc-error-summary" tabindex="-1">
+            <h3 class="fc-error-summary__title">There is a problem</h3>
+            <ul class="fc-error-summary__list">
+              <li><a class="fc-error-summary__link" href="#fx-in-3">Enter an email address</a></li>
+            </ul>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-check" data-fixture="check" aria-labelledby="fx-check-h">
+    <h2 class="fx__title" id="fx-check-h">Checkbox, radio and switch <code class="fx__file">check.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="checkbox">
+        <figcaption class="fx__caption">checkbox</figcaption>
+        <div class="fx__body">
+          <fieldset class="fc-check-group">
+            <legend class="fc-check-group__legend">Notify me</legend>
+            <label class="fc-check"><input class="fc-check__input" type="checkbox"><span class="fc-check__label">Unchecked</span></label>
+            <label class="fc-check"><input class="fc-check__input" type="checkbox" checked><span class="fc-check__label">Checked</span></label>
+            <label class="fc-check"><input class="fc-check__input fx-indeterminate" type="checkbox"><span class="fc-check__label">Indeterminate</span></label>
+            <label class="fc-check"><input class="fc-check__input" type="checkbox" disabled><span class="fc-check__label">Disabled</span></label>
+            <label class="fc-check"><input class="fc-check__input" type="checkbox" checked disabled><span class="fc-check__label">Checked, disabled</span></label>
+            <label class="fc-check"><input class="fc-check__input" type="checkbox" aria-invalid="true"><span class="fc-check__label">Invalid</span><span class="fc-check__hint">You must accept the terms.</span></label>
+          </fieldset>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="radio, inline">
+        <figcaption class="fx__caption">radio, inline</figcaption>
+        <div class="fx__body">
+          <fieldset class="fc-check-group fc-check-group--inline">
+            <legend class="fc-check-group__legend">Density</legend>
+            <label class="fc-check"><input class="fc-check__input" type="radio" name="fx-density" checked><span class="fc-check__label">Comfortable</span></label>
+            <label class="fc-check"><input class="fc-check__input" type="radio" name="fx-density"><span class="fc-check__label">Compact</span></label>
+            <label class="fc-check"><input class="fc-check__input" type="radio" name="fx-density" disabled><span class="fc-check__label">Dense</span></label>
+          </fieldset>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="switch">
+        <figcaption class="fx__caption">switch</figcaption>
+        <div class="fx__body">
+          <input class="fc-switch fc-switch--sm" type="checkbox" role="switch" aria-label="Small, off">
+          <input class="fc-switch" type="checkbox" role="switch" aria-label="On" checked>
+          <input class="fc-switch fc-switch--lg" type="checkbox" role="switch" aria-label="Large, on" checked>
+          <input class="fc-switch" type="checkbox" role="switch" aria-label="Disabled" disabled>
+          <input class="fc-switch" type="checkbox" role="switch" aria-label="Disabled, on" disabled checked>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="switch row">
+        <figcaption class="fx__caption">switch row</figcaption>
+        <div class="fx__body">
+          <label class="fc-switch-row">
+            <span class="fc-switch-row__text">
+              <span class="fc-switch-row__label">Show reasoning by default</span>
+              <span class="fc-switch-row__hint">Expands the thinking trace on every answer.</span>
+            </span>
+            <input class="fc-switch" type="checkbox" role="switch" checked>
+          </label>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-card" data-fixture="card" aria-labelledby="fx-card-h">
+    <h2 class="fx__title" id="fx-card-h">Card <code class="fx__file">card.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="default, link card">
+        <figcaption class="fx__caption">default, link card</figcaption>
+        <div class="fx__body">
+          <article class="fc-card">
+            <div class="fc-card__header"><div class="fc-card__heading">
+              <h3 class="fc-card__title"><a class="fc-card__link" href="#fx-card">Research agent</a></h3>
+              <p class="fc-card__subtitle">Reads the web, cites sources</p>
+            </div></div>
+            <div class="fc-card__body"><p>The whole card is clickable; only the title is the link.</p></div>
+            <div class="fc-card__footer fc-card__footer--divided"><span class="fc-badge fc-badge--success">Ready</span></div>
+          </article>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="elevated, subtle">
+        <figcaption class="fx__caption">elevated, subtle</figcaption>
+        <div class="fx__body">
+          <article class="fc-card fc-card--elevated"><div class="fc-card__body"><p>Elevated.</p></div></article>
+          <article class="fc-card fc-card--subtle"><div class="fc-card__body"><p>Subtle.</p></div></article>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="selectable: checked, unchecked, disabled">
+        <figcaption class="fx__caption">selectable: checked, unchecked, disabled</figcaption>
+        <div class="fx__body">
+          <label class="fc-card"><div class="fc-card__header"><div class="fc-card__heading"><span class="fc-card__title">Team plan</span></div><input type="radio" name="fx-plan" class="fc-check__input" checked></div></label>
+          <label class="fc-card"><div class="fc-card__header"><div class="fc-card__heading"><span class="fc-card__title">Personal plan</span></div><input type="radio" name="fx-plan" class="fc-check__input"></div></label>
+          <label class="fc-card"><div class="fc-card__header"><div class="fc-card__heading"><span class="fc-card__title">Enterprise</span><span class="fc-card__subtitle">Contact sales</span></div><input type="radio" name="fx-plan" class="fc-check__input" disabled></div></label>
+        </div>
+      </figure>
+      <figure class="fx__state fx__state--wide" data-fx-state="with media (container query)">
+        <figcaption class="fx__caption">with media (container query)</figcaption>
+        <div class="fx__body">
+          <article class="fc-card">
+            <div class="fc-card__layout">
+              <div class="fc-card__media fx-media" aria-hidden="true"></div>
+              <div><div class="fc-card__header"><div class="fc-card__heading"><h3 class="fc-card__title">Container-aware</h3></div></div>
+              <div class="fc-card__body"><p>Media sits beside the text when the card is wide.</p></div></div>
+            </div>
+          </article>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-badge" data-fixture="badge" aria-labelledby="fx-badge-h">
+    <h2 class="fx__title" id="fx-badge-h">Badge, tag and kbd <code class="fx__file">badge.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="badges">
+        <figcaption class="fx__caption">badges</figcaption>
+        <div class="fx__body">
+          <span class="fc-badge">Draft</span> <span class="fc-badge fc-badge--accent">Beta</span>
+          <span class="fc-badge fc-badge--success"><span class="fc-badge__dot" aria-hidden="true"></span>Passing</span>
+          <span class="fc-badge fc-badge--warning">Rate limited</span> <span class="fc-badge fc-badge--danger">Failed</span>
+          <span class="fc-badge fc-badge--info">Info</span>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="solid, outline, square, count">
+        <figcaption class="fx__caption">solid, outline, square, count</figcaption>
+        <div class="fx__body">
+          <span class="fc-badge fc-badge--solid fc-badge--accent">Solid</span>
+          <span class="fc-badge fc-badge--solid fc-badge--danger">Solid danger</span>
+          <span class="fc-badge fc-badge--outline fc-badge--info">Outline</span>
+          <span class="fc-badge fc-badge--square">Square</span>
+          <span class="fc-badge fc-badge--solid fc-badge--count" aria-label="3 unread">3</span>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="tags: pressed, unpressed, disabled, removable">
+        <figcaption class="fx__caption">tags: pressed, unpressed, disabled, removable</figcaption>
+        <div class="fx__body">
+          <button type="button" class="fc-tag" aria-pressed="true">TypeScript</button>
+          <button type="button" class="fc-tag" aria-pressed="false">Rust</button>
+          <button type="button" class="fc-tag" aria-pressed="false" disabled>Go</button>
+          <button type="button" class="fc-tag" aria-pressed="false" aria-disabled="true">Zig</button>
+          <span class="fc-tag"><span class="fc-tag__label">reviewer: ada</span><button type="button" class="fc-tag__remove" aria-label="Remove reviewer: ada">&#215;</button></span>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="kbd">
+        <figcaption class="fx__caption">kbd</figcaption>
+        <div class="fx__body">
+          <span>Press <kbd class="fc-kbd">Ctrl</kbd> <kbd class="fc-kbd">Enter</kbd> to send</span>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-alert" data-fixture="alert" aria-labelledby="fx-alert-h">
+    <h2 class="fx__title" id="fx-alert-h">Alert <code class="fx__file">alert.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="info">
+        <figcaption class="fx__caption">info</figcaption>
+        <div class="fx__body">
+          <div class="fc-alert fc-alert--info">
+            <span class="fc-alert__icon" aria-hidden="true">i</span>
+            <div class="fc-alert__content"><p class="fc-alert__title">New models available</p><p class="fc-alert__body">Pick one from the context strip.</p></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="success">
+        <figcaption class="fx__caption">success</figcaption>
+        <div class="fx__body">
+          <div class="fc-alert fc-alert--success">
+            <span class="fc-alert__icon" aria-hidden="true">&#10003;</span>
+            <div class="fc-alert__content"><p class="fc-alert__body">Settings saved.</p></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="warning, with actions and dismiss">
+        <figcaption class="fx__caption">warning, with actions and dismiss</figcaption>
+        <div class="fx__body">
+          <div class="fc-alert fc-alert--warning" role="status">
+            <span class="fc-alert__icon" aria-hidden="true">!</span>
+            <div class="fc-alert__content">
+              <p class="fc-alert__title">Context window 92% full</p>
+              <p class="fc-alert__body">Older messages will be summarised on the next turn.</p>
+              <div class="fc-alert__actions"><button type="button" class="fc-btn fc-btn--secondary fc-btn--sm">Start a new chat</button></div>
+            </div>
+            <button type="button" class="fc-alert__dismiss" aria-label="Dismiss warning">&#10005;</button>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="danger">
+        <figcaption class="fx__caption">danger</figcaption>
+        <div class="fx__body">
+          <div class="fc-alert fc-alert--danger">
+            <span class="fc-alert__icon" aria-hidden="true">&#10005;</span>
+            <div class="fc-alert__content"><p class="fc-alert__title">The tool call failed</p><p class="fc-alert__body">The sandbox ran out of memory after 41s.</p></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state fx__state--wide" data-fx-state="banner">
+        <figcaption class="fx__caption">banner</figcaption>
+        <div class="fx__body">
+          <div class="fc-alert fc-alert--info fc-alert--banner">
+            <span class="fc-alert__icon" aria-hidden="true">i</span>
+            <div class="fc-alert__content"><p class="fc-alert__body">Scheduled maintenance tonight at 22:00 UTC.</p></div>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-dialog" data-fixture="dialog" aria-labelledby="fx-dialog-h">
+    <h2 class="fx__title" id="fx-dialog-h">Dialog and sheet <code class="fx__file">dialog.css</code></h2>
+    <p class="fx__note">The fixture opens dialogs with the <code>open</code> attribute inside a containing box. In an app they open with <code>showModal()</code> in the top layer.</p>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="open (non-modal, contained for the fixture)">
+        <figcaption class="fx__caption">open (non-modal, contained for the fixture)</figcaption>
+        <div class="fx__body">
+          <div class="fx-overlay">
+            <dialog class="fc-dialog fc-dialog--sm" open aria-labelledby="fx-dlg-t">
+              <header class="fc-dialog__header"><h3 class="fc-dialog__title" id="fx-dlg-t">Delete this chat?</h3>
+                <button type="button" class="fc-dialog__close" aria-label="Close">&#10005;</button></header>
+              <div class="fc-dialog__body"><p class="fc-dialog__description">This cannot be undone.</p></div>
+              <footer class="fc-dialog__footer"><button type="button" class="fc-btn fc-btn--secondary">Cancel</button><button type="button" class="fc-btn fc-btn--danger">Delete</button></footer>
+            </dialog>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="sheet">
+        <figcaption class="fx__caption">sheet</figcaption>
+        <div class="fx__body">
+          <div class="fx-overlay">
+            <dialog class="fc-dialog fc-dialog--sheet" open aria-labelledby="fx-sheet-t">
+              <header class="fc-dialog__header"><h3 class="fc-dialog__title" id="fx-sheet-t">Run inspector</h3>
+                <button type="button" class="fc-dialog__close" aria-label="Close run inspector">&#10005;</button></header>
+              <div class="fc-dialog__body"><p>Docks to the inline end.</p></div>
+            </dialog>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-popover" data-fixture="popover" aria-labelledby="fx-popover-h">
+    <h2 class="fx__title" id="fx-popover-h">Popover and tooltip <code class="fx__file">popover.css</code></h2>
+    <p class="fx__note">Tooltips show on hover and keyboard focus; hover or Tab to them.</p>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="popover content (shown statically)">
+        <figcaption class="fx__caption">popover content (shown statically)</figcaption>
+        <div class="fx__body">
+          <div class="fc-popover fx-popover-static">
+            <p class="fc-popover__title">Sampling</p>
+            <p>Temperature 0.7</p>
+            <div class="fc-popover__footer"><button type="button" class="fc-btn fc-btn--primary fc-btn--sm">Done</button></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="tooltip: above, below, dismissed">
+        <figcaption class="fx__caption">tooltip: above, below, dismissed</figcaption>
+        <div class="fx__body">
+          <span class="fc-tooltip"><button type="button" class="fc-btn fc-btn--ghost fc-btn--icon" aria-label="Copy" aria-describedby="fx-tip-1">&#10697;</button><span class="fc-tooltip__bubble" role="tooltip" id="fx-tip-1">Copy to clipboard</span></span>
+          <span class="fc-tooltip"><button type="button" class="fc-btn fc-btn--ghost fc-btn--icon" aria-label="Share" aria-describedby="fx-tip-2">&#8599;</button><span class="fc-tooltip__bubble fc-tooltip__bubble--below" role="tooltip" id="fx-tip-2">Share link</span></span>
+          <span class="fc-tooltip" data-fc-dismissed="true"><button type="button" class="fc-btn fc-btn--ghost fc-btn--icon" aria-label="Pin" aria-describedby="fx-tip-3">&#9733;</button><span class="fc-tooltip__bubble" role="tooltip" id="fx-tip-3">Pin chat</span></span>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-toast" data-fixture="toast" aria-labelledby="fx-toast-h">
+    <h2 class="fx__title" id="fx-toast-h">Toast <code class="fx__file">toast.css</code></h2>
+    <p class="fx__note">Toasts are shown in a plain list here; in an app the toaster region is fixed to a corner.</p>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="every tone">
+        <figcaption class="fx__caption">every tone</figcaption>
+        <div class="fx__body">
+          <ol class="fc-toaster__list">
+          <li class="fc-toast fc-toast--info" data-fc-kind="toast">
+            <span class="fc-toast__icon" aria-hidden="true">i</span>
+            <div class="fc-toast__content"><p class="fc-toast__title">Indexing</p><p class="fc-toast__body">Finished 412 files.</p></div>
+            <button type="button" class="fc-toast__close" aria-label="Dismiss: Indexing">&#10005;</button>
+          </li>
+          <li class="fc-toast fc-toast--success" data-fc-kind="toast">
+            <span class="fc-toast__icon" aria-hidden="true">&#10003;</span>
+            <div class="fc-toast__content"><p class="fc-toast__title">Saved</p><p class="fc-toast__body">Settings saved.</p></div>
+            <button type="button" class="fc-toast__close" aria-label="Dismiss: Saved">&#10005;</button>
+          </li>
+          <li class="fc-toast fc-toast--warning" data-fc-kind="toast">
+            <span class="fc-toast__icon" aria-hidden="true">!</span>
+            <div class="fc-toast__content"><p class="fc-toast__title">Rate limited</p><p class="fc-toast__body">Retrying in 30s.</p></div>
+            <button type="button" class="fc-toast__close" aria-label="Dismiss: Rate limited">&#10005;</button>
+          </li>
+          <li class="fc-toast fc-toast--danger" data-fc-kind="toast">
+            <span class="fc-toast__icon" aria-hidden="true">&#10005;</span>
+            <div class="fc-toast__content"><p class="fc-toast__title">Upload failed</p><p class="fc-toast__body">The file is over 25 MB.</p></div>
+            <button type="button" class="fc-toast__close" aria-label="Dismiss: Upload failed">&#10005;</button>
+          </li>
+          </ol>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="with action">
+        <figcaption class="fx__caption">with action</figcaption>
+        <div class="fx__body">
+          <ol class="fc-toaster__list">
+          <li class="fc-toast fc-toast--info" data-fc-kind="toast">
+            <span class="fc-toast__icon" aria-hidden="true">i</span>
+            <div class="fc-toast__content"><p class="fc-toast__title">Chat archived</p><p class="fc-toast__body">Moved to the archive.</p></div>
+            <button type="button" class="fc-toast__action">Undo</button><button type="button" class="fc-toast__close" aria-label="Dismiss: Chat archived">&#10005;</button>
+          </li>
+          </ol>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-tabs" data-fixture="tabs" aria-labelledby="fx-tabs-h">
+    <h2 class="fx__title" id="fx-tabs-h">Tabs <code class="fx__file">tabs.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="selected, count, aria-disabled">
+        <figcaption class="fx__caption">selected, count, aria-disabled</figcaption>
+        <div class="fx__body">
+          <div class="fc-tabs">
+            <div class="fc-tabs__list" role="tablist" aria-label="Answer view">
+              <button type="button" class="fc-tabs__tab" role="tab" aria-selected="true">Preview</button>
+              <button type="button" class="fc-tabs__tab" role="tab" aria-selected="false" tabindex="-1">Problems <span class="fc-tabs__count">2</span></button>
+              <button type="button" class="fc-tabs__tab" role="tab" aria-selected="false" aria-disabled="true" tabindex="-1">Deploy</button>
+            </div>
+            <div class="fc-tabs__panel" role="tabpanel" tabindex="0">The rendered answer.</div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="segmented">
+        <figcaption class="fx__caption">segmented</figcaption>
+        <div class="fx__body">
+          <div class="fc-tabs">
+            <div class="fc-tabs__list fc-tabs__list--segmented" role="tablist" aria-label="Range">
+              <button type="button" class="fc-tabs__tab" role="tab" aria-selected="true">Preview</button>
+              <button type="button" class="fc-tabs__tab" role="tab" aria-selected="false" tabindex="-1">Problems <span class="fc-tabs__count">2</span></button>
+              <button type="button" class="fc-tabs__tab" role="tab" aria-selected="false" aria-disabled="true" tabindex="-1">Deploy</button>
+            </div>
+            <div class="fc-tabs__panel" role="tabpanel" tabindex="0">The rendered answer.</div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="vertical">
+        <figcaption class="fx__caption">vertical</figcaption>
+        <div class="fx__body">
+          <div class="fc-tabs">
+            <div class="fc-tabs__list" role="tablist" aria-label="Settings" aria-orientation="vertical">
+              <button type="button" class="fc-tabs__tab" role="tab" aria-selected="true">Preview</button>
+              <button type="button" class="fc-tabs__tab" role="tab" aria-selected="false" tabindex="-1">Problems <span class="fc-tabs__count">2</span></button>
+              <button type="button" class="fc-tabs__tab" role="tab" aria-selected="false" aria-disabled="true" tabindex="-1">Deploy</button>
+            </div>
+            <div class="fc-tabs__panel" role="tabpanel" tabindex="0">The rendered answer.</div>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-breadcrumb" data-fixture="breadcrumb" aria-labelledby="fx-breadcrumb-h">
+    <h2 class="fx__title" id="fx-breadcrumb-h">Breadcrumb <code class="fx__file">breadcrumb.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state fx__state--wide" data-fx-state="links and current page">
+        <figcaption class="fx__caption">links and current page</figcaption>
+        <div class="fx__body">
+          <nav class="fc-breadcrumb" aria-label="Breadcrumb"><ol class="fc-breadcrumb__list">
+            <li class="fc-breadcrumb__item"><a class="fc-breadcrumb__link" href="#fx-breadcrumb">Projects</a></li>
+            <li class="fc-breadcrumb__item"><a class="fc-breadcrumb__link" href="#fx-breadcrumb">A project name long enough to truncate somewhere</a></li>
+            <li class="fc-breadcrumb__item"><a class="fc-breadcrumb__link" aria-current="page">Settings</a></li>
+          </ol></nav>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-pagination" data-fixture="pagination" aria-labelledby="fx-pagination-h">
+    <h2 class="fx__title" id="fx-pagination-h">Pagination <code class="fx__file">pagination.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="first page: previous disabled">
+        <figcaption class="fx__caption">first page: previous disabled</figcaption>
+        <div class="fx__body">
+          <nav class="fc-pagination" aria-label="Pagination, first page"><ul class="fc-pagination__list">
+            <li><a class="fc-pagination__link fc-pagination__link--prev" aria-disabled="true">Previous</a></li>
+            <li><a class="fc-pagination__link" href="#fx-pagination" aria-current="page">1</a></li>
+            <li><a class="fc-pagination__link" href="#fx-pagination">2</a></li>
+            <li><span class="fc-pagination__gap" aria-hidden="true">&hellip;</span></li>
+            <li><a class="fc-pagination__link" href="#fx-pagination">12</a></li>
+            <li><a class="fc-pagination__link fc-pagination__link--next" href="#fx-pagination">Next</a></li>
+          </ul></nav>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="last page: next disabled">
+        <figcaption class="fx__caption">last page: next disabled</figcaption>
+        <div class="fx__body">
+          <nav class="fc-pagination" aria-label="Pagination, last page"><ul class="fc-pagination__list">
+            <li><a class="fc-pagination__link fc-pagination__link--prev" href="#fx-pagination">Previous</a></li>
+            <li><a class="fc-pagination__link" href="#fx-pagination">11</a></li>
+            <li><a class="fc-pagination__link" href="#fx-pagination" aria-current="page">12</a></li>
+            <li><a class="fc-pagination__link fc-pagination__link--next" aria-disabled="true">Next</a></li>
+          </ul></nav>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-nav" data-fixture="nav" aria-labelledby="fx-nav-h">
+    <h2 class="fx__title" id="fx-nav-h">Navigation sidebar <code class="fx__file">nav.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="expanded">
+        <figcaption class="fx__caption">expanded</figcaption>
+        <div class="fx__body">
+          <nav class="fc-nav fx-nav" id="fx-nav-open" aria-label="Workspace, expanded">
+            <div class="fc-nav__header"><span class="fc-nav__title">Workspace</span>
+              <button class="fc-nav__toggle" type="button" aria-label="Sidebar" aria-expanded="true" aria-controls="fx-nav-open"></button></div>
+            <p class="fc-nav__heading">Chats</p>
+            <ul class="fc-nav__list">
+              <li><a class="fc-nav__link" href="#fx-nav" aria-current="page"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 4h14v9H8l-4 3v-3H3z"/></svg><span class="fc-nav__label">Current page</span><span class="fc-nav__meta">3</span></a></li>
+              <li><a class="fc-nav__link" href="#fx-nav" aria-current="true"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 4h14v9H8l-4 3v-3H3z"/></svg><span class="fc-nav__label">Section of the current page</span></a>
+                <ul class="fc-nav__list fc-nav__list--nested"><li><a class="fc-nav__link" href="#fx-nav"><span class="fc-nav__label">Nested</span></a></li></ul></li>
+              <li><a class="fc-nav__link" href="#fx-nav"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 4h14v9H8l-4 3v-3H3z"/></svg><span class="fc-nav__label">Rest</span></a></li>
+              <li><a class="fc-nav__link" aria-disabled="true"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 4h14v9H8l-4 3v-3H3z"/></svg><span class="fc-nav__label">Disabled</span></a></li>
+            </ul>
+            <details class="fc-nav__group" open><summary class="fc-nav__group-label">Open group</summary>
+              <ul class="fc-nav__list"><li><a class="fc-nav__link" href="#fx-nav"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 4h14v9H8l-4 3v-3H3z"/></svg><span class="fc-nav__label">Release notes</span></a></li></ul></details>
+            <details class="fc-nav__group"><summary class="fc-nav__group-label">Closed group</summary>
+              <ul class="fc-nav__list"><li><a class="fc-nav__link" href="#fx-nav"><span class="fc-nav__label">Hidden</span></a></li></ul></details>
+            <div class="fc-nav__footer"><ul class="fc-nav__list"><li><a class="fc-nav__link" href="#fx-nav"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 4h14v9H8l-4 3v-3H3z"/></svg><span class="fc-nav__label">Settings</span></a></li></ul></div>
+          </nav>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="rail">
+        <figcaption class="fx__caption">rail</figcaption>
+        <div class="fx__body">
+          <nav class="fc-nav fx-nav" id="fx-nav-rail" aria-label="Workspace, rail">
+            <div class="fc-nav__header"><span class="fc-nav__title">Workspace</span>
+              <button class="fc-nav__toggle" type="button" aria-label="Sidebar" aria-expanded="false" aria-controls="fx-nav-rail"></button></div>
+            <p class="fc-nav__heading">Chats</p>
+            <ul class="fc-nav__list">
+              <li><a class="fc-nav__link" href="#fx-nav" aria-current="page"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 4h14v9H8l-4 3v-3H3z"/></svg><span class="fc-nav__label">Current page</span><span class="fc-nav__meta">3</span></a></li>
+              <li><a class="fc-nav__link" href="#fx-nav" aria-current="true"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 4h14v9H8l-4 3v-3H3z"/></svg><span class="fc-nav__label">Section of the current page</span></a>
+                <ul class="fc-nav__list fc-nav__list--nested"><li><a class="fc-nav__link" href="#fx-nav"><span class="fc-nav__label">Nested</span></a></li></ul></li>
+              <li><a class="fc-nav__link" href="#fx-nav"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 4h14v9H8l-4 3v-3H3z"/></svg><span class="fc-nav__label">Rest</span></a></li>
+              <li><a class="fc-nav__link" aria-disabled="true"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 4h14v9H8l-4 3v-3H3z"/></svg><span class="fc-nav__label">Disabled</span></a></li>
+            </ul>
+            <details class="fc-nav__group" open><summary class="fc-nav__group-label">Open group</summary>
+              <ul class="fc-nav__list"><li><a class="fc-nav__link" href="#fx-nav"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 4h14v9H8l-4 3v-3H3z"/></svg><span class="fc-nav__label">Release notes</span></a></li></ul></details>
+            <details class="fc-nav__group"><summary class="fc-nav__group-label">Closed group</summary>
+              <ul class="fc-nav__list"><li><a class="fc-nav__link" href="#fx-nav"><span class="fc-nav__label">Hidden</span></a></li></ul></details>
+            <div class="fc-nav__footer"><ul class="fc-nav__list"><li><a class="fc-nav__link" href="#fx-nav"><svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 4h14v9H8l-4 3v-3H3z"/></svg><span class="fc-nav__label">Settings</span></a></li></ul></div>
+          </nav>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-spinner" data-fixture="spinner" aria-labelledby="fx-spinner-h">
+    <h2 class="fx__title" id="fx-spinner-h">Spinners <code class="fx__file">spinner.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="every drawing">
+        <figcaption class="fx__caption">every drawing</figcaption>
+        <div class="fx__body">
+          <span class="fc-spinner" aria-hidden="true"></span>
+          <span class="fc-spinner fc-spinner--arc" aria-hidden="true"></span>
+          <span class="fc-spinner fc-spinner--dots" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span class="fc-spinner fc-spinner--pulse" aria-hidden="true"></span>
+          <span class="fc-spinner fc-spinner--bars" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+          <span class="fc-spinner fc-spinner--orbit" aria-hidden="true"></span>
+          <span class="fc-spinner fc-spinner--sparkle" aria-hidden="true"></span>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="sizes and tones">
+        <figcaption class="fx__caption">sizes and tones</figcaption>
+        <div class="fx__body">
+          <span class="fc-spinner fc-spinner--xs" aria-hidden="true"></span>
+          <span class="fc-spinner fc-spinner--sm" aria-hidden="true"></span>
+          <span class="fc-spinner fc-spinner--lg" aria-hidden="true"></span>
+          <span class="fc-spinner fc-spinner--xl fc-spinner--muted" aria-hidden="true"></span>
+          <span class="fc-u-text-muted">inline <span class="fc-spinner fc-spinner--xs fc-spinner--current" aria-hidden="true"></span> current colour</span>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="shimmer text">
+        <figcaption class="fx__caption">shimmer text</figcaption>
+        <div class="fx__body">
+          <span class="fc-shimmer-text">Running tests</span>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-agent-status" data-fixture="agent-status" aria-labelledby="fx-agent-status-h">
+    <h2 class="fx__title" id="fx-agent-status-h">Agent status <code class="fx__file">agent-status.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="pending">
+        <figcaption class="fx__caption">pending</figcaption>
+        <div class="fx__body">
+          <div class="fc-agent-status" data-fc-kind="agent-status" data-fc-state="pending">
+            <span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"></span>
+            <span class="fc-agent-status__label" role="status">Pending step</span><span class="fc-agent-status__meta">4s</span>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="queued">
+        <figcaption class="fx__caption">queued</figcaption>
+        <div class="fx__body">
+          <div class="fc-agent-status" data-fc-kind="agent-status" data-fc-state="queued">
+            <span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"></span>
+            <span class="fc-agent-status__label" role="status">Queued step</span><span class="fc-agent-status__meta">4s</span>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="running">
+        <figcaption class="fx__caption">running</figcaption>
+        <div class="fx__body">
+          <div class="fc-agent-status" data-fc-kind="agent-status" data-fc-state="running">
+            <span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"></span>
+            <span class="fc-agent-status__label" role="status">Running step</span><span class="fc-agent-status__meta">4s</span>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="streaming">
+        <figcaption class="fx__caption">streaming</figcaption>
+        <div class="fx__body">
+          <div class="fc-agent-status" data-fc-kind="agent-status" data-fc-state="streaming">
+            <span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"></span>
+            <span class="fc-agent-status__label" role="status">Streaming step</span><span class="fc-agent-status__meta">4s</span>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="complete">
+        <figcaption class="fx__caption">complete</figcaption>
+        <div class="fx__body">
+          <div class="fc-agent-status" data-fc-kind="agent-status" data-fc-state="complete">
+            <span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"></span>
+            <span class="fc-agent-status__label" role="status">Complete step</span><span class="fc-agent-status__meta">4s</span>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="aborted">
+        <figcaption class="fx__caption">aborted</figcaption>
+        <div class="fx__body">
+          <div class="fc-agent-status" data-fc-kind="agent-status" data-fc-state="aborted">
+            <span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"></span>
+            <span class="fc-agent-status__label" role="status">Aborted step</span><span class="fc-agent-status__meta">4s</span>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="denied">
+        <figcaption class="fx__caption">denied</figcaption>
+        <div class="fx__body">
+          <div class="fc-agent-status" data-fc-kind="agent-status" data-fc-state="denied">
+            <span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"></span>
+            <span class="fc-agent-status__label" role="status">Denied step</span><span class="fc-agent-status__meta">4s</span>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="error">
+        <figcaption class="fx__caption">error</figcaption>
+        <div class="fx__body">
+          <div class="fc-agent-status" data-fc-kind="agent-status" data-fc-state="error">
+            <span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"></span>
+            <span class="fc-agent-status__label" role="status">Error step</span><span class="fc-agent-status__meta">4s</span>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-loading" data-fixture="loading" aria-labelledby="fx-loading-h">
+    <h2 class="fx__title" id="fx-loading-h">Skeleton and progress <code class="fx__file">loading.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="skeletons">
+        <figcaption class="fx__caption">skeletons</figcaption>
+        <div class="fx__body">
+          <div aria-busy="true" aria-label="Loading message" class="fx-row">
+            <span class="fc-skeleton fc-skeleton--circle"></span>
+            <span class="fx-grow"><span class="fc-skeleton fc-skeleton--text"></span><span class="fc-skeleton fc-skeleton--text"></span></span>
+          </div>
+          <span class="fc-skeleton fc-skeleton--block fx-block"></span>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="progress: determinate, indeterminate, small">
+        <figcaption class="fx__caption">progress: determinate, indeterminate, small</figcaption>
+        <div class="fx__body">
+          <progress class="fc-progress" value="64" max="100" aria-label="Upload"></progress>
+          <progress class="fc-progress" aria-label="Indexing"></progress>
+          <progress class="fc-progress fc-progress--sm" value="20" max="100" aria-label="Quota"></progress>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-avatar" data-fixture="avatar" aria-labelledby="fx-avatar-h">
+    <h2 class="fx__title" id="fx-avatar-h">Avatar <code class="fx__file">avatar.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="sizes">
+        <figcaption class="fx__caption">sizes</figcaption>
+        <div class="fx__body">
+          <span class="fc-avatar fc-avatar--xs" aria-hidden="true">A</span>
+          <span class="fc-avatar fc-avatar--sm" aria-hidden="true">AL</span>
+          <span class="fc-avatar" aria-hidden="true">AL</span>
+          <span class="fc-avatar fc-avatar--lg" aria-hidden="true">AL</span>
+          <span class="fc-avatar fc-avatar--xl" aria-hidden="true">AL</span>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="square, neutral, group">
+        <figcaption class="fx__caption">square, neutral, group</figcaption>
+        <div class="fx__body">
+          <span class="fc-avatar fc-avatar--square" aria-hidden="true">&#10022;</span>
+          <span class="fc-avatar fc-avatar--neutral" aria-hidden="true">?</span>
+          <span class="fc-avatar-group"><span class="fc-avatar fc-avatar--sm" aria-hidden="true">A</span><span class="fc-avatar fc-avatar--sm" aria-hidden="true">B</span><span class="fc-avatar fc-avatar--sm fc-avatar--neutral" aria-hidden="true">+4</span></span>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-empty" data-fixture="empty-state" aria-labelledby="fx-empty-h">
+    <h2 class="fx__title" id="fx-empty-h">Empty state <code class="fx__file">empty-state.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="empty">
+        <figcaption class="fx__caption">empty</figcaption>
+        <div class="fx__body">
+          <div class="fc-empty">
+            <span class="fc-empty__icon" aria-hidden="true">&#9776;</span>
+            <h3 class="fc-empty__title">No chats yet</h3>
+            <p class="fc-empty__body">Start one from the composer.</p>
+            <div class="fc-empty__actions"><button type="button" class="fc-btn fc-btn--primary">New chat</button></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="error">
+        <figcaption class="fx__caption">error</figcaption>
+        <div class="fx__body">
+          <div class="fc-empty fc-empty--error" role="alert">
+            <span class="fc-empty__icon" aria-hidden="true">!</span>
+            <h3 class="fc-empty__title">Could not load chats</h3>
+            <p class="fc-empty__body">The server did not respond.</p>
+            <div class="fc-empty__actions"><button type="button" class="fc-btn fc-btn--secondary">Retry</button></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="compact">
+        <figcaption class="fx__caption">compact</figcaption>
+        <div class="fx__body">
+          <div class="fc-empty fc-empty--compact"><p class="fc-empty__body">No results for “zzz”.</p></div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-disclosure" data-fixture="disclosure" aria-labelledby="fx-disclosure-h">
+    <h2 class="fx__title" id="fx-disclosure-h">Disclosure <code class="fx__file">disclosure.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="closed and open">
+        <figcaption class="fx__caption">closed and open</figcaption>
+        <div class="fx__body">
+          <details class="fc-disclosure"><summary class="fc-disclosure__summary">Closed</summary><div class="fc-disclosure__content">Hidden content.</div></details>
+          <details class="fc-disclosure" open><summary class="fc-disclosure__summary">Open</summary><div class="fc-disclosure__content">Shown content.</div></details>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="boxed">
+        <figcaption class="fx__caption">boxed</figcaption>
+        <div class="fx__body">
+          <details class="fc-disclosure fc-disclosure--boxed" open><summary class="fc-disclosure__summary">Boxed, open</summary><div class="fc-disclosure__content">A card per item.</div></details>
+          <details class="fc-disclosure fc-disclosure--boxed"><summary class="fc-disclosure__summary">Boxed, closed</summary><div class="fc-disclosure__content">Hidden.</div></details>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-reasoning" data-fixture="reasoning" aria-labelledby="fx-reasoning-h">
+    <h2 class="fx__title" id="fx-reasoning-h">Reasoning trace <code class="fx__file">reasoning.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="pending">
+        <figcaption class="fx__caption">pending</figcaption>
+        <div class="fx__body">
+          <details class="fc-reasoning" data-fc-kind="reasoning" data-fc-state="pending">
+            <summary class="fc-reasoning__summary"><span class="fc-reasoning__label">Thinking</span><span class="fc-reasoning__duration">12s</span></summary>
+            <div class="fc-reasoning__body">Cite both sources, and note the figure is uncompressed.</div>
+          </details>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="streaming, open">
+        <figcaption class="fx__caption">streaming, open</figcaption>
+        <div class="fx__body">
+          <details class="fc-reasoning" data-fc-kind="reasoning" data-fc-state="streaming" open>
+            <summary class="fc-reasoning__summary"><span class="fc-reasoning__label">Thinking</span><span class="fc-reasoning__duration">12s</span></summary>
+            <div class="fc-reasoning__body">Cite both sources, and note the figure is uncompressed.</div>
+          </details>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="complete">
+        <figcaption class="fx__caption">complete</figcaption>
+        <div class="fx__body">
+          <details class="fc-reasoning" data-fc-kind="reasoning" data-fc-state="complete">
+            <summary class="fc-reasoning__summary"><span class="fc-reasoning__label">Thought</span><span class="fc-reasoning__duration">12s</span></summary>
+            <div class="fc-reasoning__body">Cite both sources, and note the figure is uncompressed.</div>
+          </details>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="aborted">
+        <figcaption class="fx__caption">aborted</figcaption>
+        <div class="fx__body">
+          <details class="fc-reasoning" data-fc-kind="reasoning" data-fc-state="aborted">
+            <summary class="fc-reasoning__summary"><span class="fc-reasoning__label">Thought</span><span class="fc-reasoning__duration">12s</span></summary>
+            <div class="fc-reasoning__body">Cite both sources, and note the figure is uncompressed.</div>
+          </details>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="error">
+        <figcaption class="fx__caption">error</figcaption>
+        <div class="fx__body">
+          <details class="fc-reasoning" data-fc-kind="reasoning" data-fc-state="error">
+            <summary class="fc-reasoning__summary"><span class="fc-reasoning__label">Thought</span><span class="fc-reasoning__duration">12s</span></summary>
+            <div class="fc-reasoning__body">Cite both sources, and note the figure is uncompressed.</div>
+          </details>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-citation" data-fixture="citation" aria-labelledby="fx-citation-h">
+    <h2 class="fx__title" id="fx-citation-h">Citations and sources <code class="fx__file">citation.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state fx__state--wide" data-fx-state="inline markers and source list">
+        <figcaption class="fx__caption">inline markers and source list</figcaption>
+        <div class="fx__body">
+          <p>Shipped unminified on purpose<a class="fc-cite" href="#fx-src-1" aria-label="Source 1: Development plan">1</a>, minified by consumers<a class="fc-cite" href="#fx-src-2" aria-label="Source 2: Build orchestrator">2</a>.</p>
+          <ol class="fc-sources" aria-label="Sources">
+            <li class="fc-source" id="fx-src-1"><a class="fc-source__link" href="#fx-src-1"><span class="fc-source__index">1</span><span class="fc-source__title">Development plan</span><span class="fc-source__domain">docs/PLAN.md</span></a></li>
+            <li class="fc-source" id="fx-src-2"><a class="fc-source__link" href="#fx-src-2"><span class="fc-source__icon" aria-hidden="true">&#9679;</span><span class="fc-source__index">2</span><span class="fc-source__title">A source whose title is long enough to wrap onto a second line</span><span class="fc-source__domain">src/build/build.ts</span></a></li>
+          </ol>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-suggestion" data-fixture="suggestion" aria-labelledby="fx-suggestion-h">
+    <h2 class="fx__title" id="fx-suggestion-h">Suggested prompts <code class="fx__file">suggestion.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state fx__state--wide" data-fx-state="grid: rest, disabled">
+        <figcaption class="fx__caption">grid: rest, disabled</figcaption>
+        <div class="fx__body">
+          <ul class="fc-suggestions fc-suggestions--grid" aria-label="Suggested prompts">
+            <li><button type="button" class="fc-suggestion"><span class="fc-suggestion__title">Summarise this repository</span><span class="fc-suggestion__hint">in five bullet points</span></button></li>
+            <li><button type="button" class="fc-suggestion" disabled><span class="fc-suggestion__title">Deploy to production</span><span class="fc-suggestion__hint">needs permission</span></button></li>
+            <li><button type="button" class="fc-suggestion" aria-disabled="true"><span class="fc-suggestion__title">Open the dashboard</span></button></li>
+          </ul>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="pills">
+        <figcaption class="fx__caption">pills</figcaption>
+        <div class="fx__body">
+          <ul class="fc-suggestions" aria-label="Follow-ups">
+            <li><button type="button" class="fc-suggestion fc-suggestion--pill">How big is it minified?</button></li>
+            <li><button type="button" class="fc-suggestion fc-suggestion--pill" disabled>Disabled follow-up</button></li>
+          </ul>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-chat" data-fixture="chat" aria-labelledby="fx-chat-h">
+    <h2 class="fx__title" id="fx-chat-h">Chat surface <code class="fx__file">chat.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state fx__state--wide" data-fx-state="roles">
+        <figcaption class="fx__caption">roles</figcaption>
+        <div class="fx__body">
+          <div class="fc-chat" role="log" aria-label="Roles"><div class="fc-chat__group">
+          <div class="fc-msg" data-fc-kind="message" data-fc-role="user" data-fc-state="complete">
+            <div class="fc-msg__meta"><span class="fc-msg__author">You</span><time class="fc-msg__time" datetime="2026-10-06T09:12:00Z">09:12</time></div>
+            <div class="fc-msg__body fc-prose"><p>Which services are degraded?</p></div>
+          </div>
+          <div class="fc-msg" data-fc-kind="message" data-fc-role="assistant" data-fc-state="complete">
+            <div class="fc-msg__meta"><span class="fc-msg__author">Assistant</span><time class="fc-msg__time" datetime="2026-10-06T09:12:00Z">09:12</time></div>
+            <div class="fc-msg__body fc-prose"><p>One: <strong>api</strong> in <code>us-east-1</code>.</p></div>
+            <div class="fc-msg__actions fc-msg__actions--persistent" role="toolbar" aria-label="Message actions">
+              <button type="button" class="fc-msg__action" aria-label="Copy">&#10697;</button>
+              <button type="button" class="fc-msg__action" aria-label="Good response" aria-pressed="true">&#128077;</button>
+              <button type="button" class="fc-msg__action" aria-label="Bad response" aria-pressed="false">&#128078;</button>
+              <button type="button" class="fc-msg__action" aria-disabled="true">&#8635; Retry</button>
+            </div>
+          </div>
+          <div class="fc-msg" data-fc-kind="message" data-fc-role="system" data-fc-state="complete">
+            <div class="fc-msg__meta"><span class="fc-msg__author">System</span><time class="fc-msg__time" datetime="2026-10-06T09:12:00Z">09:12</time></div>
+            <div class="fc-msg__body fc-prose"><p>Model switched to Fast.</p></div>
+          </div>
+          <div class="fc-msg" data-fc-kind="message" data-fc-role="tool" data-fc-state="complete">
+            <div class="fc-msg__meta"><span class="fc-msg__author">search_logs</span><time class="fc-msg__time" datetime="2026-10-06T09:12:00Z">09:12</time></div>
+            <div class="fc-msg__body fc-prose"><p>14 matching lines.</p></div>
+          </div>
+          </div></div>
+        </div>
+      </figure>
+      <figure class="fx__state fx__state--wide" data-fx-state="lifecycle">
+        <figcaption class="fx__caption">lifecycle</figcaption>
+        <div class="fx__body">
+          <div class="fc-chat" role="log" aria-label="States"><div class="fc-chat__group">
+          <div class="fc-msg" data-fc-kind="message" data-fc-role="assistant" data-fc-state="pending">
+            <div class="fc-msg__meta"><span class="fc-msg__author">Assistant</span><time class="fc-msg__time" datetime="2026-10-06T09:12:00Z">09:12</time></div>
+            <div class="fc-msg__body fc-prose"><p>Waiting for the model&hellip;</p></div>
+          </div>
+          <div class="fc-msg" data-fc-kind="message" data-fc-role="assistant" data-fc-state="streaming">
+            <div class="fc-msg__meta"><span class="fc-msg__author">Assistant</span><time class="fc-msg__time" datetime="2026-10-06T09:12:00Z">09:12</time></div>
+            <div class="fc-msg__body fc-prose"><p>Checking the worker queue&hellip;</p></div>
+          </div>
+          <div class="fc-msg" data-fc-kind="message" data-fc-role="assistant" data-fc-state="aborted">
+            <div class="fc-msg__meta"><span class="fc-msg__author">Assistant</span><time class="fc-msg__time" datetime="2026-10-06T09:12:00Z">09:12</time></div>
+            <div class="fc-msg__body fc-prose"><p>Stopped by you.</p></div>
+          </div>
+          <div class="fc-msg" data-fc-kind="message" data-fc-role="system" data-fc-state="error">
+            <div class="fc-msg__meta"><span class="fc-msg__author">System</span><time class="fc-msg__time" datetime="2026-10-06T09:12:00Z">09:12</time></div>
+            <div class="fc-msg__body fc-prose"><p>Metrics fetch failed; retrying in 30s.</p></div>
+          </div>
+          <div class="fc-msg" data-fc-kind="message" data-fc-role="assistant" data-fc-state="complete" data-fc-truncated="true">
+            <div class="fc-msg__meta"><span class="fc-msg__author">Assistant</span><time class="fc-msg__time" datetime="2026-10-06T09:12:00Z">09:12</time></div>
+            <div class="fc-msg__body fc-prose" title="Full response: 14 log lines, 3 tool calls, 1 error."><p>Full response: 14 log lines, 3 tool&hellip;</p></div>
+          </div>
+          </div></div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-tool" data-fixture="tool-call" aria-labelledby="fx-tool-h">
+    <h2 class="fx__title" id="fx-tool-h">Tool call <code class="fx__file">tool-call.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="running, determinate">
+        <figcaption class="fx__caption">running, determinate</figcaption>
+        <div class="fx__body">
+          <div class="fc-tool" data-fc-kind="tool-call" data-fc-state="running">
+            <div class="fc-tool__header"><span class="fc-tool__name">query_metrics</span><span class="fc-tool__state" data-fc-state="running">running</span><span class="fc-tool__duration">412&nbsp;ms</span></div>
+            <div class="fc-tool__progress"><div class="fc-tool__progress-track"><div class="fc-tool__progress-bar" role="progressbar" aria-label="progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="62"></div></div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="running, indeterminate">
+        <figcaption class="fx__caption">running, indeterminate</figcaption>
+        <div class="fx__body">
+          <div class="fc-tool" data-fc-kind="tool-call" data-fc-state="running">
+            <div class="fc-tool__header"><span class="fc-tool__name">index_repo</span><span class="fc-tool__state" data-fc-state="running">running</span><span class="fc-tool__duration">412&nbsp;ms</span></div>
+            <div class="fc-tool__progress"><div class="fc-tool__progress-track"><div class="fc-tool__progress-bar" role="progressbar" aria-label="progress"></div></div></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="complete">
+        <figcaption class="fx__caption">complete</figcaption>
+        <div class="fx__body">
+          <div class="fc-tool" data-fc-kind="tool-call" data-fc-state="complete">
+            <div class="fc-tool__header"><span class="fc-tool__name">search_logs</span><span class="fc-tool__state" data-fc-state="complete">complete</span><span class="fc-tool__duration">412&nbsp;ms</span></div>
+            <div class="fc-tool__payload">{ "service": "api", "window": "15m" }</div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="complete, truncated payload">
+        <figcaption class="fx__caption">complete, truncated payload</figcaption>
+        <div class="fx__body">
+          <div class="fc-tool" data-fc-kind="tool-call" data-fc-state="complete">
+            <div class="fc-tool__header"><span class="fc-tool__name">read_file</span><span class="fc-tool__state" data-fc-state="complete">complete</span><span class="fc-tool__duration">412&nbsp;ms</span></div>
+            <div class="fc-tool__payload" data-fc-truncated="true" title="Full payload is 48 KB">{ "path": "src/index.ts", "bytes": 49152, … }</div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="denied">
+        <figcaption class="fx__caption">denied</figcaption>
+        <div class="fx__body">
+          <div class="fc-tool" data-fc-kind="tool-call" data-fc-state="denied">
+            <div class="fc-tool__header"><span class="fc-tool__name">restart_service</span><span class="fc-tool__state" data-fc-state="denied">denied</span><span class="fc-tool__duration">412&nbsp;ms</span></div>
+            <div class="fc-tool__error">Requires the <code>deploy</code> permission.</div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="aborted">
+        <figcaption class="fx__caption">aborted</figcaption>
+        <div class="fx__body">
+          <div class="fc-tool" data-fc-kind="tool-call" data-fc-state="aborted">
+            <div class="fc-tool__header"><span class="fc-tool__name">long_job</span><span class="fc-tool__state" data-fc-state="aborted">aborted</span><span class="fc-tool__duration">412&nbsp;ms</span></div>
+            <div class="fc-tool__error">Stopped by you.</div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="error">
+        <figcaption class="fx__caption">error</figcaption>
+        <div class="fx__body">
+          <div class="fc-tool" data-fc-kind="tool-call" data-fc-state="error">
+            <div class="fc-tool__header"><span class="fc-tool__name">write_report</span><span class="fc-tool__state" data-fc-state="error">error</span><span class="fc-tool__duration">412&nbsp;ms</span></div>
+            <div class="fc-tool__error"><code>EPERM</code>: the output path is not writable.</div>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-editor" data-fixture="editor" aria-labelledby="fx-editor-h">
+    <h2 class="fx__title" id="fx-editor-h">Rich text editor <code class="fx__file">editor.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="rest, pressed and disabled tools">
+        <figcaption class="fx__caption">rest, pressed and disabled tools</figcaption>
+        <div class="fx__body">
+          <div class="fc-editor">
+            <div class="fc-toolbar" role="toolbar" aria-label="Formatting">
+              <button type="button" class="fc-toolbar__item" aria-pressed="true"><strong aria-hidden="true">B</strong><span class="fc-u-visually-hidden">Bold</span></button>
+              <button type="button" class="fc-toolbar__item" aria-pressed="false" tabindex="-1"><em aria-hidden="true">I</em><span class="fc-u-visually-hidden">Italic</span></button>
+              <span class="fc-toolbar__divider" role="separator"></span>
+              <button type="button" class="fc-toolbar__item fc-toolbar__item--icon" disabled tabindex="-1" aria-label="Undo">&#8630;</button>
+              <span class="fc-toolbar__label">Paragraph</span>
+            </div>
+            <div class="fc-editor__content fc-prose" role="textbox" aria-multiline="true" aria-label="Document" contenteditable="true"><p>Some <strong>bold</strong> and <code>code</code>.</p></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="saving">
+        <figcaption class="fx__caption">saving</figcaption>
+        <div class="fx__body">
+          <div class="fc-editor" data-fc-state="saving">
+            <div class="fc-toolbar" role="toolbar" aria-label="Formatting">
+              <button type="button" class="fc-toolbar__item" aria-pressed="true"><strong aria-hidden="true">B</strong><span class="fc-u-visually-hidden">Bold</span></button>
+              <button type="button" class="fc-toolbar__item" aria-pressed="false" tabindex="-1"><em aria-hidden="true">I</em><span class="fc-u-visually-hidden">Italic</span></button>
+              <span class="fc-toolbar__divider" role="separator"></span>
+              <button type="button" class="fc-toolbar__item fc-toolbar__item--icon" disabled tabindex="-1" aria-label="Undo">&#8630;</button>
+              <span class="fc-toolbar__label">Paragraph</span>
+            </div>
+            <div class="fc-editor__content fc-prose" role="textbox" aria-multiline="true" aria-label="Document" contenteditable="true"><p>Some <strong>bold</strong> and <code>code</code>.</p></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="error">
+        <figcaption class="fx__caption">error</figcaption>
+        <div class="fx__body">
+          <div class="fc-editor" data-fc-state="error">
+            <div class="fc-toolbar" role="toolbar" aria-label="Formatting">
+              <button type="button" class="fc-toolbar__item" aria-pressed="true"><strong aria-hidden="true">B</strong><span class="fc-u-visually-hidden">Bold</span></button>
+              <button type="button" class="fc-toolbar__item" aria-pressed="false" tabindex="-1"><em aria-hidden="true">I</em><span class="fc-u-visually-hidden">Italic</span></button>
+              <span class="fc-toolbar__divider" role="separator"></span>
+              <button type="button" class="fc-toolbar__item fc-toolbar__item--icon" disabled tabindex="-1" aria-label="Undo">&#8630;</button>
+              <span class="fc-toolbar__label">Paragraph</span>
+            </div>
+            <div class="fc-editor__content fc-prose" role="textbox" aria-multiline="true" aria-label="Document" contenteditable="true"><p>Some <strong>bold</strong> and <code>code</code>.</p></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="read-only">
+        <figcaption class="fx__caption">read-only</figcaption>
+        <div class="fx__body">
+          <div class="fc-editor">
+            <div class="fc-toolbar" role="toolbar" aria-label="Formatting">
+              <button type="button" class="fc-toolbar__item" aria-pressed="true"><strong aria-hidden="true">B</strong><span class="fc-u-visually-hidden">Bold</span></button>
+              <button type="button" class="fc-toolbar__item" aria-pressed="false" tabindex="-1"><em aria-hidden="true">I</em><span class="fc-u-visually-hidden">Italic</span></button>
+              <span class="fc-toolbar__divider" role="separator"></span>
+              <button type="button" class="fc-toolbar__item fc-toolbar__item--icon" disabled tabindex="-1" aria-label="Undo">&#8630;</button>
+              <span class="fc-toolbar__label">Paragraph</span>
+            </div>
+            <div class="fc-editor__content fc-prose" role="textbox" aria-multiline="true" aria-label="Document" aria-readonly="true"><p>Some <strong>bold</strong> and <code>code</code>.</p></div>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-menu" data-fixture="menu" aria-labelledby="fx-menu-h">
+    <h2 class="fx__title" id="fx-menu-h">Context menu <code class="fx__file">menu.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="items: rest, active, checked, disabled, danger, submenu">
+        <figcaption class="fx__caption">items: rest, active, checked, disabled, danger, submenu</figcaption>
+        <div class="fx__body">
+          <div class="fx-overlay fx-overlay--menu">
+          <div class="fc-menu" role="menu" aria-label="Actions" data-fc-open="true">
+            <div class="fc-menu__group-label" role="presentation">Edit</div>
+            <button type="button" class="fc-menu__item" role="menuitem"><span class="fc-menu__check" aria-hidden="true"></span><span class="fc-menu__label">Cut</span><span class="fc-menu__shortcut" aria-hidden="true">&#8984;X</span></button>
+            <button type="button" class="fc-menu__item" role="menuitem" data-fc-active="true"><span class="fc-menu__check" aria-hidden="true"></span><span class="fc-menu__label">Copy (active)</span></button>
+            <button type="button" class="fc-menu__item" role="menuitem" aria-disabled="true"><span class="fc-menu__check" aria-hidden="true"></span><span class="fc-menu__label">Paste (disabled)</span></button>
+            <hr class="fc-menu__separator" role="separator">
+            <button type="button" class="fc-menu__item" role="menuitemcheckbox" aria-checked="true"><span class="fc-menu__check" aria-hidden="true">&#10003;</span><span class="fc-menu__label">Wrap lines</span></button>
+            <button type="button" class="fc-menu__item" role="menuitem" aria-haspopup="menu" data-fc-open="true"><span class="fc-menu__check" aria-hidden="true"></span><span class="fc-menu__label">Share</span><span class="fc-menu__submenu-arrow" aria-hidden="true"></span></button>
+            <button type="button" class="fc-menu__item fc-menu__item--danger" role="menuitem"><span class="fc-menu__check" aria-hidden="true"></span><span class="fc-menu__label">Delete file</span></button>
+          </div>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-select" data-fixture="select" aria-labelledby="fx-select-h">
+    <h2 class="fx__title" id="fx-select-h">Select / listbox <code class="fx__file">select.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="invoker: value, placeholder, disabled">
+        <figcaption class="fx__caption">invoker: value, placeholder, disabled</figcaption>
+        <div class="fx__body">
+          <button type="button" class="fc-select" role="combobox" aria-expanded="false" aria-label="Model" data-fc-value="opus"><span class="fc-select__value">Opus</span><span class="fc-select__chevron" aria-hidden="true">&#9662;</span></button>
+          <button type="button" class="fc-select" role="combobox" aria-expanded="false" aria-label="Effort"><span class="fc-select__value" data-fc-placeholder="true">Select effort</span><span class="fc-select__chevron" aria-hidden="true">&#9662;</span></button>
+          <button type="button" class="fc-select" role="combobox" aria-expanded="false" aria-label="Region" aria-disabled="true"><span class="fc-select__value">eu-west-1</span><span class="fc-select__chevron" aria-hidden="true">&#9662;</span></button>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="open list: selected, active, disabled, groups">
+        <figcaption class="fx__caption">open list: selected, active, disabled, groups</figcaption>
+        <div class="fx__body">
+          <div class="fx-overlay fx-overlay--menu">
+          <button type="button" class="fc-select" role="combobox" aria-expanded="true" aria-controls="fx-list" aria-label="Model" data-fc-value="opus"><span class="fc-select__value">Opus</span><span class="fc-select__chevron" aria-hidden="true">&#9662;</span></button>
+          <div class="fc-select__list" id="fx-list" role="listbox" aria-label="Model" data-fc-open="true">
+            <div class="fc-select__group-label" role="presentation">Anthropic</div>
+            <div class="fc-select__option" role="option" data-fc-value="opus" aria-selected="true"><span class="fc-select__option-check" aria-hidden="true">&#10003;</span><span class="fc-select__option-label">Opus</span></div>
+            <div class="fc-select__option" role="option" data-fc-value="sonnet" data-fc-active="true"><span class="fc-select__option-check" aria-hidden="true"></span><span class="fc-select__option-label">Sonnet</span></div>
+            <div class="fc-select__group-label" role="presentation">Local</div>
+            <div class="fc-select__option" role="option" data-fc-value="llama" aria-disabled="true"><span class="fc-select__option-check" aria-hidden="true"></span><span class="fc-select__option-label">Llama (needs 64 GB)</span></div>
+          </div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="empty list">
+        <figcaption class="fx__caption">empty list</figcaption>
+        <div class="fx__body">
+          <div class="fx-overlay fx-overlay--short">
+          <div class="fc-select__list" role="listbox" aria-label="Filtered" data-fc-open="true"><div class="fc-select__empty">No matches</div></div>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-grid" data-fixture="grid" aria-labelledby="fx-grid-h">
+    <h2 class="fx__title" id="fx-grid-h">Data grid <code class="fx__file">grid.css</code></h2>
+    <p class="fx__note">Unbound, so the column template is written inline: the <code>grid</code> binding sets it from the widest row.</p>
+    <div class="fx__states">
+      <figure class="fx__state fx__state--wide" data-fx-state="cell states">
+        <figcaption class="fx__caption">cell states</figcaption>
+        <div class="fx__body">
+          <div class="fc-grid" role="grid" aria-label="Cell states" style="grid-template-columns: auto repeat(3, minmax(0, 1fr))" data-fc-rowcount="3" data-fc-colcount="3">
+            <div role="row"><span class="fc-grid__corner" role="columnheader"></span><span class="fc-grid__col-header" role="columnheader">State</span><span class="fc-grid__col-header" role="columnheader">Text</span><span class="fc-grid__col-header fc-grid__col-header--numeric" role="columnheader">Cost</span></div>
+            <div role="row"><span class="fc-grid__row-header" role="rowheader">1</span><span class="fc-grid__cell" role="gridcell" data-fc-active="true" tabindex="0">active</span><span class="fc-grid__cell" role="gridcell" aria-selected="true" tabindex="-1">selected</span><span class="fc-grid__cell fc-grid__cell--numeric" role="gridcell" tabindex="-1">18.40</span></div>
+            <div role="row"><span class="fc-grid__row-header" role="rowheader">2</span><span class="fc-grid__cell" role="gridcell" data-fc-dirty="true" tabindex="-1">dirty</span><span class="fc-grid__cell" role="gridcell" aria-invalid="true" tabindex="-1">invalid</span><span class="fc-grid__cell" role="gridcell" aria-readonly="true" tabindex="-1">read-only</span></div>
+            <div role="row"><span class="fc-grid__row-header" role="rowheader">3</span><span class="fc-grid__cell fc-grid__cell--editing" role="gridcell"><input class="fc-grid__input" aria-label="Editing" value="editing"></span><span class="fc-grid__cell" role="gridcell" tabindex="-1">rest</span><span class="fc-grid__cell fc-grid__cell--numeric" role="gridcell" tabindex="-1">0.00</span></div>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-table" data-fixture="table" aria-labelledby="fx-table-h">
+    <h2 class="fx__title" id="fx-table-h">Data table <code class="fx__file">table.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state fx__state--wide" data-fx-state="sorted, selected, numeric, striped">
+        <figcaption class="fx__caption">sorted, selected, numeric, striped</figcaption>
+        <div class="fx__body">
+          <div class="fc-table-wrap" role="region" aria-labelledby="fx-table-cap" tabindex="0">
+          <table class="fc-table fc-table--striped fc-table--sticky">
+            <caption id="fx-table-cap">Runs</caption>
+            <thead><tr>
+              <th scope="col" aria-sort="ascending"><button class="fc-table__sort" type="button">Run</button></th>
+              <th scope="col"><button class="fc-table__sort" type="button">State</button></th>
+              <th scope="col" class="fc-table__cell--num" aria-sort="descending"><button class="fc-table__sort" type="button">Tokens</button></th>
+              <th scope="col"><button class="fc-table__sort" type="button" disabled>Notes</button></th>
+            </tr></thead>
+            <tbody>
+              <tr><th scope="row">Index docs</th><td>complete</td><td class="fc-table__cell--num">12,480</td><td>-</td></tr>
+              <tr aria-selected="true"><th scope="row">Refactor parser</th><td>running</td><td class="fc-table__cell--num">88,012</td><td>selected</td></tr>
+              <tr><th scope="row">Triage issues</th><td>complete</td><td class="fc-table__cell--num">9</td><td>-</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="compact, busy">
+        <figcaption class="fx__caption">compact, busy</figcaption>
+        <div class="fx__body">
+          <div class="fc-table-wrap" role="region" aria-label="Loading runs" tabindex="0">
+          <table class="fc-table fc-table--compact" aria-busy="true">
+            <thead><tr><th scope="col">Run</th><th scope="col" class="fc-table__cell--num">Tokens</th></tr></thead>
+            <tbody><tr><td><span class="fc-skeleton fc-skeleton--text"></span></td><td><span class="fc-skeleton fc-skeleton--text"></span></td></tr></tbody>
+          </table></div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="empty and error">
+        <figcaption class="fx__caption">empty and error</figcaption>
+        <div class="fx__body">
+          <div class="fc-table-wrap" role="region" aria-label="No runs" tabindex="0">
+          <table class="fc-table">
+            <thead><tr><th scope="col">Run</th><th scope="col">State</th></tr></thead>
+            <tbody><tr><td class="fc-table__empty" colspan="2">No runs yet</td></tr></tbody>
+          </table></div>
+          <div class="fc-table-wrap" role="region" aria-label="Runs failed to load" tabindex="0">
+          <table class="fc-table">
+            <thead><tr><th scope="col">Run</th><th scope="col">State</th></tr></thead>
+            <tbody><tr><td class="fc-table__empty" colspan="2"><div class="fc-empty fc-empty--compact fc-empty--error"><p class="fc-empty__body">Could not load runs.</p></div></td></tr></tbody>
+          </table></div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-dl" data-fixture="description-list" aria-labelledby="fx-dl-h">
+    <h2 class="fx__title" id="fx-dl-h">Description list <code class="fx__file">description-list.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="default">
+        <figcaption class="fx__caption">default</figcaption>
+        <div class="fx__body">
+          <dl class="fc-dl">
+            <div class="fc-dl__item"><dt>Model</dt><dd>Large</dd></div>
+            <div class="fc-dl__item"><dt>Duration</dt><dd class="fc-dl__num">14.2 s</dd></div>
+            <div class="fc-dl__item"><dt>Commit</dt><dd><code>9f2c1e04b7a3d58e6f1c2b9a0d4e7f3c8b1a6d5e</code></dd></div>
+          </dl>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="divided">
+        <figcaption class="fx__caption">divided</figcaption>
+        <div class="fx__body">
+          <dl class="fc-dl fc-dl--divided">
+            <div class="fc-dl__item"><dt>Owner</dt><dd>Ada</dd></div>
+            <div class="fc-dl__item"><dt>A term long enough to wrap in its column</dt><dd>Value</dd></div>
+          </dl>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="stacked">
+        <figcaption class="fx__caption">stacked</figcaption>
+        <div class="fx__body">
+          <dl class="fc-dl fc-dl--stacked">
+            <div class="fc-dl__item"><dt>Region</dt><dd>eu-west-1</dd></div>
+            <div class="fc-dl__item"><dt>Created</dt><dd>6 Oct 2026</dd></div>
+          </dl>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-terminal" data-fixture="terminal" aria-labelledby="fx-terminal-h">
+    <h2 class="fx__title" id="fx-terminal-h">Terminal <code class="fx__file">terminal.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="connected, exit 0">
+        <figcaption class="fx__caption">connected, exit 0</figcaption>
+        <div class="fx__body">
+          <div dir="ltr" class="fc-terminal fx-term" data-fc-state="connected">
+            <div class="fc-terminal__output" role="log" aria-label="Terminal output, connected">
+              <div class="fc-terminal__line"><span class="fc-terminal__bold">$</span> npm test</div>
+              <div class="fc-terminal__line"><span class="fc-term-ansi-green">pass</span> 18 <span class="fc-terminal__dim">dim</span> <span class="fc-terminal__italic">italic</span> <span class="fc-terminal__underline">underline</span> <span class="fc-terminal__strike">strike</span> <span class="fc-terminal__inverse">inverse</span></div>
+              <div class="fc-terminal__line"><span class="fc-term-ansi-red">fail</span> <span class="fc-terminal__text--danger">1 test failed</span> <span class="fc-term-ansi-yellow">warn</span> <span class="fc-term-ansi-blue">info</span> <span class="fc-term-ansi-magenta">mag</span> <span class="fc-term-ansi-cyan">cyan</span></div>
+              <div class="fc-terminal__line"><span class="fc-terminal__bold">$</span> <span class="fc-terminal__cursor" aria-hidden="true">&nbsp;</span></div>
+            </div>
+            <div class="fc-terminal__input-row"><span class="fc-terminal__prompt" aria-hidden="true">$</span><input class="fc-terminal__input" aria-label="Terminal input, connected" type="text" autocomplete="off" spellcheck="false"></div>
+            <div class="fc-terminal__status"><span>bash</span><span class="fc-terminal__status-end"><span class="fc-terminal__exit" data-fc-state="complete">exit 0</span></span></div>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="disconnected, exit 1">
+        <figcaption class="fx__caption">disconnected, exit 1</figcaption>
+        <div class="fx__body">
+          <div dir="ltr" class="fc-terminal fx-term" data-fc-state="disconnected">
+            <div class="fc-terminal__output" role="log" aria-label="Terminal output, disconnected">
+              <div class="fc-terminal__line"><span class="fc-terminal__bold">$</span> npm test</div>
+              <div class="fc-terminal__line"><span class="fc-term-ansi-green">pass</span> 18 <span class="fc-terminal__dim">dim</span> <span class="fc-terminal__italic">italic</span> <span class="fc-terminal__underline">underline</span> <span class="fc-terminal__strike">strike</span> <span class="fc-terminal__inverse">inverse</span></div>
+              <div class="fc-terminal__line"><span class="fc-term-ansi-red">fail</span> <span class="fc-terminal__text--danger">1 test failed</span> <span class="fc-term-ansi-yellow">warn</span> <span class="fc-term-ansi-blue">info</span> <span class="fc-term-ansi-magenta">mag</span> <span class="fc-term-ansi-cyan">cyan</span></div>
+              <div class="fc-terminal__line"><span class="fc-terminal__bold">$</span> <span class="fc-terminal__cursor" aria-hidden="true">&nbsp;</span></div>
+            </div>
+            <div class="fc-terminal__input-row"><span class="fc-terminal__prompt" aria-hidden="true">$</span><input class="fc-terminal__input" aria-label="Terminal input, disconnected" type="text" autocomplete="off" spellcheck="false"></div>
+            <div class="fc-terminal__status"><span>bash</span><span class="fc-terminal__status-end"><span class="fc-terminal__exit" data-fc-state="error">exit 1</span></span></div>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-webview" data-fixture="webview" aria-labelledby="fx-webview-h">
+    <h2 class="fx__title" id="fx-webview-h">Embedded browser chrome <code class="fx__file">webview.css</code></h2>
+    <p class="fx__note">The frame is a placeholder box rather than an <code>&lt;iframe&gt;</code>, so the fixture loads nothing.</p>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="secure, idle">
+        <figcaption class="fx__caption">secure, idle</figcaption>
+        <div class="fx__body">
+          <div class="fc-webview fx-webview">
+            <div class="fc-webview__tabs" role="tablist" aria-label="Pages">
+              <button type="button" class="fc-webview__tab" role="tab" aria-selected="true"><span class="fc-webview__tab-label">Docs</span></button>
+              <button type="button" class="fc-webview__tab" role="tab" aria-selected="false" tabindex="-1"><span class="fc-webview__tab-label">A tab whose title is long</span></button>
+            </div>
+            <div class="fc-webview__toolbar">
+              <button type="button" class="fc-btn fc-btn--ghost fc-btn--icon fc-btn--sm fc-webview__nav fc-webview__nav--back" aria-label="Back">&#8592;</button>
+              <button type="button" class="fc-btn fc-btn--ghost fc-btn--icon fc-btn--sm fc-webview__nav" aria-label="Forward" disabled>&#8594;</button>
+              <form class="fc-webview__address" role="search"><span class="fc-webview__secure"><span aria-hidden="true">&#128274;</span><span class="fc-u-visually-hidden">Secure</span></span><input class="fc-webview__address-input" aria-label="Address" type="text" value="https://example.com/docs"></form>
+            </div>
+            <div class="fx-webview__frame fc-webview__frame" role="img" aria-label="Page content placeholder"></div>
+            
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="insecure, load error overlay">
+        <figcaption class="fx__caption">insecure, load error overlay</figcaption>
+        <div class="fx__body">
+          <div class="fc-webview fx-webview">
+            <div class="fc-webview__tabs" role="tablist" aria-label="Pages">
+              <button type="button" class="fc-webview__tab" role="tab" aria-selected="true"><span class="fc-webview__tab-label">Docs</span></button>
+              <button type="button" class="fc-webview__tab" role="tab" aria-selected="false" tabindex="-1"><span class="fc-webview__tab-label">A tab whose title is long</span></button>
+            </div>
+            <div class="fc-webview__toolbar">
+              <button type="button" class="fc-btn fc-btn--ghost fc-btn--icon fc-btn--sm fc-webview__nav fc-webview__nav--back" aria-label="Back">&#8592;</button>
+              <button type="button" class="fc-btn fc-btn--ghost fc-btn--icon fc-btn--sm fc-webview__nav" aria-label="Forward" disabled>&#8594;</button>
+              <form class="fc-webview__address" role="search"><span class="fc-webview__secure" data-fc-state="insecure"><span aria-hidden="true">&#9888;</span><span>Not secure</span></span><input class="fc-webview__address-input" aria-label="Address" type="text" value="http://example.com/docs"></form>
+            </div>
+            <div class="fx-webview__frame fc-webview__frame" role="img" aria-label="Page content placeholder"></div>
+            <div class="fc-webview__overlay" role="alert"><p class="fc-webview__error">This page could not be loaded.</p><button type="button" class="fc-btn fc-btn--secondary fc-btn--sm">Retry</button></div>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-composer" data-fixture="composer" aria-labelledby="fx-composer-h">
+    <h2 class="fx__title" id="fx-composer-h">Chat composer <code class="fx__file">composer.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="idle, empty">
+        <figcaption class="fx__caption">idle, empty</figcaption>
+        <div class="fx__body">
+          <div class="fc-composer" data-fc-state="idle">
+            <textarea class="fc-composer__input" rows="2" aria-label="Message, idle"></textarea>
+            <div class="fc-composer__row">
+              <div class="fc-composer__tools"><button type="button" class="fc-btn fc-btn--ghost fc-btn--sm">Attach</button></div>
+              <button type="button" class="fc-btn fc-btn--primary fc-composer__send" data-fc-state="idle" disabled>Send</button>
+            </div>
+            <p class="fc-composer__status" role="status"></p>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="ready, with attachments">
+        <figcaption class="fx__caption">ready, with attachments</figcaption>
+        <div class="fx__body">
+          <div class="fc-composer" data-fc-state="ready">
+            <textarea class="fc-composer__input" rows="2" aria-label="Message, ready">Summarise the thread</textarea>
+            <ul class="fc-composer__attachments">
+              <li class="fc-composer__attachment"><span class="fc-composer__attachment-name" title="notes.md">notes.md</span><button type="button" class="fc-composer__attachment-remove" aria-label="Remove notes.md">&#215;</button></li>
+              <li class="fc-composer__attachment" data-fc-state="error"><span class="fc-composer__attachment-name" title="a-very-long-file-name-that-is-truncated.pdf" data-fc-truncated="true">a-very-long-file-name-that-is-truncated.pdf</span><button type="button" class="fc-composer__attachment-remove" aria-label="Remove a-very-long-file-name-that-is-truncated.pdf">&#215;</button></li>
+            </ul>
+            <div class="fc-composer__row">
+              <div class="fc-composer__tools"><button type="button" class="fc-btn fc-btn--ghost fc-btn--sm">Attach</button></div>
+              <button type="button" class="fc-btn fc-btn--primary fc-composer__send" data-fc-state="ready">Send</button>
+            </div>
+            <p class="fc-composer__status" role="status"></p>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="running: send becomes stop">
+        <figcaption class="fx__caption">running: send becomes stop</figcaption>
+        <div class="fx__body">
+          <div class="fc-composer" data-fc-state="running">
+            <textarea class="fc-composer__input" rows="2" aria-label="Message, running" readonly>Summarise the thread</textarea>
+            <div class="fc-composer__row">
+              <div class="fc-composer__tools"><button type="button" class="fc-btn fc-btn--ghost fc-btn--sm">Attach</button></div>
+              <button type="button" class="fc-btn fc-btn--primary fc-composer__send" data-fc-state="running">Stop</button>
+            </div>
+            <p class="fc-composer__status" role="status"></p>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="dragging a file over">
+        <figcaption class="fx__caption">dragging a file over</figcaption>
+        <div class="fx__body">
+          <div class="fc-composer" data-fc-state="idle" data-fc-dragging="true">
+            <textarea class="fc-composer__input" rows="2" aria-label="Message, idle"></textarea>
+            <div class="fc-composer__row">
+              <div class="fc-composer__tools"><button type="button" class="fc-btn fc-btn--ghost fc-btn--sm">Attach</button></div>
+              <button type="button" class="fc-btn fc-btn--primary fc-composer__send" data-fc-state="idle" disabled>Send</button>
+            </div>
+            <p class="fc-composer__status" role="status"></p>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-context-strip" data-fixture="context-strip" aria-labelledby="fx-context-strip-h">
+    <h2 class="fx__title" id="fx-context-strip-h">Context strip <code class="fx__file">context-strip.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state fx__state--wide" data-fx-state="fields, inapplicable field, params, notice">
+        <figcaption class="fx__caption">fields, inapplicable field, params, notice</figcaption>
+        <div class="fx__body">
+          <div class="fc-context-strip">
+            <div class="fc-context-strip__field"><span class="fc-context-strip__label">Model</span>
+              <button type="button" class="fc-select" role="combobox" aria-expanded="false" aria-label="Model"><span class="fc-select__value">Opus</span><span class="fc-select__chevron" aria-hidden="true">&#9662;</span></button></div>
+            <div class="fc-context-strip__field" data-fc-applicable="false"><span class="fc-context-strip__label">Effort</span>
+              <button type="button" class="fc-select" role="combobox" aria-expanded="false" aria-label="Effort" aria-disabled="true"><span class="fc-select__value">n/a</span><span class="fc-select__chevron" aria-hidden="true">&#9662;</span></button></div>
+            <span class="fc-context-strip__spacer"></span>
+            <div class="fc-context-strip__params"><span class="fc-context-strip__param"><span class="fc-context-strip__param-name">temp</span><span class="fc-context-strip__param-value">0.7</span></span></div>
+            <span class="fc-context-strip__notice" role="status">Effort is not available for this model.</span>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-code" data-fixture="code" aria-labelledby="fx-code-h">
+    <h2 class="fx__title" id="fx-code-h">Code block <code class="fx__file">code.css</code></h2>
+    <p class="fx__note">Rendered by <code>highlight</code>, the module the package ships.</p>
+    <div class="fx__states">
+      <figure class="fx__state fx__state--wide" data-fx-state="numbered, wrapping">
+        <figcaption class="fx__caption">numbered, wrapping</figcaption>
+        <div class="fx__body"><div dir="ltr" class="fc-code fc-code--numbered" data-fx-code="typescript" data-fc-lang="typescript"><div class="fc-code__gutter" aria-hidden="true"></div><code class="fc-code__source"></code></div></div>
+      </figure>
+      <figure class="fx__state fx__state--wide" data-fx-state="scrolling">
+        <figcaption class="fx__caption">scrolling</figcaption>
+        <div class="fx__body"><div dir="ltr" class="fc-code fc-code--scroll" data-fx-code="css" data-fc-lang="css" tabindex="0" role="region" aria-label="CSS sample"><code class="fc-code__source"></code></div></div>
+      </figure>
+      <figure class="fx__state" data-fx-state="unsupported language">
+        <figcaption class="fx__caption">unsupported language</figcaption>
+        <div class="fx__body"><div dir="ltr" class="fc-code fc-code--unsupported" data-fc-lang="cobol"><div class="fc-code__bar"><span class="fc-code__lang">cobol</span></div><code class="fc-code__source">DISPLAY &#39;HELLO&#39;.</code></div></div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-diff" data-fixture="diff" aria-labelledby="fx-diff-h">
+    <h2 class="fx__title" id="fx-diff-h">Diff <code class="fx__file">diff.css</code></h2>
+    <p class="fx__note">Rendered from <code>diffLines</code>.</p>
+    <div class="fx__states">
+      <figure class="fx__state fx__state--wide" data-fx-state="added, removed, equal">
+        <figcaption class="fx__caption">added, removed, equal</figcaption>
+        <div class="fx__body"><div dir="ltr" class="fc-diff" data-fx-diff><div class="fc-diff__bar"></div><div class="fc-diff__body"></div></div></div>
+      </figure>
+      <figure class="fx__state fx__state--wide" data-fx-state="scrolling">
+        <figcaption class="fx__caption">scrolling</figcaption>
+        <div class="fx__body"><div dir="ltr" class="fc-diff fc-diff--scroll" data-fx-diff tabindex="0" role="region" aria-label="Scrolling diff"><div class="fc-diff__bar"></div><div class="fc-diff__body"></div></div></div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-git" data-fixture="git" aria-labelledby="fx-git-h">
+    <h2 class="fx__title" id="fx-git-h">Git surface <code class="fx__file">git.css</code></h2>
+    <p class="fx__note">Rendered by <code>FutureCssGitSurface</code> from fixture data.</p>
+    <div class="fx__states">
+      <figure class="fx__state fx__state--wide" data-fx-state="every file state">
+        <figcaption class="fx__caption">every file state</figcaption>
+        <div class="fx__body"><div class="fc-git" id="fx-git-tree"><div class="fc-git__header"><span class="fc-git__branch"></span><span class="fc-git__summary"></span></div><div class="fc-git__files" role="listbox" aria-label="Changed files"></div></div></div>
+      </figure>
+      <figure class="fx__state" data-fx-state="clean tree">
+        <figcaption class="fx__caption">clean tree</figcaption>
+        <div class="fx__body"><div class="fc-git" id="fx-git-clean"><div class="fc-git__header"><span class="fc-git__branch"></span><span class="fc-git__summary"></span></div><div class="fc-git__files" role="listbox" aria-label="Changed files, clean"></div></div></div>
+      </figure>
+      <figure class="fx__state" data-fx-state="unborn branch">
+        <figcaption class="fx__caption">unborn branch</figcaption>
+        <div class="fx__body"><div class="fc-git" id="fx-git-unborn"><div class="fc-git__header"><span class="fc-git__branch"></span><span class="fc-git__summary"></span></div><div class="fc-git__files" role="listbox" aria-label="Changed files, unborn"></div></div></div>
+      </figure>
+    </div>
+  </section>
+
+</main>
+
+<script type="module" src="/demo/fixtures.js"></script>
+</body>
+</html>

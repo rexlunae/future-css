@@ -3146,4 +3146,119 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(result.ltrClosed, "-45deg");
   });
 
+  it("draws an error or aborted message on every role, not only the assistant", async () => {
+    const result = await evaluate(`
+      const chat = document.createElement('div');
+      chat.className = 'fc-chat';
+      document.body.append(chat);
+      const out = {};
+      for (const role of ['user', 'assistant', 'system', 'tool']) {
+        for (const state of ['complete', 'error', 'aborted']) {
+          const msg = document.createElement('article');
+          msg.className = 'fc-msg';
+          msg.dataset.fcRole = role;
+          msg.dataset.fcState = state;
+          msg.textContent = role + ' ' + state;
+          chat.append(msg);
+          const cs = getComputedStyle(msg);
+          out[role + ':' + state] = { width: cs.borderLeftWidth, style: cs.borderLeftStyle, color: cs.borderLeftColor };
+        }
+      }
+      chat.remove();
+      return out;
+    `);
+    for (const role of ["user", "assistant", "system", "tool"]) {
+      for (const state of ["error", "aborted"]) {
+        const edge = result[`${role}:${state}`];
+        assert.equal(edge.style, "solid", `${role} ${state} draws an edge`);
+        assert.notEqual(edge.width, "0px", `${role} ${state} draws an edge`);
+        assert.notEqual(edge.color, result[`${role}:complete`].color, `${role} ${state} is distinguishable from complete`);
+      }
+    }
+    assert.notEqual(result["assistant:error"].color, result["assistant:aborted"].color, "error and aborted differ");
+  });
+
+  /*
+   * The fixture page is every component in every state the markup can express.
+   * Loading it at 320px in both directions and both schemes is the closest
+   * thing this suite has to looking at all of it.
+   */
+  describe("fixture page", () => {
+    async function openFixtures(query: string): Promise<void> {
+      await send("Emulation.setDeviceMetricsOverride", { width: 320, height: 640, deviceScaleFactor: 1, mobile: false });
+      await send("Page.navigate", { url: `${server.origin}/demo/fixtures.html?${query}` });
+      await new Promise((r) => setTimeout(r, 1000));
+      const ready = await evaluate(`
+        for (let i = 0; i < 50 && !document.documentElement.hasAttribute('data-fx-ready'); i++) {
+          await new Promise((r) => setTimeout(r, 50));
+        }
+        return document.documentElement.hasAttribute('data-fx-ready');
+      `);
+      assert.equal(ready, true, "fixtures.js finished rendering");
+    }
+
+    for (const dir of ["ltr", "rtl"]) {
+      for (const theme of ["light", "dark"]) {
+        it(`renders every fixture at 320px without page overflow (${dir}, ${theme})`, async () => {
+          await openFixtures(`dir=${dir}&theme=${theme}`);
+          const result = await evaluate(`
+            const de = document.documentElement;
+            const blank = [...document.querySelectorAll('.fx__state')]
+              .filter((fig) => {
+                const body = fig.querySelector('.fx__body');
+                const r = body.getBoundingClientRect();
+                return r.width < 1 || r.height < 1 || body.innerText.trim() === '' && !body.querySelector('svg, input, progress, meter, [class*="fc-spinner"], [class*="fc-skeleton"]');
+              })
+              .map((fig) => fig.closest('[data-fixture]').dataset.fixture + ': ' + fig.dataset.fxState);
+            return {
+              dir: de.dir || 'ltr',
+              theme: de.dataset.fcTheme,
+              scrollWidth: de.scrollWidth,
+              clientWidth: de.clientWidth,
+              fixtures: document.querySelectorAll('[data-fixture]').length,
+              blank,
+            };
+          `);
+          assert.equal(result.dir, dir);
+          assert.equal(result.theme, theme);
+          assert.ok(result.fixtures > 30, `only ${result.fixtures} fixtures`);
+          assert.deepEqual(result.blank, [], "every state draws something");
+          assert.ok(result.scrollWidth <= result.clientWidth, `page scrolls sideways: ${result.scrollWidth} > ${result.clientWidth}`);
+        });
+      }
+    }
+
+    it("draws a focus indicator on every focusable control", async () => {
+      await openFixtures("dir=ltr&theme=light");
+      await send("DOM.enable");
+      await send("CSS.enable");
+      const { root } = (await send("DOM.getDocument", { depth: 0 })).result;
+      const selector = "a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex]:not([tabindex='-1']), [contenteditable='true']";
+      const { nodeIds } = (await send("DOM.querySelectorAll", { nodeId: root.nodeId, selector })).result;
+      for (const nodeId of nodeIds) {
+        await send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: ["focus", "focus-visible"] });
+      }
+      const missing = await evaluate(`
+        const visible = (el) => {
+          const r = el.getBoundingClientRect();
+          return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
+        };
+        const ring = (el) => {
+          const cs = getComputedStyle(el);
+          const outline = cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0;
+          return outline || cs.boxShadow !== 'none';
+        };
+        return [...document.querySelectorAll(${JSON.stringify(selector)})]
+          .filter(visible)
+          // A native control draws its ring on itself; a visually hidden input
+          // (switch, checkbox) hands it to the sibling that is drawn instead.
+          .filter((el) => !ring(el) && !(el.parentElement && ring(el.parentElement)))
+          .map((el) => (el.closest('[data-fixture]')?.dataset.fixture ?? 'page') + ' ' + el.tagName.toLowerCase() + '.' + String(el.className).split(' ')[0]);
+      `);
+      await send("CSS.disable");
+      await send("DOM.disable");
+      assert.deepEqual([...new Set(missing)], [], "controls with no visible focus");
+    });
+  });
+
 });

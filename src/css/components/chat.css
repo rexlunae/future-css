@@ -259,12 +259,19 @@
   }
 
   /* An errored or aborted message stays in place with its state visible. */
+  /*
+   * The full border, not only its colour: user and system messages have no
+   * inline-start edge to recolour, so an error on them would otherwise draw
+   * nothing at all.
+   */
   .fc-msg[data-fc-state="error"] {
-    border-inline-start-color: var(--fc-color-danger-border);
+    border-inline-start: var(--fc-border-width-thick) solid var(--fc-color-danger-border);
+    padding-inline-start: var(--fc-space-3);
   }
 
   .fc-msg[data-fc-state="aborted"] {
-    border-inline-start-color: var(--fc-color-warning-border);
+    border-inline-start: var(--fc-border-width-thick) solid var(--fc-color-warning-border);
+    padding-inline-start: var(--fc-space-3);
   }
 
   /* ---- Message actions -------------------------------------------------- */
@@ -381,7 +388,8 @@
       background-color: Highlight;
     }
 
-    .fc-msg[data-fc-state="error"] {
+    .fc-msg[data-fc-state="error"],
+    .fc-msg[data-fc-state="aborted"] {
       border-color: LinkText;
     }
 

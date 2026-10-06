@@ -3,7 +3,7 @@
 Phased roadmap with exit criteria. Each phase ends with a gate that can be checked, not a
 judgment call.
 
-**Current status: Phase 2 complete except the fixture page, Phase 3 mostly delivered, Phase A
+**Current status: Phase 2 complete, Phase 3 mostly delivered, Phase A
 (WASM size) started.** Phases 0 and 1 are complete. Form controls, overlays, navigation, and
 the status family now exist as CSS, with bindings where the platform does not already
 provide the behavior. The Rust/WASM
@@ -17,7 +17,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | --- | --- | --- |
 | 0. Foundations | Complete | Repo, toolchain, decisions |
 | 1. Token system | Complete | Palette, semantic layer, contrast contract, compiler |
-| 2. Core CSS | Nearly complete | Reset, base, layout, utilities, and every Phase 2 component; fixture page remains |
+| 2. Core CSS | Complete | Reset, base, layout, utilities, every Phase 2 component, and the fixture page |
 | 3. Component set | Mostly delivered | Forms, overlays, tabs, breadcrumb, pagination, loading, cards, table, description list, sidebar; axe-core pass remains |
 | A. WASM foundations | Started | Rust workspace, 8 crates, accelerator abstraction |
 | B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
@@ -147,8 +147,8 @@ defaults, the layout primitives, the utilities, and the first component.
 - [x] Badge and tag
 - [x] Alert / callout (the status family)
 - [x] Breadcrumb, and pagination
-- [ ] Fixture page rendering every component in every state, both directions, both schemes
-  (the demo now shows every component in both schemes and directions, but not every state)
+- [x] Fixture page rendering every component in every state, both directions, both schemes
+  (`demo/fixtures.html`; `?dir=rtl` and `?theme=dark` switch before first paint)
 
 ### Defects found and fixed during Phase 2
 
@@ -177,6 +177,12 @@ mechanisms work:
    are now excluded from that block by name.
 6. **`npm run demo` did not start**: a merge left a syntax error in `demo/server.mjs`.
    The browser tests use their own server, so nothing ran the demo's.
+7. **An errored or aborted chat message drew nothing unless it was the assistant's.**
+   The state rule recoloured the inline-start border, and only assistant messages have
+   one. Found by the fixture page; the state now draws its own border on every role.
+8. **A composer attachment chip overflowed the page at 320px.** A long file name
+   ellipsised inside the chip, but the chip itself had no maximum width. Found by the
+   fixture page's 320px pass.
 
 Issues 2 and 3 prompted new lint rules (`reduced-motion`, `forced-colors`) so the gap
 cannot recur silently.
@@ -486,14 +492,15 @@ Turning manual discipline into automation as the component count grows.
 - [ ] Playwright harness across Chromium, Firefox, WebKit
 - [ ] Visual regression, both schemes, both directions
 - [ ] axe-core in CI, zero critical/serious
-- [ ] Horizontal overflow assertion at 320px and 400% zoom
+- [x] Horizontal overflow assertion at 320px and 400% zoom (the fixture page in both
+  directions and schemes, and the demo at 400%)
 - [ ] RTL layout diffing against LTR fixtures
 - [ ] Reduced-motion and forced-colors test renders
 - [ ] Bundle size budget with a failure threshold
 
 ### Documentation
 
-- [ ] Fixture page as the living component gallery
+- [x] Fixture page as the living component gallery
 - [ ] Token reference generated from the TypeScript source
 - [ ] Per-component documentation with all six required sections
 - [ ] Migration guide

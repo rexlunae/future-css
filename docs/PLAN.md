@@ -473,7 +473,9 @@ target for a much smaller library.
 **What a budget can usefully constrain** is not the full bundle, which nobody should
 ship whole, but what one page pays. The per-layer outputs in `dist/` already let a
 consumer load tokens + base + only the components they use. So the decision is really
-which number to hold the line on, and it belongs to the maintainer:
+which number to hold the line on, and it belongs to the maintainer.
+**Status: pending the maintainer's choice; nothing below is adopted yet.**
+
 
 1. **Budget per layer and per component, minified (recommended).** Tokens + base
    < 16 KB, any single component < 7 KB, a typical page < 40 KB. Drop the full-bundle

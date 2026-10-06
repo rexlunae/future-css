@@ -37,6 +37,9 @@ export interface TableOptions {
   onSort?: (column: number, direction: SortDirection) => void;
 }
 
+/** The instance `bindTables` created for each table, which alone may clear its marker. */
+const markerOwner = new WeakMap<HTMLTableElement, FutureCssTable>();
+
 export class FutureCssTable {
   private readonly table: HTMLTableElement;
   private readonly options: TableOptions;
@@ -89,10 +92,18 @@ export class FutureCssTable {
     this.options.onSort?.(column, dir);
   }
 
-  /** Removes listeners and the bound marker, so `bindTables` can bind it again. Rows stay in their last sorted order. */
+  /**
+   * Removes listeners, and releases the bound marker if `bindTables` gave it to
+   * this instance, so the table can be bound again. Safe to call twice: a stale
+   * instance never clears the marker of a newer binding. Rows stay in their
+   * last sorted order.
+   */
   destroy(): void {
     this.table.tHead?.removeEventListener("click", this.onClick);
-    if (this.table.getAttribute("data-fc-bound") === "table") this.table.removeAttribute("data-fc-bound");
+    if (markerOwner.get(this.table) === this) {
+      markerOwner.delete(this.table);
+      this.table.removeAttribute("data-fc-bound");
+    }
   }
 
   private reorder(cellIndex: number, direction: SortDirection): void {
@@ -161,7 +172,9 @@ export function bindTables(root: ParentNode = document, options: TableOptions = 
   const bound: FutureCssTable[] = [];
   for (const el of root.querySelectorAll<HTMLTableElement>("table.fc-table:not([data-fc-bound])")) {
     el.setAttribute("data-fc-bound", "table");
-    bound.push(new FutureCssTable(el, options));
+    const table = new FutureCssTable(el, options);
+    markerOwner.set(el, table);
+    bound.push(table);
   }
   return bound;
 }

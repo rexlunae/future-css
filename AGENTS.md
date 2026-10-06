@@ -266,7 +266,7 @@ src/css/            Layered CSS. index.css declares layer order
 src/js/             Component bindings (editor, menu, grid, webview) plus the
                     WASM accelerator. WASM is optional; JS always works.
 src/build/          Token compiler, CSS bundler, WASM orchestrator
-crates/            Rust crates; six produce five .wasm files in four modules
+crates/            Rust crates; eight produce eight .wasm files in seven modules
 tools/lint-css.mjs  Architecture linter
 tests/              Contract, linter, accelerator, and WASM/JS parity tests
 tests/browser/      Binding tests in headless Chrome. Skipped if no browser.
@@ -296,11 +296,13 @@ one provider selected under another. That is a request nobody can fulfil.
 Form controls and dialogs are not yet written. The fixture-driven git surface
 (branch, status counts, file list, per-file line stats) is complete and reuses
 `fc-diff`; its Rust crate is the **first module in the workspace under its size
-budget** at 44.7 KB, which is the Phase A pattern working. The Rust/WASM layer has seven crates with 96 passing tests and a working JS-only fallback,
-but **every module except `fc-git` is still over its size budget** — see the WASM
-section above and Phase A in `docs/PLAN.md`. The rich text, context menu, and
-grid models exist in Rust and are covered by a JS parity test, but only the
-editor's browser binding is wired.
+budget** at 44.7 KB, which is the Phase A pattern working. The Rust/WASM layer has eight crates with 119 passing tests and a working JS-only fallback,
+but **every module except `fc-git` is still over its size budget** on the raw
+basis, and three are over on the shipped basis — see the WASM section above and
+Phase A in `docs/PLAN.md`. The rich text, context menu, and grid models exist in
+Rust but have no JS parity test yet; `fc-model`, `fc-diff`, `fc-select` and
+`fc-git` do. `fc-select` is the only module wired into a browser binding, as an
+opt-in with the JS model as the default.
 
 Form controls, overlays, and navigation are planned but not written. See
 `docs/PLAN.md` for the current phase and what is deliberately out of scope.

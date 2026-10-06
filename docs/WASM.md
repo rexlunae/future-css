@@ -104,8 +104,8 @@ leaks into your application** — that is the point of the abstraction.
 One workspace, one published module per *opt-in unit*. Boundaries follow *what a
 consumer opts into*, and the dependency arrow points strictly downward.
 
-Six crates produce four `.wasm` modules: `fc-core` is linked into the `fc-model` module
-rather than published on its own, and `fc-diff` is Rust-only so far.
+Eight crates produce seven importable modules: `fc-core` is emitted into the `fc-model`
+module directory rather than published on its own.
 
 ```
 crates/
@@ -114,7 +114,9 @@ crates/
   fc-rich-text/      inline formatting model      -> core, model
   fc-context-menu/   menu model + keyboard nav    -> core
   fc-grid/           grid, cells, selection       -> core
-  fc-diff/           Myers line diff + stats      -> core  (no module yet)
+  fc-diff/           Myers line diff + stats      -> core
+  fc-select/         option list + typeahead      (no deps; primitives only)
+  fc-git/            working-tree summary         (no deps; primitives only)
 ```
 
 Measured release sizes with the current code:

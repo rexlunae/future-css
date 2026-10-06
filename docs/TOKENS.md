@@ -273,12 +273,23 @@ A brand typeface overrides three tokens (`sans`, and optionally `mono`) and noth
 
 ## Elevation and motion
 
-Shadows are theme-aware pairs, because a shadow that reads as depth on white reads as a
-smudge on near-black:
+Shadows are theme-aware, because a shadow that reads as depth on white reads as a smudge
+on near-black. There are three: `raised` (cards, segmented controls), `overlay` (menus,
+popovers, the select list), and `modal` (dialogs, toasts).
 
-```ts
-raised: [shadow-light, shadow-dark]
+Each shadow is a list of layers whose geometry is shared across schemes and whose colour
+is not. The compiler wraps each layer's *colour* in `light-dark()`:
+
+```css
+--fc-shadow-raised: 0 1px 2px 0 light-dark(rgb(16 18 27 / 0.06), rgb(0 0 0 / 0.4)), …;
 ```
+
+It once wrapped the whole shadow instead, as `light-dark(<shadow>, <shadow>)`. That is
+invalid -- `light-dark()` accepts colours only -- and an invalid custom property is not a
+parse error, so every `box-shadow` reading the token silently computed to `none`. Menus,
+the select list, and `.fc-u-shadow-raised` were all flat. `tests/bundle.test.ts` rejects
+the wrapped form, and the browser suite asserts each token computes to a real shadow in
+both schemes.
 
 Durations are deliberately short -- 120ms to 300ms. Interface motion exists to explain a
 state change, not to entertain; above roughly 300ms it reads as latency.
@@ -287,6 +298,10 @@ Easing is split by intent: `decelerate` for entering (motion settles into place)
 `accelerate` for exiting (motion gets out of the way).
 
 All durations collapse under `prefers-reduced-motion`, handled once in the reset layer.
+Spinners are the one exception, excluded from that block by name: the block is
+`!important` in the earliest layer, which no later layer can loosen, and a frozen spinner
+reads as a hung page. Each spinner slows itself instead: rotating ones to a third of
+their speed, bouncing and pulsing ones to an opacity-only fade.
 
 Stacking is a closed scale: `base, raised, sticky, dropdown, overlay, modal, popover,
 toast`. A new layer gets a named step and a review, not `z-index: 9999`.

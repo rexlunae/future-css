@@ -80,6 +80,10 @@ const CHROME_CANDIDATES = [
  * and a test suite that hard-requires one would break that.
  */
 export async function findChrome() {
+  // An explicit path wins, for machines where the browser lives somewhere the
+  // list cannot guess (a Playwright cache, a CI image, a portable install).
+  const explicit = process.env.CHROME_PATH;
+  if (explicit && existsSync(explicit)) return explicit;
   for (const path of CHROME_CANDIDATES) {
     if (existsSync(path)) return path;
   }

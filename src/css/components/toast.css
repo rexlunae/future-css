@@ -1,0 +1,200 @@
+/*!
+ * future-css -- toast
+ *
+ * Brief, non-blocking notifications stacked at the inline-end, block-end corner.
+ *
+ *   <section class="fc-toaster" aria-label="Notifications">
+ *     <ol class="fc-toaster__list" role="status" aria-live="polite"></ol>
+ *     <ol class="fc-toaster__list" role="alert" aria-live="assertive"></ol>
+ *   </section>
+ *
+ * Two live regions, created up front and kept empty until needed: a live region
+ * inserted at the same moment as its content is announced unreliably or not at
+ * all, and the politeness of a region cannot be changed per message. The
+ * `toast` binding owns both and routes each message to the right one.
+ *
+ * Toasts are for things the user can afford to miss. An error the user must act
+ * on belongs in an alert next to its cause; a toast saying "Saved" does not.
+ */
+
+@layer fc.components {
+  .fc-toaster {
+    position: fixed;
+    inset-block-end: var(--fc-space-4);
+    inset-inline-end: var(--fc-space-4);
+    z-index: var(--fc-z-toast);
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--fc-space-2);
+    inline-size: min(24rem, 100% - 2 * var(--fc-space-4));
+
+    /* The region spans an area of the page; only the toasts themselves catch clicks. */
+    pointer-events: none;
+  }
+
+  .fc-toaster__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-2);
+    inline-size: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fc-toaster__list:empty {
+    display: none;
+  }
+
+  /* A top-centred placement, for layouts whose block-end corner holds a composer. */
+  .fc-toaster--top {
+    inset-block-end: auto;
+    inset-block-start: var(--fc-space-4);
+    inset-inline: 0;
+    margin-inline: auto;
+    align-items: center;
+  }
+
+  .fc-toast {
+    --fc-toast-edge: var(--fc-color-border-strong);
+
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: start;
+    gap: var(--fc-space-3);
+    inline-size: 100%;
+    padding: var(--fc-space-3) var(--fc-space-4);
+
+    background-color: var(--fc-color-bg-raised);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-xl);
+    box-shadow: var(--fc-shadow-modal);
+    pointer-events: auto;
+
+    transition:
+      opacity var(--fc-duration-normal) var(--fc-easing-decelerate),
+      translate var(--fc-duration-normal) var(--fc-easing-decelerate),
+      scale var(--fc-duration-normal) var(--fc-easing-decelerate);
+  }
+
+  @starting-style {
+    .fc-toast {
+      opacity: 0;
+      translate: 0 var(--fc-space-4);
+      scale: 0.98;
+    }
+  }
+
+  /* Leaving: the binding sets this, waits for the transition, then removes the node. */
+  .fc-toast[data-fc-leaving="true"] {
+    opacity: 0;
+    scale: 0.96;
+    transition-timing-function: var(--fc-easing-accelerate);
+  }
+
+  .fc-toast:not(:has(.fc-toast__icon)) {
+    grid-template-columns: 1fr auto;
+  }
+
+  .fc-toast__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.25rem;
+    block-size: 1lh;
+    color: var(--fc-toast-edge);
+    font-weight: var(--fc-font-weight-bold);
+  }
+
+  .fc-toast--success {
+    --fc-toast-edge: var(--fc-color-success-border);
+  }
+
+  .fc-toast--warning {
+    --fc-toast-edge: var(--fc-color-warning-border);
+  }
+
+  .fc-toast--danger {
+    --fc-toast-edge: var(--fc-color-danger-border);
+  }
+
+  .fc-toast--info {
+    --fc-toast-edge: var(--fc-color-info-border);
+  }
+
+  .fc-toast__content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-0-5);
+    min-inline-size: 0;
+  }
+
+  .fc-toast__title {
+    margin: 0;
+    font-size: var(--fc-font-size-sm);
+    font-weight: var(--fc-font-weight-semibold);
+  }
+
+  .fc-toast__body {
+    margin: 0;
+    font-size: var(--fc-font-size-sm);
+    color: var(--fc-color-text-muted);
+    overflow-wrap: anywhere;
+  }
+
+  .fc-toast__action {
+    justify-self: start;
+    margin-block-start: var(--fc-space-1);
+    padding: 0;
+    background: none;
+    color: var(--fc-color-accent-text);
+    border: 0;
+    font: inherit;
+    font-size: var(--fc-font-size-sm);
+    font-weight: var(--fc-font-weight-semibold);
+    cursor: pointer;
+  }
+
+  .fc-toast__action:hover {
+    text-decoration: underline;
+  }
+
+  .fc-toast__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--fc-size-target-min);
+    block-size: var(--fc-size-target-min);
+    padding: 0;
+    background-color: transparent;
+    color: var(--fc-color-text-muted);
+    border: 0;
+    border-radius: var(--fc-radius-md);
+    cursor: pointer;
+  }
+
+  .fc-toast__close:hover {
+    background-color: var(--fc-color-bg-muted);
+    color: var(--fc-color-text-default);
+  }
+
+  /* On a phone the stack spans the screen, so each toast is readable at a glance. */
+  @media (width < 36rem) {
+    .fc-toaster {
+      inset-inline: var(--fc-space-2);
+      inset-block-end: var(--fc-space-2);
+      inline-size: auto;
+    }
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  @media (forced-colors: active) {
+    .fc-toast {
+      border: var(--fc-border-width-thick) solid CanvasText;
+    }
+  }
+}

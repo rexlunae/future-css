@@ -162,6 +162,14 @@ export const contrastPairs: readonly ContrastPair[] = [
   { usage: "Info text on a subtle info background", fg: "info-text", bg: "info-bg-subtle", min: 4.5 },
   { usage: "Muted text on a muted (hovered) surface", fg: "text-muted", bg: "bg-muted", min: 4.5 },
   { usage: "Muted text on a sunken surface", fg: "text-muted", bg: "bg-sunken", min: 4.5 },
+  // Overlays (dialog, popover, toast) sit on bg-raised, which is a different
+  // lightness from bg-surface in dark mode, so the pairs are restated for it.
+  { usage: "Body text on a raised overlay (dialog, popover, toast)", fg: "text-default", bg: "bg-raised", min: 7 },
+  { usage: "Secondary text on a raised overlay", fg: "text-muted", bg: "bg-raised", min: 4.5 },
+  { usage: "Form control boundary on a surface (WCAG 1.4.11)", fg: "border-interactive", bg: "bg-surface", min: 3 },
+  { usage: "Invalid form control boundary on a surface (WCAG 1.4.11)", fg: "danger-border", bg: "bg-surface", min: 3 },
+  { usage: "Checked control and selected-tab indicator on a surface (WCAG 1.4.11)", fg: "accent-border", bg: "bg-surface", min: 3 },
+  { usage: "Warning text on the canvas (field warnings, inline status)", fg: "warning-text", bg: "bg-canvas", min: 4.5 },
 ];
 
 /**

@@ -1,0 +1,155 @@
+/*!
+ * future-css -- citations and sources
+ *
+ * Inline citation markers in an answer, and the list of sources they point to.
+ *
+ *   <p>The bundle is 153 KB<a class="fc-cite" href="#src-1"
+ *      aria-label="Source 1: PLAN.md">1</a>.</p>
+ *
+ *   <ol class="fc-sources" aria-label="Sources">
+ *     <li class="fc-source" id="src-1">
+ *       <a class="fc-source__link" href="https://…">
+ *         <span class="fc-source__index">1</span>
+ *         <span class="fc-source__title">PLAN.md</span>
+ *         <span class="fc-source__domain">github.com</span>
+ *       </a>
+ *     </li>
+ *   </ol>
+ *
+ * A marker's visible text is a number, which is a useless accessible name on
+ * its own -- "link, 1" -- so it carries an aria-label naming the source. The
+ * marker links to the source entry in the page, and the entry links out; the
+ * reader can check a claim without leaving the answer.
+ */
+
+@layer fc.components {
+  .fc-cite {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: 1.25em;
+    block-size: 1.25em;
+    margin-inline: 0.15em;
+    padding-inline: 0.3em;
+    /* Raised off the baseline like a footnote, without shrinking line spacing. */
+    vertical-align: 0.2em;
+
+    background-color: var(--fc-color-bg-muted);
+    color: var(--fc-color-text-muted);
+    border-radius: var(--fc-radius-full);
+    font-size: 0.7em;
+    font-weight: var(--fc-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    text-decoration: none;
+
+    transition:
+      background-color var(--fc-duration-fast) var(--fc-easing-standard),
+      color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-cite:hover {
+    background-color: var(--fc-color-accent-bg-subtle);
+    color: var(--fc-color-accent-text);
+  }
+
+  /* ---- Sources --------------------------------------------------------- */
+
+  .fc-sources {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+    gap: var(--fc-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fc-source {
+    min-inline-size: 0;
+    border-radius: var(--fc-radius-lg);
+    /* `scroll-margin` keeps a jumped-to source clear of a sticky header. */
+    scroll-margin-block: var(--fc-space-16);
+    transition: background-color var(--fc-duration-slow) var(--fc-easing-standard);
+  }
+
+  /* Arriving from a citation marker: the entry is briefly highlighted. */
+  .fc-source:target {
+    background-color: var(--fc-color-accent-bg-subtle);
+  }
+
+  .fc-source__link {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "index title"
+      "index domain";
+    column-gap: var(--fc-space-2);
+    align-items: center;
+    block-size: 100%;
+    padding: var(--fc-space-2) var(--fc-space-3);
+
+    background-color: var(--fc-color-bg-surface);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: inherit;
+    text-decoration: none;
+
+    transition: border-color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-source__link:hover {
+    border-color: var(--fc-color-border-strong);
+  }
+
+  .fc-source__index {
+    grid-area: index;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    background-color: var(--fc-color-bg-muted);
+    color: var(--fc-color-text-muted);
+    border-radius: var(--fc-radius-md);
+    font-size: var(--fc-font-size-xs);
+    font-weight: var(--fc-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* A favicon in place of the number, when the application has one. */
+  .fc-source__icon {
+    grid-area: index;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    border-radius: var(--fc-radius-md);
+    object-fit: contain;
+  }
+
+  .fc-source__title {
+    grid-area: title;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--fc-font-size-sm);
+    font-weight: var(--fc-font-weight-medium);
+  }
+
+  .fc-source__domain {
+    grid-area: domain;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--fc-font-size-xs);
+    color: var(--fc-color-text-muted);
+  }
+
+  @media (forced-colors: active) {
+    .fc-cite {
+      border: var(--fc-border-width-thin) solid LinkText;
+    }
+
+    .fc-source:target .fc-source__link {
+      border: var(--fc-border-width-thick) solid Highlight;
+    }
+  }
+}

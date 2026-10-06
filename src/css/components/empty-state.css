@@ -1,0 +1,82 @@
+/*!
+ * future-css -- empty state
+ *
+ * What a list, a search, or a new chat shows when there is nothing in it yet.
+ * The job is to say why it is empty and what to do next, in that order:
+ *
+ *   <div class="fc-empty">
+ *     <div class="fc-empty__icon" aria-hidden="true">…</div>
+ *     <h2 class="fc-empty__title">No results for "quarterly"</h2>
+ *     <p class="fc-empty__body">Try a shorter search, or check the spelling.</p>
+ *     <div class="fc-empty__actions"><button class="fc-btn">Clear search</button></div>
+ *   </div>
+ *
+ * The error variant is the same shape for "this failed to load", so a failure
+ * never renders as a blank region that looks like an empty result.
+ */
+
+@layer fc.components {
+  .fc-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--fc-space-2);
+    max-inline-size: 28rem;
+    margin-inline: auto;
+    padding-block: var(--fc-space-12);
+    padding-inline: var(--fc-space-4);
+    text-align: center;
+  }
+
+  .fc-empty__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 3rem;
+    block-size: 3rem;
+    margin-block-end: var(--fc-space-2);
+    background-color: var(--fc-empty-icon-bg, var(--fc-color-bg-subtle));
+    color: var(--fc-empty-icon-fg, var(--fc-color-text-muted));
+    border-radius: var(--fc-radius-xl);
+    font-size: var(--fc-font-size-xl);
+  }
+
+  .fc-empty__title {
+    margin: 0;
+    font-size: var(--fc-font-size-lg);
+    font-weight: var(--fc-font-weight-semibold);
+    color: var(--fc-color-text-default);
+    text-wrap: balance;
+  }
+
+  .fc-empty__body {
+    margin: 0;
+    font-size: var(--fc-font-size-sm);
+    color: var(--fc-color-text-muted);
+    text-wrap: pretty;
+  }
+
+  .fc-empty__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--fc-space-2);
+    margin-block-start: var(--fc-space-3);
+  }
+
+  .fc-empty--compact {
+    padding-block: var(--fc-space-6);
+  }
+
+  /* The modifier reaches the icon through custom properties, not a descendant selector. */
+  .fc-empty--error {
+    --fc-empty-icon-bg: var(--fc-color-danger-bg-subtle);
+    --fc-empty-icon-fg: var(--fc-color-danger-text);
+  }
+
+  @media (forced-colors: active) {
+    .fc-empty__icon {
+      border: var(--fc-border-width-thin) solid CanvasText;
+    }
+  }
+}

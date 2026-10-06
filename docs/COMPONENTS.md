@@ -811,6 +811,215 @@ a `useWasm` that returns false keeps it that way.
 
 ---
 
+## Form field (implemented)
+
+`src/css/components/field.css`. A label, an optional hint, the real control, and an
+error element that exists from the start and is filled on failure.
+
+```html
+<div class="fc-field">
+  <label class="fc-field__label" for="email">Email</label>
+  <p class="fc-field__hint" id="email-hint">Used for sign-in.</p>
+  <input class="fc-input" id="email" type="email" required
+         aria-describedby="email-hint email-error">
+  <p class="fc-field__error" id="email-error"></p>
+</div>
+```
+
+- `.fc-input` styles `<input>`, `<textarea>`, and a native `<select>` (chevron drawn
+  with `currentColor`, so it follows the theme). Sizes `--sm`, `--lg`;
+  `--autosize` grows a textarea with `field-sizing: content`, no script.
+- Invalid is `aria-invalid="true"` (set by the application) or `:user-invalid`
+  (native validation after interaction), never bare `:invalid`, which would mark a
+  required field red before anyone typed.
+- `.fc-input-group` holds a control with adornments (`__addon`, `__control`). The
+  group draws the border; the inner control's focus ring is drawn inset, because the
+  group clips its corners.
+- `.fc-error-summary` goes above the form after a failed submit, with `tabindex="-1"`
+  so focus can move to it, and links to each failing field.
+
+## Checkbox, radio, and switch (implemented)
+
+`check.css`. Checkboxes and radios are the native controls tinted with `accent-color`,
+inside a `<label class="fc-check">` that is the whole hit target. The switch is
+`<input type="checkbox" role="switch" class="fc-switch">`, drawn by hand because no
+native switch exists, and still a real checkbox: it submits, resets, and toggles with
+Space. The thumb travels by `translate`, which is physical, so it has an RTL branch.
+`.fc-switch-row` lays out a settings row with the switch at the inline end.
+
+## Card (implemented)
+
+`card.css`. The first component that is a **size container**: its parts respond to the
+card's own width, so one card works in a grid, a sidebar, and on a phone.
+`.fc-card__layout` puts `__media` beside the content once the card is 34rem wide and
+stacks it below that; tight cards (< 18rem) reduce their padding. Variants
+`--elevated`, `--subtle`.
+
+A whole-card link stretches the title link's `::after` over the card, so the hit area is
+large while the accessible name is just the title. A card containing a radio or checkbox
+reflects `:checked` and `:disabled` through `:has()`, so it works as a large option.
+
+## Badge, tag, and kbd (implemented)
+
+`badge.css`. `.fc-badge` is a static label with tones `--accent --success --warning
+--danger --info`, plus `--solid`, `--outline`, `--square`, `--count` (tabular figures).
+`.fc-tag` is interactive: a filter chip with `aria-pressed`, or a token with its own
+`.fc-tag__remove` button named "Remove <label>". `.fc-kbd` renders a key.
+
+## Alert (implemented)
+
+`alert.css`. Tones `--info --success --warning --danger`, a `--banner` variant, and
+optional `__icon`, `__title`, `__body`, `__actions`, `__dismiss`. The role is the
+consumer's choice and deliberately not implied by the class: none for a callout present
+at load, `status` for one inserted after an action, `alert` only for an interruption.
+
+## Dialog and sheet (implemented)
+
+`dialog.css`, on native `<dialog>` opened with `showModal()` (or `commandfor` /
+`command="show-modal"` where invoker commands are supported). The platform supplies the
+top layer, inert background, Escape, and focus in and back. `closedby="any"` adds light
+dismiss.
+
+- Parts: `__header`, `__title`, `__description`, `__close`, `__body` (the only part
+  that scrolls), `__footer`.
+- Sizes `--sm`, `--lg`, `--fullscreen`. `--sheet` docks to the inline-end edge and
+  slides in from it; under 36rem a centred dialog becomes a bottom sheet.
+- Enter and exit animate with `@starting-style` and discrete transitions of `display`
+  and `overlay`. Without support it shows and hides instantly.
+- `display: flex` is only set on `[open]`; setting it unconditionally would override
+  the UA rule that hides closed dialogs.
+
+## Popover and tooltip (implemented)
+
+`popover.css`. `.fc-popover` styles a native `[popover]`, anchored to its invoker with
+`position-area` and `position-try-fallbacks` where CSS anchor positioning exists, and
+centred by the UA elsewhere.
+
+`.fc-tooltip` wraps a trigger and a `role="tooltip"` bubble. It shows on hover (after a
+short delay) and on keyboard focus (immediately), stays open while the pointer moves
+onto it (WCAG 1.4.13 "hoverable"), and is hidden with `visibility` so
+`aria-describedby` still reads it. The `tooltip` binding adds Escape dismissal without
+moving focus and wires `aria-describedby` when the markup did not. A tooltip is never
+the only place information lives.
+
+## Toast (implemented)
+
+`toast.css` plus the `toast` binding. `FutureCssToaster` creates a polite and an
+assertive live region up front (a region created with its first message is announced
+unreliably), renders each toast with text only, and routes `danger` to the assertive
+region. Timers pause while the pointer is over the stack or focus is inside it;
+`danger` toasts do not time out by default. Escape dismisses a focused toast and focus
+returns to where the user came from.
+
+```js
+const toaster = new FutureCssToaster();
+toaster.show({ title: "Chat archived", action: { label: "Undo", onAction: restore } });
+```
+
+## Tabs (implemented)
+
+`tabs.css` plus the `tabs` binding (`FutureCssTabs`, `bindTabs`). APG tabs: one tab in
+the tab order, arrows move, Home/End jump, `aria-disabled` tabs are skipped, and the
+selected panel is the only one shown. **Arrow direction follows the writing direction**
+(ArrowLeft is "next" in RTL) and **orientation** (`aria-orientation="vertical"` on the
+list switches to Up/Down and lays the tabs out vertically). Activation is automatic by
+default; `activation: "manual"` selects on Enter/Space.
+
+`.fc-tabs__list--segmented` draws a segmented control. Variants reach the tabs through
+custom properties (`--fc-tabs-tab-size`, `--fc-tabs-selected-bg`, …) rather than
+descendant selectors.
+
+## Breadcrumb and pagination (implemented)
+
+`breadcrumb.css`: an ordered list whose separators are generated content with empty
+alternative text, so they are not read. Long names truncate. The current page is
+`aria-current="page"`.
+
+`pagination.css`: links, not buttons, so every page has a URL. The disabled "Previous"
+is an anchor with no `href` and `aria-disabled`. Arrows are generated and mirror in RTL.
+
+## Spinners (implemented)
+
+`spinner.css`. One block, `.fc-spinner`, with a drawing chosen by what the work is:
+
+| Modifier | Drawing | Use it for |
+| --- | --- | --- |
+| (none) | ring with one solid quarter | generic loading: a page, a request, a save |
+| `--arc` | tapering conic arc | the same, softer |
+| `--dots` | three bouncing dots (3 child spans) | someone is composing a reply: the typing indicator |
+| `--pulse` | a dot with a ripple | something live and listening: a connected agent, a recording |
+| `--bars` | four bars (4 child spans) | a stream flowing: tokens arriving, audio playing |
+| `--orbit` | two satellites | background work with several parts: indexing, syncing |
+| `--sparkle` | a turning four-point star | a model is thinking |
+
+Sizes `--xs` to `--xl` (or set `--fc-spinner-size`); tones `--muted` and `--current`
+(inherit the text colour). Every drawing uses `currentColor`; the sparkle's gradient
+can be replaced with `--fc-spinner-fill`. A spinner is always `aria-hidden`, beside a
+`role="status"` text that says what is happening.
+
+**Reduced motion:** spinners never stop, because a frozen spinner reads as a hung page.
+Rotating ones slow to a third of their speed; dots, bars, pulse, and sparkle switch to an
+opacity-only fade. **Forced colours:** they opt out of the adjustment and draw in
+`CanvasText`, since forced colours would otherwise erase every drawing but the ring.
+
+`.fc-shimmer-text` is the companion for status words ("Searching 12 sources"): a sweep
+between two text tokens that both pass contrast, so it is legible at every frame.
+
+## Agent status (implemented)
+
+`agent-status.css`. The "what is the agent doing now" row: a spinner, a label, and an
+elapsed time, all driven by `data-fc-state`. While `pending`, `queued`, `running`, or
+`streaming`, the label shimmers and the spinner turns; on `complete`, `error`,
+`aborted`, or `denied` the spinner is hidden and a glyph states the outcome.
+
+```html
+<div class="fc-agent-status" data-fc-kind="agent-status" data-fc-state="running">
+  <span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"></span>
+  <span class="fc-agent-status__label" role="status">Searching 12 sources</span>
+  <span class="fc-agent-status__meta">14s</span>
+</div>
+```
+
+`role="status"` goes on the label, not the row: the timer changes every second and
+would be announced every second; the label changes at step boundaries.
+
+## Skeleton and progress (implemented)
+
+`loading.css`. `.fc-skeleton` (`--text`, `--circle`, `--block`; the shimmer reverses
+in RTL) and `.fc-progress` on the native `<progress>`, with an indeterminate sweep. Under
+reduced motion the shimmer and sweep stop, and the indeterminate bar becomes a static
+hatch that cannot be read as a percentage.
+
+## Avatar, empty state, and disclosure (implemented)
+
+- `avatar.css`: image or initials, sizes `--xs` to `--xl`, `--square` for non-people
+  (agents, tools, organisations), and `.fc-avatar-group`.
+- `empty-state.css`: `.fc-empty` says why it is empty and what to do next; `--error`
+  uses the same shape for "failed to load", so a failure never looks like no results.
+- `disclosure.css`: `<details class="fc-disclosure">`. A shared `name` makes an
+  exclusive accordion with no script; opening animates via `::details-content` and
+  `interpolate-size` where supported. `--boxed` draws each item as a card.
+
+## AI answer parts (implemented)
+
+Four pieces an assistant answer is made of, each following the dual-audience contract:
+
+- **Reasoning trace** (`reasoning.css`): `<details class="fc-reasoning"
+  data-fc-kind="reasoning" data-fc-state="streaming">`. The label shimmers only while
+  the state is `streaming` or `pending`, between two text tokens that both pass
+  contrast, so it is legible at every frame. The body is not a live region.
+- **Citations** (`citation.css`): `.fc-cite` inline markers with an `aria-label`
+  naming the source (a bare "1" is a useless name), linking to `.fc-source` entries in
+  an `.fc-sources` list, which highlight on `:target`.
+- **Suggested prompts** (`suggestion.css`): `.fc-suggestions` of `.fc-suggestion`
+  buttons whose label is the prompt that will be sent; `--grid` for starters, `--pill`
+  for follow-ups.
+- **Message actions** (`chat.css`): `.fc-msg__actions` / `.fc-msg__action` under a
+  message. They recede until the message is hovered or focused, stay in the tab order,
+  and are always visible on devices without hover. Feedback toggles use `aria-pressed`.
+
+---
+
 ## Planned components
 
 Ordered by dependency and by how often they appear. Full specifications are written as
@@ -818,16 +1027,11 @@ each component is built.
 
 | Component | Element | Notes |
 | --- | --- | --- |
-| Link | `<a href>` | Underline always; focus from base layer |
-| Form field | `<input>` + `<label>` | Label, hint, error, `aria-describedby` wiring |
-| Checkbox / radio | native | Do not rebuild; style the native control |
-| Dialog | `<dialog>` | Native focus containment and Escape handling |
-| Disclosure | `<details>` | Progressive enhancement target |
-| Card | `<article>` / `<section>` | Surface, border, radius, shadow |
-| Tabs | ARIA tabs pattern | Full keyboard contract required |
-| Menu | `<nav>` + buttons | Focus management, Escape, arrow keys |
-| Toast | `<output>` + `role="status"` | Live region politeness matters |
-| Tooltip | `role="tooltip"` | Not for essential content; not hover-only |
+| Link | `<a href>` | Underline always; focus from base layer (styled in base today) |
+| Navigation sidebar | `<nav>` + list | Collapsible, with `aria-current` |
+| Data table | `<table>` | Sorting affordances (`aria-sort`), sticky header |
+| Description list | `<dl>` | Key/value metadata |
+| Combobox with free text | ARIA combobox | Builds on `fc-select` |
 
 ### One component that is not a component
 

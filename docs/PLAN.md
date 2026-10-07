@@ -41,10 +41,8 @@ cargo test           132 tests passing
 
 The bundle figure is uncompressed and unminified, which is the shipped form: the CSS is
 deliberately readable so engineers can debug it in devtools, and consumers minify at
-their own boundary. It exceeds the < 60 KB uncompressed budget in the performance
-section below, which has never been enforced. See
-[Performance budget](#performance-budget) for the measured minified figures and the
-decision that is still open.
+their own boundary. The budget gates what one page pays rather than the full bundle; see
+[Performance budget](#performance-budget).
 
 **Eight crates, eight `.wasm` files, seven importable modules.** `fc-core` and
 `fc-model` both emit into the `fc-model` module, so eight build entries produce seven
@@ -496,7 +494,8 @@ Turning manual discipline into automation as the component count grows.
   directions and schemes, and the demo at 400%)
 - [ ] RTL layout diffing against LTR fixtures
 - [ ] Reduced-motion and forced-colors test renders
-- [ ] Bundle size budget with a failure threshold
+- [x] Bundle size budget with a failure threshold (per layer, per component and per
+  page, in `tests/budget.test.ts`; adopted early, in Phase 2)
 
 ### Documentation
 
@@ -575,56 +574,43 @@ describes. Documentation that drifts is worse than none, because it is trusted.
 
 ### Performance budget
 
-| Budget | Target | Measured |
-| --- | --- | --- |
-| Full bundle, uncompressed | < 60 KB | **276.2 KB — over by 4.6x** |
-| Full bundle, minified | < 15 KB | **158.3 KB — over by 10.6x** |
-| Full bundle, minified + gzip | — | 33.0 KB |
-| Tokens + base only (layers, reset, tokens, base) | < 10 KB minified | **14.6 KB — over** |
-| CSS applied to a typical page | < 30 KB | **36.9 KB — over** |
+**Decided 2026-10-07 by the maintainer, for now: budget per page, enforced in
+`npm run check` from today.** `tests/budget.test.ts` fails the check when a target is
+missed.
 
-Measured on 2026-10-06 at `e96b06a` (34 components). The minified figures come from an
-external minifier (esbuild 0.25, `--minify`) run outside the repo; nothing was added to
-the toolchain. "Typical page" is tokens + base + layout + utilities plus the three
-components a chat page uses (button, chat, composer). Each component costs 2–7 KB
-minified, so the full bundle grows by roughly 5 KB per component.
+| Budget (minified) | Target | Measured | Gate |
+| --- | --- | --- | --- |
+| Layers + reset + tokens + base | < 16 KB | 12.0 KB | fails the check |
+| Any single component | < 7 KB | 6.0 KB largest (`nav`) | fails the check |
+| Typical chat page | < 40 KB | 28.7 KB | fails the check |
+| Full bundle, minified | — | 135.8 KB | reported only |
+| Full bundle, minified + gzip | — | 19.7 KB | reported only |
 
-Enforced in CI from Phase 4. Exceeding the budget requires a written justification.
+Measured on 2026-10-07 with 37 components. "Typical chat page" is layers + reset +
+tokens + base + layout + utilities plus button, chat and composer.
 
-**Every target is currently missed, and the gap is growing.** The targets were written
-before the bundle had a terminal, a syntax palette, a diff family and twenty more
-components, and nothing has re-checked them since. #24 took the system from 14 to 34
-components and the minified bundle from 84 KB to 158 KB. The < 15 KB minified target for
-the *full* bundle is not reachable for a 34-component system by trimming; it was a
-target for a much smaller library.
+**Why per page.** Consumers load the per-layer files in `dist/` and only the components
+they render, so what one page pays is the number that stays meaningful as the component
+count grows. The old full-bundle targets (< 60 KB uncompressed, < 15 KB minified) were
+written for a much smaller library and could not be met by trimming. Gating the full
+bundle on gzip would let a page that renders one component pass while paying for all of
+them; raising the uncompressed targets would penalise the explanatory comments
+`AGENTS.md` asks for. The full bundle is still printed by the test so growth stays
+visible, but it never fails.
 
-**What a budget can usefully constrain** is not the full bundle, which nobody should
-ship whole, but what one page pays. The per-layer outputs in `dist/` already let a
-consumer load tokens + base + only the components they use. So the decision is really
-which number to hold the line on, and it belongs to the maintainer.
-**Status: pending the maintainer's choice; nothing below is adopted yet.**
+**How it is measured.** Minified sizes come from `src/build/strip-css.ts`, an in-repo
+comment-and-whitespace stripper, so the check adds no dependency. The shipped CSS stays
+unminified; the stripper only measures. On this codebase it lands within 0.5% of esbuild
+(135.8 KB against 135.3 KB for the full bundle).
 
+That comparison excludes `/*!` comments, which the stripper drops and default minifiers
+keep. Every source file opens with a `/*!` banner, and those banners are about 42 KB of
+the full bundle when a consumer minifies with esbuild's defaults (177.2 KB against
+135.3 KB). The 158.3 KB measured on 2026-10-06 used those defaults, so it included them. Whether the
+banners should stay `/*!` is a separate decision; the budget measures the CSS without
+them.
 
-1. **Budget per layer and per component, minified (recommended).** Tokens + base
-   < 16 KB, any single component < 7 KB, a typical page < 40 KB. Drop the full-bundle
-   targets, or keep them as reported numbers rather than gates. This measures what a
-   consumer actually downloads and stays meaningful as the component count grows. It
-   needs a minifier in the measurement path: either a dev-only dependency used only by
-   the budget check (the shipped CSS stays unminified and dependency-free), or a small
-   in-repo comment-and-whitespace stripper, which gets within a few percent of a real
-   minifier on this codebase's style.
-2. **Restate the full-bundle targets against minified + gzip.** Today's bundle is
-   33.0 KB gzipped, so a target would have to start near 40 KB and keep rising with
-   every component. It is the number closest to wire cost, but it hides per-page
-   waste: a page using one component would still "pass" while paying for thirty-three
-   it never renders.
-3. **Raise the uncompressed targets to what the system needs**, with the reasoning
-   written down. Cheapest to adopt and needs no minifier, but uncompressed size
-   tracks comment density as much as shipped cost, so it would penalise exactly the
-   explanatory comments `AGENTS.md` asks for.
-
-Leaving targets the build contradicts is the one option that is not available: it is
-precisely the class of error this system is built to prevent everywhere else.
+Exceeding a target requires a written justification here, not a raised number.
 
 ### Open questions
 

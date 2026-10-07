@@ -713,10 +713,11 @@ mixed-direction runs thoroughly and the layout layer supports them, but there is
 `.fc-u-bidi` class and no `<bdi>` guidance in `COMPONENTS.md`. The prose is ahead of the
 API.
 
-**9. Bundle size.** 276.2 KB uncompressed (158.3 KB minified, 33.0 KB gzipped) against
-a `< 60 KB` budget in `PLAN.md`. The minified size is now measured and stated, and
-`PLAN.md` §"Performance budget" lays out the options for restating the budget. The
-choice between them is still open; until it is made, every budget target is missed.
+**9. Bundle size (resolved 2026-10-07).** The budget is now per page and gates
+`npm run check`: layers + reset + tokens + base < 16 KB, any component < 7 KB, a typical
+chat page < 40 KB, all minified. All three pass. The full bundle (135.8 KB minified,
+19.7 KB gzipped) is reported but not gated, because consumers load per-layer files. See
+`PLAN.md` §"Performance budget".
 
 ### Docs that disagree with the code
 

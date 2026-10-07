@@ -86,7 +86,10 @@
     display: block;
     inline-size: 100%;
     min-block-size: var(--fc-size-target-comfortable);
-    padding-block: var(--fc-space-2);
+    /* Small enough that one line of text plus padding stays under the minimum,
+       so the minimum -- shared with buttons and selects -- is the real height.
+       With space-2 the input came out 42px beside a 40px button. */
+    padding-block: var(--fc-space-1-5);
     padding-inline: var(--fc-space-3);
 
     background-color: var(--fc-color-bg-surface);
@@ -141,7 +144,8 @@
     border-color: var(--fc-color-danger-border);
   }
 
-  .fc-input[aria-invalid="true"]:focus-visible {
+  .fc-input[aria-invalid="true"]:focus-visible,
+  .fc-input:user-invalid:focus-visible {
     outline-color: var(--fc-color-danger-border);
     box-shadow: 0 0 0 calc(var(--fc-border-width-focus) + var(--fc-space-1)) var(--fc-color-danger-bg-subtle);
   }
@@ -263,7 +267,7 @@
   .fc-input-group__control {
     flex: 1;
     min-inline-size: 0;
-    padding-block: var(--fc-space-2);
+    padding-block: var(--fc-space-1-5);
     padding-inline: var(--fc-space-3);
     background-color: transparent;
     color: var(--fc-color-text-default);

@@ -74,7 +74,7 @@
 
   /* `bg-raised` equals `bg-surface` in the light scheme, so a fill change was
      no hover at all there. The edge moves toward the text colour instead. */
-  .fc-select:hover:not([aria-disabled="true"]) {
+  .fc-select:hover:not([aria-disabled="true"], [aria-expanded="true"]) {
     border-color: color-mix(in oklab, var(--fc-color-border-interactive), var(--fc-color-text-default) 40%);
   }
 

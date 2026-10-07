@@ -147,9 +147,9 @@ The reference component. Every other component should be built by following it.
 
 | Class | Min block size | Font size |
 | --- | --- | --- |
-| `.fc-btn--sm` | 2rem | xs |
-| default | 1.5rem (24px, WCAG minimum) | sm |
-| `.fc-btn--lg` | 2.5rem (40px) | md |
+| `.fc-btn--sm` | 2rem (32px) | xs |
+| default | 2.5rem (40px) | sm |
+| `.fc-btn--lg` | 3rem (48px) | md |
 
 ### The `:disabled` vs `aria-disabled` decision
 

@@ -20,7 +20,8 @@ import { gzipSync } from "node:zlib";
 import { stripCss } from "../src/build/strip-css.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const dist = join(resolve(here, ".."), "dist");
+const root = resolve(here, "..");
+const dist = join(root, "dist");
 const hasDist = existsSync(join(dist, "future-css.css"));
 
 const KB = 1024;
@@ -71,7 +72,10 @@ describe("performance budget", { skip: hasDist ? false : "run `npm run build` fi
   });
 
   it(`keeps every component under ${kb(BUDGET.component)}`, () => {
-    const over = readdirSync(join(dist, "components"))
+    // Enumerate the sources, not dist/components: the build never clears dist,
+    // so a removed or renamed component's stale output would still be measured.
+    const over = readdirSync(join(root, "src", "css", "components"))
+      .filter((file) => file.endsWith(".css"))
       .map((file) => [file, size(join("components", file))] as const)
       .filter(([, bytes]) => bytes >= BUDGET.component)
       .map(([file, bytes]) => `${file} (${kb(bytes)})`);

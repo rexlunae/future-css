@@ -29,15 +29,19 @@
     text-decoration: none;
     white-space: nowrap;
 
-    /* WCAG 2.2 target size (minimum), with room to spare. */
-    min-block-size: var(--fc-size-target-min);
+    /*
+     * The same height as `.fc-input` and `.fc-select` at every size, so a
+     * button beside a field lines up without a wrapper fixing it. Comfortably
+     * above the WCAG 2.2 target size minimum.
+     */
+    min-block-size: var(--fc-size-target-comfortable);
     min-inline-size: var(--fc-size-target-min);
 
     padding-block: var(--fc-space-2);
     padding-inline: var(--fc-space-4);
 
     border: var(--fc-border-width-thin) solid transparent;
-    border-radius: var(--fc-radius-md);
+    border-radius: var(--fc-radius-lg);
 
     font-family: inherit;
     font-size: var(--fc-font-size-sm);
@@ -57,20 +61,32 @@
       background-color var(--fc-duration-fast) var(--fc-easing-standard),
       border-color var(--fc-duration-fast) var(--fc-easing-standard),
       color var(--fc-duration-fast) var(--fc-easing-standard),
-      box-shadow var(--fc-duration-fast) var(--fc-easing-standard);
+      box-shadow var(--fc-duration-fast) var(--fc-easing-standard),
+      scale var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  /*
+   * A press sinks the button slightly. `scale` rather than `transform` so it
+   * composes with any transform the caller sets, and it is a compositor-only
+   * property, so it never triggers layout. Disabled and busy buttons do not
+   * respond, because a control that moves when it cannot act is lying.
+   */
+  .fc-btn:active:not(:disabled, [aria-disabled="true"], [aria-busy="true"]) {
+    scale: 0.97;
   }
 
   /* ---- Sizes ----------------------------------------------------------- */
 
   .fc-btn--sm {
     min-block-size: 2rem;
+    border-radius: var(--fc-radius-md);
     padding-block: var(--fc-space-1);
     padding-inline: var(--fc-space-3);
     font-size: var(--fc-font-size-xs);
   }
 
   .fc-btn--lg {
-    min-block-size: var(--fc-size-target-comfortable);
+    min-block-size: 3rem;
     padding-block: var(--fc-space-3);
     padding-inline: var(--fc-space-6);
     font-size: var(--fc-font-size-md);
@@ -90,34 +106,33 @@
 
   /* ---- Variants -------------------------------------------------------- */
 
-  /* Default / primary. */
+  /*
+   * Hover rules sit inside `(hover: hover)`. On touch screens a tap leaves the
+   * last-tapped button in its hover colour until something else is tapped,
+   * which reads as a stuck control.
+   *
+   * The neutral variants tint with `currentColor` at the shared overlay
+   * opacities instead of swapping to a fixed surface token. A fixed token is
+   * only right on the surface it was picked against -- `bg-subtle` matches
+   * `bg-surface` exactly in dark mode, which made the subtle button invisible
+   * on a card -- while a tint of the label colour stays visible on any surface
+   * in either scheme.
+   */
+
+  /* Default / primary. The faint shadow lifts it off the page as the one
+     action to take. */
   .fc-btn--primary {
     background-color: var(--fc-color-accent-bg);
     color: var(--fc-color-text-on-accent);
     border-color: var(--fc-color-accent-border);
-  }
-
-  .fc-btn--primary:hover {
-    background-color: var(--fc-color-accent-bg-hover);
-  }
-
-  .fc-btn--primary:active {
-    background-color: var(--fc-color-accent-bg-active);
+    box-shadow: var(--fc-shadow-raised);
   }
 
   /* Secondary: an outlined button that sits beside a primary without competing. */
   .fc-btn--secondary {
-    background-color: transparent;
+    background-color: var(--fc-color-bg-surface);
     color: var(--fc-color-text-default);
     border-color: var(--fc-color-border-interactive);
-  }
-
-  .fc-btn--secondary:hover {
-    background-color: var(--fc-color-bg-muted);
-  }
-
-  .fc-btn--secondary:active {
-    background-color: var(--fc-color-bg-subtle);
   }
 
   /* Ghost: no chrome until interacted with. Low affordance -- use sparingly. */
@@ -127,19 +142,11 @@
     border-color: transparent;
   }
 
-  .fc-btn--ghost:hover {
-    background-color: var(--fc-color-bg-muted);
-  }
-
   /* Subtle: a tinted fill for the least important of several actions. */
   .fc-btn--subtle {
-    background-color: var(--fc-color-bg-subtle);
+    background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-hover-overlay) * 100%), transparent);
     color: var(--fc-color-text-default);
     border-color: transparent;
-  }
-
-  .fc-btn--subtle:hover {
-    background-color: var(--fc-color-bg-muted);
   }
 
   /*
@@ -148,15 +155,65 @@
    */
   .fc-btn--danger {
     background-color: var(--fc-color-danger-bg);
-    color: var(--fc-color-text-default);
+    color: var(--fc-color-text-on-danger);
     border-color: var(--fc-color-danger-border);
+    box-shadow: var(--fc-shadow-raised);
   }
 
-  .fc-btn--danger:hover {
-    background-color: var(--fc-color-danger-border);
+  @media (hover: hover) {
+    .fc-btn--primary:hover {
+      background-color: var(--fc-color-accent-bg-hover);
+    }
+
+    .fc-btn--secondary:hover {
+      border-color: color-mix(in oklab, var(--fc-color-border-interactive), var(--fc-color-text-default) 40%);
+    }
+
+    .fc-btn--secondary:hover,
+    .fc-btn--ghost:hover {
+      background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-hover-overlay) * 100%), transparent);
+    }
+
+    .fc-btn--subtle:hover {
+      background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 100%), transparent);
+    }
+
+    .fc-btn--danger:hover {
+      background-color: var(--fc-color-danger-bg-hover);
+      border-color: var(--fc-color-danger-bg-hover);
+    }
+  }
+
+  /* Pressed. After the hover block, because a pressed button is also hovered
+     and the two have equal specificity. */
+  .fc-btn--primary:active {
+    background-color: var(--fc-color-accent-bg-active);
+    box-shadow: none;
+  }
+
+  .fc-btn--secondary:active,
+  .fc-btn--ghost:active {
+    background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 100%), transparent);
+  }
+
+  .fc-btn--subtle:active {
+    background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 150%), transparent);
+  }
+
+  .fc-btn--danger:active {
+    box-shadow: none;
   }
 
   /* ---- States ---------------------------------------------------------- */
+
+  /*
+   * The base focus ring paints its offset gap with box-shadow, and this layer
+   * outranks base, so the raised variants' own shadow would erase the gap.
+   * Restated here so every variant keeps it.
+   */
+  .fc-btn:focus-visible {
+    box-shadow: 0 0 0 var(--fc-space-0-5) var(--fc-color-focus-ring-offset);
+  }
 
   /*
    * Disabled. Two details matter:
@@ -173,6 +230,7 @@
     background-color: var(--fc-color-bg-subtle);
     color: var(--fc-color-text-subtle);
     border-color: var(--fc-color-border-subtle);
+    box-shadow: none;
     cursor: not-allowed;
     opacity: var(--fc-opacity-disabled);
   }

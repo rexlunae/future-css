@@ -24,6 +24,12 @@ export const easing = {
   standard: "cubic-bezier(0.2, 0, 0, 1)",
   decelerate: "cubic-bezier(0, 0, 0, 1)",
   accelerate: "cubic-bezier(0.3, 0, 1, 1)",
+  /*
+   * A small overshoot, for a part that is physically thrown -- a switch thumb.
+   * Kept under ~5% so it reads as weight, not bounce; anything springier draws
+   * the eye on every toggle.
+   */
+  spring: "cubic-bezier(0.3, 1.25, 0.5, 1)",
 } as const;
 
 /**

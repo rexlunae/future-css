@@ -108,10 +108,11 @@ the display's white point.
 ```
 Surfaces      bg-canvas  bg-surface  bg-raised  bg-overlay
               bg-sunken  bg-subtle   bg-muted   bg-inverse
+              bg-thumb
 
 Foreground    text-default  text-muted  text-subtle
               text-inverse  text-inverse-muted
-              text-on-accent
+              text-on-accent  text-on-danger
 
 Borders       border-default  border-subtle  border-strong  border-interactive
 
@@ -119,7 +120,7 @@ Accent        accent-bg  accent-bg-hover  accent-bg-active
               accent-bg-subtle  accent-text  accent-border
 
 Status        <status>-bg  <status>-text  <status>-bg-subtle  <status>-border
-              for success, warning, danger, info
+              for success, warning, danger, info; plus danger-bg-hover
 
 Focus         focus-ring  focus-ring-offset
 ```
@@ -132,6 +133,8 @@ field begins. Using one token for both means one of the two requirements gets vi
 **`text-on-accent` inverts between schemes.** In light mode the accent fill is deep, so
 the label is white. In dark mode the fill is light, so the label must be near-black.
 Hard-coding white is one of the most common dark-mode accessibility failures.
+`text-on-danger` does the same for the danger fill. The danger button used
+`text-default` until it had one, which put near-black on deep red in light mode.
 
 **`bg-inverse` and `text-inverse-muted` exist as a pair.** "Inverse text" needs a defined
 surface to be legible against, and secondary text on that surface needs its own ramp: the
@@ -295,7 +298,9 @@ Durations are deliberately short -- 120ms to 300ms. Interface motion exists to e
 state change, not to entertain; above roughly 300ms it reads as latency.
 
 Easing is split by intent: `decelerate` for entering (motion settles into place),
-`accelerate` for exiting (motion gets out of the way).
+`accelerate` for exiting (motion gets out of the way). `spring` overshoots by a few
+percent, for a part that is thrown rather than revealed -- the switch thumb. More
+overshoot than that reads as bounce and draws the eye on every toggle.
 
 All durations collapse under `prefers-reduced-motion`, handled once in the reset layer.
 Spinners are the one exception, excluded from that block by name: the block is

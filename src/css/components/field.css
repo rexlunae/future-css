@@ -86,7 +86,10 @@
     display: block;
     inline-size: 100%;
     min-block-size: var(--fc-size-target-comfortable);
-    padding-block: var(--fc-space-2);
+    /* Small enough that one line of text plus padding stays under the minimum,
+       so the minimum -- shared with buttons and selects -- is the real height.
+       With space-2 the input came out 42px beside a 40px button. */
+    padding-block: var(--fc-space-1-5);
     padding-inline: var(--fc-space-3);
 
     background-color: var(--fc-color-bg-surface);
@@ -104,17 +107,25 @@
       background-color var(--fc-duration-fast) var(--fc-easing-standard);
   }
 
+  /*
+   * Hover moves the border toward the text colour. `border-strong` is not used
+   * because it is lighter than `border-interactive` in the light scheme, so the
+   * edge faded on hover there and darkened in dark mode.
+   */
   .fc-input:hover {
-    border-color: var(--fc-color-border-strong);
+    border-color: color-mix(in oklab, var(--fc-color-border-interactive), var(--fc-color-text-default) 40%);
   }
 
   /*
-   * Text inputs match :focus-visible on every focus, mouse included, so the base
-   * ring already appears. The border change is an extra cue at the control's
-   * own edge, which is where the eye is when typing.
+   * Text inputs match :focus-visible on every focus, mouse included. The ring
+   * sits flush against the accent border, with a soft accent halo beyond it,
+   * rather than floating a gap away: a ring that hovers off a text box reads as
+   * a second box. Contrast still comes from the 2px outline, not the halo.
    */
   .fc-input:focus-visible {
     border-color: var(--fc-color-accent-border);
+    outline-offset: 0;
+    box-shadow: 0 0 0 calc(var(--fc-border-width-focus) + var(--fc-space-1)) var(--fc-color-accent-bg-subtle);
   }
 
   .fc-input::placeholder {
@@ -133,8 +144,10 @@
     border-color: var(--fc-color-danger-border);
   }
 
-  .fc-input[aria-invalid="true"]:focus-visible {
+  .fc-input[aria-invalid="true"]:focus-visible,
+  .fc-input:user-invalid:focus-visible {
     outline-color: var(--fc-color-danger-border);
+    box-shadow: 0 0 0 calc(var(--fc-border-width-focus) + var(--fc-space-1)) var(--fc-color-danger-bg-subtle);
   }
 
   .fc-input:disabled {
@@ -226,15 +239,20 @@
     border: var(--fc-border-width-thin) solid var(--fc-color-border-interactive);
     border-radius: var(--fc-radius-lg);
     overflow: clip;
-    transition: border-color var(--fc-duration-fast) var(--fc-easing-standard);
+    transition:
+      border-color var(--fc-duration-fast) var(--fc-easing-standard),
+      box-shadow var(--fc-duration-fast) var(--fc-easing-standard);
   }
 
   .fc-input-group:hover {
-    border-color: var(--fc-color-border-strong);
+    border-color: color-mix(in oklab, var(--fc-color-border-interactive), var(--fc-color-text-default) 40%);
   }
 
+  /* The same halo as a focused `.fc-input`, so a group and a bare field focus
+     alike. The inner control still draws the 2px ring. */
   .fc-input-group:focus-within {
     border-color: var(--fc-color-accent-border);
+    box-shadow: 0 0 0 var(--fc-space-1) var(--fc-color-accent-bg-subtle);
   }
 
   .fc-input-group:has([aria-invalid="true"], :user-invalid) {
@@ -249,7 +267,7 @@
   .fc-input-group__control {
     flex: 1;
     min-inline-size: 0;
-    padding-block: var(--fc-space-2);
+    padding-block: var(--fc-space-1-5);
     padding-inline: var(--fc-space-3);
     background-color: transparent;
     color: var(--fc-color-text-default);

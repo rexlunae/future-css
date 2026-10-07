@@ -37,6 +37,9 @@
 
     padding-block: var(--fc-space-2);
     padding-inline: var(--fc-space-3);
+    /* A toolbar of compact selects; full form height would make the strip
+       taller than the conversation line it annotates. */
+    --fc-select-block-size: 2rem;
 
     background-color: var(--fc-color-bg-subtle);
     border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);

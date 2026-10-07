@@ -88,12 +88,21 @@
 
   /*
    * `--fc-switch-travel` is the distance the thumb moves. It is derived from the
-   * track and thumb sizes so a size modifier only has to restate those two.
+   * track and thumb sizes so a size modifier only has to restate those three.
+   * `--fc-switch-stretch` widens the thumb while pressed; the checked position
+   * subtracts it, so the thumb grows toward the middle from either end instead
+   * of running off the track.
+   *
+   * The off track is filled with `border-strong` rather than outlined: the fill
+   * is what meets the 3:1 boundary contrast, and a light thumb sits on it. A
+   * grey thumb on a grey outline -- the old drawing -- met the ratio but read
+   * as disabled.
    */
   .fc-switch {
-    --fc-switch-w: 2.25rem;
-    --fc-switch-h: 1.25rem;
-    --fc-switch-thumb: 0.875rem;
+    --fc-switch-w: 2.5rem;
+    --fc-switch-h: 1.375rem;
+    --fc-switch-thumb: 1rem;
+    --fc-switch-stretch: 0rem;
     --fc-switch-pad: calc((var(--fc-switch-h) - var(--fc-switch-thumb)) / 2 - var(--fc-border-width-thin));
     --fc-switch-travel: calc(
       var(--fc-switch-w) - var(--fc-switch-thumb) - 2 * var(--fc-switch-pad) - 2 * var(--fc-border-width-thin)
@@ -109,34 +118,32 @@
     padding-inline: var(--fc-switch-pad);
     vertical-align: middle;
 
-    background-color: var(--fc-color-bg-muted);
-    border: var(--fc-border-width-thin) solid var(--fc-color-border-interactive);
+    background-color: var(--fc-color-border-strong);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-strong);
     border-radius: var(--fc-radius-full);
     cursor: pointer;
 
     transition:
-      background-color var(--fc-duration-fast) var(--fc-easing-standard),
-      border-color var(--fc-duration-fast) var(--fc-easing-standard);
+      background-color var(--fc-duration-normal) var(--fc-easing-standard),
+      border-color var(--fc-duration-normal) var(--fc-easing-standard);
   }
 
   .fc-switch::before {
     content: "";
-    inline-size: var(--fc-switch-thumb);
+    inline-size: calc(var(--fc-switch-thumb) + var(--fc-switch-stretch));
     block-size: var(--fc-switch-thumb);
     border-radius: var(--fc-radius-full);
-    background-color: var(--fc-color-border-interactive);
+    background-color: var(--fc-color-bg-thumb);
     box-shadow: var(--fc-shadow-raised);
     /*
      * `translate` is physical and has no logical form; the RTL branch below
-     * reverses it, the same treatment the progress sweep needed.
+     * reverses it, the same treatment the progress sweep needed. The spring
+     * curve gives the thumb a little weight as it lands.
      */
     transition:
-      translate var(--fc-duration-normal) var(--fc-easing-standard),
-      background-color var(--fc-duration-fast) var(--fc-easing-standard);
-  }
-
-  .fc-switch:hover {
-    border-color: var(--fc-color-border-strong);
+      translate var(--fc-duration-slow) var(--fc-easing-spring),
+      inline-size var(--fc-duration-fast) var(--fc-easing-standard),
+      background-color var(--fc-duration-normal) var(--fc-easing-standard);
   }
 
   .fc-switch:checked {
@@ -144,22 +151,30 @@
     border-color: var(--fc-color-accent-border);
   }
 
-  .fc-switch:checked:hover {
-    background-color: var(--fc-color-accent-bg-hover);
+  @media (hover: hover) {
+    .fc-switch:hover {
+      background-color: var(--fc-color-border-interactive);
+      border-color: var(--fc-color-border-interactive);
+    }
+
+    .fc-switch:checked:hover {
+      background-color: var(--fc-color-accent-bg-hover);
+      border-color: var(--fc-color-accent-bg-hover);
+    }
   }
 
   .fc-switch:checked::before {
     background-color: var(--fc-color-text-on-accent);
-    translate: var(--fc-switch-travel) 0;
+    translate: calc(var(--fc-switch-travel) - var(--fc-switch-stretch)) 0;
   }
 
   .fc-switch:checked:dir(rtl)::before {
-    translate: calc(var(--fc-switch-travel) * -1) 0;
+    translate: calc((var(--fc-switch-travel) - var(--fc-switch-stretch)) * -1) 0;
   }
 
-  .fc-switch:active::before {
-    /* A slight squash on press, so the control feels like it is being pushed. */
-    scale: 1.1 0.95;
+  /* Pressing stretches the thumb, so the control feels like it is being pushed. */
+  .fc-switch:active:not(:disabled) {
+    --fc-switch-stretch: calc(var(--fc-switch-thumb) / 4);
   }
 
   .fc-switch:disabled {
@@ -168,15 +183,15 @@
   }
 
   .fc-switch--sm {
-    --fc-switch-w: 1.75rem;
-    --fc-switch-h: 1rem;
-    --fc-switch-thumb: 0.625rem;
+    --fc-switch-w: 2rem;
+    --fc-switch-h: 1.125rem;
+    --fc-switch-thumb: 0.75rem;
   }
 
   .fc-switch--lg {
-    --fc-switch-w: 2.75rem;
-    --fc-switch-h: 1.5rem;
-    --fc-switch-thumb: 1.125rem;
+    --fc-switch-w: 3rem;
+    --fc-switch-h: 1.625rem;
+    --fc-switch-thumb: 1.25rem;
   }
 
   /*

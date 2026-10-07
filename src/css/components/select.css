@@ -49,7 +49,10 @@
     gap: var(--fc-space-2);
 
     inline-size: 100%;
-    min-block-size: var(--fc-size-target-min);
+    /* The same height, edge, and radius as `.fc-input`, so a select and a text
+       field in one form read as the same family of control. A dense host
+       (the context strip) lowers it through `--fc-select-block-size`. */
+    min-block-size: var(--fc-select-block-size, var(--fc-size-target-comfortable));
     padding-block: var(--fc-space-1-5);
     padding-inline: var(--fc-space-3);
 
@@ -60,13 +63,19 @@
 
     color: var(--fc-color-text-default);
     background-color: var(--fc-color-bg-surface);
-    border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
-    border-radius: var(--fc-radius-sm);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-interactive);
+    border-radius: var(--fc-radius-lg);
     cursor: pointer;
+
+    transition:
+      border-color var(--fc-duration-fast) var(--fc-easing-standard),
+      box-shadow var(--fc-duration-fast) var(--fc-easing-standard);
   }
 
+  /* `bg-raised` equals `bg-surface` in the light scheme, so a fill change was
+     no hover at all there. The edge moves toward the text colour instead. */
   .fc-select:hover:not([aria-disabled="true"]) {
-    background-color: var(--fc-color-bg-raised);
+    border-color: color-mix(in oklab, var(--fc-color-border-interactive), var(--fc-color-text-default) 40%);
   }
 
   /*
@@ -80,6 +89,7 @@
   .fc-select[aria-disabled="true"] {
     color: var(--fc-color-text-muted);
     background-color: var(--fc-color-bg-subtle);
+    border-color: var(--fc-color-border-default);
     cursor: not-allowed;
   }
 
@@ -96,6 +106,7 @@
   .fc-select[aria-expanded="true"] {
     border-color: var(--fc-color-accent-border);
     background-color: var(--fc-color-bg-raised);
+    box-shadow: 0 0 0 var(--fc-space-1) var(--fc-color-accent-bg-subtle);
   }
 
   /* ---- Value and chevron --------------------------------------------------- */
@@ -126,7 +137,7 @@
   .fc-select__chevron {
     flex: none;
     color: var(--fc-color-text-muted);
-    transition: transform var(--fc-duration-fast) var(--fc-easing-standard);
+    transition: transform var(--fc-duration-normal) var(--fc-easing-standard);
   }
 
   .fc-select[aria-expanded="true"] .fc-select__chevron {
@@ -173,11 +184,26 @@
     background-color: var(--fc-color-bg-overlay);
     color: var(--fc-color-text-default);
     border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
-    border-radius: var(--fc-radius-md);
+    border-radius: var(--fc-radius-lg);
     box-shadow: var(--fc-shadow-overlay);
 
     font-size: var(--fc-font-size-sm);
     line-height: var(--fc-line-height-snug);
+
+    /*
+     * The list fades in rather than snapping open. Opacity only: a scale or
+     * translate would change the box the binding measures to place and flip
+     * the list, so it would land a few pixels off its invoker. Entry only -- a
+     * list that lingers on close would still be painted over the next thing
+     * the user clicks.
+     */
+    transition: opacity var(--fc-duration-normal) var(--fc-easing-decelerate);
+  }
+
+  @starting-style {
+    .fc-select__list {
+      opacity: 0;
+    }
   }
 
   /*
@@ -211,7 +237,7 @@
     /* Selected options must stay legible when highlighted, and vice versa, so
        selection is a mark rather than a fill. */
     color: var(--fc-color-text-default);
-    border-radius: var(--fc-radius-sm);
+    border-radius: var(--fc-radius-md);
     border-inline-start: var(--fc-border-width-thick) solid transparent;
     cursor: pointer;
   }

@@ -48,6 +48,12 @@ export const semanticColors = {
   "bg-subtle": { light: neutral["100"]!, dark: neutral["900"]! },
   "bg-muted": { light: neutral["200"]!, dark: neutral["800"]! },
   /*
+   * The movable part of a control -- a switch thumb, a slider handle. Light in
+   * both schemes: a thumb in the dark surface colour read as a hole punched in
+   * the track rather than a part sitting on it.
+   */
+  "bg-thumb": { light: white, dark: neutral["25"]! },
+  /*
    * A deliberately inverted surface (tooltips, marketing bands, image
    * overlays). It exists so `text-inverse` has a real surface to pair against;
    * without it, "inverse text" has no defined background and the contrast
@@ -74,6 +80,8 @@ export const semanticColors = {
    * most common dark-mode accessibility failures.
    */
   "text-on-accent": { light: white, dark: neutral["1000"]! },
+  /* Same reasoning as text-on-accent: the danger fill flips lightness by scheme. */
+  "text-on-danger": { light: white, dark: neutral["1000"]! },
 
   // ---- Borders ------------------------------------------------------------
   "border-default": { light: neutral["300"]!, dark: neutral["700"]! },
@@ -106,6 +114,7 @@ export const semanticColors = {
 
   // ---- Danger -------------------------------------------------------------
   "danger-bg": { light: danger["600"]!, dark: danger["400"]! },
+  "danger-bg-hover": { light: danger["700"]!, dark: danger["300"]! },
   "danger-text": { light: danger["700"]!, dark: danger["200"]! },
   "danger-bg-subtle": { light: danger["50"]!, dark: danger["950"]! },
   "danger-border": { light: danger["600"]!, dark: danger["400"]! },
@@ -150,6 +159,8 @@ export const contrastPairs: readonly ContrastPair[] = [
   { usage: "Secondary text on an inverted surface (tooltip, overlay)", fg: "text-inverse-muted", bg: "bg-inverse", min: 4.5 },
   { usage: "Accent text (links) on canvas", fg: "accent-text", bg: "bg-canvas", min: 4.5 },
   { usage: "Label on a solid accent button", fg: "text-on-accent", bg: "accent-bg", min: 4.5 },
+  { usage: "Label on a solid danger button", fg: "text-on-danger", bg: "danger-bg", min: 4.5 },
+  { usage: "Label on a hovered danger button", fg: "text-on-danger", bg: "danger-bg-hover", min: 4.5 },
   { usage: "Accent text on a subtle accent background", fg: "accent-text", bg: "accent-bg-subtle", min: 4.5 },
   { usage: "Interactive control boundary (WCAG 1.4.11)", fg: "border-interactive", bg: "bg-canvas", min: 3 },
   { usage: "Focus ring against the canvas (WCAG 1.4.11)", fg: "focus-ring", bg: "bg-canvas", min: 3 },
@@ -172,6 +183,9 @@ export const contrastPairs: readonly ContrastPair[] = [
   { usage: "Form control boundary on a surface (WCAG 1.4.11)", fg: "border-interactive", bg: "bg-surface", min: 3 },
   { usage: "Invalid form control boundary on a surface (WCAG 1.4.11)", fg: "danger-border", bg: "bg-surface", min: 3 },
   { usage: "Checked control and selected-tab indicator on a surface (WCAG 1.4.11)", fg: "accent-border", bg: "bg-surface", min: 3 },
+  // The off switch is a border-strong track on a surface, carrying a bg-thumb.
+  { usage: "Off switch track on a surface (WCAG 1.4.11)", fg: "border-strong", bg: "bg-surface", min: 3 },
+  { usage: "Off switch thumb on its track (WCAG 1.4.11)", fg: "bg-thumb", bg: "border-strong", min: 3 },
   { usage: "Warning text on the canvas (field warnings, inline status)", fg: "warning-text", bg: "bg-canvas", min: 4.5 },
 ];
 

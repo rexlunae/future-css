@@ -88,13 +88,22 @@ Use this when implementing any component. It is the definition of "done".
 | | Default | Hover | Active | Focus | Disabled |
 | --- | --- | --- | --- | --- | --- |
 | **primary** | accent fill | accent-bg-hover | accent-bg-active | ring | muted |
-| **secondary** | transparent + border | bg-muted | bg-subtle | ring | muted |
-| **ghost** | transparent | bg-muted | bg-subtle | ring | muted |
-| **subtle** | bg-subtle | bg-muted | bg-muted | ring | muted |
-| **danger** | danger-bg | danger-border | danger-border | ring | muted |
+| **secondary** | surface + border | 8% tint, stronger border | 12% tint | ring | muted |
+| **ghost** | transparent | 8% tint | 12% tint | ring | muted |
+| **subtle** | 8% tint | 12% tint | 18% tint | ring | muted |
+| **danger** | danger-bg | danger-bg-hover | sinks | ring | muted |
+
+A "tint" is `currentColor` mixed at the `opacity-hover-overlay` and
+`opacity-pressed-overlay` tokens, so it stays visible on any surface in either scheme.
+Every enabled variant also sinks to 97% scale while pressed, and hover colours apply only
+under `(hover: hover)`, so a tapped button on a touch screen does not stay lit.
 
 All variants share the same disabled treatment. A destructive button that still looks
 destructive when disabled invites the user to keep trying.
+
+Buttons and `.fc-input` share heights (2rem small, 2.5rem default, 3rem large), and
+`.fc-select` matches the default. All three use the `radius-lg` corner, so controls placed
+side by side line up.
 
 ---
 

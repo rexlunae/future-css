@@ -217,7 +217,8 @@ primitives are an implementation detail that themes may remap.
    does not apply.
 7. Register the file in `BUNDLE_ORDER` in `src/build/build.ts`.
 8. Add a usage example to `docs/COMPONENTS.md`.
-9. Run `npm run check`.
+9. Run `npm run check`. It fails a component over 7 KB minified; see the performance
+   budget in `docs/PLAN.md`. Split the component or justify the exception there.
 
 ### A lint rule
 

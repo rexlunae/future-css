@@ -22,7 +22,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | A. WASM foundations | Started | Rust workspace, 8 crates, accelerator abstraction |
 | B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
 | C. Token roles and themes | Not started | State tokens, override points, theme tier, type roles |
-| D. Material 3 parity | Started | Mapping done; D1 to D4 shipped |
+| D. Material 3 parity | Started | Mapping done; D1 to D5 shipped except the connected button group |
 | 4. Verification | Not started | Visual regression, browser matrix, docs site |
 | 5. Platform expansion | Not started | Email build, print, native tokens |
 | 6. Release | Not started | Publishing, versioning, governance |
@@ -536,8 +536,9 @@ Status is **Shipped** (an existing component covers it), **Gap** (scheduled belo
 | | Chips: assist, filter, input, suggestion | `button.fc-tag` (assist), `fc-tag[aria-pressed]` (filter), `fc-tag__remove` (input), `fc-suggestion--pill` (suggestion) | Shipped |
 | | Menus | `fc-menu` and its binding (context and anchored) | Shipped |
 | | Sliders | `fc-slider` on `<input type="range">`, `slider` binding for the fill | Shipped, D2 |
-| | Date pickers | none | Gap, D5 |
-| | Time pickers | none | Gap, D5 |
+| | Date pickers | `fc-datepicker` and native `<input type="date">` | Shipped, D5; range selection deferred |
+| | Time pickers | native `<input type="time">` and `fc-timepicker` input mode | Shipped, D5 |
+| | Time picker clock dial | none | Divergent: a dial is a pointer gesture with no keyboard or screen-reader equivalent beyond the input mode it duplicates, and its hit targets shrink below the minimum on small screens |
 | Text inputs | Text fields: outlined | `fc-input` in `fc-field` | Shipped |
 | | Text fields: filled | `fc-input--filled` | Shipped, D4 |
 | | Floating label | label above the input | Divergent: a label that moves into the field is unreadable while empty at small sizes and adds motion for no information; the persistent label is the accessible form |
@@ -591,10 +592,15 @@ API, `<dialog>`, scroll snap); a binding ships only where the platform has no an
   declared as contrast pairs
 
 **D5. Pickers**
-- [ ] Date picker: a calendar grid with the APG date-grid keyboard contract, and the
-  native `<input type="date">` styled as the text-entry path and the no-JS fallback
-- [ ] Time picker: native `<input type="time">` styled, plus an input-mode picker
-  (hours, minutes, period) for locales that need the period stated
+- [x] Date picker (`fc-datepicker`): a calendar grid with the APG date-grid keyboard
+  contract in a `datepicker` binding (arrows, Home/End, Page Up/Down, Shift+Page for
+  years, RTL), month and weekday names from `Intl`, the locale's first day of the week,
+  and min, max and per-day unavailability. The native `<input type="date">` is styled as
+  the text-entry path and the no-JS fallback. Range selection is deferred until someone
+  needs it; it changes the value from one date to two and the grid's selection model
+- [x] Time picker: native `<input type="time">` styled, plus an input-mode layout
+  (`fc-timepicker`: hours, minutes, an `fc-segmented` period) for locales that need the
+  period stated. The clock dial is Divergent, see the table
 
 **Exit criteria**
 

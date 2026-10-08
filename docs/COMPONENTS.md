@@ -1778,3 +1778,53 @@ item and `--free` turns off snapping. `--fc-carousel-item` sets item width. The 
 ship `hidden` and `bindCarousel` reveals them, pages by most of the visible width, and
 sets `aria-disabled` at each end, in both directions. Captions sit on the inverse surface,
 so they stay legible over any image. It never autoplays.
+
+## Date and time pickers
+
+`datepicker.css` styles a month calendar. The `datepicker` binding renders it and owns
+the WAI-ARIA date-grid keyboard contract.
+
+```html
+<div class="fc-datepicker" id="due"></div>
+<script type="module">
+  import { bindDatePicker } from "future-css/datepicker";
+  const picker = bindDatePicker(document.getElementById("due"), {
+    value: "2026-10-21",
+    min: "2026-10-01",
+    isDisabled: (iso) => [0, 6].includes(new Date(iso).getUTCDay()),
+    onChange: (iso) => form.elements.due.value = iso,
+  });
+</script>
+```
+
+Values are ISO `YYYY-MM-DD` strings, compared as calendar dates with no time zone. Month
+and weekday names come from `Intl` in the page's `lang` (or `locale`), and the week
+starts on the locale's first day unless `firstDayOfWeek` says otherwise. Arrow keys move
+by day and week, Home and End to the week's ends, Page Up and Down by month, and with
+Shift by year, mirrored in RTL. The selection is `aria-selected="true"` on the cell,
+today is `aria-current="date"`, and unavailable days are `aria-disabled` so the arrow keys
+still reach them. The root mirrors the selection as `data-fc-value`.
+
+The calendar is for browsing. For entering a known date, and wherever script is absent,
+use the native input, which `field.css` styles:
+
+```html
+<input class="fc-input" type="date" name="due">
+<input class="fc-input" type="time" name="start">
+```
+
+For a time where the period must be stated explicitly, `fc-timepicker` lays out hour and
+minute fields with an `fc-segmented` period. The row is isolated left to right, since
+times read hours first in every script:
+
+```html
+<fieldset class="fc-timepicker">
+  <legend class="fc-field__label">Start time</legend>
+  <input class="fc-input fc-timepicker__unit" inputmode="numeric" aria-label="Hour" value="09" maxlength="2">
+  <span class="fc-timepicker__separator" aria-hidden="true">:</span>
+  <input class="fc-input fc-timepicker__unit" inputmode="numeric" aria-label="Minute" value="30" maxlength="2">
+  <fieldset class="fc-segmented">…AM / PM…</fieldset>
+</fieldset>
+```
+
+Material's clock dial is not offered; see the Phase D table in `docs/PLAN.md`.

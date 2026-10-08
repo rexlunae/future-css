@@ -1730,6 +1730,36 @@
     </div>
   </section>
 
+  <section class="fx" id="fx-datepicker" data-fixture="datepicker" aria-labelledby="fx-datepicker-h">
+    <h2 class="fx__title" id="fx-datepicker-h">Date and time pickers <code class="fx__file">datepicker.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="calendar: today, selected"><figcaption class="fx__caption">calendar: today, selected</figcaption><div class="fx__body">
+        <div class="fc-datepicker" data-fx-datepicker data-fx-value="2026-10-21" aria-label="Due date"></div>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="calendar: min date, weekends unavailable"><figcaption class="fx__caption">calendar: min date, weekends unavailable</figcaption><div class="fx__body">
+        <div class="fc-datepicker" data-fx-datepicker data-fx-min="2026-10-12" aria-label="Delivery date"></div>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="native date and time inputs"><figcaption class="fx__caption">native date and time inputs</figcaption><div class="fx__body">
+        <div class="fc-field"><label class="fc-field__label" for="fx-date-native">Due date</label><input class="fc-input" id="fx-date-native" type="date" value="2026-10-21"></div>
+        <div class="fc-field"><label class="fc-field__label" for="fx-time-native">Start time</label><input class="fc-input" id="fx-time-native" type="time" value="09:30"></div>
+        <div class="fc-field"><label class="fc-field__label" for="fx-date-dis">Locked date</label><input class="fc-input" id="fx-date-dis" type="date" value="2026-10-01" disabled></div>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="time picker, input mode"><figcaption class="fx__caption">time picker, input mode</figcaption><div class="fx__body">
+        <fieldset class="fc-timepicker">
+          <legend class="fc-field__label">Reminder</legend>
+          <input class="fc-input fc-timepicker__unit" inputmode="numeric" aria-label="Hour" value="09" maxlength="2">
+          <span class="fc-timepicker__separator" aria-hidden="true">:</span>
+          <input class="fc-input fc-timepicker__unit" inputmode="numeric" aria-label="Minute" value="30" maxlength="2">
+          <fieldset class="fc-segmented">
+            <legend class="fc-u-visually-hidden">Period</legend>
+            <label class="fc-segmented__item"><input class="fc-segmented__input" type="radio" name="fx-tp-period" checked><span class="fc-segmented__check" aria-hidden="true"></span>AM</label>
+            <label class="fc-segmented__item"><input class="fc-segmented__input" type="radio" name="fx-tp-period"><span class="fc-segmented__check" aria-hidden="true"></span>PM</label>
+          </fieldset>
+        </fieldset>
+      </div></figure>
+    </div>
+  </section>
+
   <section class="fx" id="fx-composer" data-fixture="composer" aria-labelledby="fx-composer-h">
     <h2 class="fx__title" id="fx-composer-h">Chat composer <code class="fx__file">composer.css</code></h2>
     <div class="fx__states">

@@ -126,16 +126,11 @@
     border-inline-end: var(--fc-border-width-thick) solid currentColor;
     rotate: 45deg;
     translate: 0 -0.1em;
-  }
-
-  /*
-   * A check mark does not mirror. Its borders are logical, so in RTL the
-   * inline-end border would sit on the left and draw a sideways chevron; the
-   * stroke moves to inline-start, which is the physical right again.
-   */
-  .fc-segmented__check:dir(rtl) {
-    border-inline-end: 0;
-    border-inline-start: var(--fc-border-width-thick) solid currentColor;
+    /* A check mark does not mirror. Its borders are logical, so the span
+       pins its own direction: the stroke stays on the physical right under
+       a dir="rtl" page and inside an LTR-isolated row such as the time
+       picker, where a :dir(rtl) correction would flip it the wrong way. */
+    direction: ltr;
   }
 
   /* The item tells its check mark to show through a property the part reads,

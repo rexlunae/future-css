@@ -286,17 +286,17 @@ docs/               Design documents; PLAN.md is the roadmap, WASM.md the WASM s
 
 ## Current state
 
-Pre-alpha. Foundations are built and enforced. Forty-nine CSS components are
+Pre-alpha. Foundations are built and enforced. Fifty CSS components are
 complete. The general set: button, segmented button, split button, floating action
-button and FAB menu, control group, masthead, list, divider, slider, toolbar, navigation bar, search, carousel, form field and input group, checkbox / radio /
+button and FAB menu, control group, masthead, list, divider, slider, toolbar, navigation bar, search, carousel, date and time pickers, form field and input group, checkbox / radio /
 switch, card, badge and tag, alert, dialog, side sheet and bottom sheet, popover and tooltip, toast,
 tabs, breadcrumb, pagination, spinners (ring, arc, typing dots, pulse, stream bars, orbit, sparkle), skeleton, progress, avatar, empty state,
 disclosure, navigation sidebar, data table with sorting, and description list. The AI-chat set: chat surface (with message actions), agent status row, reasoning trace,
 citations and sources, suggested prompts, tool call / step trace, rich text editor,
 context menu, data grid, embedded browser chrome, terminal, code block, diff viewer,
-select/listbox, chat composer, context strip, and git surface. Sixteen ship browser
+select/listbox, chat composer, context strip, and git surface. Seventeen ship browser
 bindings -- editor, menu, grid, webview, select, composer, context strip, git surface,
-tabs, toast, tooltip, table, nav, slider, toolbar, and carousel -- exercised by tests in a real headless Chrome. Overlays lean
+tabs, toast, tooltip, table, nav, slider, toolbar, carousel, and date picker -- exercised by tests in a real headless Chrome. Overlays lean
 on the platform (`<dialog>`, the popover API, `<details>`, `@starting-style`) and need
 no script. Syntax highlighting, Markdown, and line diffing ship as JS modules
 (`highlight`, `diff`, `markdown`); the diff has a Rust crate, the other two do not yet.

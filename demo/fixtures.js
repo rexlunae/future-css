@@ -3,12 +3,16 @@
  * markup -- code, diff, and the git surface -- with the same modules the
  * package exports, so the fixture shows what a consumer actually gets.
  *
+ * The date picker is rendered by its binding, with a fixed "today" so the
+ * fixture looks the same every day.
+ *
  * Also sets `indeterminate`, which is a property with no attribute form.
  */
 
 import { renderHighlighted } from "/src/js/highlight.js";
 import { diffLines, diffStats } from "/src/js/diff.js";
 import { FutureCssGitSurface } from "/src/js/git.js";
+import { bindDatePicker } from "/src/js/datepicker.js";
 
 const SAMPLES = {
   typescript: `// A line long enough to wrap at 320px, which is the point of the wrapping mode.
@@ -34,6 +38,17 @@ for (const block of document.querySelectorAll("[data-fx-code]")) {
 
 const BEFORE = "const a = 1;\nconst b = 2;\nexport { a, b };\n";
 const AFTER = "const a = 1;\nconst c = 3;\nexport { a, c }; // a long trailing comment that forces the scrolling mode to scroll\n";
+
+for (const root of document.querySelectorAll("[data-fx-datepicker]")) {
+  bindDatePicker(root, {
+    today: "2026-10-08",
+    value: root.dataset.fxValue || null,
+    min: root.dataset.fxMin || undefined,
+    locale: "en-US",
+    // Weekends unavailable in the constrained example, to show the state.
+    isDisabled: root.dataset.fxMin ? (iso) => [0, 6].includes(new Date(iso).getUTCDay()) : undefined,
+  });
+}
 
 for (const root of document.querySelectorAll("[data-fx-diff]")) {
   const lines = diffLines(BEFORE, AFTER);

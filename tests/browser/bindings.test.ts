@@ -187,11 +187,12 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         import('/src/js/slider.js'),
         import('/src/js/toolbar.js'),
         import('/src/js/carousel.js'),
-      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt, tl, nv, sl, tr, cr]) => {
+        import('/src/js/datepicker.js'),
+      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt, tl, nv, sl, tr, cr, dp]) => {
         globalThis.E = e; globalThis.M = m; globalThis.G = g; globalThis.W = w;
         globalThis.H = h; globalThis.D = d; globalThis.S = s;
         globalThis.C = c; globalThis.K = k; globalThis.IT = it;
-        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt; globalThis.TL = tl; globalThis.NV = nv; globalThis.SL = sl; globalThis.TR = tr; globalThis.CR = cr;
+        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt; globalThis.TL = tl; globalThis.NV = nv; globalThis.SL = sl; globalThis.TR = tr; globalThis.CR = cr; globalThis.DP = dp;
         return 'ok';
       })
     `);
@@ -3338,6 +3339,71 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       assert.deepEqual(r[dir].mid, ["false", "false"], `${dir}: both enabled mid-track`);
       assert.deepEqual(r[dir].end, ["false", "true"], `${dir}: next disabled at the end`);
     }
+  });
+
+  // ----------------------------------------------------------- datepicker
+
+  it("renders a date picker month and walks it with the date grid keys", async () => {
+    // One tab stop on the focused day; arrows by day and week, swapped in
+    // RTL; Home/End to the week's ends; PageDown to the next month, clamped
+    // to its length; selection on the gridcell; unavailable days reachable
+    // but not selectable.
+    await loadBindings();
+    const r = await evaluate(`
+      const root = document.createElement('div');
+      root.className = 'fc-datepicker';
+      document.body.appendChild(root);
+      const changes = [];
+      const p = DP.bindDatePicker(root, {
+        today: '2026-01-15', value: '2026-01-31', locale: 'en-US', firstDayOfWeek: 0,
+        max: '2026-03-10', isDisabled: (iso) => iso === '2026-02-02', onChange: (iso) => changes.push(iso),
+      });
+      const focused = () => document.activeElement.dataset.fcDate;
+      const key = (k, extra = {}) => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, ...extra }));
+      const out = {
+        title: root.querySelector('.fc-datepicker__title').textContent,
+        heads: [...root.querySelectorAll('th')].map((th) => th.textContent + '/' + th.abbr).join(' '),
+        stops: [...root.querySelectorAll('.fc-datepicker__day')].filter((b) => b.tabIndex === 0).map((b) => b.dataset.fcDate),
+        today: root.querySelector('[aria-current="date"]').dataset.fcDate,
+        selectedCell: root.querySelector('[aria-selected="true"] button').dataset.fcDate,
+        value: root.dataset.fcValue,
+      };
+      p.focus();
+      key('ArrowRight'); out.right = focused();
+      out.titleAfter = root.querySelector('.fc-datepicker__title').textContent;
+      key('ArrowRight'); key('Enter');
+      document.activeElement.click(); out.disabledClick = [p.value, changes.length];
+      key('ArrowUp'); out.up = focused();
+      key('Home'); out.home = focused();
+      key('End'); out.end = focused();
+      p.value = '2026-01-31'; p.focus();
+      key('PageDown'); out.pageDown = focused();
+      key('PageDown', { shiftKey: true }); out.clampedToMax = focused();
+      root.dir = 'rtl'; p.value = '2026-01-14'; p.focus();
+      key('ArrowRight'); out.rtlRight = focused();
+      root.dir = '';
+      document.activeElement.click();
+      out.selected = [p.value, changes.slice(-1)[0], root.querySelector('[aria-selected="true"] button').dataset.fcDate];
+      p.destroy();
+      root.remove();
+      return out;
+    `);
+    assert.equal(r.title, "January 2026");
+    assert.equal(r.heads.split(" ")[0], "S/Sunday", "narrow name shown, full name as the header's abbr");
+    assert.deepEqual(r.stops, ["2026-01-31"], "one tab stop, on the selected day");
+    assert.equal(r.today, "2026-01-15");
+    assert.equal(r.selectedCell, "2026-01-31");
+    assert.equal(r.value, "2026-01-31", "the selection is mirrored for machine readers");
+    assert.equal(r.right, "2026-02-01", "Right crosses into the next month");
+    assert.equal(r.titleAfter, "February 2026");
+    assert.deepEqual(r.disabledClick, ["2026-01-31", 0], "an unavailable day takes focus but not selection");
+    assert.equal(r.up, "2026-01-26");
+    assert.equal(r.home, "2026-01-25", "Home goes to the first day of the week (Sunday here)");
+    assert.equal(r.end, "2026-01-31");
+    assert.equal(r.pageDown, "2026-02-28", "PageDown keeps the day, clamped to the shorter month");
+    assert.equal(r.clampedToMax, "2026-03-10", "Shift+PageDown clamps to max");
+    assert.equal(r.rtlRight, "2026-01-13", "in RTL, Right goes back a day");
+    assert.deepEqual(r.selected, ["2026-01-13", "2026-01-13", "2026-01-13"]);
   });
 
   // --------------------------------------------------------------- slider

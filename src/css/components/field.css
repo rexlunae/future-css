@@ -224,6 +224,20 @@
   }
 
   /*
+   * The date and time inputs' picker button, dimmed until hovered so it reads
+   * as secondary to the value. The icon follows the token layer's
+   * `color-scheme`, so it inverts in dark mode on its own.
+   */
+  .fc-input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.7;
+  }
+
+  .fc-input::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
+
+  /*
    * Native select. The chevron is two gradients rather than an inline SVG,
    * because an SVG data URI would carry a literal colour that cannot follow the
    * theme. `currentColor` keeps it in step with the text in every scheme.

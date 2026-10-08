@@ -1530,8 +1530,10 @@ buttons, because they are two actions with two names.
 
 Colour, size and every state come from `.fc-btn`; the split button only joins the pair,
 so load it after `button.css` (the bundle does). `bindMenuButton` sets `aria-haspopup`,
-`aria-controls` and `aria-expanded`, opens the menu beneath the trigger on click, Enter,
-Space, ArrowDown or ArrowUp, and returns focus on Escape. The open toggle turns round and
+`aria-controls` and `aria-expanded`, toggles the menu beneath the trigger on click, Enter
+or Space, opens it at the first item on ArrowDown and the last on ArrowUp, and returns
+focus on Escape. Near the bottom of the viewport the menu opens above the trigger, and it
+is clamped inside the viewport sideways. The open toggle turns round and
 its chevron flips, drawn from `aria-expanded`. Without the binding both buttons still
 work as buttons; only the menu needs script.
 
@@ -1553,7 +1555,10 @@ The default is tonal; `--primary` is solid and `--surface` neutral. `--sm` is 40
 the default 56px and `--lg` 96px. `--lowered` drops the shadow for a FAB on a surface
 that already floats, and `--fixed` docks it to the block-end, inline-end corner, which is
 bottom-left in RTL, clear of a phone's home bar. An icon-only FAB needs `aria-label`.
-Disabled, `aria-disabled` and `aria-busy` are styled; long labels wrap.
+Disabled, `aria-disabled` and `aria-busy` are styled; long labels wrap. As with
+`fc-btn`, `aria-disabled` blocks pointer activation only, so the host ignores Enter and
+Space (see [the `:disabled` vs `aria-disabled` decision](#the-disabled-vs-aria-disabled-decision));
+use `disabled` when the action need not stay focusable.
 
 A FAB menu is a FAB with `popovertarget` and a `.fc-fab-menu` popover of
 `.fc-fab-menu__item` buttons. The platform provides light dismiss, Escape and returning

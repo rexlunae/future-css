@@ -38,6 +38,10 @@
     border-start-end-radius: var(--fc-radius-sm);
     border-end-end-radius: var(--fc-radius-sm);
     min-inline-size: 0;
+    /* fc-btn never wraps; a shrunk action would paint its label over the
+       toggle, so a long or translated label wraps inside it instead. */
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .fc-split-btn__toggle {

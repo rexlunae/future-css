@@ -182,7 +182,10 @@
     cursor: not-allowed;
   }
 
-  .fc-fab[aria-disabled="true"] {
+  /* Blocks pointer activation without leaving the tab order. Keyboard
+     activation is the host's to ignore, as for any aria-disabled fc-btn. */
+  .fc-fab[aria-disabled="true"],
+  .fc-fab-menu__item[aria-disabled="true"] {
     pointer-events: none;
   }
 

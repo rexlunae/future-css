@@ -296,6 +296,16 @@ export interface MenuOptions {
   onClose?: (menu: HTMLElement) => void;
 }
 
+/** A viewport point to open a menu at; see `FutureCssMenu.open`. */
+export interface MenuPoint {
+  x: number;
+  y: number;
+  /** Where the menu's block-end goes if it does not fit below `y`. */
+  flipY?: number;
+  /** Which physical side of the menu sits at `x`. */
+  edge?: "left" | "right";
+}
+
 export class FutureCssMenu {
   private readonly menu: HTMLElement;
   private readonly invoker: HTMLElement | null;
@@ -330,25 +340,28 @@ export class FutureCssMenu {
    * Opens the menu at an anchor element or a viewport point.
    *
    * Anchor positioning stays in CSS via anchor names where the browser supports
-   * them; the numeric fallback positions directly. Either way the flip is CSS's
-   * job via `position-area`.
+   * them. A viewport point is positioned directly, in physical viewport
+   * coordinates (`clientX`/`clientY`). `edge` says which side of the menu sits
+   * at `x`; by default it is the menu's inline-start side, so a context menu
+   * hangs to the left of the pointer in RTL. `position-area` cannot flip a
+   * menu with no anchor, so `open` keeps it on screen itself: one that would
+   * cross the block end moves above `flipY` (the top of the trigger it hangs
+   * from, when there is one), and it is clamped inside the viewport.
    */
-  open(anchor?: HTMLElement | { x: number; y: number }): void {
+  open(anchor?: HTMLElement | MenuPoint): void {
     if (this.opened) return;
 
     if (anchor instanceof HTMLElement) {
       this.menu.style.positionAnchor = `--fc-anchor-${anchor.id || "trigger"}`;
     } else if (anchor) {
       this.menu.style.position = "fixed";
-      this.menu.style.insetInlineStart = `${anchor.x}px`;
       this.menu.style.insetBlockStart = `${anchor.y}px`;
       // The UA styles a popover with `inset: 0; margin: auto`, which centres it
-      // in whatever box the two insets above leave. Releasing the opposite
+      // in whatever box the two start insets leave. Releasing the opposite
       // edges and the margin is what puts the menu at the point.
       this.menu.style.insetInlineEnd = "auto";
       this.menu.style.insetBlockEnd = "auto";
       this.menu.style.margin = "0";
-      this.menu.style.positionArea = "bottom span-right-end";
     }
 
     this.opened = true;
@@ -370,9 +383,41 @@ export class FutureCssMenu {
       this.menu.style.display = "block";
     }
 
+    // Placed once it is showing, because the menu's width decides where an
+    // end-aligned menu starts and whether it fits.
+    if (anchor && !(anchor instanceof HTMLElement)) this.placeAt(anchor);
+
     this.focusFirstItem();
     this.options.onOpen?.(this.menu);
   }
+
+  /** Moves roving focus to the last item, for a menu button opened by ArrowUp. */
+  focusLastItem(): void {
+    this.model.focusLast();
+    if (this.model.activeIndex >= 0) this.focusActive();
+  }
+
+  private placeAt(point: MenuPoint): void {
+    const rtl = getComputedStyle(this.menu).direction === "rtl";
+    const rect = this.menu.getBoundingClientRect();
+    const viewWidth = document.documentElement.clientWidth;
+    const viewHeight = document.documentElement.clientHeight;
+
+    const edge = point.edge ?? (rtl ? "right" : "left");
+    const wanted = edge === "left" ? point.x : point.x - rect.width;
+    const left = Math.min(Math.max(0, wanted), Math.max(0, viewWidth - rect.width));
+    // The inset is logical, so in an RTL menu it is the offset of the right edge.
+    this.menu.style.insetInlineStart = `${rtl ? viewWidth - left - rect.width : left}px`;
+
+    if (point.y + rect.height > viewHeight) {
+      const above = (point.flipY ?? point.y) - rect.height;
+      // Above when it fits there; otherwise as low as it can sit and still end
+      // inside the viewport, where its own max-block-size lets it scroll.
+      const top = above >= 0 ? above : Math.max(0, viewHeight - rect.height);
+      this.menu.style.insetBlockStart = `${top}px`;
+    }
+  }
+
 
   /**
    * Closes the menu and restores focus.
@@ -609,8 +654,8 @@ export function bindContextMenu(target: HTMLElement, menuSelector: string): Futu
  *
  * The trigger's `aria-expanded` follows the menu, because it is what a screen
  * reader announces and what `.fc-split-btn__toggle` draws, so the two cannot
- * disagree. Click, Enter and Space open; ArrowDown and ArrowUp open too, per
- * the WAI-ARIA menu button pattern.
+ * disagree. Click, Enter and Space toggle the menu; ArrowDown opens it at the
+ * first item and ArrowUp at the last, per the WAI-ARIA menu button pattern.
  */
 export function bindMenuButton(trigger: HTMLElement, menuSelector: string): FutureCssMenu {
   const menuEl = document.querySelector<HTMLElement>(menuSelector);
@@ -629,11 +674,11 @@ export function bindMenuButton(trigger: HTMLElement, menuSelector: string): Futu
 
   const openBelow = (): void => {
     const rect = trigger.getBoundingClientRect();
-    // The menu is placed by its inline-start edge, which is the right edge in
-    // RTL, so the offset is measured from the right there.
+    // The menu lines up with the trigger's start edge, the right edge in an RTL
+    // trigger, whatever direction the menu itself has.
     const rtl = getComputedStyle(trigger).direction === "rtl";
-    const x = rtl ? document.documentElement.clientWidth - rect.right : rect.left;
-    menu.open({ x, y: rect.bottom + 4 });
+    const x = rtl ? rect.right : rect.left;
+    menu.open({ x, y: rect.bottom + 4, flipY: rect.top - 4, edge: rtl ? "right" : "left" });
   };
 
   // A click on the trigger of an open menu must close it, not reopen it. The
@@ -644,13 +689,18 @@ export function bindMenuButton(trigger: HTMLElement, menuSelector: string): Futu
     wasOpen = menu.isOpen;
   });
   trigger.addEventListener("click", () => {
-    if (!wasOpen && !menu.isOpen) openBelow();
+    // Enter and Space click with no pointerdown before them, so an open menu
+    // is still open here and the click itself has to close it.
+    if (menu.isOpen) menu.close();
+    else if (!wasOpen) openBelow();
     wasOpen = false;
   });
   trigger.addEventListener("keydown", (event) => {
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
     event.preventDefault();
     if (!menu.isOpen) openBelow();
+    // ArrowUp starts from the bottom of the menu, per the menu button pattern.
+    if (event.key === "ArrowUp") menu.focusLastItem();
   });
 
   return menu;

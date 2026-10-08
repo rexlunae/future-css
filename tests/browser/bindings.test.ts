@@ -561,6 +561,9 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
           <button type="button" class="fc-menu__item" role="menuitem">Send later</button>
           <button type="button" class="fc-menu__item" role="menuitem">Save draft</button>
         </div>\`;
+      // Pinned to the top, so there is room below whatever the page above it
+      // has grown to; the flip case is tested on its own below.
+      wrap.style.cssText = 'position: fixed; inset-block-start: 8px; inset-inline-start: 24px;';
       document.body.appendChild(wrap);
       const trigger = wrap.querySelector('#mb-trigger');
       const menuEl = wrap.querySelector('#mb-menu');
@@ -584,6 +587,41 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       trigger.click();
       out.toggledClosed = [m.isOpen, trigger.getAttribute('aria-expanded')];
 
+      // Enter and Space click with no pointerdown first; that click closes too.
+      trigger.click();
+      trigger.focus();
+      trigger.click();
+      out.keyboardClosed = m.isOpen;
+
+      // ArrowUp opens at the last item.
+      trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+      out.arrowUp = document.activeElement.textContent.trim();
+      m.close();
+
+      // At the bottom of the viewport the menu opens above the trigger, and at
+      // the inline end it is pulled back inside the viewport.
+      trigger.style.cssText = 'position: fixed; inset-block-end: 2px; inset-inline-end: 2px;';
+      trigger.click();
+      const t3 = trigger.getBoundingClientRect(), mr3 = menuEl.getBoundingClientRect();
+      out.flipped = mr3.bottom <= t3.top && mr3.top >= 0;
+      out.clamped = mr3.right <= document.documentElement.clientWidth && mr3.left >= 0;
+      m.close();
+      trigger.style.cssText = '';
+
+      // A locally RTL trigger with an LTR menu outside its section still lines
+      // the menu up with the trigger's right edge.
+      const section = document.createElement('div');
+      section.dir = 'rtl';
+      section.style.cssText = 'inline-size: 300px;';
+      wrap.prepend(section);
+      section.appendChild(trigger);
+      trigger.click();
+      const t4 = trigger.getBoundingClientRect(), mr4 = menuEl.getBoundingClientRect();
+      out.mixedAligned = Math.abs(mr4.right - t4.right) < 2;
+      m.close();
+      wrap.appendChild(trigger);
+      section.remove();
+
       // RTL: the menu's inline-start edge is its right edge, so it lines up with
       // the trigger's right edge rather than its left.
       document.documentElement.dir = 'rtl';
@@ -601,6 +639,11 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.deepEqual(r.escaped, [false, "false", "mb-trigger"]);
     assert.equal(r.arrow, true, "ArrowDown on the trigger opens the menu");
     assert.deepEqual(r.toggledClosed, [false, "false"]);
+    assert.equal(r.keyboardClosed, false, "a keyboard click on the trigger of an open menu closes it");
+    assert.equal(r.arrowUp, "Save draft", "ArrowUp opens the menu at its last item");
+    assert.equal(r.flipped, true, "at the viewport bottom the menu opens above the trigger");
+    assert.equal(r.clamped, true, "the menu stays inside the viewport sideways");
+    assert.equal(r.mixedAligned, true, "an RTL trigger's LTR menu aligns to the trigger's right edge");
     assert.equal(r.rtlAligned, true, "in RTL the menu aligns to the trigger's right edge");
   });
 

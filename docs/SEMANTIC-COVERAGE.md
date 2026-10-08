@@ -166,7 +166,7 @@ Counts by canonical name. "Shipped" counts only what is enforced, not merely pre
 | --- | --- | --- | --- |
 | 1 | Primitive ramp | **Shipped** | Ramp integrity tests: 14 steps, monotonic lightness, single hue, gamut |
 | 2 | Semantic alias | **Shipped** | `no-color-literals` lint rule; components cannot reach a primitive |
-| 3 | Component token | **Partial** | Button, chat and composer slots with semantic fallbacks ([TOKENS.md](TOKENS.md)); no test fails if one goes missing |
+| 3 | Component token | **Shipped** | Button, chat and composer slots ([TOKENS.md](TOKENS.md)); `tests/roles.test.ts` pins each slot's semantic fallback and that the library never sets one |
 | 4 | Surface ladder | **Shipped** | 8 surfaces, each a declared contrast pair |
 | 5 | Foreground ladder | **Shipped** | 21 contrast pairs, both schemes, build fails on violation |
 | 6 | Boundary ladder | **Shipped** | `border-default/subtle/strong` |
@@ -178,7 +178,7 @@ Counts by canonical name. "Shipped" counts only what is enforced, not merely pre
 | 12 | Brand accent | **Shipped** | 6 tokens: bg, bg-hover, bg-active, bg-subtle, text, border |
 | 13 | Scheme | **Shipped** | `light-dark()` + `color-scheme`, no JS |
 | 14 | High-contrast scheme | **Shipped** | High-contrast theme set under `prefers-contrast: more` and `[data-fc-theme]`, verified by the full contract; `forced-colors` blocks as before |
-| 15 | Composite type style | **Partial** | `--fc-type-<role>` tokens and `.fc-type-*` classes, used by `base.css`; no test fails if one goes missing |
+| 15 | Composite type style | **Shipped** | `--fc-type-<role>` tokens and `.fc-type-*` classes, used by `base.css`; `tests/roles.test.ts` fails when a role, its class or its tracking goes missing |
 | 16 | Measurement | **Shipped** | `size-content-max` 75ch, `size-measure` 65ch |
 | 17 | Target size | **Shipped** | `size-target-min` 1.5rem = WCAG 2.2 |
 | 18 | Layer order | **Shipped** | 9 steps; `z-index-scale` lint rule rejects raw values |
@@ -188,9 +188,9 @@ Counts by canonical name. "Shipped" counts only what is enforced, not merely pre
 | 22 | Diff role | **Shipped** | Added/removed as surface *and* foreground, not surface alone |
 | 23 | Machine-readable state | **Shipped** | 8 documented `data-fc-*` attributes, AGENTS.md contract |
 
-**Shipped: 21. Partial: 2. Absent: 0.** (2026-10-08: entries 9, 10 and 14 moved to Shipped
-because the contrast contract now checks them; 3 and 15 moved from Absent to Partial
-because they exist but nothing enforces them. See Phase C in [PLAN.md](PLAN.md).)
+**Shipped: 23. Partial: 0. Absent: 0.** (2026-10-08: entries 9, 10 and 14 moved to Shipped
+because the contrast contract checks them; 3 and 15 moved from Absent to Shipped once
+`tests/roles.test.ts` enforced them. See Phase C in [PLAN.md](PLAN.md).)
 
 The two rows that were Absent when this document was written are the substantive
 findings, and both are discussed in [Gaps](#gaps-that-are-actually-gaps).
@@ -245,12 +245,12 @@ The meaning layer. Components read these and never a primitive.
   it mechanically, because `no-color-literals` fails the build on any raw colour in a
   component regardless of which token the author meant to use.
 
-### 3. Component token — Partial
+### 3. Component token — Shipped
 
 **Update, 2026-10-08.** Button (`--fc-btn-primary-*`), chat (`--fc-chat-*`) and composer
 (`--fc-composer-*`) now read optional slots that fall back to semantic tokens; see
-[TOKENS.md](TOKENS.md). Partial rather than Shipped because no test fails when a slot
-stops being read. The analysis below is as originally written.
+[TOKENS.md](TOKENS.md). `tests/roles.test.ts` fails when a slot stops being read over its
+fallback, or when the library sets one. The analysis below is as originally written.
 
 A token scoped to one component, overriding the semantic layer for that component only.
 
@@ -495,11 +495,11 @@ serve people whose contrast needs are not met by either of our two schemes.
 and would need its own token tier. Note this is the same gap as the missing theme sets
 in entry 12, seen from a different angle: both want a third value per token.
 
-### 15. Composite type style — Partial
+### 15. Composite type style — Shipped
 
 **Update, 2026-10-08.** Named roles ship as `--fc-type-<role>` and `-tracking` tokens with
-`.fc-type-*` classes, and `base.css` uses them. Partial rather than Shipped because no
-test fails when one goes missing. The analysis below is as originally written.
+`.fc-type-*` classes, and `base.css` uses them. `tests/roles.test.ts` fails when a role,
+its class or its tracking token goes missing. The analysis below is as originally written.
 
 A named role that bundles size, weight, line height and tracking — `body-small`,
 `title-medium`, `md-typescale-headline-small`.
@@ -701,8 +701,8 @@ Items 1-8 are scheduled as **Phase C** in [`PLAN.md`](PLAN.md#phase-c----token-r
 which orders them by what to do first; item 9 lives in that document's performance
 budget section. When an item ships, update its scorecard row here in the same edit.
 
-**Update, 2026-10-08.** Items 3, 4 and 5 below have shipped, and 1 and 2 exist but are not
-yet enforced by a test; the scorecard and the per-entry notes above say which. The list
+**Update, 2026-10-08.** Items 1 to 5 below have shipped and are enforced; the scorecard
+and the per-entry notes above say how. The list
 is kept as written because it records why each gap mattered.
 
 **1. Component tokens (Absent, entry 3)** and **2. Composite type styles (Absent, entry

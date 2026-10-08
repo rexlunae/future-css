@@ -21,7 +21,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | 3. Component set | Mostly delivered | Forms, overlays, tabs, breadcrumb, pagination, loading, cards, table, description list, sidebar; axe-core pass remains |
 | A. WASM size | In progress | Rust workspace, 8 crates, accelerator abstraction; every module but `fc-rich-text` within budget on the shipped basis |
 | B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
-| C. Token roles and themes | Mostly delivered | State tokens, override points, high-contrast and brand theme sets, type roles; component slots and type roles still lack a test |
+| C. Token roles and themes | Mostly delivered | State tokens, override points, high-contrast and brand theme sets, type roles; reduced-transparency and reduced-data remain |
 | D. Material 3 parity | Complete | Every M3 component Shipped or Divergent with its reason |
 | 4. Verification | Started | Overflow assertions, size budgets, generated token reference; visual regression and browser matrix remain |
 | 5. Platform expansion | Mostly delivered | Print foundation, email foundation, Swift and Kotlin tokens, Figma variables; vertical writing, APCA and cognitive guidance remain |
@@ -407,9 +407,9 @@ existing ones. An extension point that cannot be verified is not one this system
 
 **Status, 2026-10-08.** Most of this phase landed in the maintainer's "Styling
 improvements" commits (2c3c7e7, 9921f33) without this document being updated; the boxes
-below are now checked against the code. What remains is enforcement: component slots and
-type roles exist and are documented in [TOKENS.md](TOKENS.md), but no test fails when
-one is removed, so the coverage scorecard still counts them as Partial.
+below are now checked against the code. Component slots and type roles are enforced by
+`tests/roles.test.ts`, which closes every Absent and Partial row in the coverage
+scorecard. What remains is the reduced-transparency and reduced-data item.
 
 Ordered by what to do first, which is not quite the coverage document's order (that one
 ranks by cost to a consumer). State tokens come first because every component added
@@ -448,8 +448,8 @@ Today a consumer who wants "the primary button is blue, not accent" must write C
   field going; we ship the components but no tokens for them
 - [x] The linter and contrast contract cover the defaults; document that overriding one
   takes the pair outside the contract ([TOKENS.md](TOKENS.md))
-- [ ] A test that fails when a documented slot stops being read, or its fallback stops
-  being a semantic token. Until then the coverage scorecard counts entry 3 as Partial
+- [x] A test that fails when a documented slot stops being read, or its fallback stops
+  being a semantic token (`tests/roles.test.ts`)
 
 ### 3. A third value per token: high contrast and theme sets (closes entries 12 and 14)
 
@@ -474,8 +474,7 @@ once rather than twice.
   used by `base.css` instead of per-element composition
 - [x] A `letterSpacing` token group, so the `-0.01em` literal in `base.css` becomes a
   token with its script-safety comment intact
-- [ ] A test that fails when a role or its class goes missing, which is what moves entry
-  15 from Partial to Shipped
+- [x] A test that fails when a role or its class goes missing (`tests/roles.test.ts`)
 - [x] Until this ships, `COMPONENTS.md` states the limitation, so a consumer does not
   discover it during design review
 

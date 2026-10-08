@@ -1506,6 +1506,26 @@ a fill, so it does not rest on colour. Disabled segments use `disabled` on the i
 `aria-invalid` or `:user-invalid` outlines the whole row. Labels wrap inside their
 segments at narrow widths instead of the row wrapping or scrolling. No binding.
 
+## Connected button group
+
+`button-group.css` joins a few related buttons into one segmented shape: Material's
+connected button group. Each is a real `fc-btn` with its own Tab stop and state.
+
+```html
+<div class="fc-button-group" role="group" aria-label="Alignment">
+  <button class="fc-btn fc-btn--secondary fc-button-group__item" type="button" aria-pressed="true">Start</button>
+  <button class="fc-btn fc-btn--secondary fc-button-group__item" type="button" aria-pressed="false">Center</button>
+  <button class="fc-btn fc-btn--secondary fc-button-group__item" type="button" aria-pressed="false">End</button>
+</div>
+```
+
+Inner corners are tight and the outer ends round, mirrored in RTL by logical corners. A
+pressed segment (`aria-pressed="true"`) rounds fully and takes the selected fill, so the
+state shows in shape as well as colour. Disabled and `aria-disabled` are styled; long
+labels wrap inside their segment. Use `fc-segmented` instead when exactly one value is
+chosen and submitted with a form, and `fc-control-group` for controls that should not
+look joined. No binding: toggling `aria-pressed` is the app's job.
+
 ## Split button
 
 `split-button.css` joins a default action to a menu of alternatives. It is two real

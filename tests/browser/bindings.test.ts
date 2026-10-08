@@ -184,11 +184,12 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         import('/src/js/tooltip.js'),
         import('/src/js/table.js'),
         import('/src/js/nav.js'),
-      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt, tl, nv]) => {
+        import('/src/js/slider.js'),
+      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt, tl, nv, sl]) => {
         globalThis.E = e; globalThis.M = m; globalThis.G = g; globalThis.W = w;
         globalThis.H = h; globalThis.D = d; globalThis.S = s;
         globalThis.C = c; globalThis.K = k; globalThis.IT = it;
-        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt; globalThis.TL = tl; globalThis.NV = nv;
+        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt; globalThis.TL = tl; globalThis.NV = nv; globalThis.SL = sl;
         return 'ok';
       })
     `);
@@ -3231,6 +3232,43 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
   });
 
   // ------------------------------------------------------------------- nav
+
+  // --------------------------------------------------------------- slider
+
+  it("fills the slider track to the value and mirrors it in its output", async () => {
+    // Blink has no pseudo-element for the filled part of a range track, so the
+    // fill is the binding's job; a stale fill would show one value while the
+    // input announces another.
+    await loadBindings();
+    const r = await evaluate(`
+      const wrap = document.createElement('div');
+      wrap.className = 'fc-slider';
+      wrap.innerHTML = '<input class="fc-slider__input" type="range" id="sl-temp" min="0" max="2" step="0.1" value="0.5" aria-label="Temperature">'
+        + '<output class="fc-slider__value" for="sl-temp">?</output>';
+      document.body.appendChild(wrap);
+      const input = wrap.querySelector('input');
+      const output = wrap.querySelector('output');
+      const unbind = SL.bindSliders(document);
+      const initial = [input.style.getPropertyValue('--fc-slider-pct'), output.value];
+      input.value = '1.5';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      const moved = [input.style.getPropertyValue('--fc-slider-pct'), output.value];
+      // Degenerate and out-of-range values clamp rather than drawing past the track.
+      const flat = document.createElement('input');
+      flat.type = 'range'; flat.min = '5'; flat.max = '5'; flat.value = '5';
+      const extremes = [SL.sliderPercent(flat)];
+      unbind();
+      input.value = '2';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      const afterUnbind = output.value;
+      wrap.remove();
+      return { initial, moved, extremes, afterUnbind };
+    `);
+    assert.deepEqual(r.initial, ["25%", "0.5"]);
+    assert.deepEqual(r.moved, ["75%", "1.5"]);
+    assert.deepEqual(r.extremes, ["0%"]);
+    assert.equal(r.afterUnbind, "1.5", "the returned function removes the listener");
+  });
 
   it("collapses the sidebar to a rail from aria-expanded, keeping link names", async () => {
     await loadBindings();

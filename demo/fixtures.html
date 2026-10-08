@@ -1494,6 +1494,82 @@
     </div>
   </section>
 
+  <section class="fx" id="fx-divider" data-fixture="divider" aria-labelledby="fx-divider-h">
+    <h2 class="fx__title" id="fx-divider-h">Divider <code class="fx__file">divider.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="full, inset, middle"><figcaption class="fx__caption">full, inset, middle</figcaption><div class="fx__body">
+        <div>
+        <p>Above a full divider</p>
+        <hr class="fc-divider">
+        <p>Above an inset divider</p>
+        <hr class="fc-divider fc-divider--inset">
+        <p>Above a middle divider</p>
+        <hr class="fc-divider fc-divider--middle">
+        <p>Below</p>
+        </div>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="vertical, in a row"><figcaption class="fx__caption">vertical, in a row</figcaption><div class="fx__body">
+        <div style="display: flex; align-items: center">
+          <button class="fc-btn fc-btn--ghost fc-btn--sm" type="button">Bold</button>
+          <button class="fc-btn fc-btn--ghost fc-btn--sm" type="button">Italic</button>
+          <div class="fc-divider fc-divider--vertical" role="separator" aria-orientation="vertical"></div>
+          <button class="fc-btn fc-btn--ghost fc-btn--sm" type="button">Link</button>
+        </div>
+      </div></figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-list" data-fixture="list" aria-labelledby="fx-list-h">
+    <h2 class="fx__title" id="fx-list-h">List <code class="fx__file">list.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="static: one, two, three lines"><figcaption class="fx__caption">static: one, two, three lines</figcaption><div class="fx__body">
+        <ul class="fc-list fc-list--divided">
+          <li class="fc-list__item"><span class="fc-list__content"><span class="fc-list__headline">One line</span></span></li>
+          <li class="fc-list__item"><span class="fc-list__leading" aria-hidden="true"><span class="fc-avatar fc-avatar--sm">AB</span></span><span class="fc-list__content"><span class="fc-list__headline">Ada Byron</span><span class="fc-list__supporting">ada@example.com</span></span><span class="fc-list__trailing">2h</span></li>
+          <li class="fc-list__item"><span class="fc-list__leading" aria-hidden="true">&#128196;</span><span class="fc-list__content"><span class="fc-list__overline">Shared with you</span><span class="fc-list__headline">Quarterly plan</span><span class="fc-list__supporting" data-fc-truncated="true" title="A long supporting line that runs past two lines and is clamped, with the clamp declared on the element so a machine reader knows the visible text is not the whole value.">A long supporting line that runs past two lines and is clamped, with the clamp declared on the element so a machine reader knows the visible text is not the whole value.</span></span></li>
+        </ul>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="links: rest, current, disabled"><figcaption class="fx__caption">links: rest, current, disabled</figcaption><div class="fx__body">
+        <ul class="fc-list">
+          <li class="fc-list__item"><span class="fc-list__leading" aria-hidden="true">&#9881;</span><span class="fc-list__content"><a class="fc-list__action fc-list__headline" href="#general">General</a><span class="fc-list__supporting">Language, appearance</span></span><span class="fc-list__trailing" aria-hidden="true">&#8250;</span></li>
+          <li class="fc-list__item"><span class="fc-list__leading" aria-hidden="true">&#128274;</span><span class="fc-list__content"><a class="fc-list__action fc-list__headline" href="#privacy" aria-current="page">Privacy</a><span class="fc-list__supporting">Current page</span></span></li>
+          <li class="fc-list__item"><span class="fc-list__leading" aria-hidden="true">&#128179;</span><span class="fc-list__content"><a class="fc-list__action fc-list__headline" aria-disabled="true">Billing</a><span class="fc-list__supporting">Unavailable on this plan</span></span></li>
+        </ul>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="controls: switch, checkbox, disabled"><figcaption class="fx__caption">controls: switch, checkbox, disabled</figcaption><div class="fx__body">
+        <ul class="fc-list">
+          <li><label class="fc-list__item"><span class="fc-list__content"><span class="fc-list__headline">Web search</span><span class="fc-list__supporting">Let the assistant search the web</span></span><span class="fc-list__trailing"><input class="fc-switch" type="checkbox" role="switch" checked></span></label></li>
+          <li><label class="fc-list__item"><span class="fc-list__content"><span class="fc-list__headline">Include attachments</span></span><span class="fc-list__trailing"><input type="checkbox"></span></label></li>
+          <li><label class="fc-list__item"><span class="fc-list__content"><span class="fc-list__headline">Code execution</span><span class="fc-list__supporting">Disabled by your administrator</span></span><span class="fc-list__trailing"><input class="fc-switch" type="checkbox" role="switch" disabled></span></label></li>
+        </ul>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="buttons with a trailing action"><figcaption class="fx__caption">buttons with a trailing action</figcaption><div class="fx__body">
+        <ul class="fc-list">
+          <li class="fc-list__item"><span class="fc-list__content"><button class="fc-list__action fc-list__headline" type="button">Draft reply to the infrastructure review thread with a long title</button><span class="fc-list__supporting">Yesterday</span></span><span class="fc-list__trailing"><button class="fc-btn fc-btn--ghost fc-btn--icon fc-btn--sm" type="button" aria-label="Delete draft">&#215;</button></span></li>
+          <li class="fc-list__item"><span class="fc-list__content"><button class="fc-list__action fc-list__headline" type="button" aria-selected="true">Selected draft</button></span></li>
+        </ul>
+      </div></figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-slider" data-fixture="slider" aria-labelledby="fx-slider-h">
+    <h2 class="fx__title" id="fx-slider-h">Slider <code class="fx__file">slider.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="rest, with value and marks"><figcaption class="fx__caption">rest, with value and marks</figcaption><div class="fx__body">
+        <div class="fc-slider">
+          <input class="fc-slider__input" type="range" id="fx-slider-temp" min="0" max="2" step="0.1" value="0.7" aria-label="Temperature" style="--fc-slider-pct: 35%">
+          <output class="fc-slider__value" for="fx-slider-temp">0.7</output>
+          <ol class="fc-slider__marks" aria-hidden="true"><li>0</li><li>1</li><li>2</li></ol>
+        </div>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="no binding (unfilled), invalid, disabled"><figcaption class="fx__caption">no binding (unfilled), invalid, disabled</figcaption><div class="fx__body">
+        <div class="fc-slider"><input class="fc-slider__input" type="range" value="40" aria-label="Volume"></div>
+        <div class="fc-slider"><input class="fc-slider__input" type="range" value="90" aria-label="Budget" aria-invalid="true" style="--fc-slider-pct: 90%"><output class="fc-slider__value">90</output></div>
+        <div class="fc-slider"><input class="fc-slider__input" type="range" value="60" aria-label="Locked" disabled style="--fc-slider-pct: 60%"><output class="fc-slider__value">60</output></div>
+      </div></figure>
+    </div>
+  </section>
+
   <section class="fx" id="fx-composer" data-fixture="composer" aria-labelledby="fx-composer-h">
     <h2 class="fx__title" id="fx-composer-h">Chat composer <code class="fx__file">composer.css</code></h2>
     <div class="fx__states">

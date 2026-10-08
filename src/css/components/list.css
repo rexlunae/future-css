@@ -1,0 +1,214 @@
+/*!
+ * future-css -- list
+ *
+ * Rows of related items with optional leading media, up to three lines of
+ * text, and trailing meta or a control: settings, contacts, files, search
+ * results. Material's list. `fc-nav` and `fc-menu` are lists with one job
+ * each; this is the general one.
+ *
+ *   <ul class="fc-list">
+ *     <li class="fc-list__item">
+ *       <span class="fc-list__leading" aria-hidden="true">…</span>
+ *       <span class="fc-list__content">
+ *         <span class="fc-list__overline">Shared with you</span>
+ *         <a class="fc-list__action fc-list__headline" href="/doc/1">Quarterly plan</a>
+ *         <span class="fc-list__supporting">Edited 2 hours ago</span>
+ *       </span>
+ *       <span class="fc-list__trailing">PDF</span>
+ *     </li>
+ *   </ul>
+ *
+ * Three kinds of row, from the same parts:
+ *   - Static: no action. Text only.
+ *   - Linked or button row: one `.fc-list__action` (an `<a>` or `<button>`).
+ *     Its ::after stretches over the row, so the whole row is the hit target
+ *     while the accessible name is only the headline -- not every line of the
+ *     row read as one run-on link.
+ *   - Control row: `.fc-list__item` on a `<label>` whose trailing slot holds a
+ *     checkbox or switch, so a click anywhere on the row toggles it.
+ *
+ * Selection is `aria-current` or `aria-selected="true"` on the action; there
+ * is no selected class to drift from what assistive technology announces.
+ */
+
+@layer fc.components {
+  .fc-list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    padding-block: var(--fc-space-2);
+    list-style: none;
+  }
+
+  /*
+   * Rows separated by a rule. The rule belongs to the gap between rows, so
+   * the first row has none and nothing doubles against the container's edge.
+   */
+  .fc-list--divided > li + li {
+    border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  }
+
+  .fc-list__item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-4);
+    min-block-size: 3.5rem;
+    padding-block: var(--fc-space-2);
+    padding-inline: var(--fc-space-4);
+    color: var(--fc-color-text-default);
+    border-radius: var(--fc-radius-md);
+    transition: background-color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  /* A label row: the whole row toggles its control. */
+  label.fc-list__item {
+    cursor: pointer;
+  }
+
+  /*
+   * Leading media: an icon, an avatar, or a thumbnail. A fixed slot width so
+   * headlines align down the list whatever each row's media is.
+   */
+  .fc-list__leading {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    min-inline-size: var(--fc-size-target-comfortable);
+    color: var(--fc-color-text-muted);
+  }
+
+  .fc-list__content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .fc-list__overline {
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-xs);
+    font-weight: var(--fc-font-weight-medium);
+    line-height: var(--fc-line-height-snug);
+  }
+
+  .fc-list__headline {
+    color: inherit;
+    font-size: var(--fc-font-size-md);
+    line-height: var(--fc-line-height-snug);
+    text-decoration: none;
+  }
+
+  /*
+   * Supporting text clamps at two lines, which is Material's three-line row.
+   * The clamp is declared, not silent: set `data-fc-truncated="true"` and keep
+   * the full text reachable (a title attribute or the destination page).
+   */
+  .fc-list__supporting {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-sm);
+    line-height: var(--fc-line-height-normal);
+  }
+
+  .fc-list__trailing {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: var(--fc-space-2);
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-sm);
+  }
+
+  /* ---- Interactive rows ------------------------------------------------ */
+
+  /* Buttons as actions lose their chrome so they read as row text. */
+  .fc-list__action {
+    padding: 0;
+    background: none;
+    border: 0;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .fc-list__action::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: var(--fc-z-base);
+    border-radius: inherit;
+  }
+
+  /*
+   * The focus ring moves from the headline to the row, because the row is
+   * what activates. The headline keeps a transparent outline rather than
+   * none, so forced-colors mode, which repaints outline colours, still draws
+   * a ring there too.
+   */
+  .fc-list__action:focus-visible {
+    outline-color: transparent;
+  }
+
+  .fc-list__action:focus-visible::after {
+    outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring);
+    outline-offset: calc(var(--fc-border-width-focus) * -1);
+  }
+
+  /* Trailing controls sit above the stretched action, so they stay clickable. */
+  .fc-list__trailing :is(a, button, input, select) {
+    position: relative;
+    z-index: var(--fc-z-raised);
+  }
+
+  @media (hover: hover) {
+    .fc-list__item:has(.fc-list__action):hover,
+    label.fc-list__item:hover {
+      background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-hover-overlay) * 100%), transparent);
+    }
+  }
+
+  .fc-list__item:has(.fc-list__action):active,
+  label.fc-list__item:active {
+    background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 100%), transparent);
+  }
+
+  .fc-list__item:has([aria-current]:not([aria-current="false"]), [aria-selected="true"]) {
+    background-color: var(--fc-color-selected-bg);
+    color: var(--fc-color-selected-fg);
+  }
+
+  .fc-list__item:has(:disabled, [aria-disabled="true"]) {
+    color: var(--fc-color-disabled-fg);
+    cursor: not-allowed;
+  }
+
+  /* An aria-disabled action stays focusable but does not activate. */
+  .fc-list__action[aria-disabled="true"] {
+    pointer-events: none;
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  /* The selected fill is discarded; Highlight restates it. */
+  @media (forced-colors: active) {
+    .fc-list__item:has([aria-current]:not([aria-current="false"]), [aria-selected="true"]) {
+      background-color: Highlight;
+      color: HighlightText;
+      forced-color-adjust: none;
+    }
+
+    .fc-list__item:has(:disabled, [aria-disabled="true"]) {
+      color: GrayText;
+    }
+  }
+
+  /* Motion: one background-colour transition, zeroed by the reset under
+     reduced motion. */
+}

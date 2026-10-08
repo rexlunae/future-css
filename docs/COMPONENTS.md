@@ -1560,3 +1560,73 @@ A FAB menu is a FAB with `popovertarget` and a `.fc-fab-menu` popover of
 focus. Items are plain buttons in tab order rather than a `role="menu"`: three to six
 actions do not need a menu's arrow-key contract. While open, the FAB shows the selected
 colours. The menu fades in without sliding under reduced motion.
+
+## List
+
+`list.css` is the general list: settings, contacts, files, results. Rows have an optional
+leading slot (icon, avatar, thumbnail), up to three lines of text (`__overline`,
+`__headline`, `__supporting`), and a trailing slot for meta or a control.
+
+```html
+<ul class="fc-list fc-list--divided">
+  <li class="fc-list__item">
+    <span class="fc-list__leading" aria-hidden="true">…</span>
+    <span class="fc-list__content">
+      <a class="fc-list__action fc-list__headline" href="/settings/privacy" aria-current="page">Privacy</a>
+      <span class="fc-list__supporting">Who can see your conversations</span>
+    </span>
+  </li>
+  <li>
+    <label class="fc-list__item">
+      <span class="fc-list__content"><span class="fc-list__headline">Web search</span></span>
+      <span class="fc-list__trailing"><input class="fc-switch" type="checkbox" role="switch"></span>
+    </label>
+  </li>
+</ul>
+```
+
+A row is static, an action row (one `.fc-list__action`, a link or button, whose
+`::after` covers the row so the whole row is the target while the accessible name stays
+the headline), or a control row (`.fc-list__item` on a `<label>`). The focus ring is drawn
+around the row. Selection is `aria-current` or `aria-selected="true"` on the action;
+disabled is `disabled` or `aria-disabled` inside the row. Trailing buttons sit above the
+stretched action and stay clickable. Supporting text clamps at two lines; when it does,
+set `data-fc-truncated="true"` and keep the full text reachable. No binding: a list of
+links or buttons is already keyboard-operable, and a list that needs arrow-key focus is a
+listbox (`fc-select`) or a menu.
+
+## Divider
+
+`divider.css`: `<hr class="fc-divider">` between sections, `--inset` to start where a
+list's text starts, `--middle` to inset both edges, and `--vertical` on an element with
+`role="separator" aria-orientation="vertical"` inside a row. `--fc-divider-space` and
+`--fc-divider-inset` adjust spacing. It uses the subtle border, which is decoration and
+exempt from non-text contrast.
+
+## Slider
+
+`slider.css` styles `<input type="range">`, so the keyboard contract, the slider role and
+the announced value come from the platform.
+
+```html
+<div class="fc-slider">
+  <input class="fc-slider__input" type="range" id="temp" min="0" max="2" step="0.1"
+         value="0.7" aria-label="Temperature">
+  <output class="fc-slider__value" for="temp">0.7</output>
+  <ol class="fc-slider__marks" aria-hidden="true"><li>0</li><li>1</li><li>2</li></ol>
+</div>
+<script type="module">
+  import { bindSliders } from "future-css/slider";
+  bindSliders(document);
+</script>
+```
+
+Blink and WebKit have no pseudo-element for the filled part of the track, so the fill
+reads `--fc-slider-pct`, which `bindSliders` keeps current and which it also mirrors into
+any `<output for>`. The output is not a live region, because the input already announces
+its value. After setting `value` from script, call `syncSlider(input)`. Without the
+binding the track is unfilled and the thumb alone shows the value; Firefox draws the fill
+natively. The fill and track colours are the declared 3:1 boundary pairs. Hover, active
+(a larger thumb, held still under reduced motion), disabled and `aria-invalid` are
+styled; forced colors restate the track and thumb in system colours. RTL fills from the
+right, as the browser does.

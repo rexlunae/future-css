@@ -22,7 +22,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | A. WASM foundations | Started | Rust workspace, 8 crates, accelerator abstraction |
 | B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
 | C. Token roles and themes | Not started | State tokens, override points, theme tier, type roles |
-| D. Material 3 parity | Started | Mapping done; D1 (actions) mostly shipped |
+| D. Material 3 parity | Started | Mapping done; D1 and D2 shipped |
 | 4. Verification | Not started | Visual regression, browser matrix, docs site |
 | 5. Platform expansion | Not started | Email build, print, native tokens |
 | 6. Release | Not started | Publishing, versioning, governance |
@@ -523,8 +523,8 @@ Status is **Shipped** (an existing component covers it), **Gap** (scheduled belo
 | | Side sheets | `fc-dialog--sheet` | Shipped |
 | | Bottom sheets | none | Gap, D4 |
 | | Carousel | none | Gap, D4 |
-| | Dividers | bare `<hr>` in `base.css`; no inset or vertical form | Gap, D2 |
-| | Lists | none: `fc-nav` and `fc-menu` are lists with a single job | Gap, D2 |
+| | Dividers | `fc-divider`, `--inset`, `--middle`, `--vertical` | Shipped, D2 |
+| | Lists | `fc-list`: static, linked, button and control rows, one to three lines | Shipped, D2 |
 | Navigation | Top app bar | `fc-masthead` | Shipped |
 | | Navigation drawer | `fc-nav` | Shipped |
 | | Navigation rail | `fc-nav` rail (toggle's `aria-expanded`) | Shipped |
@@ -533,9 +533,9 @@ Status is **Shipped** (an existing component covers it), **Gap** (scheduled belo
 | | Search: bar and view | none; `fc-select` filters a fixed list | Gap, D3 |
 | | Tabs, primary and secondary | `fc-tabs`, tabs binding | Shipped |
 | Selection | Checkbox, radio, switch | `fc-check`, `fc-switch` | Shipped |
-| | Chips: assist, filter, input, suggestion | `fc-tag` and `fc-suggestion` cover display and prompts only | Gap, D2 |
+| | Chips: assist, filter, input, suggestion | `button.fc-tag` (assist), `fc-tag[aria-pressed]` (filter), `fc-tag__remove` (input), `fc-suggestion--pill` (suggestion) | Shipped |
 | | Menus | `fc-menu` and its binding (context and anchored) | Shipped |
-| | Sliders | none | Gap, D2 |
+| | Sliders | `fc-slider` on `<input type="range">`, `slider` binding for the fill | Shipped, D2 |
 | | Date pickers | none | Gap, D5 |
 | | Time pickers | none | Gap, D5 |
 | Text inputs | Text fields: outlined | `fc-input` in `fc-field` | Shipped |
@@ -561,13 +561,15 @@ API, `<dialog>`, scroll snap); a binding ships only where the platform has no an
 - [x] FAB menu: the FAB as a popover invoker opening a column of actions
 
 **D2. Lists and selection**
-- [ ] List (`fc-list`): one-, two- and three-line items with leading and trailing slots,
+- [x] List (`fc-list`): one-, two- and three-line items with leading and trailing slots,
   static, linked and interactive (checkbox or switch in the trailing slot)
-- [ ] Divider (`fc-divider`): full, inset, and vertical, on `<hr>` or `role="separator"`
-- [ ] Chips (`fc-chip`): assist, filter (`aria-pressed` or a checkbox), input (with a
-  remove button), and suggestion
-- [ ] Slider (`fc-slider`) on `<input type="range">`, with a value label and tick marks
-  from `<datalist>`; RTL fill direction verified
+- [x] Divider (`fc-divider`): full, inset, and vertical, on `<hr>` or `role="separator"`
+- [x] Chips: on inspection already covered. `fc-tag` as a button is an assist chip, with
+  `aria-pressed` a filter chip, and with `__remove` an input chip; `fc-suggestion--pill`
+  is the suggestion chip. No new component
+- [x] Slider (`fc-slider`) on `<input type="range">`, with an `<output>` value and a
+  visible scale; a small `slider` binding draws the fill, which Blink and WebKit have no
+  pseudo-element for. RTL fill direction verified
 
 **D3. Navigation**
 - [ ] Navigation bar (`fc-navbar`): three to five destinations at the block end, labels

@@ -42,6 +42,7 @@
     "./tabs": "./src/js/tabs.ts",
     "./toast": "./src/js/toast.ts",
     "./tooltip": "./src/js/tooltip.ts",
+    "./slider": "./src/js/slider.ts",
     "./type": "./dist/type.css",
     "./themes": "./dist/themes.css",
     "./print": "./dist/print.css",

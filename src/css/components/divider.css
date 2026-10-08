@@ -1,0 +1,65 @@
+/*!
+ * future-css -- divider
+ *
+ * A thin rule between groups of content. On `<hr>` when it separates
+ * paragraphs or sections of a document, which a screen reader announces as a
+ * thematic break; on an element with `role="separator"` inside a toolbar or a
+ * row, where the break is visual grouping:
+ *
+ *   <hr class="fc-divider">
+ *   <hr class="fc-divider fc-divider--inset">
+ *   <div class="fc-divider fc-divider--vertical" role="separator" aria-orientation="vertical"></div>
+ *
+ * The bare `<hr>` in base.css stays as the classless default; this adds the
+ * inset and vertical forms and the tighter spacing a component needs.
+ *
+ * A divider is decoration of structure, so it uses the subtle border, which is
+ * exempt from non-text contrast (WCAG 1.4.11 covers controls and graphics that
+ * carry meaning, not separators). It has no states and no motion.
+ */
+
+@layer fc.components {
+  .fc-divider {
+    flex-shrink: 0;
+    align-self: stretch;
+    margin: 0;
+    margin-block: var(--fc-divider-space, var(--fc-space-2));
+    border: 0;
+    border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  }
+
+  /*
+   * Inset from the inline-start edge by the width of a list's leading slot, so
+   * the rule starts where the text does. Logical, so it insets from the right
+   * in RTL.
+   */
+  .fc-divider--inset {
+    margin-inline-start: var(--fc-divider-inset, var(--fc-space-12));
+  }
+
+  /* Inset from both edges, for a break inside a padded surface. */
+  .fc-divider--middle {
+    margin-inline: var(--fc-space-4);
+  }
+
+  /*
+   * Vertical: a rule between items in a row. `align-self: stretch` makes it as
+   * tall as the row in a flex container; `min-block-size` keeps it visible in
+   * a row with no height of its own.
+   */
+  .fc-divider--vertical {
+    min-block-size: 1em;
+    margin-block: 0;
+    margin-inline: var(--fc-divider-space, var(--fc-space-2));
+    border-block-start: 0;
+    border-inline-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  }
+
+  /* Forced colors keep borders but recolour them; restated so the rule is not
+     lost against a system background that matches the subtle border. */
+  @media (forced-colors: active) {
+    .fc-divider {
+      border-color: CanvasText;
+    }
+  }
+}

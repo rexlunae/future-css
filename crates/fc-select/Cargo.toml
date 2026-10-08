@@ -29,3 +29,16 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 wasm-bindgen = { workspace = true }
+
+# `no_std` on wasm, for the reason given in fc-diff: the allocator is named here
+# rather than arriving with std. It is the same dlmalloc std would have linked.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+dlmalloc = { workspace = true, optional = true }
+
+[features]
+# Build without std on wasm (see src/lib.rs). Off by default because std and a
+# crate-defined panic handler cannot share a build: any std crate compiled
+# alongside -- every other crate here enables wasm-bindgen's `std` -- brings
+# its own handler, and the two collide. build:wasm builds the bare crates on
+# their own, with this on.
+bare = ["dep:dlmalloc"]

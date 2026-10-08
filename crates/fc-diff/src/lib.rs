@@ -28,7 +28,30 @@
 //! nothing rather than 0 — inventing a line number is how a reviewer is misled
 //! about where a change landed.
 
-use std::cmp::min;
+// `no_std` on wasm, for size rather than portability. std's panic runtime
+// formats every message it could print -- `Debug` for ranges, char escaping,
+// integer padding -- and links all of it the moment any bounds check can fail,
+// which is most of this module's bytes and none of its behaviour. With
+// `panic = "abort"` a panic was already a trap, so the handler below traps
+// without formatting anything first.
+#![cfg_attr(all(target_arch = "wasm32", feature = "bare", not(test)), no_std)]
+
+extern crate alloc;
+
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
+use core::cmp::min;
+
+#[cfg(all(target_arch = "wasm32", feature = "bare", not(test)))]
+#[panic_handler]
+fn panic(_: &core::panic::PanicInfo) -> ! {
+    core::arch::wasm32::unreachable()
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "bare", not(test)))]
+#[global_allocator]
+static ALLOC: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
 
 /// How a line relates to the other side of the diff.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -84,13 +107,36 @@ struct Step {
 /// An empty input has *no* lines, not one empty line. Treating it as one makes
 /// "created a file" render as "emptied an existing file", which is a
 /// materially different (and wrong) story to a reviewer.
-pub fn split_lines(text: &str) -> Vec<String> {
-    if text.is_empty() {
-        return Vec::new();
+///
+/// `\r\n`, a lone `\r` and `\n` all end a line. Lines are borrowed slices
+/// found by scanning bytes rather than built with `replace` and `split`: the
+/// terminators are ASCII, so every cut lands on a character boundary, and the
+/// substring search behind `replace` brought panic paths whose message
+/// formatting was a quarter of the WASM module.
+pub fn split_lines(text: &str) -> Vec<&str> {
+    let bytes = text.as_bytes();
+    let mut lines = Vec::new();
+    let mut start = 0;
+    let mut i = 0;
+    while i < bytes.len() {
+        let end = i;
+        match bytes[i] {
+            b'\n' => i += 1,
+            b'\r' if bytes.get(i + 1) == Some(&b'\n') => i += 2,
+            b'\r' => i += 1,
+            _ => {
+                i += 1;
+                continue;
+            }
+        }
+        lines.push(text.get(start..end).unwrap_or(""));
+        start = i;
     }
-    let normalized = text.replace("\r\n", "\n").replace('\r', "\n");
-    let trimmed = normalized.strip_suffix('\n').unwrap_or(&normalized);
-    trimmed.split('\n').map(str::to_string).collect()
+    // A final terminator ends the last line rather than starting an empty one.
+    if start < bytes.len() {
+        lines.push(text.get(start..).unwrap_or(""));
+    }
+    lines
 }
 
 /// Compute a line diff between two texts.
@@ -134,10 +180,10 @@ pub fn diff_lines(before: &str, after: &str) -> Vec<DiffLine> {
     out
 }
 
-fn step_text<'a>(a: &'a [String], b: &'a [String], step: &Step) -> &'a str {
+fn step_text<'a>(a: &[&'a str], b: &[&'a str], step: &Step) -> &'a str {
     match step.kind {
-        DiffKind::Equal | DiffKind::Remove => a[step.a_index].as_str(),
-        DiffKind::Add => b[step.b_index].as_str(),
+        DiffKind::Equal | DiffKind::Remove => a[step.a_index],
+        DiffKind::Add => b[step.b_index],
     }
 }
 
@@ -166,7 +212,7 @@ pub fn diff_stats(lines: &[DiffLine]) -> DiffStats {
 /// whichever reaches further — the greedy choice that makes this O(ND) rather
 /// than O(N*M). The per-step trace is what `backtrack` needs to recover the
 /// edit script.
-fn myers(a: &[String], b: &[String]) -> Vec<Step> {
+fn myers(a: &[&str], b: &[&str]) -> Vec<Step> {
     let n = a.len();
     let m = b.len();
     if n == 0 {
@@ -463,6 +509,16 @@ mod tests {
     #[test]
     fn trailing_newline_is_a_terminator() {
         assert_eq!(split_lines("a\n").len(), 1);
+    }
+
+    #[test]
+    fn every_terminator_ends_one_line() {
+        assert_eq!(split_lines("a\r\nb\rc\nd"), ["a", "b", "c", "d"]);
+        // A lone \r before \r\n is its own terminator, not part of the pair.
+        assert_eq!(split_lines("a\r\r\nb"), ["a", "", "b"]);
+        assert_eq!(split_lines("\n"), [""]);
+        assert_eq!(split_lines("a\n\n"), ["a", ""]);
+        assert_eq!(split_lines("é\r😀"), ["é", "😀"]);
     }
 
     #[test]

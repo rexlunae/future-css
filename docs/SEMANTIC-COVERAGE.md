@@ -166,19 +166,19 @@ Counts by canonical name. "Shipped" counts only what is enforced, not merely pre
 | --- | --- | --- | --- |
 | 1 | Primitive ramp | **Shipped** | Ramp integrity tests: 14 steps, monotonic lightness, single hue, gamut |
 | 2 | Semantic alias | **Shipped** | `no-color-literals` lint rule; components cannot reach a primitive |
-| 3 | Component token | **Absent** | Nothing to enforce yet |
+| 3 | Component token | **Partial** | Button, chat and composer slots with semantic fallbacks ([TOKENS.md](TOKENS.md)); no test fails if one goes missing |
 | 4 | Surface ladder | **Shipped** | 8 surfaces, each a declared contrast pair |
 | 5 | Foreground ladder | **Shipped** | 21 contrast pairs, both schemes, build fails on violation |
 | 6 | Boundary ladder | **Shipped** | `border-default/subtle/strong` |
 | 7 | Non-text boundary | **Shipped** | `border-interactive`, declared at 3:1 |
 | 8 | Focus indicator | **Shipped** | Ring + offset; `preserve-focus` lint rule |
-| 9 | Status family | **Partial** | 4 families x 4 roles; **no hover/active per family** |
-| 10 | Interactive state ramp | **Partial** | Accent only. No selected token, no disabled colour |
+| 9 | Status family | **Shipped** | 4 families x 6 roles, hover and active included; label pairs declared on every solid step |
+| 10 | Interactive state ramp | **Shipped** | `selected-*` and `disabled-*` tokens as declared contrast pairs; a theme test keeps selection distinct from the surface |
 | 11 | Inverse surface | **Shipped** | `bg-inverse`, with its own foreground ramp |
 | 12 | Brand accent | **Shipped** | 6 tokens: bg, bg-hover, bg-active, bg-subtle, text, border |
 | 13 | Scheme | **Shipped** | `light-dark()` + `color-scheme`, no JS |
-| 14 | High-contrast scheme | **Partial** | `forced-colors` blocks in all 10 components; **no HC token scheme** |
-| 15 | Composite type style | **Absent** | Scales exist, no composed role tokens |
+| 14 | High-contrast scheme | **Shipped** | High-contrast theme set under `prefers-contrast: more` and `[data-fc-theme]`, verified by the full contract; `forced-colors` blocks as before |
+| 15 | Composite type style | **Partial** | `--fc-type-<role>` tokens and `.fc-type-*` classes, used by `base.css`; no test fails if one goes missing |
 | 16 | Measurement | **Shipped** | `size-content-max` 75ch, `size-measure` 65ch |
 | 17 | Target size | **Shipped** | `size-target-min` 1.5rem = WCAG 2.2 |
 | 18 | Layer order | **Shipped** | 9 steps; `z-index-scale` lint rule rejects raw values |
@@ -188,10 +188,12 @@ Counts by canonical name. "Shipped" counts only what is enforced, not merely pre
 | 22 | Diff role | **Shipped** | Added/removed as surface *and* foreground, not surface alone |
 | 23 | Machine-readable state | **Shipped** | 8 documented `data-fc-*` attributes, AGENTS.md contract |
 
-**Shipped: 18. Partial: 3. Absent: 2.**
+**Shipped: 21. Partial: 2. Absent: 0.** (2026-10-08: entries 9, 10 and 14 moved to Shipped
+because the contrast contract now checks them; 3 and 15 moved from Absent to Partial
+because they exist but nothing enforces them. See Phase C in [PLAN.md](PLAN.md).)
 
-The two Absent rows are the substantive findings, and both are discussed in
-[Gaps](#gaps-that-are-actually-gaps).
+The two rows that were Absent when this document was written are the substantive
+findings, and both are discussed in [Gaps](#gaps-that-are-actually-gaps).
 
 ---
 
@@ -243,7 +245,12 @@ The meaning layer. Components read these and never a primitive.
   it mechanically, because `no-color-literals` fails the build on any raw colour in a
   component regardless of which token the author meant to use.
 
-### 3. Component token — Absent
+### 3. Component token — Partial
+
+**Update, 2026-10-08.** Button (`--fc-btn-primary-*`), chat (`--fc-chat-*`) and composer
+(`--fc-composer-*`) now read optional slots that fall back to semantic tokens; see
+[TOKENS.md](TOKENS.md). Partial rather than Shipped because no test fails when a slot
+stops being read. The analysis below is as originally written.
 
 A token scoped to one component, overriding the semantic layer for that component only.
 
@@ -350,7 +357,10 @@ leave a ring but a keyboard focus always does.
 Fluent ships `$focus-inset` as a variant rather than an offset; Primer separates
 `outline.focus` from `borderColor.default`. Same three ideas, three arrangements.
 
-### 9. Status family — Partial
+### 9. Status family — Shipped
+
+**Update, 2026-10-08.** Every family now has `-bg-hover` and `-bg-active`, and each solid step
+has its label pair in the contrast contract. The table below is as originally written.
 
 | Subfeature | accent | success | warning | danger | info |
 | --- | --- | --- | --- | --- | --- |
@@ -378,7 +388,10 @@ components work around it by using `warning-bg-subtle` for surfaces and `warning
 only for fills with no text. That ceiling is real and is recorded here rather than
 hidden.
 
-### 10. Interactive state ramp — Partial
+### 10. Interactive state ramp — Shipped
+
+**Update, 2026-10-08.** `selected-bg`/`-fg` and `disabled-bg`/`-fg`/`-border` exist as declared
+contrast pairs, and components read them. The analysis below is as originally written.
 
 The hover/active/selected/disabled family, treated separately from status because these
 are *states of one surface* rather than parallel families.
@@ -455,7 +468,11 @@ recording the bug: `color-scheme` was declared in `fc.base` as well as `fc.token
 is ordered later at equal specificity, and the theme switcher silently did nothing —
 while still responding to clicks. The rule now lives in the tokens layer alone.
 
-### 14. High-contrast scheme — Partial
+### 14. High-contrast scheme — Shipped
+
+**Update, 2026-10-08.** A high-contrast theme set applies under `prefers-contrast: more` and
+`[data-fc-theme="high-contrast-*"]`, and the build checks it against the full contract.
+The table below is as originally written.
 
 | Subfeature | Us | Radix | Carbon | Fluent 2 | M3 | Primer |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -478,7 +495,11 @@ serve people whose contrast needs are not met by either of our two schemes.
 and would need its own token tier. Note this is the same gap as the missing theme sets
 in entry 12, seen from a different angle: both want a third value per token.
 
-### 15. Composite type style — Absent
+### 15. Composite type style — Partial
+
+**Update, 2026-10-08.** Named roles ship as `--fc-type-<role>` and `-tracking` tokens with
+`.fc-type-*` classes, and `base.css` uses them. Partial rather than Shipped because no
+test fails when one goes missing. The analysis below is as originally written.
 
 A named role that bundles size, weight, line height and tracking — `body-small`,
 `title-medium`, `md-typescale-headline-small`.
@@ -676,9 +697,13 @@ each invisible to unit tests and obvious the moment real components rendered.
 
 Ordered by cost to a consumer adopting this system, not by effort.
 
-Items 1-8 are scheduled as **Phase C** in [`PLAN.md`](PLAN.md#phase-c----token-roles-and-themes-not-started),
+Items 1-8 are scheduled as **Phase C** in [`PLAN.md`](PLAN.md#phase-c----token-roles-and-themes-mostly-delivered),
 which orders them by what to do first; item 9 lives in that document's performance
 budget section. When an item ships, update its scorecard row here in the same edit.
+
+**Update, 2026-10-08.** Items 3, 4 and 5 below have shipped, and 1 and 2 exist but are not
+yet enforced by a test; the scorecard and the per-entry notes above say which. The list
+is kept as written because it records why each gap mattered.
 
 **1. Component tokens (Absent, entry 3)** and **2. Composite type styles (Absent, entry
 15)** follow from one position — everything is a scale, nothing is a role — and both are

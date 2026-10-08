@@ -389,7 +389,7 @@ natively and never sees the feature.
 The remaining raw bytes are mostly wasm-bindgen's descriptor section (about 8 KB for
 fc-diff), which bindgen strips and which never ships, plus the allocator (about 5 KB).
 
-, like the `wasm-bindgen` CLI: install
+`wasm-opt` is an optional system tool, like the `wasm-bindgen` CLI: install
 binaryen and the build uses it, skip it and the build is complete but the
 shipped sizes are ~10% larger. The report says which happened. The parity suite
 runs against the optimized modules, so a wasm-opt regression is caught by the

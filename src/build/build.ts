@@ -82,6 +82,7 @@ const BUNDLE_ORDER: ReadonlyArray<readonly [source: string, publishedAs: string]
   ["components/nav.css", "components/nav.css"],
   ["components/masthead.css", "components/masthead.css"],
   ["components/control-group.css", "components/control-group.css"],
+  ["components/button-group.css", "components/button-group.css"],
   ["components/segmented.css", "components/segmented.css"],
   ["components/split-button.css", "components/split-button.css"],
   ["components/fab.css", "components/fab.css"],

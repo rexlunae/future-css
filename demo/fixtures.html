@@ -1442,6 +1442,33 @@
     </div>
   </section>
 
+  <section class="fx" id="fx-button-group" data-fixture="button-group" aria-labelledby="fx-button-group-h">
+    <h2 class="fx__title" id="fx-button-group-h">Connected button group <code class="fx__file">button-group.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="one pressed"><figcaption class="fx__caption">one pressed</figcaption><div class="fx__body">
+        <div class="fc-button-group" role="group" aria-label="Alignment">
+          <button class="fc-btn fc-btn--secondary fc-button-group__item" type="button" aria-pressed="true">Start</button>
+          <button class="fc-btn fc-btn--secondary fc-button-group__item" type="button" aria-pressed="false">Center</button>
+          <button class="fc-btn fc-btn--secondary fc-button-group__item" type="button" aria-pressed="false">End</button>
+        </div>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="small, disabled and unavailable"><figcaption class="fx__caption">small, disabled and unavailable</figcaption><div class="fx__body">
+        <div class="fc-button-group" role="group" aria-label="Speed">
+          <button class="fc-btn fc-btn--secondary fc-btn--sm fc-button-group__item" type="button" aria-pressed="false">0.5×</button>
+          <button class="fc-btn fc-btn--secondary fc-btn--sm fc-button-group__item" type="button" aria-pressed="true">1×</button>
+          <button class="fc-btn fc-btn--secondary fc-btn--sm fc-button-group__item" type="button" disabled>1.5×</button>
+          <button class="fc-btn fc-btn--secondary fc-btn--sm fc-button-group__item" type="button" aria-disabled="true">2×</button>
+        </div>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="actions with long labels"><figcaption class="fx__caption">actions with long labels</figcaption><div class="fx__body">
+        <div class="fc-button-group" role="group" aria-label="Export">
+          <button class="fc-btn fc-btn--secondary fc-button-group__item" type="button">Export the whole conversation history</button>
+          <button class="fc-btn fc-btn--secondary fc-button-group__item" type="button">Copy link</button>
+        </div>
+      </div></figure>
+    </div>
+  </section>
+
   <section class="fx" id="fx-segmented" data-fixture="segmented" aria-labelledby="fx-segmented-h">
     <h2 class="fx__title" id="fx-segmented-h">Segmented button <code class="fx__file">segmented.css</code></h2>
     <div class="fx__states">

@@ -1,0 +1,144 @@
+/*!
+ * future-css -- carousel
+ *
+ * A row of items that scrolls sideways: featured content, image galleries,
+ * suggested prompts with artwork. Built on a scroll container with scroll
+ * snap, so touch, trackpad, Shift+wheel, and the arrow keys on the focused
+ * track all scroll it with no script:
+ *
+ *   <section class="fc-carousel" aria-roledescription="carousel" aria-label="Featured">
+ *     <div class="fc-carousel__controls" hidden>
+ *       <button class="fc-btn fc-btn--secondary fc-btn--icon" type="button"
+ *               data-fc-carousel="prev" aria-label="Previous">‹</button>
+ *       <button class="fc-btn fc-btn--secondary fc-btn--icon" type="button"
+ *               data-fc-carousel="next" aria-label="Next">›</button>
+ *     </div>
+ *     <ul class="fc-carousel__track" tabindex="0" aria-label="Featured items">
+ *       <li class="fc-carousel__item" aria-roledescription="slide" aria-label="1 of 4">…</li>
+ *     </ul>
+ *   </section>
+ *
+ * The track is focusable so a keyboard user can scroll it. Previous and next
+ * buttons are optional and need the `carousel` binding, so the controls ship
+ * with `hidden` and the binding removes it: a button that does nothing is
+ * worse than none.
+ *
+ * Never autoplays. Content that moves on its own needs a pause control
+ * (WCAG 2.2.2), and a carousel that advances while someone reads it is the
+ * most reliably disliked pattern on the web.
+ */
+
+@layer fc.components {
+  .fc-carousel {
+    /* Width of one item as a share of the track: a multi-browse layout shows
+       the next item peeking in, which is what says "this scrolls". */
+    --fc-carousel-item: clamp(12rem, 42%, 22rem);
+
+    display: grid;
+    /* One column that takes the container's width, never the track's: a
+       max-content column would size the carousel to every item side by side
+       and nothing would scroll. */
+    grid-template-columns: minmax(0, 1fr);
+    inline-size: 100%;
+    gap: var(--fc-space-2);
+    min-inline-size: 0;
+  }
+
+  .fc-carousel__track {
+    display: flex;
+    gap: var(--fc-space-2);
+    margin: 0;
+    padding: 0;
+    padding-block-end: var(--fc-space-2);
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: var(--fc-carousel-snap, inline mandatory);
+    scrollbar-width: thin;
+    border-radius: var(--fc-radius-xl);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .fc-carousel__track {
+      scroll-behavior: smooth;
+    }
+  }
+
+  .fc-carousel__item {
+    position: relative;
+    flex: 0 0 var(--fc-carousel-item);
+    min-inline-size: 0;
+    overflow: hidden;
+    scroll-snap-align: start;
+    background-color: var(--fc-color-bg-muted);
+    color: var(--fc-color-text-default);
+    border-radius: var(--fc-radius-xl);
+  }
+
+  /* Media fills the item; the item's radius clips it. */
+  .fc-carousel__item > :is(img, video, picture) {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  /*
+   * A caption over the bottom of the media, on a scrim so the text is legible
+   * over any image. The scrim is the inverse surface at full strength under
+   * the text, so the declared inverse pair holds whatever the image is.
+   */
+  .fc-carousel__caption {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    margin: 0;
+    padding: var(--fc-space-3);
+    background-color: var(--fc-color-bg-inverse);
+    color: var(--fc-color-text-inverse);
+    font-size: var(--fc-font-size-sm);
+    font-weight: var(--fc-font-weight-medium);
+  }
+
+  /* Hero: one large item at a time, with the next just visible. */
+  .fc-carousel--hero {
+    --fc-carousel-item: 85%;
+  }
+
+  /* Free: items do not snap, for browsing a long row. */
+  .fc-carousel--free {
+    --fc-carousel-snap: none;
+  }
+
+  @media (hover: hover) {
+    .fc-carousel__item:has(a, button):hover {
+      background-color: color-mix(in oklab, var(--fc-color-text-default) calc(var(--fc-opacity-hover-overlay) * 100%), var(--fc-color-bg-muted));
+    }
+  }
+
+  /* An item that holds focus draws the ring on the whole item, not just the
+     small link inside it. */
+  .fc-carousel__item:has(:focus-visible) {
+    outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring);
+    outline-offset: calc(var(--fc-border-width-focus) * -1);
+  }
+
+  .fc-carousel__controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--fc-space-2);
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  @media (forced-colors: active) {
+    .fc-carousel__item {
+      border: var(--fc-border-width-thin) solid CanvasText;
+    }
+
+    .fc-carousel__caption {
+      background-color: Canvas;
+      color: CanvasText;
+    }
+  }
+}

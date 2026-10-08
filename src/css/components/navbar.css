@@ -1,0 +1,178 @@
+/*!
+ * future-css -- navigation bar
+ *
+ * Three to five top-level destinations along the block-end edge of a phone
+ * layout. Material's navigation bar; `fc-nav` is the drawer and rail for wider
+ * screens, and an app typically swaps one for the other at a breakpoint.
+ *
+ *   <nav class="fc-navbar fc-navbar--fixed" aria-label="Primary">
+ *     <a class="fc-navbar__item" href="/chats" aria-current="page">
+ *       <span class="fc-navbar__icon" aria-hidden="true">…</span>
+ *       <span class="fc-navbar__label">Chats</span>
+ *     </a>
+ *     <a class="fc-navbar__item" href="/inbox">
+ *       <span class="fc-navbar__icon" aria-hidden="true">…
+ *         <span class="fc-navbar__badge">3</span></span>
+ *       <span class="fc-navbar__label">Inbox</span>
+ *       <span class="fc-u-visually-hidden">, 3 unread</span>
+ *     </a>
+ *   </nav>
+ *
+ * Labels are always shown. Material allows icon-only bars; an icon alone is
+ * a guess for anyone who has not learned it, and the label costs nothing here.
+ * The current destination is `aria-current="page"` -- the attribute a screen
+ * reader announces -- and it is drawn as an indicator behind the icon plus a
+ * heavier label, so it does not rest on colour.
+ *
+ * A badge is decorative to assistive technology; say the count in the link's
+ * name, as the visually hidden text above does.
+ */
+
+@layer fc.components {
+  .fc-navbar {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-around;
+    gap: var(--fc-space-1);
+    padding-block: var(--fc-space-2);
+    padding-inline: var(--fc-space-2);
+    background-color: var(--fc-color-bg-surface);
+    border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  }
+
+  /*
+   * Fixed to the viewport's block-end edge, above the phone's home indicator.
+   * Pages using it reserve the space themselves (padding on the scroll
+   * container), since only they know what else is pinned.
+   */
+  .fc-navbar--fixed {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: var(--fc-z-sticky);
+    padding-block-end: max(var(--fc-space-2), env(safe-area-inset-bottom));
+  }
+
+  .fc-navbar__item {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--fc-space-1);
+    min-inline-size: 0;
+    min-block-size: var(--fc-size-target-comfortable);
+    padding-block: var(--fc-space-1);
+    color: var(--fc-color-text-muted);
+    border-radius: var(--fc-radius-lg);
+    font-size: var(--fc-font-size-xs);
+    font-weight: var(--fc-font-weight-medium);
+    line-height: var(--fc-line-height-snug);
+    text-align: center;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /*
+   * The indicator: a pill behind the icon. It carries the hover and pressed
+   * tints too, so the feedback lands where the thumb is aimed.
+   */
+  .fc-navbar__icon {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    inline-size: 4rem;
+    max-inline-size: 100%;
+    block-size: 2rem;
+    font-size: 1.25rem;
+    line-height: 1;
+    background-color: var(--fc-navbar-indicator, transparent);
+    border-radius: var(--fc-radius-full);
+    transition: background-color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-navbar__label {
+    max-inline-size: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  /* A count or a dot at the icon's inline-end top corner. */
+  .fc-navbar__badge {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 55%;
+    min-inline-size: 1rem;
+    block-size: 1rem;
+    padding-inline: var(--fc-space-1);
+    background-color: var(--fc-color-danger-bg);
+    color: var(--fc-color-text-on-danger);
+    border-radius: var(--fc-radius-full);
+    font-size: var(--fc-font-size-xs);
+    font-weight: var(--fc-font-weight-semibold);
+    line-height: 1rem;
+    text-align: center;
+  }
+
+  /* An empty badge is a dot: "something new" without a number. */
+  .fc-navbar__badge:empty {
+    min-inline-size: 0.5rem;
+    block-size: 0.5rem;
+    padding: 0;
+    inset-block-start: var(--fc-space-1);
+  }
+
+  @media (hover: hover) {
+    .fc-navbar__item:hover {
+      --fc-navbar-indicator: color-mix(in oklab, currentColor calc(var(--fc-opacity-hover-overlay) * 100%), transparent);
+      color: var(--fc-color-text-default);
+    }
+  }
+
+  .fc-navbar__item:active {
+    --fc-navbar-indicator: color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 100%), transparent);
+  }
+
+  .fc-navbar__item[aria-current="page"] {
+    --fc-navbar-indicator: var(--fc-color-selected-bg);
+    color: var(--fc-color-text-default);
+    font-weight: var(--fc-font-weight-semibold);
+  }
+
+  /* Without an href an anchor is not a link; this is the disabled form, with
+     `aria-disabled` for the announcement. */
+  .fc-navbar__item[aria-disabled="true"] {
+    color: var(--fc-color-disabled-fg);
+    cursor: not-allowed;
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  @media (forced-colors: active) {
+    .fc-navbar {
+      border-block-start-color: CanvasText;
+    }
+
+    .fc-navbar__item[aria-current="page"] {
+      --fc-navbar-indicator: Highlight;
+      --fc-navbar-icon-fg: HighlightText;
+      color: LinkText;
+    }
+
+    /* The indicator is drawn by the component, so the icon keeps the colours
+       it is given instead of having them forced back to the text colour. */
+    .fc-navbar__icon {
+      color: var(--fc-navbar-icon-fg, inherit);
+      forced-color-adjust: none;
+    }
+
+    .fc-navbar__badge {
+      border: var(--fc-border-width-thin) solid CanvasText;
+    }
+
+    .fc-navbar__item[aria-disabled="true"] {
+      color: GrayText;
+    }
+  }
+
+  /* Motion: the indicator's colour transition, zeroed by the reset under
+     reduced motion. */
+}

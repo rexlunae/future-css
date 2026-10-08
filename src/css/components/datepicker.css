@@ -1,0 +1,245 @@
+/*!
+ * future-css -- date picker and time picker
+ *
+ * DATE PICKER. A month calendar for picking one date, with the WAI-ARIA date
+ * grid keyboard contract supplied by the `datepicker` binding, which also
+ * renders the month:
+ *
+ *   <div class="fc-datepicker" id="due">
+ *     <div class="fc-datepicker__header">
+ *       <button class="fc-btn fc-btn--ghost fc-btn--icon" type="button" data-fc-datepicker="prev" aria-label="Previous month">‹</button>
+ *       <h2 class="fc-datepicker__title" aria-live="polite">October 2026</h2>
+ *       <button class="fc-btn fc-btn--ghost fc-btn--icon" type="button" data-fc-datepicker="next" aria-label="Next month">›</button>
+ *     </div>
+ *     <table class="fc-datepicker__grid" role="grid" aria-labelledby="…">…</table>
+ *   </div>
+ *
+ * The no-script path, and the fastest one for anyone who knows the date, is
+ * a native `<input type="date" class="fc-input">`: the platform's own picker,
+ * keyboard entry, locale formatting and validation. The calendar is for
+ * browsing dates, not a replacement for typing one.
+ *
+ * Selection is `aria-selected="true"` on the grid cell, today is
+ * `aria-current="date"` on its button, and unavailable dates are
+ * `aria-disabled="true"`, which keeps them reachable by arrow keys so the
+ * grid does not skip silently over a gap.
+ *
+ * TIME PICKER. The native `<input type="time" class="fc-input">`, plus an
+ * input-mode layout (`fc-timepicker`) of hour and minute fields with an
+ * `fc-segmented` period, for locales and forms where AM/PM must be stated
+ * explicitly. Material's clock dial is not offered; see docs/PLAN.md. The
+ * native inputs' picker button is styled in field.css.
+ */
+
+@layer fc.components {
+  .fc-datepicker {
+    display: inline-flex;
+    flex-direction: column;
+    gap: var(--fc-space-2);
+    /* Seven 40px days plus padding, shrinking with a narrow container. */
+    inline-size: 20rem;
+    max-inline-size: 100%;
+    padding: var(--fc-space-3);
+    background-color: var(--fc-color-bg-raised);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-xl);
+  }
+
+  .fc-datepicker__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fc-space-2);
+  }
+
+  .fc-datepicker__title {
+    margin: 0;
+    font-size: var(--fc-font-size-sm);
+    font-weight: var(--fc-font-weight-semibold);
+    text-align: center;
+  }
+
+  /*
+   * Month arrows. Two logical borders turned 45 degrees make a corner that
+   * points toward inline-start or inline-end, so "previous" points backwards
+   * in either direction without a glyph swap.
+   */
+  .fc-datepicker__chevron {
+    inline-size: 0.45em;
+    block-size: 0.45em;
+    rotate: 45deg;
+  }
+
+  .fc-datepicker__chevron--prev {
+    border-block-end: var(--fc-border-width-thick) solid currentColor;
+    border-inline-start: var(--fc-border-width-thick) solid currentColor;
+    translate: 0.1em 0;
+  }
+
+  .fc-datepicker__chevron--next {
+    border-block-start: var(--fc-border-width-thick) solid currentColor;
+    border-inline-end: var(--fc-border-width-thick) solid currentColor;
+    translate: -0.1em 0;
+  }
+
+  /* The rotation is physical, so the mirrored corner needs the opposite turn. */
+  .fc-datepicker__chevron:dir(rtl) {
+    rotate: -45deg;
+  }
+
+  .fc-datepicker__grid {
+    inline-size: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  /* The base layer rules table rows; a calendar is a grid of buttons, and
+     row rules would read as a week separator that means nothing. */
+  .fc-datepicker__weekday,
+  .fc-datepicker__cell {
+    border: 0;
+  }
+
+  .fc-datepicker__weekday {
+    padding: 0;
+    padding-block-end: var(--fc-space-1);
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-xs);
+    font-weight: var(--fc-font-weight-medium);
+    text-align: center;
+  }
+
+  .fc-datepicker__cell {
+    padding: var(--fc-space-0-5);
+    text-align: center;
+  }
+
+  /*
+   * The day: a 40px circle, the shared control size and well past the target
+   * minimum. Its colours come from properties the cell sets, so selection on
+   * the cell restyles the button without reaching into it.
+   */
+  .fc-datepicker__day {
+    display: inline-grid;
+    place-items: center;
+    /* Shrinks with its column on a narrow screen, never past the 24px
+       target minimum the table's own minimum width implies. */
+    inline-size: 100%;
+    max-inline-size: var(--fc-size-target-comfortable);
+    aspect-ratio: 1;
+    padding: 0;
+    background-color: var(--fc-datepicker-day-bg, transparent);
+    color: var(--fc-datepicker-day-fg, var(--fc-color-text-default));
+    border: var(--fc-border-width-thin) solid var(--fc-datepicker-day-border, transparent);
+    border-radius: var(--fc-radius-full);
+    font: inherit;
+    font-size: var(--fc-font-size-sm);
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition: background-color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  /* Today is ringed, not filled, so it never reads as selected. */
+  .fc-datepicker__day[aria-current="date"] {
+    --fc-datepicker-day-border: var(--fc-color-accent-border);
+    font-weight: var(--fc-font-weight-semibold);
+  }
+
+  @media (hover: hover) {
+    .fc-datepicker__day:hover {
+      background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-hover-overlay) * 100%), var(--fc-datepicker-day-bg, transparent));
+    }
+  }
+
+  .fc-datepicker__day:active {
+    background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 100%), var(--fc-datepicker-day-bg, transparent));
+  }
+
+  .fc-datepicker__cell[aria-selected="true"] {
+    --fc-datepicker-day-bg: var(--fc-color-accent-bg);
+    --fc-datepicker-day-fg: var(--fc-color-text-on-accent);
+  }
+
+  .fc-datepicker__day[aria-disabled="true"] {
+    color: var(--fc-color-disabled-fg);
+    text-decoration: line-through;
+    cursor: not-allowed;
+  }
+
+  /* ---- Time picker ----------------------------------------------------- */
+
+  /*
+   *   <fieldset class="fc-timepicker">
+   *     <legend class="fc-field__label">Start time</legend>
+   *     <input class="fc-input fc-timepicker__unit" inputmode="numeric" aria-label="Hour" value="09">
+   *     <span class="fc-timepicker__separator" aria-hidden="true">:</span>
+   *     <input class="fc-input fc-timepicker__unit" inputmode="numeric" aria-label="Minute" value="30">
+   *     <fieldset class="fc-segmented">…AM / PM…</fieldset>
+   *   </fieldset>
+   *
+   * Hours and minutes always run hours-first, left to right, even in RTL
+   * scripts, which write times that way; the row is isolated as LTR.
+   */
+  .fc-timepicker {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fc-space-2);
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
+  .fc-timepicker > legend {
+    flex-basis: 100%;
+    margin-block-end: var(--fc-space-1);
+    padding: 0;
+  }
+
+  .fc-timepicker__unit {
+    inline-size: 4.5rem;
+    min-block-size: 3.5rem;
+    font-size: var(--fc-font-size-2xl);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  .fc-timepicker__separator {
+    font-size: var(--fc-font-size-2xl);
+    font-weight: var(--fc-font-weight-semibold);
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  @media (forced-colors: active) {
+    /* The day buttons opt out of forcing so the selection can be drawn in
+       Highlight; their resting colours are restated in system colours. */
+    .fc-datepicker {
+      --fc-datepicker-day-fg: CanvasText;
+      border-color: CanvasText;
+    }
+
+    .fc-datepicker__cell[aria-selected="true"] {
+      --fc-datepicker-day-bg: Highlight;
+      --fc-datepicker-day-fg: HighlightText;
+    }
+
+    .fc-datepicker__day {
+      forced-color-adjust: none;
+    }
+
+    .fc-datepicker__day[aria-current="date"] {
+      --fc-datepicker-day-border: CanvasText;
+    }
+
+    .fc-datepicker__day[aria-disabled="true"] {
+      color: GrayText;
+    }
+  }
+
+  /* Motion: one colour transition, zeroed by the reset under reduced motion. */
+}

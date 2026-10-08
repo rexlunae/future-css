@@ -23,6 +23,7 @@ import {
   ansiContrastPairs,
   checkAnsiContrast,
 } from "../src/tokens/semantic/terminal.ts";
+import { themeSets } from "../src/tokens/semantic/themes.ts";
 import { contrastRatio, oklchToHex } from "../src/tokens/color-utils.ts";
 import { ramps } from "../src/tokens/palette.ts";
 
@@ -60,6 +61,23 @@ describe("contrast contract", () => {
     const white = { l: 1, c: 0, h: 0 };
     const gray = { l: 0.5, c: 0, h: 0 };
     assert.equal(contrastRatio(white, gray), contrastRatio(gray, white));
+  });
+});
+
+describe("themes", () => {
+  it("keeps the selected surface distinct from the surface in every theme", () => {
+    // A theme that collapses the two shows a selected row as unselected,
+    // with nothing in the contrast pairs to catch it.
+    for (const [theme, colors] of Object.entries(themeSets)) {
+      for (const scheme of ["light", "dark"] as const) {
+        const ratio = contrastRatio(colors["selected-bg"]![scheme], colors["bg-surface"]![scheme]);
+        // The default and brand themes draw selection as a soft tint, with
+        // check marks and indicators carrying the state. High contrast has no
+        // soft tints, so its fill must be a real non-text boundary (1.4.11).
+        const min = theme === "high-contrast" ? 3 : 1.05;
+        assert.ok(ratio >= min, `${theme} ${scheme}: selected-bg is ${ratio.toFixed(2)}:1 against bg-surface, below ${min}`);
+      }
+    }
   });
 });
 

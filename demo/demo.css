@@ -98,10 +98,13 @@
   font-size: var(--fc-font-size-sm);
 }
 
+/* Four settings outgrow a 320px header (or 400% zoom); they wrap onto a
+   second line rather than widening the page. */
 .demo-controls {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--fc-space-2);
-  flex-shrink: 0;
+  min-inline-size: 0;
 }
 
 /* ---- Nav ---------------------------------------------------------------- */

@@ -1,0 +1,317 @@
+/*!
+ * future-css -- floating action button and FAB menu
+ *
+ * The one most important action on a screen, floating above the content:
+ * compose, new chat, add. One per screen; two FABs compete and neither wins.
+ *
+ *   <button class="fc-fab" type="button" aria-label="New chat">
+ *     <svg class="fc-fab__icon" aria-hidden="true">…</svg>
+ *   </button>
+ *
+ *   <button class="fc-fab fc-fab--extended" type="button">
+ *     <svg class="fc-fab__icon" aria-hidden="true">…</svg>New chat
+ *   </button>
+ *
+ * An icon-only FAB needs `aria-label`: the glyph is decorative and the button
+ * otherwise has no name. The extended form carries its own text, which is why
+ * it is the better choice whenever there is room.
+ *
+ * FAB MENU. A FAB that opens a short column of related actions, on the native
+ * popover API, so light dismiss, Escape and returning focus to the FAB come
+ * from the platform:
+ *
+ *   <button class="fc-fab" popovertarget="create" aria-label="Create">+</button>
+ *   <div class="fc-fab-menu" id="create" popover>
+ *     <button class="fc-fab-menu__item" type="button">Document</button>
+ *     <button class="fc-fab-menu__item" type="button">Folder</button>
+ *   </div>
+ *
+ * Items are real buttons in tab order, not a role="menu" -- three to six
+ * actions do not need a menu's arrow-key contract, and Tab is what users try.
+ */
+
+@layer fc.components {
+  .fc-fab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fc-space-3);
+
+    /* 3.5rem: well past the comfortable target, because a FAB is aimed at
+       with a thumb, often one-handed. */
+    min-block-size: 3.5rem;
+    min-inline-size: 3.5rem;
+    padding-inline: var(--fc-space-4);
+
+    background-color: var(--fc-color-accent-bg-subtle);
+    color: var(--fc-color-accent-text);
+    border: var(--fc-border-width-thin) solid transparent;
+    border-radius: var(--fc-radius-xl);
+    box-shadow: var(--fc-shadow-floating);
+
+    font-family: inherit;
+    font-size: var(--fc-font-size-md);
+    font-weight: var(--fc-font-weight-medium);
+    line-height: var(--fc-line-height-snug);
+    /* A translated label wraps inside the FAB rather than pushing it off the
+       screen; a FAB that overflows has lost the one job it had. */
+    max-inline-size: 100%;
+    text-align: start;
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation;
+
+    transition:
+      background-color var(--fc-duration-fast) var(--fc-easing-standard),
+      box-shadow var(--fc-duration-fast) var(--fc-easing-standard),
+      scale var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  /* Sized in em by font-size, so an SVG and a glyph icon come out the same. */
+  .fc-fab__icon {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1em;
+    block-size: 1em;
+    flex-shrink: 0;
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  /* ---- Variants -------------------------------------------------------- */
+
+  /* Solid: the strongest colour, for a screen whose surface is already busy. */
+  .fc-fab--primary {
+    background-color: var(--fc-color-accent-bg);
+    color: var(--fc-color-text-on-accent);
+  }
+
+  /* Surface: neutral, for when the accent is already spent on the page. */
+  .fc-fab--surface {
+    background-color: var(--fc-color-bg-raised);
+    color: var(--fc-color-text-default);
+    border-color: var(--fc-color-border-subtle);
+  }
+
+  /* Lowered: sits on a surface that is itself floating (a sheet, a card). */
+  .fc-fab--lowered {
+    box-shadow: var(--fc-shadow-raised);
+  }
+
+  /* ---- Sizes ----------------------------------------------------------- */
+
+  .fc-fab--sm {
+    min-block-size: var(--fc-size-target-comfortable);
+    min-inline-size: var(--fc-size-target-comfortable);
+    padding-inline: var(--fc-space-2);
+    border-radius: var(--fc-radius-lg);
+    font-size: var(--fc-font-size-sm);
+  }
+
+  .fc-fab--lg {
+    min-block-size: 6rem;
+    min-inline-size: 6rem;
+    border-radius: var(--fc-radius-2xl);
+    font-size: var(--fc-font-size-lg);
+  }
+
+  /* The label widens the button; the icon keeps its place at the start. */
+  .fc-fab--extended {
+    padding-inline: var(--fc-space-4) var(--fc-space-5);
+  }
+
+  /*
+   * Docked to the block-end, inline-end corner of the viewport. Logical insets
+   * put it bottom-left in RTL, which is where the thumb of a right-to-left
+   * reader rests. The safe-area inset keeps it clear of a phone's home bar.
+   */
+  .fc-fab--fixed {
+    position: fixed;
+    inset-block-end: max(var(--fc-space-4), env(safe-area-inset-bottom));
+    inset-inline-end: var(--fc-space-4);
+    z-index: var(--fc-z-sticky);
+  }
+
+  /* ---- States ---------------------------------------------------------- */
+
+  @media (hover: hover) {
+    .fc-fab:hover {
+      background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-hover-overlay) * 100%), var(--fc-color-accent-bg-subtle));
+      box-shadow: var(--fc-shadow-overlay);
+    }
+
+    .fc-fab--primary:hover {
+      background-color: var(--fc-color-accent-bg-hover);
+    }
+
+    .fc-fab--surface:hover {
+      background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-hover-overlay) * 100%), var(--fc-color-bg-raised));
+    }
+  }
+
+  .fc-fab:active:not(:disabled, [aria-disabled="true"]) {
+    scale: 0.96;
+    box-shadow: var(--fc-shadow-raised);
+  }
+
+  .fc-fab--primary:active {
+    background-color: var(--fc-color-accent-bg-active);
+  }
+
+  /* The raised shadow would erase the focus ring's offset gap; restated so it
+     survives, as on `.fc-btn`. */
+  .fc-fab:focus-visible {
+    box-shadow:
+      0 0 0 var(--fc-space-0-5) var(--fc-color-focus-ring-offset),
+      var(--fc-shadow-floating);
+  }
+
+  /* An open FAB menu turns its FAB into the selected state, so the invoker
+     shows which menu is open without a separate icon swap. */
+  .fc-fab:has(+ .fc-fab-menu:popover-open) {
+    background-color: var(--fc-color-selected-bg);
+    color: var(--fc-color-selected-fg);
+  }
+
+  .fc-fab:disabled,
+  .fc-fab[aria-disabled="true"] {
+    background-color: var(--fc-color-disabled-bg);
+    color: var(--fc-color-disabled-fg);
+    border-color: var(--fc-color-disabled-border);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  /* Blocks pointer activation without leaving the tab order. Keyboard
+     activation is the host's to ignore, as for any aria-disabled fc-btn. */
+  .fc-fab[aria-disabled="true"],
+  .fc-fab-menu__item[aria-disabled="true"] {
+    pointer-events: none;
+  }
+
+  .fc-fab[aria-busy="true"] {
+    cursor: progress;
+  }
+
+  /* ---- FAB menu -------------------------------------------------------- */
+
+  .fc-fab-menu {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--fc-space-2);
+    margin: 0;
+    padding: var(--fc-space-2);
+    background-color: transparent;
+    border: 0;
+    overflow: visible;
+
+    /*
+     * Above the FAB, aligned to its inline-end edge, flipping below when there
+     * is no room. Without anchor positioning the UA centres it, which is
+     * usable rather than broken.
+     */
+    position-area: block-start span-inline-start;
+    position-try-fallbacks: flip-block;
+
+    opacity: 0;
+    translate: 0 var(--fc-space-2);
+    transition:
+      opacity var(--fc-duration-fast) var(--fc-easing-decelerate),
+      translate var(--fc-duration-fast) var(--fc-easing-decelerate),
+      overlay var(--fc-duration-fast) allow-discrete,
+      display var(--fc-duration-fast) allow-discrete;
+  }
+
+  .fc-fab-menu:popover-open {
+    display: flex;
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  @starting-style {
+    .fc-fab-menu:popover-open {
+      opacity: 0;
+      translate: 0 var(--fc-space-2);
+    }
+  }
+
+  .fc-fab-menu__item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-2);
+    min-block-size: 3.5rem;
+    padding-inline: var(--fc-space-5);
+
+    background-color: var(--fc-color-accent-bg);
+    color: var(--fc-color-text-on-accent);
+    border: var(--fc-border-width-thin) solid transparent;
+    border-radius: var(--fc-radius-full);
+    box-shadow: var(--fc-shadow-floating);
+
+    font-family: inherit;
+    font-size: var(--fc-font-size-md);
+    font-weight: var(--fc-font-weight-medium);
+    max-inline-size: 100%;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  @media (hover: hover) {
+    .fc-fab-menu__item:hover {
+      background-color: var(--fc-color-accent-bg-hover);
+    }
+  }
+
+  .fc-fab-menu__item:active {
+    background-color: var(--fc-color-accent-bg-active);
+  }
+
+  .fc-fab-menu__item:focus-visible {
+    box-shadow:
+      0 0 0 var(--fc-space-0-5) var(--fc-color-focus-ring-offset),
+      var(--fc-shadow-floating);
+  }
+
+  .fc-fab-menu__item:disabled,
+  .fc-fab-menu__item[aria-disabled="true"] {
+    background-color: var(--fc-color-disabled-bg);
+    color: var(--fc-color-disabled-fg);
+    border-color: var(--fc-color-disabled-border);
+    cursor: not-allowed;
+  }
+
+  /*
+   * Reduced motion: the menu appears without sliding. The reset zeroes the
+   * duration already; zeroing the offset too means nothing is drawn mid-move.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .fc-fab-menu {
+      translate: 0 0;
+    }
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  /* Shadows are discarded in forced colors, so the FAB needs a border to have
+     an edge at all. */
+  @media (forced-colors: active) {
+    .fc-fab,
+    .fc-fab-menu__item {
+      background-color: ButtonFace;
+      color: ButtonText;
+      border-color: ButtonText;
+    }
+
+    .fc-fab:has(+ .fc-fab-menu:popover-open) {
+      background-color: Highlight;
+      color: HighlightText;
+      forced-color-adjust: none;
+    }
+
+    .fc-fab:disabled,
+    .fc-fab-menu__item:disabled {
+      color: GrayText;
+      border-color: GrayText;
+    }
+  }
+}

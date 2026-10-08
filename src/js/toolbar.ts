@@ -30,7 +30,8 @@ function rove(list: HTMLElement[], target: HTMLElement): void {
 }
 
 /**
- * Binds one toolbar. Returns a function that removes the listeners; the
+ * Binds one toolbar. Returns a function that removes the listeners and the
+ * observer; the
  * tabindex values it set are left in place, which is still a valid order.
  */
 export function bindToolbar(toolbar: HTMLElement): () => void {
@@ -74,9 +75,20 @@ export function bindToolbar(toolbar: HTMLElement): () => void {
     if (list.includes(target)) rove(list, target);
   };
 
+  // Apps disable and add items as commands come and go. Disabling the item
+  // that holds the stop, or removing it, would leave no way to Tab back in,
+  // so the stop moves to the first enabled item whenever it is lost.
+  const reconcile = (): void => {
+    const list = items(toolbar);
+    if (list.length && !list.some((el) => el.tabIndex === 0)) rove(list, list[0]);
+  };
+  const observer = typeof MutationObserver === "function" ? new MutationObserver(reconcile) : null;
+  observer?.observe(toolbar, { subtree: true, childList: true, attributes: true, attributeFilter: ["disabled"] });
+
   toolbar.addEventListener("keydown", onKeyDown);
   toolbar.addEventListener("focusin", onFocusIn);
   return () => {
+    observer?.disconnect();
     toolbar.removeEventListener("keydown", onKeyDown);
     toolbar.removeEventListener("focusin", onFocusIn);
   };

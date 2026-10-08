@@ -688,7 +688,13 @@ export function bindMenuButton(trigger: HTMLElement, menuSelector: string): Futu
   trigger.addEventListener("pointerdown", () => {
     wasOpen = menu.isOpen;
   });
+  // An aria-disabled trigger stays focusable but must not open its menu; CSS
+  // blocks only the pointer, and Enter and Space still click.
+  const unavailable = (): boolean =>
+    trigger.getAttribute("aria-disabled") === "true" || (trigger as HTMLButtonElement).disabled === true;
+
   trigger.addEventListener("click", () => {
+    if (unavailable()) return;
     // Enter and Space click with no pointerdown before them, so an open menu
     // is still open here and the click itself has to close it.
     if (menu.isOpen) menu.close();
@@ -698,6 +704,7 @@ export function bindMenuButton(trigger: HTMLElement, menuSelector: string): Futu
   trigger.addEventListener("keydown", (event) => {
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
     event.preventDefault();
+    if (unavailable()) return;
     if (!menu.isOpen) openBelow();
     // ArrowUp starts from the bottom of the menu, per the menu button pattern.
     if (event.key === "ArrowUp") menu.focusLastItem();

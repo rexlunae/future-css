@@ -47,14 +47,25 @@ function toIso(ms: number): string {
   return new Date(ms).toISOString().slice(0, 10);
 }
 
+/**
+ * `Date.UTC` with the year taken literally. `Date.UTC` reads years 0 to 99
+ * as 1900 to 1999, which would move an ISO `0099-12-31` nineteen centuries;
+ * `setUTCFullYear` does not, and still rolls months and days over.
+ */
+function utc(year: number, month: number, day: number): number {
+  const date = new Date(0);
+  date.setUTCFullYear(year, month, day);
+  return date.getTime();
+}
+
 function fromIso(iso: string): number {
   const [y, m, d] = iso.split("-").map(Number);
-  return Date.UTC(y, m - 1, d);
+  return utc(y, m - 1, d);
 }
 
 function localToday(): string {
   const now = new Date();
-  return toIso(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  return toIso(utc(now.getFullYear(), now.getMonth(), now.getDate()));
 }
 
 /** The same day of the month `delta` months away, clamped to that month's length. */
@@ -62,8 +73,8 @@ export function addMonths(iso: string, delta: number): string {
   const date = new Date(fromIso(iso));
   const y = date.getUTCFullYear();
   const m = date.getUTCMonth() + delta;
-  const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
-  return toIso(Date.UTC(y, m, Math.min(date.getUTCDate(), last)));
+  const last = new Date(utc(y, m + 1, 0)).getUTCDate();
+  return toIso(utc(y, m, Math.min(date.getUTCDate(), last)));
 }
 
 /** The locale's first day of the week, 0 = Sunday, where `Intl` reports one. */
@@ -116,7 +127,12 @@ export class FutureCssDatePicker {
   set value(iso: string | null) {
     this.selected = iso;
     if (iso) this.focusDate = iso;
+    // Rendering replaces the day buttons, so a keyboard user mid-grid would
+    // be left focused on nothing; focus follows to the new day only then, so
+    // an update from elsewhere in the form never steals it.
+    const hadFocus = this.root.contains(document.activeElement);
     this.render();
+    if (hadFocus) this.focus();
   }
 
   /** Moves the roving focus to the selected or focused day. */
@@ -149,16 +165,16 @@ export class FutureCssDatePicker {
     const focus = new Date(fromIso(this.focusDate));
     const year = focus.getUTCFullYear();
     const month = focus.getUTCMonth();
-    const first = Date.UTC(year, month, 1);
-    const days = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    const first = utc(year, month, 1);
+    const days = new Date(utc(year, month + 1, 0)).getUTCDate();
     const lead = (new Date(first).getUTCDay() - this.firstDay + 7) % 7;
-    const utc = { timeZone: "UTC" } as const;
+    const inUtc = { timeZone: "UTC" } as const;
 
-    const title = new Intl.DateTimeFormat(this.locale, { ...utc, month: "long", year: "numeric" }).format(first);
-    const narrow = new Intl.DateTimeFormat(this.locale, { ...utc, weekday: "narrow" });
-    const long = new Intl.DateTimeFormat(this.locale, { ...utc, weekday: "long" });
-    const full = new Intl.DateTimeFormat(this.locale, { ...utc, dateStyle: "full" });
-    const numeric = new Intl.DateTimeFormat(this.locale, { ...utc, day: "numeric" });
+    const title = new Intl.DateTimeFormat(this.locale, { ...inUtc, month: "long", year: "numeric" }).format(first);
+    const narrow = new Intl.DateTimeFormat(this.locale, { ...inUtc, weekday: "narrow" });
+    const long = new Intl.DateTimeFormat(this.locale, { ...inUtc, weekday: "long" });
+    const full = new Intl.DateTimeFormat(this.locale, { ...inUtc, dateStyle: "full" });
+    const numeric = new Intl.DateTimeFormat(this.locale, { ...inUtc, day: "numeric" });
 
     const doc = this.root.ownerDocument;
     const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string): HTMLElementTagNameMap[K] => {
@@ -183,7 +199,7 @@ export class FutureCssDatePicker {
     };
     const { min, max, labels } = this.options;
     const prevDisabled = min !== undefined && toIso(first - DAY) < min;
-    const nextDisabled = max !== undefined && toIso(Date.UTC(year, month + 1, 1)) > max;
+    const nextDisabled = max !== undefined && toIso(utc(year, month + 1, 1)) > max;
     const heading = el("h2", "fc-datepicker__title");
     heading.id = this.titleId;
     // Announces the new month when the buttons or PageUp/PageDown change it.
@@ -202,7 +218,7 @@ export class FutureCssDatePicker {
     const headRow = el("tr");
     for (let i = 0; i < 7; i += 1) {
       // 2026-01-04 was a Sunday; offsetting from it gives each weekday's name.
-      const sample = Date.UTC(2026, 0, 4 + ((this.firstDay + i) % 7));
+      const sample = utc(2026, 0, 4 + ((this.firstDay + i) % 7));
       const th = el("th", "fc-datepicker__weekday");
       th.scope = "col";
       th.abbr = long.format(sample);
@@ -216,7 +232,7 @@ export class FutureCssDatePicker {
     // Padding cells carry the cell class so they share its spacing and rules.
     for (let i = 0; i < lead; i += 1) row.append(el("td", "fc-datepicker__cell"));
     for (let d = 1; d <= days; d += 1) {
-      const ms = Date.UTC(year, month, d);
+      const ms = utc(year, month, d);
       const iso = toIso(ms);
       const cell = el("td", "fc-datepicker__cell");
       cell.setAttribute("role", "gridcell");

@@ -1712,7 +1712,9 @@ content below. `data-fc-open="true"` or `"false"` holds it open or closed, `--do
 it in the page flow (a full-screen search on a phone), and `aria-busy="true"` dims stale
 results while new ones load. Its contents are links or buttons, so Tab reaches them; when
 suggestions should be chosen with arrow keys, use `fc-select`'s combobox instead. The
-focus ring is drawn on the bar. Disabled and `aria-invalid` are styled.
+focus ring is drawn on the bar. Disabled and `aria-invalid` are styled. The browser's own
+clear button stays unless the input has `fc-search__input--own-clear`, for a trailing slot
+that supplies a named "Clear search" button.
 
 ## Bottom sheet
 

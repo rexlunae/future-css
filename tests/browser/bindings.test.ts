@@ -593,6 +593,13 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       trigger.click();
       out.keyboardClosed = m.isOpen;
 
+      // An aria-disabled trigger stays focusable but opens nothing.
+      trigger.setAttribute('aria-disabled', 'true');
+      trigger.click();
+      trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      out.disabledOpens = m.isOpen;
+      trigger.removeAttribute('aria-disabled');
+
       // ArrowUp opens at the last item.
       trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
       out.arrowUp = document.activeElement.textContent.trim();
@@ -640,6 +647,7 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(r.arrow, true, "ArrowDown on the trigger opens the menu");
     assert.deepEqual(r.toggledClosed, [false, "false"]);
     assert.equal(r.keyboardClosed, false, "a keyboard click on the trigger of an open menu closes it");
+    assert.equal(r.disabledOpens, false, "an aria-disabled trigger does not open its menu");
     assert.equal(r.arrowUp, "Save draft", "ArrowUp opens the menu at its last item");
     assert.equal(r.flipped, true, "at the viewport bottom the menu opens above the trigger");
     assert.equal(r.clamped, true, "the menu stays inside the viewport sideways");
@@ -3320,15 +3328,23 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       bar.dir = '';
       bar.setAttribute('aria-orientation', 'vertical');
       key('ArrowDown'); const vertical = name();
+      // Disabling the item that holds the stop hands it to the first enabled
+      // item, or Tab could never re-enter the toolbar.
+      const holder = [...bar.querySelectorAll('button')].find((el) => el.tabIndex === 0);
+      holder.blur();
+      holder.disabled = true;
+      await Promise.resolve();
+      const reStop = [...bar.querySelectorAll('button:not(:disabled), input')].filter((el) => el.tabIndex === 0).map((el) => el.textContent || 'input');
       unbind();
       bar.remove();
-      return { stops, seen, stopAfter, rtl, vertical };
+      return { stops, seen, stopAfter, rtl, vertical, reStop };
     `);
     assert.deepEqual(r.stops, ["A"], "one tab stop");
     assert.deepEqual(r.seen, ["C", "Find", "Find", "A", "D", "A"]);
     assert.deepEqual(r.stopAfter, ["A"], "the tab stop follows focus");
     assert.equal(r.rtl, "C", "in RTL, Left moves forward");
     assert.equal(r.vertical, "Find", "a vertical toolbar moves with Down");
+    assert.equal(r.reStop.length, 1, "disabling the stop's holder moves the stop, keeping exactly one");
   });
 
   // ------------------------------------------------------------- carousel
@@ -3427,6 +3443,14 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       root.dir = '';
       document.activeElement.click();
       out.selected = [p.value, changes.slice(-1)[0], root.querySelector('[aria-selected="true"] button').dataset.fcDate];
+      // A value set from outside while a day has focus keeps the keyboard in
+      // the grid, on the new day.
+      p.focus();
+      p.value = '2026-01-21';
+      out.refocused = focused();
+      // Years below 100 are taken literally, not as 19xx.
+      p.value = '0099-12-31';
+      out.earlyYear = [root.querySelector('[aria-selected="true"] button').dataset.fcDate, root.querySelector('.fc-datepicker__title').textContent];
       p.destroy();
       root.remove();
       return out;
@@ -3447,6 +3471,9 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(r.clampedToMax, "2026-03-10", "Shift+PageDown clamps to max");
     assert.equal(r.rtlRight, "2026-01-13", "in RTL, Right goes back a day");
     assert.deepEqual(r.selected, ["2026-01-13", "2026-01-13", "2026-01-13"]);
+    assert.equal(r.refocused, "2026-01-21", "setting the value keeps focus in the grid");
+    assert.equal(r.earlyYear[0], "0099-12-31");
+    assert.match(r.earlyYear[1], /December 99\b/, "year 99 is not shown as 1999");
   });
 
   // --------------------------------------------------------------- slider

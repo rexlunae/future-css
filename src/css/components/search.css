@@ -95,9 +95,10 @@
     color: var(--fc-color-text-subtle);
   }
 
-  /* The UA cancel button duplicates a clear control the trailing slot can
-     name properly ("Clear search"), and is unstyled. */
-  .fc-search__input::-webkit-search-cancel-button {
+  /* The browser's own clear button stays by default: it is the only one a
+     search gets without script. `--own-clear` hides it when the trailing slot
+     supplies a named "Clear search" button, so there are never two. */
+  .fc-search__input--own-clear::-webkit-search-cancel-button {
     -webkit-appearance: none;
     appearance: none;
   }

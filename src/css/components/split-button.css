@@ -1,0 +1,92 @@
+/*!
+ * future-css -- split button
+ *
+ * A default action joined to a menu of alternatives: Send / Send later, Merge /
+ * Squash and merge. Two real buttons, because they are two actions with two
+ * accessible names; one button with a hot zone would give a screen reader one
+ * name for both.
+ *
+ *   <div class="fc-split-btn" role="group" aria-label="Send">
+ *     <button class="fc-btn fc-btn--primary fc-split-btn__action" type="button">Send</button>
+ *     <button class="fc-btn fc-btn--primary fc-btn--icon fc-split-btn__toggle" type="button"
+ *             aria-haspopup="menu" aria-expanded="false" aria-controls="send-menu"
+ *             aria-label="More send options">
+ *       <span class="fc-split-btn__chevron" aria-hidden="true"></span>
+ *     </button>
+ *   </div>
+ *   <div class="fc-menu" id="send-menu" role="menu" popover>…</div>
+ *
+ * Colour, size and every interaction state come from `.fc-btn` and its
+ * variants; this file only joins the pair. The menu is `fc-menu` with its
+ * binding, which owns `aria-expanded` and focus. Load this file after
+ * `button.css` (the bundle does), since the joined corners override the
+ * button's own radius at equal specificity.
+ */
+
+@layer fc.components {
+  .fc-split-btn {
+    display: inline-flex;
+    align-items: stretch;
+    /* A hairline gap rather than a divider element: it reads as a seam on
+       every variant, solid or outlined, without a colour of its own. */
+    gap: var(--fc-space-0-5);
+    max-inline-size: 100%;
+  }
+
+  /* Logical corner longhands, so the seam stays between the two in RTL. */
+  .fc-split-btn__action {
+    border-start-end-radius: var(--fc-radius-sm);
+    border-end-end-radius: var(--fc-radius-sm);
+    min-inline-size: 0;
+  }
+
+  .fc-split-btn__toggle {
+    border-start-start-radius: var(--fc-radius-sm);
+    border-end-start-radius: var(--fc-radius-sm);
+  }
+
+  /*
+   * The toggle's open state is its `aria-expanded`, the attribute the menu
+   * binding already maintains, so the drawn and announced states agree. Open,
+   * it turns fully round: the shape change says "this one is open" without
+   * relying on colour.
+   */
+  .fc-split-btn__toggle[aria-expanded="true"] {
+    --fc-split-btn-chevron: 225deg;
+    border-radius: var(--fc-radius-full);
+  }
+
+  .fc-split-btn__chevron {
+    inline-size: 0.5em;
+    block-size: 0.5em;
+    border-block-end: var(--fc-border-width-thick) solid currentColor;
+    border-inline-end: var(--fc-border-width-thick) solid currentColor;
+    rotate: var(--fc-split-btn-chevron, 45deg);
+    translate: 0 -0.15em;
+    transition: rotate var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  /* The chevron points down in both directions; see `.fc-segmented__check`. */
+  .fc-split-btn__chevron:dir(rtl) {
+    border-inline-end: 0;
+    border-inline-start: var(--fc-border-width-thick) solid currentColor;
+  }
+
+  /*
+   * Reduced motion: the chevron flips without turning. The reset zeroes the
+   * duration; stated here because the flip is the open-state cue.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .fc-split-btn__chevron {
+      transition: none;
+    }
+  }
+
+  /* Forced colors: each half is a `.fc-btn`, whose forced-colors block draws
+     its border; the seam is a gap, which survives as background. */
+  @media (forced-colors: active) {
+    .fc-split-btn__toggle[aria-expanded="true"] {
+      border-color: Highlight;
+    }
+  }
+}

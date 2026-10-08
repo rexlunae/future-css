@@ -286,8 +286,9 @@ docs/               Design documents; PLAN.md is the roadmap, WASM.md the WASM s
 
 ## Current state
 
-Pre-alpha. Foundations are built and enforced. Thirty-seven CSS components are
-complete. The general set: button, form field and input group, checkbox / radio /
+Pre-alpha. Foundations are built and enforced. Forty-two CSS components are
+complete. The general set: button, segmented button, split button, floating action
+button and FAB menu, control group, masthead, form field and input group, checkbox / radio /
 switch, card, badge and tag, alert, dialog and side sheet, popover and tooltip, toast,
 tabs, breadcrumb, pagination, spinners (ring, arc, typing dots, pulse, stream bars, orbit, sparkle), skeleton, progress, avatar, empty state,
 disclosure, navigation sidebar, data table with sorting, and description list. The AI-chat set: chat surface (with message actions), agent status row, reasoning trace,

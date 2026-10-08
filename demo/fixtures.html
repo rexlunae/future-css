@@ -1402,6 +1402,98 @@
     </div>
   </section>
 
+  <section class="fx" id="fx-segmented" data-fixture="segmented" aria-labelledby="fx-segmented-h">
+    <h2 class="fx__title" id="fx-segmented-h">Segmented button <code class="fx__file">segmented.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="single choice, one checked"><figcaption class="fx__caption">single choice, one checked</figcaption><div class="fx__body">
+        <fieldset class="fc-segmented">
+          <legend class="fc-u-visually-hidden">Units</legend>
+          <label class="fc-segmented__item"><input class="fc-segmented__input" type="radio" name="fx-seg-unit" value="c" checked><span class="fc-segmented__check" aria-hidden="true"></span>Celsius</label>
+          <label class="fc-segmented__item"><input class="fc-segmented__input" type="radio" name="fx-seg-unit" value="f"><span class="fc-segmented__check" aria-hidden="true"></span>Fahrenheit</label>
+          <label class="fc-segmented__item"><input class="fc-segmented__input" type="radio" name="fx-seg-unit" value="k"><span class="fc-segmented__check" aria-hidden="true"></span>Kelvin</label>
+        </fieldset>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="multiple choice, disabled segment"><figcaption class="fx__caption">multiple choice, disabled segment</figcaption><div class="fx__body">
+        <fieldset class="fc-segmented">
+          <legend class="fc-u-visually-hidden">Sources</legend>
+          <label class="fc-segmented__item"><input class="fc-segmented__input" type="checkbox" checked><span class="fc-segmented__check" aria-hidden="true"></span>Web</label>
+          <label class="fc-segmented__item"><input class="fc-segmented__input" type="checkbox" checked><span class="fc-segmented__check" aria-hidden="true"></span>Files</label>
+          <label class="fc-segmented__item"><input class="fc-segmented__input" type="checkbox" disabled><span class="fc-segmented__check" aria-hidden="true"></span>Email</label>
+        </fieldset>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="invalid, long labels wrap"><figcaption class="fx__caption">invalid, long labels wrap</figcaption><div class="fx__body">
+        <fieldset class="fc-segmented">
+          <legend class="fc-u-visually-hidden">Retention</legend>
+          <label class="fc-segmented__item"><input class="fc-segmented__input" type="radio" name="fx-seg-keep" aria-invalid="true" required><span class="fc-segmented__check" aria-hidden="true"></span>Keep every conversation indefinitely</label>
+          <label class="fc-segmented__item"><input class="fc-segmented__input" type="radio" name="fx-seg-keep" aria-invalid="true"><span class="fc-segmented__check" aria-hidden="true"></span>Delete after thirty days</label>
+        </fieldset>
+      </div></figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-split-button" data-fixture="split-button" aria-labelledby="fx-split-button-h">
+    <h2 class="fx__title" id="fx-split-button-h">Split button <code class="fx__file">split-button.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="primary, secondary, small"><figcaption class="fx__caption">primary, secondary, small</figcaption><div class="fx__body">
+        <div class="fc-split-btn" role="group" aria-label="Send">
+          <button class="fc-btn fc-btn--primary fc-split-btn__action" type="button">Send</button>
+          <button class="fc-btn fc-btn--primary fc-btn--icon fc-split-btn__toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="More send options"><span class="fc-split-btn__chevron" aria-hidden="true"></span></button>
+        </div>
+        <div class="fc-split-btn" role="group" aria-label="Merge">
+          <button class="fc-btn fc-btn--secondary fc-split-btn__action" type="button">Merge</button>
+          <button class="fc-btn fc-btn--secondary fc-btn--icon fc-split-btn__toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="More merge options"><span class="fc-split-btn__chevron" aria-hidden="true"></span></button>
+        </div>
+        <div class="fc-split-btn" role="group" aria-label="Export">
+          <button class="fc-btn fc-btn--subtle fc-btn--sm fc-split-btn__action" type="button">Export</button>
+          <button class="fc-btn fc-btn--subtle fc-btn--sm fc-btn--icon fc-split-btn__toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="More export options"><span class="fc-split-btn__chevron" aria-hidden="true"></span></button>
+        </div>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="menu open, disabled, busy"><figcaption class="fx__caption">menu open, disabled, busy</figcaption><div class="fx__body">
+        <div class="fc-split-btn" role="group" aria-label="Run">
+          <button class="fc-btn fc-btn--primary fc-split-btn__action" type="button">Run</button>
+          <button class="fc-btn fc-btn--primary fc-btn--icon fc-split-btn__toggle" type="button" aria-haspopup="menu" aria-expanded="true" aria-label="More run options"><span class="fc-split-btn__chevron" aria-hidden="true"></span></button>
+        </div>
+        <div class="fc-split-btn" role="group" aria-label="Deploy">
+          <button class="fc-btn fc-btn--primary fc-split-btn__action" type="button" disabled>Deploy</button>
+          <button class="fc-btn fc-btn--primary fc-btn--icon fc-split-btn__toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="More deploy options" disabled><span class="fc-split-btn__chevron" aria-hidden="true"></span></button>
+        </div>
+        <div class="fc-split-btn" role="group" aria-label="Save">
+          <button class="fc-btn fc-btn--secondary fc-split-btn__action" type="button" aria-busy="true"><span class="fc-btn__spinner" aria-hidden="true"></span>Saving&hellip;</button>
+          <button class="fc-btn fc-btn--secondary fc-btn--icon fc-split-btn__toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="More save options" aria-disabled="true"><span class="fc-split-btn__chevron" aria-hidden="true"></span></button>
+        </div>
+      </div></figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-fab" data-fixture="fab" aria-labelledby="fx-fab-h">
+    <h2 class="fx__title" id="fx-fab-h">Floating action button <code class="fx__file">fab.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="variants and sizes"><figcaption class="fx__caption">variants and sizes</figcaption><div class="fx__body">
+        <button class="fc-fab" type="button" aria-label="New chat"><span class="fc-fab__icon" aria-hidden="true">+</span></button>
+        <button class="fc-fab fc-fab--primary" type="button" aria-label="Compose"><span class="fc-fab__icon" aria-hidden="true">&#9998;</span></button>
+        <button class="fc-fab fc-fab--surface" type="button" aria-label="Upload"><span class="fc-fab__icon" aria-hidden="true">&#8593;</span></button>
+        <button class="fc-fab fc-fab--sm" type="button" aria-label="Add"><span class="fc-fab__icon" aria-hidden="true">+</span></button>
+        <button class="fc-fab fc-fab--lg fc-fab--lowered" type="button" aria-label="Record"><span class="fc-fab__icon" aria-hidden="true">&#9679;</span></button>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="extended, long label"><figcaption class="fx__caption">extended, long label</figcaption><div class="fx__body">
+        <button class="fc-fab fc-fab--extended" type="button"><span class="fc-fab__icon" aria-hidden="true">+</span>New conversation with a long translated name</button>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="disabled, aria-disabled, busy"><figcaption class="fx__caption">disabled, aria-disabled, busy</figcaption><div class="fx__body">
+        <button class="fc-fab" type="button" aria-label="New chat" disabled><span class="fc-fab__icon" aria-hidden="true">+</span></button>
+        <button class="fc-fab fc-fab--extended" type="button" aria-disabled="true"><span class="fc-fab__icon" aria-hidden="true">+</span>Unavailable</button>
+        <button class="fc-fab fc-fab--extended" type="button" aria-busy="true"><span class="fc-btn__spinner" aria-hidden="true"></span>Creating&hellip;</button>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="menu (open it)"><figcaption class="fx__caption">menu (open it)</figcaption><div class="fx__body">
+        <button class="fc-fab" type="button" popovertarget="fx-fab-menu" aria-label="Create"><span class="fc-fab__icon" aria-hidden="true">+</span></button>
+        <div class="fc-fab-menu" id="fx-fab-menu" popover>
+          <button class="fc-fab-menu__item" type="button">Document</button>
+          <button class="fc-fab-menu__item" type="button">Folder</button>
+          <button class="fc-fab-menu__item" type="button" disabled>Shared drive</button>
+        </div>
+      </div></figure>
+    </div>
+  </section>
+
   <section class="fx" id="fx-composer" data-fixture="composer" aria-labelledby="fx-composer-h">
     <h2 class="fx__title" id="fx-composer-h">Chat composer <code class="fx__file">composer.css</code></h2>
     <div class="fx__states">

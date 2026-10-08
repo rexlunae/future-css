@@ -541,6 +541,62 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(activeId, "trigger");
   });
 
+  it("wires a menu button: aria-expanded follows the menu, which opens beneath it", async () => {
+    // The split button's toggle draws its open state from aria-expanded, so the
+    // binding keeping it in step is what keeps the drawn and announced states
+    // the same. A fresh menu, for the same reason as the arrow-navigation test.
+    await loadBindings();
+    const r = await evaluate(`
+      const wrap = document.createElement('div');
+      wrap.innerHTML = \`
+        <button type="button" id="mb-trigger" class="fc-btn">More</button>
+        <div class="fc-menu" id="mb-menu" popover="manual">
+          <button type="button" class="fc-menu__item" role="menuitem">Send later</button>
+          <button type="button" class="fc-menu__item" role="menuitem">Save draft</button>
+        </div>\`;
+      document.body.appendChild(wrap);
+      const trigger = wrap.querySelector('#mb-trigger');
+      const menuEl = wrap.querySelector('#mb-menu');
+      const m = M.bindMenuButton(trigger, '#mb-menu');
+      const out = { initial: [trigger.getAttribute('aria-haspopup'), trigger.getAttribute('aria-expanded'), trigger.getAttribute('aria-controls')] };
+
+      trigger.focus();
+      trigger.click();
+      const t = trigger.getBoundingClientRect(), mr = menuEl.getBoundingClientRect();
+      out.opened = [m.isOpen, trigger.getAttribute('aria-expanded'), document.activeElement.textContent.trim()];
+      out.below = mr.top >= t.bottom && Math.abs(mr.left - t.left) < 2;
+
+      menuEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      out.escaped = [m.isOpen, trigger.getAttribute('aria-expanded'), document.activeElement.id];
+
+      trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      out.arrow = m.isOpen;
+
+      // A pointer click on the trigger of an open menu closes it and leaves it closed.
+      trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      trigger.click();
+      out.toggledClosed = [m.isOpen, trigger.getAttribute('aria-expanded')];
+
+      // RTL: the menu's inline-start edge is its right edge, so it lines up with
+      // the trigger's right edge rather than its left.
+      document.documentElement.dir = 'rtl';
+      trigger.click();
+      const t2 = trigger.getBoundingClientRect(), mr2 = menuEl.getBoundingClientRect();
+      out.rtlAligned = Math.abs(mr2.right - t2.right) < 2;
+      m.close();
+      document.documentElement.dir = '';
+      wrap.remove();
+      return out;
+    `);
+    assert.deepEqual(r.initial, ["menu", "false", "mb-menu"]);
+    assert.deepEqual(r.opened, [true, "true", "Send later"]);
+    assert.equal(r.below, true, "the menu opens beneath the trigger, aligned to its start edge");
+    assert.deepEqual(r.escaped, [false, "false", "mb-trigger"]);
+    assert.equal(r.arrow, true, "ArrowDown on the trigger opens the menu");
+    assert.deepEqual(r.toggledClosed, [false, "false"]);
+    assert.equal(r.rtlAligned, true, "in RTL the menu aligns to the trigger's right edge");
+  });
+
   it("moves focus by typeahead", async () => {
     await loadBindings();
     const focused = await evaluate(`

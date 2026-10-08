@@ -342,6 +342,12 @@ export class FutureCssMenu {
       this.menu.style.position = "fixed";
       this.menu.style.insetInlineStart = `${anchor.x}px`;
       this.menu.style.insetBlockStart = `${anchor.y}px`;
+      // The UA styles a popover with `inset: 0; margin: auto`, which centres it
+      // in whatever box the two insets above leave. Releasing the opposite
+      // edges and the margin is what puts the menu at the point.
+      this.menu.style.insetInlineEnd = "auto";
+      this.menu.style.insetBlockEnd = "auto";
+      this.menu.style.margin = "0";
       this.menu.style.positionArea = "bottom span-right-end";
     }
 
@@ -592,6 +598,59 @@ export function bindContextMenu(target: HTMLElement, menuSelector: string): Futu
     // it is noise, and leaving it up breaks the illusion that this is the app's menu.
     event.preventDefault();
     menu.open({ x: event.clientX, y: event.clientY });
+  });
+
+  return menu;
+}
+
+/**
+ * Wires a menu button: a trigger that opens a menu beneath itself, as the
+ * toggle half of a split button does.
+ *
+ * The trigger's `aria-expanded` follows the menu, because it is what a screen
+ * reader announces and what `.fc-split-btn__toggle` draws, so the two cannot
+ * disagree. Click, Enter and Space open; ArrowDown and ArrowUp open too, per
+ * the WAI-ARIA menu button pattern.
+ */
+export function bindMenuButton(trigger: HTMLElement, menuSelector: string): FutureCssMenu {
+  const menuEl = document.querySelector<HTMLElement>(menuSelector);
+  if (!menuEl) throw new Error(`future-css: menu not found: ${menuSelector}`);
+
+  trigger.setAttribute("aria-haspopup", "menu");
+  trigger.setAttribute("aria-expanded", "false");
+  if (menuEl.id) trigger.setAttribute("aria-controls", menuEl.id);
+
+  const menu = new FutureCssMenu({
+    menu: menuEl,
+    invoker: trigger,
+    onOpen: () => trigger.setAttribute("aria-expanded", "true"),
+    onClose: () => trigger.setAttribute("aria-expanded", "false"),
+  });
+
+  const openBelow = (): void => {
+    const rect = trigger.getBoundingClientRect();
+    // The menu is placed by its inline-start edge, which is the right edge in
+    // RTL, so the offset is measured from the right there.
+    const rtl = getComputedStyle(trigger).direction === "rtl";
+    const x = rtl ? document.documentElement.clientWidth - rect.right : rect.left;
+    menu.open({ x, y: rect.bottom + 4 });
+  };
+
+  // A click on the trigger of an open menu must close it, not reopen it. The
+  // menu's own outside-pointerdown dismissal runs first and closes it, so the
+  // state before that pointerdown is what decides.
+  let wasOpen = false;
+  trigger.addEventListener("pointerdown", () => {
+    wasOpen = menu.isOpen;
+  });
+  trigger.addEventListener("click", () => {
+    if (!wasOpen && !menu.isOpen) openBelow();
+    wasOpen = false;
+  });
+  trigger.addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    event.preventDefault();
+    if (!menu.isOpen) openBelow();
   });
 
   return menu;

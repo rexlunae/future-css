@@ -1,0 +1,207 @@
+/*!
+ * future-css -- segmented button
+ *
+ * A row of joined options that picks a VALUE: a sort order, a unit, a set of
+ * filters. Material calls it a segmented button. It is not the segmented tabs
+ * list (`fc-tabs__list--segmented`), which switches between VIEWS and owns
+ * panels; using tabs to pick a value announces panels that do not exist.
+ *
+ *   <fieldset class="fc-segmented">
+ *     <legend class="fc-u-visually-hidden">Units</legend>
+ *     <label class="fc-segmented__item">
+ *       <input class="fc-segmented__input" type="radio" name="unit" value="c" checked>
+ *       <span class="fc-segmented__check" aria-hidden="true"></span>Celsius
+ *     </label>
+ *     ...
+ *   </fieldset>
+ *
+ * Built on real radio inputs (one choice) or checkboxes (several), so the
+ * value is a form value, arrow keys move a radio group for free, and the
+ * selected state is the input's `:checked` -- there is no class to fall out of
+ * sync with what the form submits. A row too narrow for its labels wraps the
+ * labels, never scrolls: a scrolled row hides options without saying so.
+ *
+ * Motion is limited to colour transitions, which the reset's reduced-motion
+ * block already zeroes.
+ */
+
+@layer fc.components {
+  .fc-segmented {
+    display: inline-flex;
+    max-inline-size: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-inline-size: 0;
+    /* Its own stacking context, so lifting a segment over its neighbours'
+       shared edge can never lift it over the page. */
+    isolation: isolate;
+  }
+
+  .fc-segmented__item {
+    position: relative;
+    display: inline-flex;
+    /*
+     * Segments share the row and their labels wrap inside them, rather than
+     * the row wrapping: a wrapped row breaks the joined shape into pieces
+     * whose rounded ends no longer mean "first" and "last".
+     */
+    flex: 1 1 auto;
+    min-inline-size: var(--fc-size-target-comfortable);
+    overflow-wrap: anywhere;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fc-space-1-5);
+
+    /* The shared control height, so a segmented button lines up with a field. */
+    min-block-size: var(--fc-size-target-comfortable);
+    padding-block: var(--fc-space-2);
+    padding-inline: var(--fc-space-4);
+
+    background-color: var(--fc-color-bg-surface);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-segmented-border, var(--fc-color-border-interactive));
+    font-size: var(--fc-font-size-sm);
+    font-weight: var(--fc-font-weight-medium);
+    line-height: var(--fc-line-height-snug);
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation;
+
+    transition:
+      background-color var(--fc-duration-fast) var(--fc-easing-standard),
+      color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  /*
+   * Neighbours share one border: each item after the first pulls back over the
+   * previous one's edge, so the joins are 1px, not 2px.
+   */
+  .fc-segmented__item + .fc-segmented__item {
+    margin-inline-start: calc(var(--fc-border-width-thin) * -1);
+  }
+
+  /*
+   * The outer corners only. Logical corner longhands, so the rounded ends swap
+   * sides in RTL with no direction rule.
+   */
+  .fc-segmented__item:first-of-type {
+    border-start-start-radius: var(--fc-radius-full);
+    border-end-start-radius: var(--fc-radius-full);
+    padding-inline-start: var(--fc-space-5);
+  }
+
+  .fc-segmented__item:last-of-type {
+    border-start-end-radius: var(--fc-radius-full);
+    border-end-end-radius: var(--fc-radius-full);
+    padding-inline-end: var(--fc-space-5);
+  }
+
+  /*
+   * The input covers its item: the whole segment is the hit target and the
+   * native input still receives focus, arrow keys and form submission. Opacity
+   * rather than display:none, which would remove it from the tab order.
+   */
+  .fc-segmented__input {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: inherit;
+  }
+
+  /*
+   * The check mark appears on selection, so the selected state is carried by a
+   * shape and not by fill colour alone (WCAG 1.4.1). It takes no space while
+   * hidden, so labels do not shift sideways until chosen.
+   */
+  .fc-segmented__check {
+    display: var(--fc-segmented-check, none);
+    inline-size: 0.6em;
+    block-size: 1em;
+    border-block-end: var(--fc-border-width-thick) solid currentColor;
+    border-inline-end: var(--fc-border-width-thick) solid currentColor;
+    rotate: 45deg;
+    translate: 0 -0.1em;
+  }
+
+  /*
+   * A check mark does not mirror. Its borders are logical, so in RTL the
+   * inline-end border would sit on the left and draw a sideways chevron; the
+   * stroke moves to inline-start, which is the physical right again.
+   */
+  .fc-segmented__check:dir(rtl) {
+    border-inline-end: 0;
+    border-inline-start: var(--fc-border-width-thick) solid currentColor;
+  }
+
+  /* The item tells its check mark to show through a property the part reads,
+     rather than a descendant selector reaching into it. */
+  .fc-segmented__item:has(:checked) {
+    --fc-segmented-check: block;
+    z-index: var(--fc-z-raised);
+    background-color: var(--fc-color-selected-bg);
+    color: var(--fc-color-selected-fg);
+  }
+
+
+  @media (hover: hover) {
+    .fc-segmented__item:hover {
+      background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-hover-overlay) * 100%), var(--fc-color-bg-surface));
+    }
+
+    .fc-segmented__item:has(:checked):hover {
+      background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-hover-overlay) * 100%), var(--fc-color-selected-bg));
+    }
+  }
+
+  .fc-segmented__item:active {
+    background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 100%), var(--fc-color-bg-surface));
+  }
+
+  /* The ring is drawn on the segment, since the input itself is invisible. */
+  .fc-segmented__item:has(:focus-visible) {
+    z-index: var(--fc-z-sticky);
+    outline: var(--fc-border-width-thick) solid var(--fc-color-focus-ring);
+    outline-offset: var(--fc-border-width-thick);
+  }
+
+  .fc-segmented__item:has(:disabled) {
+    background-color: var(--fc-color-disabled-bg);
+    color: var(--fc-color-disabled-fg);
+    border-color: var(--fc-color-disabled-border);
+    cursor: not-allowed;
+  }
+
+  /* An invalid group (a required choice left empty) outlines every segment. */
+  .fc-segmented:has([aria-invalid="true"], :user-invalid) {
+    --fc-segmented-border: var(--fc-color-danger-border);
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  /*
+   * The selected fill is discarded in forced colors; the check mark survives
+   * because it is a border, and Highlight restates the selection.
+   */
+  @media (forced-colors: active) {
+    .fc-segmented__item {
+      border-color: ButtonText;
+    }
+
+    .fc-segmented__item:has(:checked) {
+      background-color: Highlight;
+      color: HighlightText;
+      forced-color-adjust: none;
+    }
+
+    .fc-segmented__item:has(:disabled) {
+      color: GrayText;
+      border-color: GrayText;
+    }
+  }
+
+}

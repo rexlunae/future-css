@@ -22,7 +22,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | A. WASM foundations | Started | Rust workspace, 8 crates, accelerator abstraction |
 | B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
 | C. Token roles and themes | Not started | State tokens, override points, theme tier, type roles |
-| D. Material 3 parity | Started | Mapping done; 18 gaps in five groups |
+| D. Material 3 parity | Started | Mapping done; D1 (actions) mostly shipped |
 | 4. Verification | Not started | Visual regression, browser matrix, docs site |
 | 5. Platform expansion | Not started | Email build, print, native tokens |
 | 6. Release | Not started | Publishing, versioning, governance |
@@ -508,10 +508,10 @@ Status is **Shipped** (an existing component covers it), **Gap** (scheduled belo
 | | Icon button, toggle icon button | `fc-btn--icon`; `aria-pressed` styles the toggle | Shipped |
 | | Button group (standard) | `fc-control-group` | Shipped |
 | | Button group (connected) | none | Gap, D1 |
-| | Segmented button | `fc-tabs__list--segmented` switches *views*; nothing selects *values* | Gap, D1 |
-| | Split button | none | Gap, D1 |
-| | FAB, extended FAB | none | Gap, D1 |
-| | FAB menu | none | Gap, D1 |
+| | Segmented button | `fc-segmented` (`fc-tabs__list--segmented` remains for switching views) | Shipped, D1 |
+| | Split button | `fc-split-btn` with `bindMenuButton` | Shipped, D1 |
+| | FAB, extended FAB | `fc-fab`, `--extended` | Shipped, D1 |
+| | FAB menu | `fc-fab-menu` | Shipped, D1 |
 | Communication | Badges | `fc-badge`, `fc-badge--count` | Shipped |
 | | Loading indicator | `fc-spinner` family | Shipped |
 | | Progress, linear | `fc-progress` | Shipped |
@@ -553,11 +553,12 @@ API, `<dialog>`, scroll snap); a binding ships only where the platform has no an
 
 **D1. Actions**
 - [ ] Connected button group, a variant of `fc-control-group` with joined edges
-- [ ] Segmented button (`fc-segmented`): single or multiple choice, built on native radio
+- [x] Segmented button (`fc-segmented`): single or multiple choice, built on native radio
   and checkbox inputs so the value is a form value and the selection model is the browser's
-- [ ] Split button: a primary action plus a menu trigger, reusing `fc-menu`
-- [ ] FAB and extended FAB (`fc-fab`), including sizes and the lowered surface variant
-- [ ] FAB menu: the FAB as a popover invoker opening a column of actions
+- [x] Split button: a primary action plus a menu trigger, reusing `fc-menu` (new
+  `bindMenuButton` in the menu binding)
+- [x] FAB and extended FAB (`fc-fab`), including sizes and the lowered surface variant
+- [x] FAB menu: the FAB as a popover invoker opening a column of actions
 
 **D2. Lists and selection**
 - [ ] List (`fc-list`): one-, two- and three-line items with leading and trailing slots,

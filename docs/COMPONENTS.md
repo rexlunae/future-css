@@ -1477,3 +1477,86 @@ Wrap externally supplied mixed-direction values in `<bdi>` (preferred) or `.fc-u
 
 Isolation prevents a filename, identifier or user name from rearranging surrounding RTL
 text. It does not choose a writing direction for the whole component.
+
+## Segmented button
+
+`segmented.css` picks a **value**: a unit, a sort order, a set of sources. It is
+Material's segmented button. The segmented tabs list (`fc-tabs__list--segmented`)
+switches **views** and owns panels; picking a value with tabs announces panels that do
+not exist.
+
+```html
+<fieldset class="fc-segmented">
+  <legend class="fc-u-visually-hidden">Units</legend>
+  <label class="fc-segmented__item">
+    <input class="fc-segmented__input" type="radio" name="unit" value="c" checked>
+    <span class="fc-segmented__check" aria-hidden="true"></span>Celsius
+  </label>
+  <label class="fc-segmented__item">
+    <input class="fc-segmented__input" type="radio" name="unit" value="f">
+    <span class="fc-segmented__check" aria-hidden="true"></span>Fahrenheit
+  </label>
+</fieldset>
+```
+
+Radios give one choice and checkboxes several. Either way the value is a form value,
+arrow keys move a radio group with no script, and the selected state is `:checked`, so
+nothing can disagree with what the form submits. Selection shows a check mark as well as
+a fill, so it does not rest on colour. Disabled segments use `disabled` on the input;
+`aria-invalid` or `:user-invalid` outlines the whole row. Labels wrap inside their
+segments at narrow widths instead of the row wrapping or scrolling. No binding.
+
+## Split button
+
+`split-button.css` joins a default action to a menu of alternatives. It is two real
+buttons, because they are two actions with two names.
+
+```html
+<div class="fc-split-btn" role="group" aria-label="Send">
+  <button class="fc-btn fc-btn--primary fc-split-btn__action" type="button">Send</button>
+  <button class="fc-btn fc-btn--primary fc-btn--icon fc-split-btn__toggle" type="button"
+          id="send-more" aria-label="More send options">
+    <span class="fc-split-btn__chevron" aria-hidden="true"></span>
+  </button>
+</div>
+<div class="fc-menu" id="send-menu" popover>
+  <button class="fc-menu__item" role="menuitem" type="button">Send later</button>
+</div>
+<script type="module">
+  import { bindMenuButton } from "future-css/menu";
+  bindMenuButton(document.querySelector("#send-more"), "#send-menu");
+</script>
+```
+
+Colour, size and every state come from `.fc-btn`; the split button only joins the pair,
+so load it after `button.css` (the bundle does). `bindMenuButton` sets `aria-haspopup`,
+`aria-controls` and `aria-expanded`, opens the menu beneath the trigger on click, Enter,
+Space, ArrowDown or ArrowUp, and returns focus on Escape. The open toggle turns round and
+its chevron flips, drawn from `aria-expanded`. Without the binding both buttons still
+work as buttons; only the menu needs script.
+
+## Floating action button
+
+`fab.css` is the one most important action on a screen. Use one per screen.
+
+```html
+<button class="fc-fab fc-fab--fixed" type="button" aria-label="New chat">
+  <svg class="fc-fab__icon" aria-hidden="true">…</svg>
+</button>
+
+<button class="fc-fab fc-fab--extended" type="button">
+  <svg class="fc-fab__icon" aria-hidden="true">…</svg>New chat
+</button>
+```
+
+The default is tonal; `--primary` is solid and `--surface` neutral. `--sm` is 40px,
+the default 56px and `--lg` 96px. `--lowered` drops the shadow for a FAB on a surface
+that already floats, and `--fixed` docks it to the block-end, inline-end corner, which is
+bottom-left in RTL, clear of a phone's home bar. An icon-only FAB needs `aria-label`.
+Disabled, `aria-disabled` and `aria-busy` are styled; long labels wrap.
+
+A FAB menu is a FAB with `popovertarget` and a `.fc-fab-menu` popover of
+`.fc-fab-menu__item` buttons. The platform provides light dismiss, Escape and returning
+focus. Items are plain buttons in tab order rather than a `role="menu"`: three to six
+actions do not need a menu's arrow-key contract. While open, the FAB shows the selected
+colours. The menu fades in without sliding under reduced motion.

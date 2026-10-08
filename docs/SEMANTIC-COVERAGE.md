@@ -166,19 +166,19 @@ Counts by canonical name. "Shipped" counts only what is enforced, not merely pre
 | --- | --- | --- | --- |
 | 1 | Primitive ramp | **Shipped** | Ramp integrity tests: 14 steps, monotonic lightness, single hue, gamut |
 | 2 | Semantic alias | **Shipped** | `no-color-literals` lint rule; components cannot reach a primitive |
-| 3 | Component token | **Absent** | Nothing to enforce yet |
+| 3 | Component token | **Partial** | Button, chat and composer slots with semantic fallbacks ([TOKENS.md](TOKENS.md)); no test fails if one goes missing |
 | 4 | Surface ladder | **Shipped** | 8 surfaces, each a declared contrast pair |
 | 5 | Foreground ladder | **Shipped** | 21 contrast pairs, both schemes, build fails on violation |
 | 6 | Boundary ladder | **Shipped** | `border-default/subtle/strong` |
 | 7 | Non-text boundary | **Shipped** | `border-interactive`, declared at 3:1 |
 | 8 | Focus indicator | **Shipped** | Ring + offset; `preserve-focus` lint rule |
-| 9 | Status family | **Partial** | 4 families x 4 roles; **no hover/active per family** |
-| 10 | Interactive state ramp | **Partial** | Accent only. No selected token, no disabled colour |
+| 9 | Status family | **Shipped** | 4 families x 6 roles, hover and active included; label pairs declared on every solid step |
+| 10 | Interactive state ramp | **Shipped** | `selected-*` and `disabled-*` tokens as declared contrast pairs; a theme test keeps selection distinct from the surface |
 | 11 | Inverse surface | **Shipped** | `bg-inverse`, with its own foreground ramp |
 | 12 | Brand accent | **Shipped** | 6 tokens: bg, bg-hover, bg-active, bg-subtle, text, border |
 | 13 | Scheme | **Shipped** | `light-dark()` + `color-scheme`, no JS |
-| 14 | High-contrast scheme | **Partial** | `forced-colors` blocks in all 10 components; **no HC token scheme** |
-| 15 | Composite type style | **Absent** | Scales exist, no composed role tokens |
+| 14 | High-contrast scheme | **Shipped** | High-contrast theme set under `prefers-contrast: more` and `[data-fc-theme]`, verified by the full contract; `forced-colors` blocks as before |
+| 15 | Composite type style | **Partial** | `--fc-type-<role>` tokens and `.fc-type-*` classes, used by `base.css`; no test fails if one goes missing |
 | 16 | Measurement | **Shipped** | `size-content-max` 75ch, `size-measure` 65ch |
 | 17 | Target size | **Shipped** | `size-target-min` 1.5rem = WCAG 2.2 |
 | 18 | Layer order | **Shipped** | 9 steps; `z-index-scale` lint rule rejects raw values |
@@ -188,10 +188,12 @@ Counts by canonical name. "Shipped" counts only what is enforced, not merely pre
 | 22 | Diff role | **Shipped** | Added/removed as surface *and* foreground, not surface alone |
 | 23 | Machine-readable state | **Shipped** | 8 documented `data-fc-*` attributes, AGENTS.md contract |
 
-**Shipped: 18. Partial: 3. Absent: 2.**
+**Shipped: 21. Partial: 2. Absent: 0.** (2026-10-08: entries 9, 10 and 14 moved to Shipped
+because the contrast contract now checks them; 3 and 15 moved from Absent to Partial
+because they exist but nothing enforces them. See Phase C in [PLAN.md](PLAN.md).)
 
-The two Absent rows are the substantive findings, and both are discussed in
-[Gaps](#gaps-that-are-actually-gaps).
+The two rows that were Absent when this document was written are the substantive
+findings, and both are discussed in [Gaps](#gaps-that-are-actually-gaps).
 
 ---
 

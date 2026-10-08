@@ -45,6 +45,14 @@ const BUDGET: Record<string, number> = {
   fc_select: 35_000,
 };
 
+/**
+ * Crates built without std, through their `bare` feature (see the fc-diff
+ * crate root). They build in a second cargo invocation because feature
+ * unification is per build: alongside the std crates, wasm-bindgen's `std`
+ * comes back on and std's panic handler collides with the crate's own.
+ */
+const BARE = ["fc-diff", "fc-select"] as const;
+
 /** Cargo crate name -> the module name JS imports. */
 const CRATES: ReadonlyArray<readonly [crate: string, module: string]> = [
   ["fc-core", "fc-model"],
@@ -105,9 +113,15 @@ async function main(): Promise<void> {
   let wasmOptFailure: string | null = null;
 
   try {
-    await execFileAsync(cargo, ["build", "--release", "--target", "wasm32-unknown-unknown"], {
+    const target = ["build", "--release", "--target", "wasm32-unknown-unknown"];
+    await execFileAsync(cargo, [...target, "--workspace", ...BARE.flatMap((c) => ["--exclude", c])], {
       cwd: projectRoot,
     });
+    await execFileAsync(
+      cargo,
+      [...target, ...BARE.flatMap((c) => ["-p", c]), "--features", BARE.map((c) => `${c}/bare`).join(",")],
+      { cwd: projectRoot },
+    );
   } catch (error) {
     console.error(
       "build:wasm failed. If the Rust toolchain is missing, install it from " +

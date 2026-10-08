@@ -27,7 +27,27 @@
 //! the browser's, and AGENTS.md is explicit that a WASM module never touches the
 //! DOM. This crate answers "which option is active" and nothing else.
 
+// `no_std` on wasm for size, as in fc-diff: std's panic runtime links the
+// formatting for every message it could print, and with `panic = "abort"` a
+// panic was already a trap.
+#![cfg_attr(all(target_arch = "wasm32", feature = "bare", not(test)), no_std)]
+
+extern crate alloc;
+
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
 use wasm_bindgen::prelude::*;
+
+#[cfg(all(target_arch = "wasm32", feature = "bare", not(test)))]
+#[panic_handler]
+fn panic(_: &core::panic::PanicInfo) -> ! {
+    core::arch::wasm32::unreachable()
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "bare", not(test)))]
+#[global_allocator]
+static ALLOC: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
 
 /// One option in the list.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -99,8 +119,8 @@ impl Folding {
     pub const PREFOLDED: Folding = Folding { key: str::to_string, query: str::to_string };
 }
 
-impl std::fmt::Debug for Folding {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for Folding {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("Folding")
     }
 }
@@ -316,7 +336,7 @@ impl Select {
             self.options
                 .iter()
                 .enumerate()
-                .filter(|(_, o)| key(&o.label).contains(&needle) || key(&o.value).contains(&needle))
+                .filter(|(_, o)| contains(&key(&o.label), &needle) || contains(&key(&o.value), &needle))
                 .map(|(i, _)| i)
                 .collect()
         };
@@ -483,6 +503,19 @@ pub fn js_select_label_at(labels: Vec<String>, index: i32) -> String {
         return String::new();
     }
     labels.get(index as usize).cloned().unwrap_or_default()
+}
+
+/// Substring test over bytes, equal to `str::contains` for a `&str` needle.
+///
+/// Both sides are valid UTF-8, which is self-synchronising: a match can only
+/// begin on a character boundary, so comparing bytes finds exactly the matches
+/// `str::contains` would. `str::contains` gets there through the two-way
+/// searcher, whose slicing panics linked about 10 KB of message formatting
+/// into the raw module; option labels are short enough that the naive scan
+/// costs nothing measurable.
+fn contains(haystack: &str, needle: &str) -> bool {
+    let (h, n) = (haystack.as_bytes(), needle.as_bytes());
+    n.is_empty() || (n.len() <= h.len() && (0..=h.len() - n.len()).any(|i| h.get(i..i + n.len()) == Some(n)))
 }
 
 /// Indices surviving a `contains` filter.

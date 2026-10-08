@@ -354,7 +354,42 @@ adapter and the JS twin through exactly those cases.
 The pattern generalises: any crate that folds, normalises, or segments text for
 matching should take the result from JavaScript rather than link the tables.
 
-`wasm-opt` is an optional system tool, like the `wasm-bindgen` CLI: install
+### No std for primitives-only crates
+
+With case folding gone, `fc-select` and `fc-diff` were still over budget, and the
+profile (same method) put most of the remainder in code neither crate wrote: std's
+panic runtime, which formats every message it might print -- `Debug` for ranges, char
+escaping for `str` slicing errors, integer padding -- and links all of it as soon as
+any bounds check or string slice can fail. With `panic = "abort"` a panic was already a
+trap, so the formatting bought nothing.
+
+Both crates now have a `bare` feature that builds them `no_std` on wasm: a panic
+handler that traps without formatting, and std's own allocator (`dlmalloc`) named as a
+dependency instead of arriving with std. Two edits went with it, because core's own
+string search panics through the same formatting: `fc-diff` splits lines by scanning
+bytes rather than with `replace` and `split`, and `fc-select` matches substrings with a
+byte scan rather than `str::contains`. Both terminators and substrings are byte-exact
+in valid UTF-8, so neither changes a result; the parity suite pins every line
+terminator shape.
+
+Measured with rustc 1.97, no wasm-opt, before and after on the same toolchain:
+
+| module | raw | ships |
+| --- | ---: | ---: |
+| fc-diff | 54.4 → 37.7 KB | 36.8 → **20.9 KB** |
+| fc-select | 62.1 → 47.4 KB | 41.5 → **27.5 KB** |
+
+`bare` is off by default and build:wasm builds those crates in a separate cargo
+invocation. Feature unification is per build: compiled alongside the std crates,
+wasm-bindgen's `std` feature comes back on, std's panic handler arrives with it, and the
+two handlers collide. A plain `cargo build --target wasm32-unknown-unknown` of the
+workspace therefore still works, and produces the larger std build. `cargo test` runs
+natively and never sees the feature.
+
+The remaining raw bytes are mostly wasm-bindgen's descriptor section (about 8 KB for
+fc-diff), which bindgen strips and which never ships, plus the allocator (about 5 KB).
+
+, like the `wasm-bindgen` CLI: install
 binaryen and the build uses it, skip it and the build is complete but the
 shipped sizes are ~10% larger. The report says which happened. The parity suite
 runs against the optimized modules, so a wasm-opt regression is caught by the

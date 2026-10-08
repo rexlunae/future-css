@@ -229,6 +229,14 @@ describe("fc-diff and the JS diff agree", () => {
     ["x", "x\nx\nx"],
     ["l1\nl2", "totally\ndifferent\ncontent\nhere"],
     ["a\r\nb", "a\r\nc"],
+    // The Rust splitter scans bytes for terminators rather than normalising
+    // with replace and split, so every terminator shape is pinned here.
+    ["a\rb\rc", "a\rx\rc"],
+    ["a\r\r\nb", "a\n\nb"],
+    ["a\r\n", "a\r"],
+    ["\n", "\r\n"],
+    ["a\n\n", "a\n"],
+    ["a\r\nb\rc\nd", "a\nb\nc\nd\n"],
     ["fn f() {}\nfn g() {}", "fn f() {}\nfn h() {}"],
     ["a\nb\nc\na\nb\nc", "c\nb\na"],
     // Non-ASCII: text crosses as UTF-8 bytes and must come back identical.

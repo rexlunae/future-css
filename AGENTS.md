@@ -122,7 +122,11 @@ So:
 - `npm run build:wasm` prints a size report and the budgets in
   `src/build/build-wasm.ts`. Six modules are over budget on the report's raw
   basis; on the **shipped** basis (what actually downloads, post-bindgen and
-  post-opt — see docs/WASM.md) two exceed theirs. Phase A in `docs/PLAN.md` is
+  post-opt — see docs/WASM.md) only `fc-rich-text` exceeds its own.
+- **A primitives-only crate can drop std.** `fc-diff` and `fc-select` build
+  `no_std` through a `bare` feature, which build:wasm enables in its own cargo
+  invocation; std's panic formatting was most of their bytes. Never enable
+  `bare` in a build that includes a std crate: the two panic handlers collide. Phase A in `docs/PLAN.md` is
   the work to fix that. Do not raise a budget to make the report green.
 - **Never run `git push -u origin HEAD:<branch>` while checked out on `main`.**
   The `-u` rewrites main's upstream to the feature branch, and when that branch
@@ -322,7 +326,7 @@ The fixture-driven git surface
 `fc-diff`; its Rust crate is the **first module in the workspace under its size
 budget** at 44.7 KB, which is the Phase A pattern working. The Rust/WASM layer has eight crates with 132 passing tests and a working JS-only fallback,
 but **every module except `fc-git` and `fc-context-menu` is still over its size
-budget** on the raw basis, and two are over on the shipped basis — see the WASM
+budget** on the raw basis, and `fc-rich-text` is over on the shipped basis — see the WASM
 section above and Phase A in `docs/PLAN.md`. The select and context menu bindings
 opt into their Rust models with `useWasm`, and both fold case in JavaScript so the
 modules link no Unicode tables. The rich text and grid models exist in Rust but

@@ -3,8 +3,8 @@
 Phased roadmap with exit criteria. Each phase ends with a gate that can be checked, not a
 judgment call.
 
-**Current status: Phase 2 complete, Phase 3 mostly delivered, Phase A
-(WASM size) started.** Phases 0 and 1 are complete. Form controls, overlays, navigation, and
+**Current status: Phase 2 complete, Phase 3 and Phase C mostly delivered, Phase A
+(WASM size) in progress.** Phases 0 and 1 are complete. Form controls, overlays, navigation, and
 the status family now exist as CSS, with bindings where the platform does not already
 provide the behavior. The Rust/WASM
 layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
@@ -19,12 +19,12 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | 1. Token system | Complete | Palette, semantic layer, contrast contract, compiler |
 | 2. Core CSS | Complete | Reset, base, layout, utilities, every Phase 2 component, and the fixture page |
 | 3. Component set | Mostly delivered | Forms, overlays, tabs, breadcrumb, pagination, loading, cards, table, description list, sidebar; axe-core pass remains |
-| A. WASM foundations | Started | Rust workspace, 8 crates, accelerator abstraction |
+| A. WASM size | In progress | Rust workspace, 8 crates, accelerator abstraction; every module but `fc-rich-text` within budget on the shipped basis |
 | B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
-| C. Token roles and themes | Not started | State tokens, override points, theme tier, type roles |
+| C. Token roles and themes | Mostly delivered | State tokens, override points, high-contrast and brand theme sets, type roles; component slots and type roles still lack a test |
 | D. Material 3 parity | Complete | Every M3 component Shipped or Divergent with its reason |
-| 4. Verification | Not started | Visual regression, browser matrix, docs site |
-| 5. Platform expansion | Not started | Email build, print, native tokens |
+| 4. Verification | Started | Overflow assertions, size budgets, generated token reference; visual regression and browser matrix remain |
+| 5. Platform expansion | Mostly delivered | Print foundation, email foundation, Swift and Kotlin tokens, Figma variables; vertical writing, APCA and cognitive guidance remain |
 | 6. Release | Not started | Publishing, versioning, governance |
 
 ### Working now
@@ -62,6 +62,17 @@ bindgen strips most of it, and that two primitives-only modules are still over. 
 now targets where the shipped bytes are, not where the raw ones were. `fc-context-menu` and
 `fc-select` both cut size by leaving case folding to JavaScript, which already ships the
 Unicode tables; see [WASM.md](WASM.md#what-actually-ships).
+
+Since 2026-10-08 `fc-diff` and `fc-select` build without std, which drops std's panic
+formatting, and avoid the substring searcher whose panics linked the rest of it (measured
+without wasm-opt, so ~10% above the figures above):
+
+```
+fc-diff            20.9 KB shipped   (raw  37.7 KB)   was 36.8 / 54.4, now within budget
+fc-select          27.5 KB shipped   (raw  47.4 KB)   was 41.5 / 62.1, now within budget
+```
+
+See [WASM.md](WASM.md#no-std-for-primitives-only-crates).
 
 Verified: contrast contract enforced in both schemes · all ramps validated · linter
 verified against both violations and legitimate patterns · WASM modules instantiate and
@@ -247,7 +258,7 @@ rather than treating dialogs as a quick win.
 
 ---
 
-## Phase A -- WASM size reduction (started)
+## Phase A -- WASM size reduction (in progress)
 
 **Goal.** Get each WASM module from ~350-420 KB to its ~30-45 KB budget. Everything else
 in the WASM plan depends on this, because a 400 KB download to open a context menu is not
@@ -266,6 +277,12 @@ Delivered:
   behind `useWasm` with a parity test (`tests/menu.test.ts`).
 - **A measured size report in the build output**, because the dominant cost is invisible
   in source and only obvious in the numbers.
+- **`fc-diff` and `fc-select` without std** (2026-10-08): 36.8 to 20.9 KB and 41.5 to
+  27.5 KB shipped, both within budget on that basis. A `bare` crate feature drops std, so
+  panics trap without linking std's message formatting, and both crates scan bytes where
+  `str::replace` and `str::contains` brought the two-way searcher and its slicing panics.
+  Native builds and `cargo test` are unchanged; see
+  [WASM.md](WASM.md#no-std-for-primitives-only-crates).
 
 The problem, measured rather than guessed:
 
@@ -285,8 +302,14 @@ Remaining:
   overstates the wire by 2–18x — see the table in docs/WASM.md — and three
   modules exceeded their budgets on shipped bytes (`fc-context-menu` 81.3 KB,
   `fc-select` 50.0, `fc-diff` 34.8). `fc-context-menu` is now at 21.7 and
-  `fc-select` at 38.4, so `fc-select` and `fc-diff` remain over. Phase A's effort
-  should go where the bytes are, which the raw basis gets wrong.
+  `fc-select` at 38.4, and since the `bare` builds `fc-select` and `fc-diff` are under
+  too. On the shipped basis only `fc-rich-text` (45.9 KB with wasm-opt, 52.1 without,
+  against 49) is still over. On the raw basis `fc-diff` and `fc-select` remain 3 and 12 KB
+  over, most of it wasm-bindgen's own descriptor section, which never ships. Whether to
+  move the budgets to the shipped basis is the maintainer's call, not a side effect of a
+  size change.
+- Apply the `bare` pattern to `fc-git` and `fc-context-menu`, which are already
+  primitives-only, and to the js-sys crates once their boundaries are.
 - Replace `js_sys::Array` / `Vec<JsValue>` returns with flat primitives: numbers, strings,
   and typed arrays. A range crosses as four numbers, not an object.
 - Drop `serde-wasm-bindgen` in favour of hand-written `to_js` for the few shapes crossing
@@ -369,7 +392,7 @@ pattern to a file whose contents can contain anything.
 
 ---
 
-## Phase C -- Token roles and themes (not started)
+## Phase C -- Token roles and themes (mostly delivered)
 
 **Goal.** Close the gaps [Semantic coverage](SEMANTIC-COVERAGE.md) found against the ten
 most widely-used token systems, without giving up what makes ours checkable. That
@@ -382,43 +405,51 @@ against each other. The rule that holds throughout: **every new colour token is 
 declared contrast pair**, and every new token value passes the same contract as the
 existing ones. An extension point that cannot be verified is not one this system ships.
 
+**Status, 2026-10-08.** Most of this phase landed in the maintainer's "Styling
+improvements" commits (2c3c7e7, 9921f33) without this document being updated; the boxes
+below are now checked against the code. What remains is enforcement: component slots and
+type roles exist and are documented in [TOKENS.md](TOKENS.md), but no test fails when
+one is removed, so the coverage scorecard still counts them as Partial.
+
 Ordered by what to do first, which is not quite the coverage document's order (that one
 ranks by cost to a consumer). State tokens come first because every component added
 without them encodes the workaround.
 
 ### 1. State tokens (closes entries 9 and 10)
 
-- [ ] `selected` background and foreground, replacing the surfaces the data grid, select,
+- [x] `selected` background and foreground, replacing the surfaces the data grid, select,
   tabs and git surface currently borrow from outside the vocabulary
-- [ ] `disabled` background, foreground, and border colours, declared as contrast pairs.
+- [x] `disabled` background, foreground, and border colours, declared as contrast pairs.
   Opacity stays available for controls that must keep their identity (a disabled
   destructive button), but stops being the only mechanism, so the disabled state can be
   stated rather than only composited
-- [ ] Hover and active steps for each status family -- success, warning, danger, info --
+- [x] Hover and active steps for each status family -- success, warning, danger, info --
   so the four families match accent's shape: `<family>-bg-hover` and
   `<family>-bg-active`, eight tokens derived from the existing ramps. The coverage
   document estimates sixteen, which would also give `-bg-subtle` its own hover and
   active steps; add those only if a component needs them
-- [ ] Re-try `warning-text` on `warning-bg` as a declared pair while the warning ramp is
+- [x] Re-try `warning-text` on `warning-bg` as a declared pair while the warning ramp is
   being touched. It failed in Phase 1, and components work around it; if it still cannot
   pass, record why in `color.ts`
-- [ ] Migrate components off the workarounds in the same change, not later
+- [x] Migrate components off the workarounds in the same change, not later
 
 ### 2. Component override points (closes entry 3)
 
 Today a consumer who wants "the primary button is blue, not accent" must write CSS in
 `fc.overrides`. Primer, Carbon, M3 and Spectrum all solve this with component tokens.
 
-- [ ] Decide the shape. The constraint is [ARCHITECTURE.md](ARCHITECTURE.md): per-layer
+- [x] Decide the shape. The constraint is [ARCHITECTURE.md](ARCHITECTURE.md): per-layer
   distribution and a zero-specificity base must survive, so decisions must not move from
   the cascade into a token table wholesale. The candidate is a small set of
   `--fc-<component>-*` custom properties per component, each defaulting to a semantic
   token, read by the component and set by nothing in the library
-- [ ] Ship them for the components with brand weight first: button, chat surface,
+- [x] Ship them for the components with brand weight first: button, chat surface,
   composer. The chat components are where Carbon's `$ai-*` / `$chat-*` families show the
   field going; we ship the components but no tokens for them
-- [ ] The linter and contrast contract cover the defaults; document that overriding one
-  takes the pair outside the contract
+- [x] The linter and contrast contract cover the defaults; document that overriding one
+  takes the pair outside the contract ([TOKENS.md](TOKENS.md))
+- [ ] A test that fails when a documented slot stops being read, or its fallback stops
+  being a semantic token. Until then the coverage scorecard counts entry 3 as Partial
 
 ### 3. A third value per token: high contrast and theme sets (closes entries 12 and 14)
 
@@ -426,43 +457,46 @@ One mechanism, two consumers. Every token has exactly two values today, and both
 high-contrast schemes and alternative brands need more. Build the compiler abstraction
 once rather than twice.
 
-- [ ] A theme-set abstraction in the token compiler: a named set of semantic values,
+- [x] A theme-set abstraction in the token compiler: a named set of semantic values,
   verified by the same contrast contract, emitted under a selector
-- [ ] High-contrast light and dark sets, opt-in through `[data-fc-theme]` and applied
+- [x] High-contrast light and dark sets, opt-in through `[data-fc-theme]` and applied
   automatically under `@media (prefers-contrast: more)`. `focus-ring` is already two
   tokens so an HC set can swap in a double-colour ring
-- [ ] A second brand set, generated from a different accent ramp, as the proof that a
+- [x] A second brand set, generated from a different accent ramp, as the proof that a
   consumer can do the same. Tokens Studio's "theme set" is the reference
-- [ ] `forced-colors` handling stays as it is; it is the OS half of high contrast and is
+- [x] `forced-colors` handling stays as it is; it is the OS half of high contrast and is
   already complete and linted
 
 ### 4. Composite type styles (closes entry 15)
 
-- [ ] Named type roles (`body`, `body-small`, `title`, `heading-*`, `code`, `label`)
+- [x] Named type roles (`body`, `body-small`, `title`, `heading-*`, `code`, `label`)
   that bundle size, weight, line height and tracking, exposed as tokens or classes and
   used by `base.css` instead of per-element composition
-- [ ] A `letterSpacing` token group, so the `-0.01em` literal in `base.css` becomes a
+- [x] A `letterSpacing` token group, so the `-0.01em` literal in `base.css` becomes a
   token with its script-safety comment intact
-- [ ] Until this ships, `COMPONENTS.md` states the limitation, so a consumer does not
+- [ ] A test that fails when a role or its class goes missing, which is what moves entry
+  15 from Partial to Shipped
+- [x] Until this ships, `COMPONENTS.md` states the limitation, so a consumer does not
   discover it during design review
 
 ### 5. Smaller additions
 
 Each is cheap and independent; none needs a new decision.
 
-- [ ] **Elevation.** Three shadows today (`raised`, `overlay`, `modal`); a menu over a
+- [x] **Elevation.** Three shadows today (`raised`, `overlay`, `modal`); a menu over a
   modal over a toast needs more. Extend the scale rather than adding literals
-- [ ] **Surface depth.** Numbered aliases over the existing surface ladder, so a
+- [x] **Surface depth.** Numbered aliases over the existing surface ladder, so a
   third-party component can ask for "one step above raised" (Carbon's `$layer-01..05`).
   The role names stay; depth is an alias, not a replacement
-- [ ] **Bidi isolation.** A `.fc-u-bidi` utility and `<bdi>` guidance in
+- [x] **Bidi isolation.** A `.fc-u-bidi` utility and `<bdi>` guidance in
   `COMPONENTS.md`, so the API matches what `INTERNATIONALIZATION.md` already describes
-- [ ] **Wide gamut.** Emit an `oklch()` value alongside each hex so P3 displays get the
+- [x] **Wide gamut.** Emit an `oklch()` value alongside each hex so P3 displays get the
   authored colour, while the contrast contract keeps verifying the hex that every browser
   can fall back to
-- [ ] **Per-token descriptions** in `tokens.json` (Polaris), generated from the comments
+- [x] **Per-token descriptions** in `tokens.json` (Polaris), generated from the comments
   already in the TypeScript source
-- [ ] **`prefers-reduced-transparency` and `prefers-reduced-data`.** Honour the first
+- [ ] **`prefers-reduced-transparency` and `prefers-reduced-data`.** Partly done: the
+  dialog backdrop honours the first. Honour the first
   wherever a component uses translucency; the second only once something ships that is
   worth not loading
 
@@ -615,7 +649,7 @@ API, `<dialog>`, scroll snap); a binding ships only where the platform has no an
 
 ---
 
-## Phase 4 -- Verification (not started)
+## Phase 4 -- Verification (started)
 
 Turning manual discipline into automation as the component count grows.
 
@@ -634,7 +668,7 @@ Turning manual discipline into automation as the component count grows.
 ### Documentation
 
 - [x] Fixture page as the living component gallery
-- [ ] Token reference generated from the TypeScript source
+- [x] Token reference generated from the TypeScript source (`docs/TOKEN-REFERENCE.md`)
 - [ ] Per-component documentation with all six required sections
 - [ ] Migration guide
 
@@ -652,12 +686,14 @@ Turning manual discipline into automation as the component count grows.
 
 ---
 
-## Phase 5 -- Platform expansion (not started)
+## Phase 5 -- Platform expansion (mostly delivered)
 
-- [ ] Print stylesheet
-- [ ] Email build generated from the same tokens
-- [ ] Native token packages (Swift, Kotlin) from `tokens.json`
-- [ ] Figma variable export from `tokens.json`
+- [x] Print stylesheet (`dist/print.css`, opt-in utilities)
+- [x] Email build generated from the same tokens (`dist/email.css`, a light-only
+  foundation; consumers still inline it)
+- [x] Native token files (`FutureCssTokens.swift`, `FutureCssTokens.kt`), generated
+  alongside `tokens.json`; packaging them is Phase 6
+- [x] Figma variable export (`dist/figma-variables.json`)
 - [ ] Vertical writing mode (`writing-mode`) support
 - [ ] APCA contrast checking alongside WCAG 2.x
 - [ ] Cognitive accessibility guidance
@@ -665,7 +701,8 @@ Turning manual discipline into automation as the component count grows.
 **Note on email.** It must be generated from the token source, never hand-maintained.
 Hand-maintained email CSS drifts from the tokens within months, and a design system that
 silently diverges between channels is worse than one that admits it does not support
-email yet. Until this build exists, the system does not claim email support.
+email yet. The generated foundation covers canvas, surface, link and muted text only, so
+the claim is that much email support and no more.
 
 ---
 

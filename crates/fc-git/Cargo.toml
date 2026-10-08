@@ -25,4 +25,4 @@ authors.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-wasm-bindgen = { workspace = true }
+wasm-bindgen = { workspace = true, features = ["std"] }

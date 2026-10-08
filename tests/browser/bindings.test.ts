@@ -547,6 +547,9 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     // the same. A fresh menu, for the same reason as the arrow-navigation test.
     await loadBindings();
     const r = await evaluate(`
+      // An earlier test leaves its menu open, and its document-level Escape
+      // handler would move focus to its own trigger.
+      globalThis.m?.close();
       const wrap = document.createElement('div');
       wrap.innerHTML = \`
         <button type="button" id="mb-trigger" class="fc-btn">More</button>

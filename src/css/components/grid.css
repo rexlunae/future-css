@@ -177,8 +177,8 @@
    * most important thing to perceive while editing.
    */
   .fc-grid__cell[aria-selected="true"] {
-    background-color: var(--fc-color-accent-bg-subtle);
-    color: var(--fc-color-accent-text);
+    background-color: var(--fc-color-selected-bg);
+    color: var(--fc-color-selected-fg);
     box-shadow: inset 0 0 0 var(--fc-border-width-thick) var(--fc-color-accent-border);
   }
 

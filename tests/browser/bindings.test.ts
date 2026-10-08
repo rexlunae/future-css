@@ -862,6 +862,109 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     await send("Emulation.clearDeviceMetricsOverride");
   });
 
+  it("uses the viewport for the demo and highlights every section's copyable examples", async () => {
+    await send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    await send("Page.navigate", { url: `${server.origin}/demo/index.html` });
+    await new Promise((r) => setTimeout(r, 1200));
+    const result = await evaluate(`
+      const original = new DOMParser().parseFromString(await (await fetch('/demo/index.html')).text(), 'text/html');
+      const snippets = [...document.querySelectorAll('[data-demo-snippet]')];
+      const missing = [...document.querySelectorAll('.demo-section')]
+        .filter((section) => !section.querySelector('[data-demo-snippet]')).map((section) => section.id);
+      const changed = snippets.filter((snippet) => {
+        const initial = original.querySelector('[data-demo-snippet="' + snippet.dataset.demoSnippet + '"] code');
+        return snippet.querySelector('code').textContent !== initial.textContent;
+      }).map((snippet) => snippet.dataset.demoSnippet);
+      const unhighlighted = snippets.filter((snippet) => !snippet.matches('.fc-code') || !snippet.querySelector('.fc-code__tok'))
+        .map((snippet) => snippet.dataset.demoSnippet);
+      const block = document.querySelector('.demo-snippet');
+      const source = getComputedStyle(block.querySelector('.fc-code__source'));
+      return {
+        missing, changed, unhighlighted,
+        width: document.querySelector('main').getBoundingClientRect().width,
+        overflow: getComputedStyle(block).overflowX,
+        sourceRadius: source.borderStartStartRadius,
+        sourceBackground: source.backgroundColor,
+      };
+    `);
+    assert.deepEqual(result.missing, [], "every section has usage examples");
+    assert.deepEqual(result.changed, [], "highlighting preserves the exact text copied");
+    assert.deepEqual(result.unhighlighted, [], "examples use the real highlighted code component");
+    assert.ok(result.width > 1300, "the workbench uses the available desktop width");
+    assert.equal(result.overflow, "clip", "child surfaces follow the outer corners");
+    assert.equal(result.sourceRadius, "0px", "block source does not inherit inline-code rounding");
+    assert.equal(result.sourceBackground, "rgba(0, 0, 0, 0)");
+    await send("Emulation.clearDeviceMetricsOverride");
+  });
+
+  it("nests the masthead and sidebar with a working collapse control", async () => {
+    await send("Page.navigate", { url: `${server.origin}/demo/index.html` });
+    await new Promise((r) => setTimeout(r, 1200));
+    const result = await evaluate(`
+      const nav = document.querySelector('#shell-nav');
+      const toggle = nav.querySelector('.fc-nav__toggle');
+      const expanded = nav.getBoundingClientRect().width;
+      toggle.click();
+      await new Promise((r) => setTimeout(r, 250));
+      const collapsed = nav.getBoundingClientRect().width;
+      const state = toggle.getAttribute('aria-expanded');
+      const masthead = document.querySelector('#shell .fc-masthead');
+      return { expanded, collapsed, state,
+        current: masthead.querySelector('[aria-current="page"]').textContent,
+        disabledHref: masthead.querySelector('[aria-disabled="true"]').getAttribute('href'),
+        named: [...nav.querySelectorAll('.fc-nav__link')].every((link) => link.textContent.trim()),
+      };
+    `);
+    assert.ok(result.collapsed < result.expanded, "the live sidebar collapses to a rail");
+    assert.equal(result.state, "false");
+    assert.equal(result.current, "Workspace");
+    assert.equal(result.disabledHref, null);
+    assert.equal(result.named, true, "collapsed destinations retain accessible names");
+  });
+
+  it("operates grouped composer controls without sending and keeps settings through Send/Stop", async () => {
+    await send("Page.navigate", { url: `${server.origin}/demo/index.html` });
+    await new Promise((r) => setTimeout(r, 1200));
+    const result = await evaluate(`
+      const root = document.querySelector('#composer-root');
+      root.scrollIntoView({ block: 'center' });
+      const input = root.querySelector('textarea');
+      input.value = 'Review this design';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      const search = document.querySelector('#composer-search');
+      search.click();
+      const invoker = document.querySelector('#composer-model');
+      invoker.focus();
+      const key = (value) => invoker.dispatchEvent(new KeyboardEvent('keydown', { key: value, bubbles: true }));
+      key('Enter'); key('ArrowDown'); key('Enter');
+      const beforeSend = { draft: input.value, state: root.dataset.fcState,
+        model: invoker.dataset.fcValue, pressed: search.getAttribute('aria-pressed'),
+        expanded: invoker.getAttribute('aria-expanded') };
+      const send = document.querySelector('#composer-send');
+      send.click();
+      const running = input.readOnly && root.dataset.fcState === 'running';
+      const submitted = document.querySelector('#composer-context-status').textContent;
+      send.click();
+      const bold = document.querySelector('[data-demo-format="bold"]');
+      bold.click();
+      return { beforeSend, running, submitted, sameSend: send === document.querySelector('#composer-send'),
+        modelAfter: invoker.dataset.fcValue, searchAfter: search.getAttribute('aria-pressed'),
+        bold: !!document.querySelector('#group-preview strong'), stopped: root.dataset.fcState };
+    `);
+    assert.equal(result.beforeSend.draft, 'Review this design');
+    assert.equal(result.beforeSend.state, 'idle', 'model and tool controls do not submit the draft');
+    assert.equal(result.beforeSend.model, 'fast');
+    assert.equal(result.beforeSend.pressed, 'true');
+    assert.equal(result.beforeSend.expanded, 'false');
+    assert.equal(result.running, true);
+    assert.match(result.submitted, /using fast; tools: Web search/);
+    assert.equal(result.sameSend, true);
+    assert.equal(result.modelAfter, 'fast');
+    assert.equal(result.searchAfter, 'true');
+    assert.equal(result.stopped, 'idle');
+    assert.equal(result.bold, true, 'standalone grouped controls update the preview');
+  });
+
   // ------------------------------------------------------------------- code
 
   it("renders highlighted spans that reconstruct the source exactly", async () => {
@@ -2592,6 +2695,90 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     `);
     assert.ok(parseFloat(result.ltr) > 0, `LTR thumb should move right, got ${result.ltr}`);
     assert.ok(parseFloat(result.rtl) < 0, `RTL thumb should move left, got ${result.rtl}`);
+  });
+
+  it("applies optional brand and contrast themes and the browser contrast preference", async () => {
+    const result = await evaluate(`
+      const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = '/dist/themes.css';
+      document.head.append(link); await new Promise((resolve,reject) => {link.onload=resolve;link.onerror=reject});
+      const root = document.documentElement;
+      const sample = document.createElement('button'); sample.className = 'fc-btn fc-btn--primary'; sample.textContent = 'Theme'; sample.style.transition = 'none'; document.body.append(sample);
+      root.dataset.fcTheme = 'light';
+      const initial = getComputedStyle(sample).backgroundColor;
+      root.dataset.fcBrand = 'forest';
+      const forest = getComputedStyle(sample).backgroundColor;
+      root.dataset.fcTheme = 'high-contrast-light';
+      const light = {fg:getComputedStyle(sample).color,bg:getComputedStyle(sample).backgroundColor};
+      root.dataset.fcTheme = 'high-contrast-dark';
+      const dark = {fg:getComputedStyle(sample).color,bg:getComputedStyle(sample).backgroundColor};
+      root.dataset.fcTheme = 'light'; delete root.dataset.fcBrand;
+      sample.remove(); link.remove();
+      return {initial,forest,light,dark};
+    `);
+    assert.notEqual(result.initial, result.forest);
+    assert.deepEqual(result.light, {fg:'rgb(255, 255, 255)',bg:'rgb(0, 0, 0)'});
+    assert.deepEqual(result.dark, {fg:'rgb(0, 0, 0)',bg:'rgb(255, 255, 255)'});
+    try {
+      await send("Emulation.setEmulatedMedia", { features:[{name:'prefers-contrast',value:'more'}] });
+      const high = await evaluate(`
+        const link=document.createElement('link');link.rel='stylesheet';link.href='/dist/themes.css';document.head.append(link);
+        await new Promise((resolve,reject)=>{link.onload=resolve;link.onerror=reject});
+        const color=getComputedStyle(document.documentElement).getPropertyValue('--fc-color-text-default');
+        link.remove(); return color;
+      `);
+      assert.match(high, /#000000/);
+    } finally { await send("Emulation.setEmulatedMedia", {features:[]}); }
+  });
+
+  it("renders all fixtures under reduced motion and forced colors", async () => {
+    try {
+      await send("Page.navigate", { url: `${server.origin}/demo/fixtures.html` });
+      await new Promise(r => setTimeout(r, 1000));
+      for (const feature of [{name:'prefers-reduced-motion',value:'reduce'}, {name:'forced-colors',value:'active'}]) {
+        await send("Emulation.setEmulatedMedia", {features:[feature]});
+        const blank = await evaluate(`return [...document.querySelectorAll('[data-fixture]')].filter(el=>el.getBoundingClientRect().height === 0).map(el=>el.dataset.fixture);`);
+        assert.deepEqual(blank, [], feature.name);
+        const capture = await send('Page.captureScreenshot', {format:'png',captureBeyondViewport:true});
+        assert.ok(Buffer.from(capture.result?.data ?? capture.data, 'base64').length > 1000);
+        if (feature.name === 'forced-colors') {
+          const fg = await evaluate(`return getComputedStyle(document.querySelector('.fc-btn')).color;`);
+          assert.notEqual(fg, 'rgba(0, 0, 0, 0)');
+        }
+      }
+    } finally { await send("Emulation.setEmulatedMedia", {features:[]}); }
+  });
+
+  it("prints a light document and preserves explicit content while hiding marked chrome", async () => {
+    try {
+      await evaluate(`
+        const link=document.createElement('link');link.id='print-test-style';link.rel='stylesheet';link.href='/dist/print.css';document.head.append(link);
+        await new Promise((resolve,reject)=>{link.onload=resolve;link.onerror=reject});
+        document.documentElement.dataset.fcTheme='dark';
+        const chrome=document.createElement('button');chrome.id='print-test-chrome';chrome.className='fc-print-hide';chrome.textContent='Action';document.body.append(chrome);
+        const content=document.createElement('a');content.id='print-test-content';content.className='fc-print-content fc-print-link';content.href='https://example.com/reference';content.textContent='Reference';document.body.append(content);
+      `);
+      await send('Emulation.setEmulatedMedia',{media:'print'});
+      const result=await evaluate(`
+        const content=document.getElementById('print-test-content');
+        return {scheme:getComputedStyle(document.documentElement).colorScheme,hidden:getComputedStyle(document.getElementById('print-test-chrome')).display,display:getComputedStyle(content).display,url:getComputedStyle(content,'::after').content,shadow:getComputedStyle(content).boxShadow};
+      `);
+      assert.equal(result.scheme,'light'); assert.equal(result.hidden,'none');
+      assert.notEqual(result.display,'none'); assert.match(result.url,/reference/); assert.equal(result.shadow,'none');
+    } finally {
+      await send('Emulation.setEmulatedMedia',{media:'',features:[]});
+      await evaluate(`document.documentElement.dataset.fcTheme='light';for(const id of ['print-test-style','print-test-chrome','print-test-content'])document.getElementById(id)?.remove();`);
+    }
+  });
+
+  it("replaces the translucent dialog backdrop when reduced transparency is requested", async () => {
+    try {
+      await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-transparency',value:'reduce'}]});
+      const result=await evaluate(`
+        const dialog=document.createElement('dialog');dialog.className='fc-dialog';dialog.setAttribute('aria-label','Preference test');dialog.textContent='Dialog';document.body.append(dialog);dialog.showModal();
+        const cs=getComputedStyle(dialog,'::backdrop');const result={color:cs.backgroundColor,filter:cs.backdropFilter};dialog.close();dialog.remove();return result;
+      `);
+      assert.equal(result.filter,'none'); assert.doesNotMatch(result.color,/rgba/);
+    } finally {await send('Emulation.setEmulatedMedia',{features:[]});}
   });
 
   // --------------------------------------------------------- reduced motion

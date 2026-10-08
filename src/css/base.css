@@ -46,10 +46,8 @@
     background-color: var(--fc-color-bg-canvas);
     color: var(--fc-color-text-default);
 
-    font-family: var(--fc-font-family-sans);
-    font-size: var(--fc-font-size-md);
-    line-height: var(--fc-line-height-normal);
-    font-weight: var(--fc-font-weight-regular);
+    font: var(--fc-type-body);
+    letter-spacing: var(--fc-type-body-tracking);
 
     font-kerning: normal;
     text-rendering: optimizeLegibility;
@@ -81,27 +79,32 @@
   }
 
   :where(h1) {
-    font-size: var(--fc-font-size-4xl);
+    font: var(--fc-type-heading-1);
+    letter-spacing: var(--fc-type-heading-1-tracking);
     margin-block-end: var(--fc-space-4);
   }
 
   :where(h2) {
-    font-size: var(--fc-font-size-3xl);
+    font: var(--fc-type-heading-2);
+    letter-spacing: var(--fc-type-heading-2-tracking);
     margin-block-end: var(--fc-space-3);
   }
 
   :where(h3) {
-    font-size: var(--fc-font-size-2xl);
+    font: var(--fc-type-heading-3);
+    letter-spacing: var(--fc-type-heading-3-tracking);
     margin-block-end: var(--fc-space-3);
   }
 
   :where(h4) {
-    font-size: var(--fc-font-size-xl);
+    font: var(--fc-type-heading-4);
+    letter-spacing: var(--fc-type-heading-4-tracking);
     margin-block-end: var(--fc-space-2);
   }
 
   :where(h5) {
-    font-size: var(--fc-font-size-lg);
+    font: var(--fc-type-heading-5);
+    letter-spacing: var(--fc-type-heading-5-tracking);
     margin-block-end: var(--fc-space-2);
   }
 
@@ -112,8 +115,8 @@
      * letter-spacing alone would misbehave in scripts that have no such
      * tradition (Arabic, CJK).
      */
-    font-size: var(--fc-font-size-md);
-    font-weight: var(--fc-font-weight-semibold);
+    font: var(--fc-type-heading-6);
+    letter-spacing: var(--fc-type-heading-6-tracking);
     color: var(--fc-color-text-muted);
   }
 

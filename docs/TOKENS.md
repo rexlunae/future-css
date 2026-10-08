@@ -14,7 +14,7 @@ Primitive     --fc-color-accent-600        a raw ramp step
 Semantic      --fc-color-accent-bg         a role in the interface
    |
    v
-Component     (not yet a tier in this system) --fc-btn-padding-inline
+Component     --fc-btn-primary-bg (optional override; semantic fallback)
 ```
 
 **Primitive tokens** are raw values with no meaning beyond their number. `--fc-color-accent-600`
@@ -34,11 +34,10 @@ stays at 600 and the *semantic* alias points somewhere else:
 A component written against `accent-bg` is correct in both schemes without knowing either
 exists.
 
-**Why components do not get their own token tier (yet).** A `--fc-btn-padding-inline`
-token is only justified when at least two components need the same value *and* the value
-needs to be themeable. Spacing is not themeable, so component-level spacing tokens tend to
-become indirection for its own sake. If a scale of component-specific overrides becomes
-necessary, the tier will be added deliberately rather than by accumulation.
+**Component slots are optional override points.** Button, chat and composer read a small
+set of custom properties with semantic fallbacks; the library never assigns those
+properties. The cascade and per-component distribution remain intact. Defaults are
+contrast-checked; custom foreground/background pairs become the consumer's contract.
 
 ---
 
@@ -325,3 +324,70 @@ toast`. A new layer gets a named step and a review, not `z-index: 9999`.
    needs both values.
 5. **Run `npm run check`.** The build fails if the contract is violated.
 6. **Document it** in the table in the relevant section above.
+
+
+### Visual rhythm
+
+The default radius scale runs from 0.375rem (`sm`) to 1.5rem (`2xl`),
+with 0.75rem controls and 1rem cards. Unitless line heights are 1.4 (`snug`),
+1.6 (`normal`), and 1.75 (`relaxed`): compact controls retain their shared minimum
+height while prose and helper text have more breathing room. Raised surfaces use
+an edge shadow plus a soft, wider shadow; overlays use a wider blur to distinguish
+floating content. Shadows remain theme aware, and decorative edges stay separate
+from the contrast-checked interactive boundaries. All values remain overridable
+through the existing public tokens.
+
+## State, typography and theme roles
+
+The [generated reference](TOKEN-REFERENCE.md) lists every token and its default values.
+`tokens.json` retains the original named-token values and adds a reserved `$metadata`
+object with descriptions. Readers iterate keys beginning with `--fc-`.
+
+Selected controls use `selected-bg` / `selected-fg`; disabled controls use `disabled-bg`,
+`disabled-fg`, and `disabled-border`, preserving readable text instead of reducing the
+whole element's opacity. Inactive borders are exempt from WCAG non-text contrast;
+foregrounds still meet 4.5:1. Solid status fills each have rest, hover, active and
+`text-on-<family>` pairs. `warning-text` is for subtle surfaces; on a solid warning fill
+use `text-on-warning` because the former fails 4.5:1 in both schemes.
+
+Typography roles are `body`, `body-small`, `title`, `heading-1` through `heading-6`,
+`code`, and `label`. Each has `--fc-type-<role>` (CSS font shorthand) and
+`--fc-type-<role>-tracking`. The matching `.fc-type-<role>` class applies both. Base
+headings and body read these roles. Normal tracking preserves Arabic and CJK shaping;
+`--fc-tracking-tight` and `wide` are opt-in. Import `future-css/type` when loading pieces.
+
+Five surface-depth tokens alias canvas, surface, raised, overlay and sunken, respectively.
+Their declared text pair is `text-default`; the numbering is a lookup order, not a
+lightness ramp, and does not imply that every muted foreground passes on every depth. Elevation includes `floating` and `dialog` alongside
+`raised`, `overlay` and `modal`.
+
+Import `future-css/themes` **after** `future-css/tokens` (or the full bundle):
+
+```html
+<html data-fc-brand="forest" data-fc-theme="dark">
+<html data-fc-theme="high-contrast-light">
+<html data-fc-theme="high-contrast-dark">
+```
+
+Place brand and theme on the same root. Remove the attributes to follow system defaults.
+The optional file applies high contrast automatically under `prefers-contrast: more`,
+including to the forest brand. All named semantic palettes pass the same contract;
+syntax and ANSI palettes keep their separate contracts. Forced colors retain OS focus
+colors. The demo has working brand and contrast toggles.
+
+`future-css/wide-gamut` is an optional authored OKLCH enhancement over the hex foundation.
+It applies on P3 displays with OKLCH support, normal contrast, no forced colors and no
+alternate brand. Other combinations retain their verified theme palette. The hex values
+remain the build-time contrast baseline. P3 hardware review remains a release check.
+
+## Component slots
+
+| Component | Properties | Default |
+| --- | --- | --- |
+| Primary button | `--fc-btn-primary-bg`, `-bg-hover`, `-bg-active`, `-fg`, `-border` | Corresponding accent roles |
+| Chat | `--fc-chat-bg`, `-fg`, `-gap`, `-message-measure` | Canvas, default text, space-4, size-measure |
+| Composer | `--fc-composer-bg`, `-fg`, `-radius` | Surface, default text, radius-2xl |
+
+Prefixes in the table apply to each suffix. Set the complete color pair and interaction
+states when branding a control, then check contrast in both schemes. Slots never replace
+lifecycle attributes, disabled states, or focus indicators.

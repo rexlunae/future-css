@@ -51,7 +51,7 @@
 
   .fc-field__hint {
     margin: 0;
-    font-size: var(--fc-font-size-xs);
+    font-size: var(--fc-font-size-sm);
     color: var(--fc-color-text-muted);
   }
 
@@ -65,7 +65,7 @@
     display: flex;
     gap: var(--fc-space-1);
     align-items: baseline;
-    font-size: var(--fc-font-size-xs);
+    font-size: var(--fc-font-size-sm);
     font-weight: var(--fc-font-weight-medium);
     color: var(--fc-color-danger-text);
   }
@@ -151,8 +151,8 @@
   }
 
   .fc-input:disabled {
-    background-color: var(--fc-color-bg-subtle);
-    color: var(--fc-color-text-subtle);
+    background-color: var(--fc-color-disabled-bg);
+    color: var(--fc-color-disabled-fg);
     border-color: var(--fc-color-border-default);
     cursor: not-allowed;
   }
@@ -260,7 +260,7 @@
   }
 
   .fc-input-group:has(:disabled) {
-    background-color: var(--fc-color-bg-subtle);
+    background-color: var(--fc-color-disabled-bg);
     border-color: var(--fc-color-border-default);
   }
 

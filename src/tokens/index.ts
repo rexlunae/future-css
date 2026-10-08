@@ -55,9 +55,9 @@ export const fontSize = {
 export const lineHeight = {
   none: "1",
   tight: "1.15",
-  snug: "1.3",
-  normal: "1.5",
-  relaxed: "1.65",
+  snug: "1.4",
+  normal: "1.6",
+  relaxed: "1.75",
 } as const;
 
 export const fontWeight = {
@@ -91,11 +91,11 @@ export const fontFamily = {
 
 export const borderRadius = {
   none: "0",
-  sm: "0.25rem",
-  md: "0.375rem",
-  lg: "0.5rem",
-  xl: "0.75rem",
-  "2xl": "1rem",
+  sm: "0.375rem",
+  md: "0.5rem",
+  lg: "0.75rem",
+  xl: "1rem",
+  "2xl": "1.5rem",
   full: "9999px",
 } as const;
 
@@ -106,3 +106,20 @@ export const borderWidth = {
 } as const;
 
 export const spacingScale = space;
+/** Tracking defaults to zero so connected scripts and CJK keep their shaping. */
+export const letterSpacing = { normal: "0", tight: "-0.01em", wide: "0.04em" } as const;
+
+/** Composite roles reuse the public scales, so changing a scale still reaches prose. */
+export const typeRoles = {
+  body: { size: "md", weight: "regular", leading: "normal", family: "sans", tracking: "normal" },
+  "body-small": { size: "sm", weight: "regular", leading: "normal", family: "sans", tracking: "normal" },
+  title: { size: "2xl", weight: "semibold", leading: "tight", family: "sans", tracking: "normal" },
+  "heading-1": { size: "4xl", weight: "semibold", leading: "tight", family: "sans", tracking: "normal" },
+  "heading-2": { size: "3xl", weight: "semibold", leading: "tight", family: "sans", tracking: "normal" },
+  "heading-3": { size: "2xl", weight: "semibold", leading: "tight", family: "sans", tracking: "normal" },
+  "heading-4": { size: "xl", weight: "semibold", leading: "tight", family: "sans", tracking: "normal" },
+  "heading-5": { size: "lg", weight: "semibold", leading: "tight", family: "sans", tracking: "normal" },
+  "heading-6": { size: "md", weight: "semibold", leading: "tight", family: "sans", tracking: "normal" },
+  code: { size: "sm", weight: "regular", leading: "snug", family: "mono", tracking: "normal" },
+  label: { size: "sm", weight: "medium", leading: "snug", family: "sans", tracking: "normal" },
+} as const;

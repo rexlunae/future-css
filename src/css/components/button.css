@@ -122,9 +122,9 @@
   /* Default / primary. The faint shadow lifts it off the page as the one
      action to take. */
   .fc-btn--primary {
-    background-color: var(--fc-color-accent-bg);
-    color: var(--fc-color-text-on-accent);
-    border-color: var(--fc-color-accent-border);
+    background-color: var(--fc-btn-primary-bg, var(--fc-color-accent-bg));
+    color: var(--fc-btn-primary-fg, var(--fc-color-text-on-accent));
+    border-color: var(--fc-btn-primary-border, var(--fc-color-accent-border));
     box-shadow: var(--fc-shadow-raised);
   }
 
@@ -162,7 +162,7 @@
 
   @media (hover: hover) {
     .fc-btn--primary:hover {
-      background-color: var(--fc-color-accent-bg-hover);
+      background-color: var(--fc-btn-primary-bg-hover, var(--fc-color-accent-bg-hover));
     }
 
     .fc-btn--secondary:hover {
@@ -187,7 +187,7 @@
   /* Pressed. After the hover block, because a pressed button is also hovered
      and the two have equal specificity. */
   .fc-btn--primary:active {
-    background-color: var(--fc-color-accent-bg-active);
+    background-color: var(--fc-btn-primary-bg-active, var(--fc-color-accent-bg-active));
     box-shadow: none;
   }
 
@@ -218,7 +218,7 @@
   /*
    * Disabled. Two details matter:
    *   - `opacity` alone is not enough, since it drags the label below the
-   *     contrast minimum; the colour is swapped to a muted token as well.
+   *     contrast minimum; dedicated disabled colors preserve label readability.
    *   - `cursor: not-allowed` comes from the reset layer.
    *
    * `:disabled` handles the truly disabled control. `aria-disabled` is the
@@ -227,12 +227,12 @@
    */
   .fc-btn:disabled,
   .fc-btn[aria-disabled="true"] {
-    background-color: var(--fc-color-bg-subtle);
-    color: var(--fc-color-text-subtle);
-    border-color: var(--fc-color-border-subtle);
+    background-color: var(--fc-color-disabled-bg);
+    color: var(--fc-color-disabled-fg);
+    border-color: var(--fc-color-disabled-border);
     box-shadow: none;
     cursor: not-allowed;
-    opacity: var(--fc-opacity-disabled);
+    opacity: 1;
   }
 
   /* Blocks activation without removing the element from the tab order. */

@@ -67,6 +67,9 @@
     box-shadow: var(--fc-shadow-raised);
   }
 
+  /* Isolate unknown-direction names and paths from surrounding punctuation. */
+  .fc-u-bidi { unicode-bidi: isolate; }
+
   /* Spacing utilities. Logical, so they mirror correctly in RTL. */
   .fc-u-p-0 { padding: var(--fc-space-0); }
   .fc-u-p-2 { padding: var(--fc-space-2); }

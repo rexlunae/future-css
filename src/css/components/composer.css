@@ -32,6 +32,7 @@
    * is what makes it read as attached to the thread above rather than floating.
    */
   .fc-composer {
+    min-inline-size: 0;
     display: flex;
     flex-direction: column;
     gap: var(--fc-space-2);
@@ -39,9 +40,25 @@
     padding-block: var(--fc-space-3);
     padding-inline: var(--fc-space-4);
 
-    background-color: var(--fc-color-bg-surface);
-    color: var(--fc-color-text-default);
+    background-color: var(--fc-composer-bg, var(--fc-color-bg-surface));
+    color: var(--fc-composer-fg, var(--fc-color-text-default));
     border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  }
+
+  /* Optional standalone surface; input parts read these properties so no
+     descendant modifier selector can raise their specificity. */
+  .fc-composer--contained {
+    --fc-composer-input-border: transparent;
+    --fc-composer-input-padding: 0;
+    --fc-composer-input-size: var(--fc-font-size-md);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-interactive);
+    border-radius: var(--fc-composer-radius, var(--fc-radius-2xl));
+    box-shadow: var(--fc-shadow-raised);
+    padding: var(--fc-space-4);
+  }
+
+  .fc-composer--contained:focus-within {
+    border-color: var(--fc-color-accent-border);
   }
 
   /* ---- Text entry ---------------------------------------------------------- */
@@ -64,14 +81,14 @@
     max-block-size: 12lh;
 
     padding-block: var(--fc-space-2);
-    padding-inline: var(--fc-space-3);
+    padding-inline: var(--fc-composer-input-padding, var(--fc-space-3));
 
     font-family: var(--fc-font-family-sans);
-    font-size: var(--fc-font-size-sm);
+    font-size: var(--fc-composer-input-size, var(--fc-font-size-sm));
     line-height: var(--fc-line-height-normal);
-    color: var(--fc-color-text-default);
-    background-color: var(--fc-color-bg-surface);
-    border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
+    color: var(--fc-composer-fg, var(--fc-color-text-default));
+    background-color: var(--fc-composer-bg, var(--fc-color-bg-surface));
+    border: var(--fc-border-width-thin) solid var(--fc-composer-input-border, var(--fc-color-border-default));
     border-radius: var(--fc-radius-md);
     /* Grows with its content, up to max-block-size, then scrolls. */
     field-sizing: content;
@@ -110,6 +127,8 @@
   }
 
   .fc-composer__tools {
+    min-inline-size: 0;
+    max-inline-size: 100%;
     display: flex;
     align-items: center;
     gap: var(--fc-space-2);
@@ -147,7 +166,7 @@
     padding-inline: var(--fc-space-2);
 
     background-color: var(--fc-color-bg-subtle);
-    color: var(--fc-color-text-default);
+    color: var(--fc-composer-fg, var(--fc-color-text-default));
     border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
     border-radius: var(--fc-radius-full);
     font-size: var(--fc-font-size-xs);
@@ -214,6 +233,7 @@
    * that appears mid-run is exactly the one a keyboard user is not looking at.
    */
   .fc-composer__send {
+    margin-inline-start: auto;
     min-inline-size: var(--fc-size-target-min);
     min-block-size: var(--fc-size-target-min);
   }
@@ -248,7 +268,7 @@
   /* An empty composer cannot be sent. Disabled rather than inert: it stays
      focusable so the reason is discoverable. */
   .fc-composer__send:disabled {
-    opacity: 0.5;
+    opacity: 1;
     cursor: not-allowed;
   }
 
@@ -273,7 +293,7 @@
    */
   .fc-composer[data-fc-dragging="true"] {
     background-color: var(--fc-color-bg-raised);
-    border-block-start-color: var(--fc-color-accent-border);
+    border-color: var(--fc-color-accent-border);
   }
 
   /* ---- Forced colors ------------------------------------------------------- */
@@ -288,6 +308,14 @@
       background-color: Canvas;
       color: CanvasText;
       border-block-start-color: CanvasText;
+    }
+
+    .fc-composer--contained {
+      border-color: CanvasText;
+    }
+
+    .fc-composer--contained:focus-within {
+      border-color: Highlight;
     }
 
     .fc-composer__input {
@@ -319,7 +347,7 @@
 
     .fc-composer[data-fc-dragging="true"] {
       background-color: Canvas;
-      border-block-start-color: Highlight;
+      border-color: Highlight;
     }
   }
 }

@@ -22,7 +22,8 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { oklchToHex } from "../tokens/color-utils.ts";
-import { checkContrast, semanticColors, semanticColorNames } from "../tokens/semantic/color.ts";
+import { checkContrast, contrastPairs, semanticColors, semanticColorNames } from "../tokens/semantic/color.ts";
+import { themeSets } from "../tokens/semantic/themes.ts";
 import { ansiColorNames, ansiColors, checkAnsiContrast } from "../tokens/semantic/terminal.ts";
 import {
   checkDistinct,
@@ -38,6 +39,8 @@ import {
   fontSize,
   fontWeight,
   lineHeight,
+  letterSpacing,
+  typeRoles,
   space,
 } from "../tokens/index.ts";
 import {
@@ -98,7 +101,9 @@ for (const name of semanticColorNames) {
   const darkHex = oklchToHex(dark);
   tokens.push({
     name: `${PREFIX}-color-${name}`,
-    value: `light-dark(${lightHex}, ${darkHex})`,
+    value: name.startsWith("surface-depth-")
+      ? `var(--fc-color-${["bg-canvas", "bg-surface", "bg-raised", "bg-overlay", "bg-sunken"][Number(name.at(-1))]})`
+      : `light-dark(${lightHex}, ${darkHex})`,
     light: lightHex,
     dark: darkHex,
   });
@@ -140,6 +145,11 @@ for (const name of syntaxColorNames) {
 }
 
 // ---- Literal scales -----------------------------------------------------
+addLiteralGroup("tracking", letterSpacing);
+addLiteralGroup("type", Object.fromEntries(Object.entries(typeRoles).map(([name, role]) => [name,
+  `var(--fc-font-weight-${role.weight}) var(--fc-font-size-${role.size})/var(--fc-line-height-${role.leading}) var(--fc-font-family-${role.family})`,
+])));
+addLiteralGroup("type", Object.fromEntries(Object.entries(typeRoles).map(([name, role]) => [`${name}-tracking`, `var(--fc-tracking-${role.tracking})`])));
 addLiteralGroup("space", space);
 addLiteralGroup("font-size", fontSize);
 addLiteralGroup("line-height", lineHeight);
@@ -251,6 +261,7 @@ async function main(): Promise<void> {
   // see, not merely an ugly one.
   const failures = [
     ...checkContrast(),
+    ...Object.values(themeSets).flatMap(colors => checkContrast(contrastPairs, colors)),
     ...checkAnsiContrast(),
     ...checkSyntaxContrast(),
   ];
@@ -283,7 +294,99 @@ async function main(): Promise<void> {
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((t) => [t.name, t.light && t.dark ? { light: t.light, dark: t.dark } : t.value]),
   );
+  const descriptions = Object.fromEntries(tokens.map(t => [t.name,
+    t.name.startsWith("--fc-color-")
+      ? contrastPairs.filter(p => p.fg === t.name.slice(11) || p.bg === t.name.slice(11)).map(p => `${p.usage} (minimum ${p.min}:1)`).join("; ") || `Semantic ${t.name.slice(11)} role.`
+      : t.name.startsWith("--fc-type-") ? `Composite ${t.name.slice(10)} typography: weight, size, leading and family. Tracking uses --fc-tracking-normal.`
+      : `Shared ${t.name.slice(5).replaceAll("-", " ")} token; source: src/tokens.`,
+  ]));
+  // Reserved metadata is additive: named token values retain their original shape.
+  json.$metadata = { descriptions };
   await writeFile(resolve(outDir, "tokens.json"), `${JSON.stringify(json, null, 2)}\n`, "utf8");
+
+  const themeDeclarations = (colors: typeof themeSets.forest) => Object.entries(colors)
+    .filter(([name]) => !name.startsWith("surface-depth-"))
+    .map(([name, p]) => `    --fc-color-${name}: light-dark(${oklchToHex(p.light)}, ${oklchToHex(p.dark)});`).join("\n");
+  const hc = themeDeclarations(themeSets["high-contrast"]);
+  const forest = themeDeclarations(Object.fromEntries(Object.entries(themeSets.forest).filter(([name,p]) => {
+    const initial = semanticColors[name as keyof typeof semanticColors];
+    return oklchToHex(p.light) !== oklchToHex(initial.light) || oklchToHex(p.dark) !== oklchToHex(initial.dark);
+  })));
+  await writeFile(resolve(outDir, "themes.css"), `${GENERATED_HEADER}
+@layer fc.tokens {
+  [data-fc-brand="forest"] {
+${forest}
+  }
+  @media (prefers-contrast: more) {
+    :root, [data-fc-brand] {
+${hc}
+    }
+  }
+  [data-fc-theme="high-contrast-light"], [data-fc-theme="high-contrast-dark"] {
+${hc}
+  }
+  [data-fc-theme="high-contrast-light"] { color-scheme: light; }
+  [data-fc-theme="high-contrast-dark"] { color-scheme: dark; }
+  @media (forced-colors: active) {
+    :root, [data-fc-brand], [data-fc-theme] {
+      --fc-color-focus-ring: Highlight;
+      --fc-color-focus-ring-offset: Canvas;
+    }
+  }
+}
+`);
+
+  const authored = (color: {l:number;c:number;h:number}) => `oklch(${color.l} ${color.c} ${color.h})`;
+  const gamutColors = [
+    ...Object.entries(semanticColors).map(([name,p]) => [`--fc-color-${name}`,p] as const),
+    ...Object.entries(ansiColors).map(([name,p]) => [`--fc-term-${name}`,p] as const),
+    ...Object.entries(syntaxColors).map(([name,p]) => [`--fc-code-${name}`,p] as const),
+  ];
+  // Alternate brands and contrast modes retain their verified theme values.
+  // The hex foundation remains available when any feature here is unsupported.
+  await writeFile(resolve(outDir, "wide-gamut.css"), `${GENERATED_HEADER}
+@layer fc.tokens {
+  @supports (color: oklch(0.5 0.1 250)) {
+    @media (color-gamut: p3) and (prefers-contrast: no-preference) and (forced-colors: none) {
+      :root:not([data-fc-brand], [data-fc-theme^="high-contrast"]) {
+${gamutColors.map(([name,p]) => `        ${name}: light-dark(${authored(p.light)}, ${authored(p.dark)});`).join("\n")}
+      }
+    }
+  }
+}\n`);
+
+  const rows = [...tokens].sort((a,b) => a.name.localeCompare(b.name)).map(t =>
+    `| \`${t.name}\` | \`${t.light ?? t.value}\` | \`${t.dark ?? t.value}\` | ${descriptions[t.name]} |`);
+  await writeFile(resolve(projectRoot, "docs/TOKEN-REFERENCE.md"), `# Token reference\n\nGenerated by \`npm run build:tokens\` from src/tokens. Do not edit. Values below are the default theme; optional named themes are verified by the same contrast contract.\n\n| Token | Light / value | Dark / value | Description |\n| --- | --- | --- | --- |\n${rows.join("\n")}\n`);
+
+  // Native packages expose values rather than importing platform UI libraries:
+  // callers can map hex strings to their own color type and rem to their scale.
+  const identifier = (name: string) => name.slice(5).replaceAll("-", "_");
+  const quote = (value: string) => JSON.stringify(value);
+  await writeFile(resolve(outDir, "FutureCssTokens.swift"), `// Generated from future-css tokens. Values use CSS units.\npublic enum FutureCssTokens {\n${tokens.flatMap(t => t.light ? [
+    `  public static let ${identifier(t.name)}_light = ${quote(t.light)}`,
+    `  public static let ${identifier(t.name)}_dark = ${quote(t.dark!)}`,
+  ] : [`  public static let ${identifier(t.name)} = ${quote(t.value)}`]).join("\n")}\n}\n`);
+  // Kotlin interprets $ in strings; CSS font stacks may acquire it later.
+  const kotlinQuote = (value: string) => quote(value).replaceAll("$", "\\$");
+  await writeFile(resolve(outDir, "FutureCssTokens.kt"), `// Generated from future-css tokens. Values use CSS units.\nobject FutureCssTokens {\n${tokens.flatMap(t => t.light ? [
+    `  const val ${identifier(t.name)}_light = ${kotlinQuote(t.light)}`,
+    `  const val ${identifier(t.name)}_dark = ${kotlinQuote(t.dark!)}`,
+  ] : [`  const val ${identifier(t.name)} = ${kotlinQuote(t.value)}`]).join("\n")}\n}\n`);
+  // This import-neutral variable payload uses Figma's COLOR / STRING value
+  // shapes. Creating variables in a document remains the importer's job.
+  const rgba = (hex: string) => ({ r: parseInt(hex.slice(1,3),16)/255, g: parseInt(hex.slice(3,5),16)/255, b: parseInt(hex.slice(5,7),16)/255, a: 1 });
+  const variables = tokens.filter(t => !t.light || /^#[0-9a-f]{6}$/.test(t.light)).map(t => ({
+    name: t.name.slice(5).replaceAll("-", "/"), description: descriptions[t.name],
+    resolvedType: t.light ? "COLOR" : "STRING",
+    valuesByMode: { light: t.light ? rgba(t.light) : t.value, dark: t.dark ? rgba(t.dark) : t.value },
+  }));
+  await writeFile(resolve(outDir, "figma-variables.json"), JSON.stringify({ name: "Future CSS", modes: ["light", "dark"], variables }, null, 2) + "\n");
+  // Email deliberately has no var(), light-dark(), layers or interactive
+  // components. Rem values use the conventional 16px email baseline.
+  // Clients still require the author's usual CSS inlining step.
+  const lightColor = (name: keyof typeof semanticColors) => oklchToHex(semanticColors[name].light);
+  await writeFile(resolve(outDir, "email.css"), `/* Generated light-only email foundation; inline for client compatibility. */\n.fc-email { background-color: ${lightColor("bg-canvas")}; color: ${lightColor("text-default")}; font-family: ${fontFamily.sans}; font-size: ${parseFloat(fontSize.md) * 16}px; line-height: ${lineHeight.normal}; }\n.fc-email-surface { background-color: ${lightColor("bg-surface")}; color: ${lightColor("text-default")}; padding: ${parseFloat(space["4"]) * 16}px; }\n.fc-email-link { color: ${lightColor("accent-text")}; text-decoration: underline; }\n.fc-email-muted { color: ${lightColor("text-muted")}; }\n`);
 
   const themed = tokens.filter((t) => t.light).length;
   console.log(

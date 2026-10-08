@@ -53,13 +53,19 @@ export interface ShadowLayer {
   dark: string;
 }
 
-export const shadow: Record<"raised" | "overlay" | "modal", readonly ShadowLayer[]> = {
+export const shadow: Record<"raised" | "overlay" | "modal" | "floating" | "dialog", readonly ShadowLayer[]> = {
+  floating: [
+    { geometry: "0 12px 32px -8px", light: "rgb(16 18 27 / 0.14)", dark: "rgb(0 0 0 / 0.5)" },
+  ],
+  dialog: [
+    { geometry: "0 32px 64px -12px", light: "rgb(16 18 27 / 0.24)", dark: "rgb(0 0 0 / 0.65)" },
+  ],
   raised: [
     { geometry: "0 1px 2px 0", light: "rgb(16 18 27 / 0.06)", dark: "rgb(0 0 0 / 0.4)" },
-    { geometry: "0 1px 3px 0", light: "rgb(16 18 27 / 0.1)", dark: "rgb(0 0 0 / 0.5)" },
+    { geometry: "0 4px 12px -4px", light: "rgb(16 18 27 / 0.08)", dark: "rgb(0 0 0 / 0.3)" },
   ],
   overlay: [
-    { geometry: "0 4px 6px -1px", light: "rgb(16 18 27 / 0.1)", dark: "rgb(0 0 0 / 0.5)" },
+    { geometry: "0 8px 24px -8px", light: "rgb(16 18 27 / 0.12)", dark: "rgb(0 0 0 / 0.5)" },
     { geometry: "0 2px 4px -2px", light: "rgb(16 18 27 / 0.1)", dark: "rgb(0 0 0 / 0.5)" },
   ],
   /*

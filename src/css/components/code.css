@@ -28,7 +28,9 @@
     background-color: var(--fc-code-bg);
     color: var(--fc-code-fg);
     border: var(--fc-border-width-thin) solid var(--fc-code-border-default);
-    border-radius: var(--fc-radius-md);
+    border-radius: var(--fc-radius-lg);
+    /* Child surfaces must follow the outer curve without painting over its border. */
+    overflow: clip;
     /*
      * Code carries a denser leading than prose. The document's line-height is
      * tuned for reading sentences; code is read by shape, and loose leading
@@ -47,6 +49,9 @@
     display: block;
     padding: var(--fc-space-3) var(--fc-space-4);
     margin: 0;
+    /* A block source must not inherit the base inline-code pill decoration. */
+    background-color: transparent;
+    border-radius: 0;
     font-family: var(--fc-font-family-mono);
     font-size: var(--fc-font-size-sm);
     tab-size: 2;
@@ -79,6 +84,7 @@
    * source so the source can be copied without dragging the label along.
    */
   .fc-code__bar {
+    grid-column: 1 / -1;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -113,7 +119,7 @@
   .fc-code--numbered {
     display: grid;
     /* One column for both halves, so the numbers and the source stay aligned. */
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
   /*

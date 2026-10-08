@@ -273,4 +273,12 @@
       border-block-start-color: CanvasText;
     }
   }
+  /* A solid backdrop preserves separation when the user rejects translucency. */
+  @media (prefers-reduced-transparency: reduce) {
+    .fc-dialog::backdrop {
+      background-color: var(--fc-color-bg-inverse);
+      backdrop-filter: none;
+    }
+  }
+
 }

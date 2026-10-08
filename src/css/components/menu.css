@@ -103,7 +103,7 @@
    */
   .fc-menu__item:disabled,
   .fc-menu__item[aria-disabled="true"] {
-    color: var(--fc-color-text-subtle);
+    color: var(--fc-color-disabled-fg);
     cursor: not-allowed;
   }
 

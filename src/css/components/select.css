@@ -87,8 +87,8 @@
    * nothing, which is the honest behaviour.
    */
   .fc-select[aria-disabled="true"] {
-    color: var(--fc-color-text-muted);
-    background-color: var(--fc-color-bg-subtle);
+    color: var(--fc-color-disabled-fg);
+    background-color: var(--fc-color-disabled-bg);
     border-color: var(--fc-color-border-default);
     cursor: not-allowed;
   }
@@ -251,7 +251,8 @@
    * forced-colors mode, where the OS replaces author backgrounds.
    */
   .fc-select__option[data-fc-active="true"] {
-    background-color: var(--fc-color-accent-bg-subtle);
+    background-color: var(--fc-color-selected-bg);
+    color: var(--fc-color-selected-fg);
     border-inline-start-color: var(--fc-color-accent-border);
   }
 
@@ -276,7 +277,7 @@
    * see that it exists and that it is the reason they cannot select it.
    */
   .fc-select__option[aria-disabled="true"] {
-    color: var(--fc-color-text-muted);
+    color: var(--fc-color-disabled-fg);
     cursor: not-allowed;
   }
 

@@ -137,7 +137,7 @@
    * invites the user to keep pressing it.
    */
   .fc-webview__nav:disabled {
-    color: var(--fc-color-text-subtle);
+    color: var(--fc-color-disabled-fg);
     cursor: not-allowed;
   }
 

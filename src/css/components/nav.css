@@ -140,7 +140,7 @@
 
   .fc-nav__toggle:disabled,
   .fc-nav__toggle[aria-disabled="true"] {
-    color: var(--fc-color-text-subtle);
+    color: var(--fc-color-disabled-fg);
     background-color: transparent;
     cursor: not-allowed;
   }
@@ -283,7 +283,7 @@
    * user learns it exists.
    */
   .fc-nav__link[aria-disabled="true"] {
-    color: var(--fc-color-text-subtle);
+    color: var(--fc-color-disabled-fg);
     background-color: transparent;
     cursor: not-allowed;
   }

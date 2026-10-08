@@ -13,7 +13,7 @@ acknowledged manual gate.
 
 ### Contrast ratios
 
-All 19 declared pairings are evaluated in both color schemes at build time.
+All declared pairings are evaluated in both color schemes at build time.
 
 | Requirement | WCAG | Minimum |
 | --- | --- | --- |
@@ -222,3 +222,22 @@ with a real IME (macOS Pinyin or Japanese Romaji are the easiest to drive):
 
 Record the result in the PR that touched the guard. A PR that changes
 composition handling without this checklist run is not done.
+
+## Cognitive accessibility
+
+Use familiar action labels consistently. Group related composer settings with a visible
+or programmatic name, and preserve the draft when a setting changes. Explain disabled
+controls in nearby text rather than making users infer the reason from appearance.
+
+Keep one primary action per task. Supply a short path for common tasks before advanced
+settings, and keep optional details collapsible without hiding essential instructions.
+Errors identify the problem and the next step; keep the user's input available for retry.
+Allow review and undo for actions that change user data.
+
+Announce state changes at useful boundaries, not on every streamed token. Reserve
+assertive announcements for urgent failures. Avoid unexpected focus moves, automatic
+navigation, and timeouts that erase work. Respect motion, transparency, contrast and data
+preferences; none should remove the information needed to complete a task.
+
+Review these choices with people performing realistic tasks. Automated contrast and
+keyboard checks cannot establish comprehension or usability.

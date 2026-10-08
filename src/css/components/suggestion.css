@@ -70,8 +70,8 @@
 
   .fc-suggestion:disabled,
   .fc-suggestion[aria-disabled="true"] {
-    color: var(--fc-color-text-subtle);
-    border-color: var(--fc-color-border-subtle);
+    color: var(--fc-color-disabled-fg);
+    border-color: var(--fc-color-disabled-border);
     background-color: transparent;
     cursor: not-allowed;
   }

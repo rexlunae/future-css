@@ -40,6 +40,12 @@ const black: Oklch = { l: 0, c: 0, h: 0 };
  */
 export const semanticColors = {
   // ---- Surfaces -----------------------------------------------------------
+  // Numbered aliases retain role names; order is not a lightness scale.
+  "surface-depth-0": { light: neutral["25"]!, dark: neutral["950"]! },
+  "surface-depth-1": { light: neutral["0"]!, dark: neutral["900"]! },
+  "surface-depth-2": { light: neutral["0"]!, dark: neutral["800"]! },
+  "surface-depth-3": { light: neutral["0"]!, dark: neutral["900"]! },
+  "surface-depth-4": { light: neutral["100"]!, dark: black },
   "bg-canvas": { light: neutral["25"]!, dark: neutral["950"]! },
   "bg-surface": { light: neutral["0"]!, dark: neutral["900"]! },
   "bg-raised": { light: neutral["0"]!, dark: neutral["800"]! },
@@ -83,6 +89,16 @@ export const semanticColors = {
   /* Same reasoning as text-on-accent: the danger fill flips lightness by scheme. */
   "text-on-danger": { light: white, dark: neutral["1000"]! },
 
+  // State names keep components independent of the brand's selected surface.
+  "selected-bg": { light: accent["50"]!, dark: accent["950"]! },
+  "selected-fg": { light: accent["700"]!, dark: accent["200"]! },
+  "disabled-bg": { light: neutral["100"]!, dark: neutral["900"]! },
+  "disabled-fg": { light: neutral["700"]!, dark: neutral["300"]! },
+  "disabled-border": { light: neutral["300"]!, dark: neutral["700"]! },
+  "text-on-success": { light: white, dark: neutral["1000"]! },
+  "text-on-info": { light: white, dark: neutral["1000"]! },
+  "text-on-warning": { light: neutral["1000"]!, dark: neutral["1000"]! },
+
   // ---- Borders ------------------------------------------------------------
   "border-default": { light: neutral["300"]!, dark: neutral["700"]! },
   "border-subtle": { light: neutral["200"]!, dark: neutral["800"]! },
@@ -102,12 +118,18 @@ export const semanticColors = {
 
   // ---- Success ------------------------------------------------------------
   "success-bg": { light: success["700"]!, dark: success["300"]! },
+  "success-bg-hover": { light: success["800"]!, dark: success["200"]! },
+  "success-bg-active": { light: success["900"]!, dark: success["100"]! },
   "success-text": { light: success["800"]!, dark: success["200"]! },
   "success-bg-subtle": { light: success["50"]!, dark: success["950"]! },
   "success-border": { light: success["600"]!, dark: success["400"]! },
 
+  // warning-text on warning-bg is 3.90:1 light and 1.78:1 dark. The
+  // solid fill uses text-on-warning instead; status text stays on its subtle fill.
   // ---- Warning ------------------------------------------------------------
   "warning-bg": { light: warning["500"]!, dark: warning["400"]! },
+  "warning-bg-hover": { light: warning["400"]!, dark: warning["300"]! },
+  "warning-bg-active": { light: warning["300"]!, dark: warning["200"]! },
   "warning-text": { light: warning["900"]!, dark: warning["100"]! },
   "warning-bg-subtle": { light: warning["50"]!, dark: warning["950"]! },
   "warning-border": { light: warning["600"]!, dark: warning["500"]! },
@@ -115,12 +137,15 @@ export const semanticColors = {
   // ---- Danger -------------------------------------------------------------
   "danger-bg": { light: danger["600"]!, dark: danger["400"]! },
   "danger-bg-hover": { light: danger["700"]!, dark: danger["300"]! },
+  "danger-bg-active": { light: danger["800"]!, dark: danger["200"]! },
   "danger-text": { light: danger["700"]!, dark: danger["200"]! },
   "danger-bg-subtle": { light: danger["50"]!, dark: danger["950"]! },
   "danger-border": { light: danger["600"]!, dark: danger["400"]! },
 
   // ---- Info ---------------------------------------------------------------
   "info-bg": { light: info["700"]!, dark: info["300"]! },
+  "info-bg-hover": { light: info["800"]!, dark: info["200"]! },
+  "info-bg-active": { light: info["900"]!, dark: info["100"]! },
   "info-text": { light: info["800"]!, dark: info["200"]! },
   "info-bg-subtle": { light: info["50"]!, dark: info["950"]! },
   "info-border": { light: info["600"]!, dark: info["400"]! },
@@ -151,6 +176,32 @@ const darkSet: Record<string, Oklch> = Object.fromEntries(
  * legality fails CI instead of shipping.
  */
 export const contrastPairs: readonly ContrastPair[] = [
+  { usage: "Default text inside selected rows", fg: "text-default", bg: "selected-bg", min: 4.5 },
+  { usage: "Secondary text inside selected rows", fg: "text-muted", bg: "selected-bg", min: 4.5 },
+  { usage: "Subtle text inside selected rows", fg: "text-subtle", bg: "selected-bg", min: 4.5 },
+  { usage: "Accent label on hover", fg: "text-on-accent", bg: "accent-bg-hover", min: 4.5 },
+  { usage: "Accent label on active", fg: "text-on-accent", bg: "accent-bg-active", min: 4.5 },
+  { usage: "Text on depth 0", fg: "text-default", bg: "surface-depth-0", min: 4.5 },
+  { usage: "Text on depth 1", fg: "text-default", bg: "surface-depth-1", min: 4.5 },
+  { usage: "Text on depth 2", fg: "text-default", bg: "surface-depth-2", min: 4.5 },
+  { usage: "Text on depth 3", fg: "text-default", bg: "surface-depth-3", min: 4.5 },
+  { usage: "Text on depth 4", fg: "text-default", bg: "surface-depth-4", min: 4.5 },
+  { usage: "Selected text on its state surface", fg: "selected-fg", bg: "selected-bg", min: 4.5 },
+  { usage: "Disabled control label", fg: "disabled-fg", bg: "disabled-bg", min: 4.5 },
+  { usage: "Disabled text on canvas", fg: "disabled-fg", bg: "bg-canvas", min: 4.5 },
+  { usage: "Disabled text on surface", fg: "disabled-fg", bg: "bg-surface", min: 4.5 },
+  // Disabled boundaries carry no interactive meaning (WCAG exempts inactive controls).
+  { usage: "Decorative disabled boundary", fg: "disabled-border", bg: "disabled-bg", min: 1 },
+  { usage: "Label on success solid", fg: "text-on-success", bg: "success-bg", min: 4.5 },
+  { usage: "Label on success solid-hover", fg: "text-on-success", bg: "success-bg-hover", min: 4.5 },
+  { usage: "Label on success solid-active", fg: "text-on-success", bg: "success-bg-active", min: 4.5 },
+  { usage: "Label on warning solid", fg: "text-on-warning", bg: "warning-bg", min: 4.5 },
+  { usage: "Label on warning solid-hover", fg: "text-on-warning", bg: "warning-bg-hover", min: 4.5 },
+  { usage: "Label on warning solid-active", fg: "text-on-warning", bg: "warning-bg-active", min: 4.5 },
+  { usage: "Label on danger solid-active", fg: "text-on-danger", bg: "danger-bg-active", min: 4.5 },
+  { usage: "Label on info solid", fg: "text-on-info", bg: "info-bg", min: 4.5 },
+  { usage: "Label on info solid-hover", fg: "text-on-info", bg: "info-bg-hover", min: 4.5 },
+  { usage: "Label on info solid-active", fg: "text-on-info", bg: "info-bg-active", min: 4.5 },
   { usage: "Body text on the page canvas", fg: "text-default", bg: "bg-canvas", min: 7 },
   { usage: "Body text on a raised surface (cards, panels)", fg: "text-default", bg: "bg-surface", min: 7 },
   { usage: "Secondary text / helper copy", fg: "text-muted", bg: "bg-surface", min: 4.5 },

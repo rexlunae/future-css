@@ -58,7 +58,7 @@
 
   .fc-check:has(:disabled) {
     cursor: not-allowed;
-    color: var(--fc-color-text-subtle);
+    color: var(--fc-color-disabled-fg);
   }
 
   .fc-check:has([aria-invalid="true"], :user-invalid) .fc-check__label {
@@ -179,7 +179,7 @@
 
   .fc-switch:disabled {
     cursor: not-allowed;
-    opacity: var(--fc-opacity-disabled);
+    opacity: 1;
   }
 
   .fc-switch--sm {
@@ -227,7 +227,7 @@
 
   .fc-switch-row:has(:disabled) {
     cursor: not-allowed;
-    color: var(--fc-color-text-subtle);
+    color: var(--fc-color-disabled-fg);
   }
 
   /* ---- Forced colors --------------------------------------------------- */

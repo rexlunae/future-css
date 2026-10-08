@@ -118,7 +118,8 @@
    * second source of truth.
    */
   .fc-table tbody tr[aria-selected="true"] {
-    background-color: var(--fc-color-accent-bg-subtle);
+    background-color: var(--fc-color-selected-bg);
+    color: var(--fc-color-selected-fg);
   }
 
   /*
@@ -211,7 +212,7 @@
 
   .fc-table__sort:disabled,
   .fc-table__sort[aria-disabled="true"] {
-    color: var(--fc-color-text-subtle);
+    color: var(--fc-color-disabled-fg);
     background-color: transparent;
     cursor: not-allowed;
   }

@@ -7,8 +7,9 @@ npm install
 npm run check      # build + lint + test
 ```
 
-Node 22.6 or later. No other tooling is required; the build runs the TypeScript sources
-directly.
+Node 22.6 or later runs TypeScript directly. `build:css` needs no Rust toolchain.
+The full gate also requires Rust, the wasm32 target, wasm-bindgen CLI 0.2.118, and Chrome
+for browser checks. CI requires Chrome rather than accepting a skipped suite.
 
 | Command | Does |
 | --- | --- |

@@ -80,6 +80,9 @@ const BUNDLE_ORDER: ReadonlyArray<readonly [source: string, publishedAs: string]
   ["components/table.css", "components/table.css"],
   ["components/description-list.css", "components/description-list.css"],
   ["components/nav.css", "components/nav.css"],
+  ["components/masthead.css", "components/masthead.css"],
+  ["components/control-group.css", "components/control-group.css"],
+  ["type.css", "type.css"],
   ["utilities.css", "utilities.css"],
 ];
 
@@ -204,6 +207,7 @@ async function main(): Promise<void> {
   await mkdir(outDir, { recursive: true });
   await buildIndividualFiles();
   await buildBundle();
+  await writeFile(resolve(outDir, "print.css"), await readSource("print.css"), "utf8");
 
   const componentFiles = await readdir(resolve(srcCss, "components"));
   const bytes = (await readFile(resolve(outDir, "future-css.css"))).byteLength;

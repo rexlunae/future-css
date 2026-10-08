@@ -48,14 +48,31 @@ const directionButton = $("[data-demo-toggle='direction']");
 
 // `data-fc-theme` is the system's own override hook. Setting it changes two
 // `color-scheme` declarations, and because every themed token is a light-dark()
-// pair, that single attribute re-themes all 65 of them. A theme switcher in any
+// pair, that single attribute re-themes the palette. A theme switcher in any
 // app built on this system needs no other CSS.
 schemeButton?.addEventListener("click", () => {
-  const dark = root.dataset.fcTheme !== "dark";
-  root.dataset.fcTheme = dark ? "dark" : "light";
+  const dark = !root.dataset.fcTheme?.endsWith("dark");
+  const contrast = $("[data-demo-toggle=contrast]")?.getAttribute("aria-pressed") === "true";
+  root.dataset.fcTheme = (contrast ? "high-contrast-" : "") + (dark ? "dark" : "light");
   schemeButton.setAttribute("aria-pressed", String(dark));
   schemeButton.querySelector("[data-demo-label]").textContent = dark ? "Dark" : "Light";
   // The token values changed, so any ratio computed from them is now stale.
+  renderTokens();
+});
+
+$("[data-demo-toggle=contrast]")?.addEventListener("click", event => {
+  const button = event.currentTarget;
+  const contrast = button.getAttribute("aria-pressed") !== "true";
+  button.setAttribute("aria-pressed", String(contrast));
+  root.dataset.fcTheme = (contrast ? "high-contrast-" : "") + (root.dataset.fcTheme?.endsWith("dark") ? "dark" : "light");
+  renderTokens();
+});
+$("[data-demo-toggle=brand]")?.addEventListener("click", event => {
+  const button = event.currentTarget;
+  const forest = button.getAttribute("aria-pressed") !== "true";
+  button.setAttribute("aria-pressed", String(forest));
+  if (forest) root.dataset.fcBrand = "forest";
+  else delete root.dataset.fcBrand;
   renderTokens();
 });
 
@@ -381,6 +398,16 @@ webview.navigate("/demo/page.html");
 // so the failure path reports rather than silently doing nothing.
 // ---------------------------------------------------------------------------
 
+for (const snippet of document.querySelectorAll("[data-demo-snippet]")) {
+  const language = snippet.querySelector(".fc-code__lang")?.textContent.trim();
+  snippet.dataset.fcLang = language === "js" ? "javascript" : language;
+  const source = snippet.querySelector(".fc-code__source");
+  if (source) {
+    const rendered = renderHighlighted(source.textContent, snippet.dataset.fcLang);
+    source.replaceChildren(...rendered.childNodes);
+  }
+}
+
 document.addEventListener("click", async (event) => {
   const button = event.target.closest(".demo-snippet__copy");
   if (!button) return;
@@ -662,13 +689,43 @@ let composerRunning = false;
 /** Handle for the simulated run, cleared before each new one. */
 let runTimer;
 
+const composerModel = new FutureCssSelect({
+  invoker: "#composer-model",
+  list: "#composer-model-list",
+  onChange: (_value, option) => status("#composer-context-status", `Model: ${option.label}`),
+});
+
+for (const id of ["composer-search", "composer-research"]) {
+  document.getElementById(id)?.addEventListener("click", (event) => {
+    const button = event.currentTarget;
+    const pressed = button.getAttribute("aria-pressed") !== "true";
+    button.setAttribute("aria-pressed", String(pressed));
+    status("#composer-context-status", `${button.textContent.trim()} ${pressed ? "enabled" : "disabled"}`);
+  });
+}
+
+for (const button of document.querySelectorAll("[data-demo-format]")) {
+  button.addEventListener("click", () => {
+    button.setAttribute("aria-pressed", String(button.getAttribute("aria-pressed") !== "true"));
+    let content = document.createTextNode("A well-composed interface makes room for the work.");
+    for (const control of document.querySelectorAll('[data-demo-format][aria-pressed="true"]')) {
+      const wrapper = document.createElement(control.dataset.demoFormat === "bold" ? "strong" : "em");
+      wrapper.append(content);
+      content = wrapper;
+    }
+    $("#group-preview").replaceChildren(content);
+    status("#group-status", "Formatting updated.");
+  });
+}
+
 const composer = new FutureCssComposer({
   root: "#composer-root",
   onSubmit: (text, attachments) => {
     const names = attachments.map((a) => a.name);
+    const enabledTools = [...document.querySelectorAll('#composer-root [aria-pressed="true"]')].map((button) => button.textContent.trim());
     status(
-      "#composer-status",
-      `Submitted ${text.length} chars${names.length ? ` with ${names.join(", ")}` : ""}`,
+      "#composer-context-status",
+      `Submitted ${text.length} chars using ${composerModel.value}${enabledTools.length ? `; tools: ${enabledTools.join(", ")}` : ""}${names.length ? ` with ${names.join(", ")}` : ""}`,
     );
     // The demo "runs" for a moment so the Stop state is reachable. A real app
     // calls setRunning() from its stream's lifecycle, not on a timer.
@@ -685,7 +742,7 @@ const composer = new FutureCssComposer({
     }, 2500);
   },
   onStop: () => {
-    status("#composer-status", "Stopped. Your draft was kept.");
+    status("#composer-context-status", "Stopped. Your draft was kept.");
     // Cancel the pending end-of-run, or it would fire after the stop and reset
     // state the user has already moved on from.
     clearTimeout(runTimer);

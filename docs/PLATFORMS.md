@@ -15,12 +15,12 @@ mobile browsers. There is no Internet Explorer support and no polyfill layer.
 
 | Feature | Used for | Without it |
 | --- | --- | --- |
-| `light-dark()` | Theme switching | `@supports` fallback to `prefers-color-scheme` |
-| Cascade layers | The whole precedence model | Unlayered fallback bundle |
-| `:where()` | Zero-specificity base layer | Higher specificity in base |
+| `light-dark()` | Theme switching | Unsupported; no legacy fallback bundle |
+| Cascade layers | The whole precedence model | Unsupported; no unlayered bundle |
+| `:where()` | Zero-specificity base layer | Unsupported |
 | Logical properties | RTL correctness | **Broken RTL** -- no acceptable fallback |
 | `color-scheme` | Native controls, scrollbars, default theme | Manual UA widget styling |
-| `:focus-visible` | Focus ring precision | `:focus` (shows the ring for mouse too) |
+| `:focus-visible` | Focus ring precision | Unsupported; supported browsers provide this |
 | `text-wrap: pretty` | Orphan control | Normal wrapping |
 | `line-clamp` | Multi-line truncation | Text shows in full (acceptable) |
 | `oklch()` | Perceptual ramps | Compiled to hex at build time |
@@ -125,15 +125,11 @@ Email is the hardest target and deserves honesty rather than optimism.
 
 ### Strategy
 
-Email gets a **separate, hand-authored build** from the same tokens. Not the same CSS
-with fallbacks -- a deliberately constrained stylesheet using tables for layout, physical
-properties, and inline styles, generated from the same token definitions.
-
-That last part matters: email must not be hand-maintained, because hand-maintained styles
-drift from the token source within months. It should be generated, like everything else.
-
-**Current status: not started.** Recorded as a Phase 5 scope item in the plan. The system
-should not claim email support until this exists.
+`dist/email.css` is a generated, light-only foundation: `.fc-email`,
+`.fc-email-surface`, `.fc-email-link`, and `.fc-email-muted`. It has no custom properties,
+layers, or `light-dark()`. Inline the generated declarations through your email pipeline;
+use email-safe HTML tables for layout. This does not make the interactive web components
+email components. Outlook, Gmail and Apple Mail validation remains a manual release task.
 
 ---
 
@@ -141,36 +137,31 @@ should not claim email support until this exists.
 
 Print is where a web stylesheet most often turns out to be unusable.
 
-### Rules
+Import `future-css/print` last. It forces the light scheme on the root and themed
+subtrees for print, and exposes opt-in helpers:
 
-```css
-@media print {
-  /* Hide interface chrome, not content */
-  .fc-nav, .fc-sidebar, .fc-btn { display: none; }
+- `.fc-print-hide` removes application chrome.
+- `.fc-print-content` removes shadows, overflow clipping and measure limits.
+- `.fc-print-keep` avoids a page break within an element.
+- `.fc-print-break` starts a new page.
+- `.fc-print-link` appends a link's URL and allows long URLs to wrap.
 
-  /* Force real black on white; a printer cannot render a dark scheme */
-  :root { color-scheme: light; }
+The application chooses what to hide: a button can contain useful status, and a sidebar
+can be a document's table of contents. Do not apply `fc-print-keep` to a block longer than
+a page. Inspect the actual print preview before distributing a document.
 
-  /* Print the URL for links, since a printed page cannot be clicked */
-  a[href^="http"]::after {
-    content: " (" attr(href) ")";
-    font-size: 0.8em;
-    color: #555;
-  }
+## Native and Figma exports
 
-  /* Prevent content splitting across pages */
-  h1, h2, h3 { break-after: avoid; }
-  figure, table, pre { break-inside: avoid; }
-}
-```
+The token build emits `FutureCssTokens.swift` and `FutureCssTokens.kt`: typed string
+constants with separate `_light` / `_dark` values. Map hex colors to native color types
+and CSS dimensions to the host's unit scale. These are value exports, not native UI
+components; font shorthand and shadows need host-specific interpretation.
 
-**Links and URLs.** `break-inside: avoid` on tables, figures, and preformatted blocks
-prevents the most jarring print artifacts. Adding `::after { content: attr(href) }` to
-links is not optional in a printed document.
-
-**A dark scheme in print wastes ink and looks wrong.** The print stylesheet forces light,
-which is a legitimate case where overriding the user's stated preference is correct, since
-the output medium is physically incapable of displaying it.
+`figma-variables.json` contains named COLOR / STRING variables, descriptions and
+light/dark mode values. COLOR channels are normalized RGBA derived from the same hex
+values. A Figma importer must create the collection/mode IDs and map these mode names;
+this file is not a REST mutation request or an automatically installed Figma library.
+Shadows remain in the native/JSON export, since a Figma color variable cannot hold one.
 
 ---
 

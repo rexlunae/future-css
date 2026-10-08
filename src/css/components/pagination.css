@@ -69,7 +69,7 @@
   }
 
   .fc-pagination__link[aria-disabled="true"] {
-    color: var(--fc-color-text-subtle);
+    color: var(--fc-color-disabled-fg);
     background-color: transparent;
     pointer-events: none;
   }

@@ -59,7 +59,7 @@
   align-items: center;
   justify-content: space-between;
 
-  padding-block: var(--fc-space-3);
+  padding-block: var(--fc-space-4);
 }
 
 .demo-masthead__id {
@@ -95,7 +95,7 @@
 .demo-sub {
   margin: 0;
   color: var(--fc-color-text-muted);
-  font-size: var(--fc-font-size-xs);
+  font-size: var(--fc-font-size-sm);
 }
 
 .demo-controls {
@@ -160,16 +160,16 @@
 /* ---- Page --------------------------------------------------------------- */
 
 .demo-main {
-  padding-block: var(--fc-space-6) var(--fc-space-8);
+  padding-block: var(--fc-space-10) var(--fc-space-12);
 }
 
 .demo-lede {
   max-inline-size: 62ch;
-  margin-block: 0 var(--fc-space-8);
+  margin-block: 0 var(--fc-space-6);
 
   color: var(--fc-color-text-muted);
-  font-size: var(--fc-font-size-md);
-  line-height: var(--fc-line-height-normal);
+  font-size: var(--fc-font-size-lg);
+  line-height: var(--fc-line-height-relaxed);
 }
 
 /*
@@ -178,20 +178,20 @@
  * header -- which is most visible on the nav links, the whole point of the nav.
  */
 .demo-section {
-  scroll-margin-block-start: var(--fc-space-12);
+  scroll-margin-block-start: calc(var(--fc-space-32) + var(--fc-space-6));
 
-  padding-block: var(--fc-space-6);
+  padding-block: var(--fc-space-10);
   /* Logical separator, so the hairline follows the writing direction. */
   border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
 }
 
 .demo-section__head {
-  margin-block-end: var(--fc-space-4);
+  margin-block-end: var(--fc-space-5);
 }
 
 .demo-h2 {
   margin: 0 0 var(--fc-space-2);
-  font-size: var(--fc-font-size-xl);
+  font-size: var(--fc-font-size-2xl);
   line-height: var(--fc-line-height-tight);
 }
 
@@ -204,10 +204,11 @@
 }
 
 .demo-panel {
-  padding: var(--fc-space-4);
+  padding: clamp(var(--fc-space-4), 3vi, var(--fc-space-6));
   background-color: var(--fc-color-bg-surface);
   border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
-  border-radius: var(--fc-radius-lg);
+  border-radius: var(--fc-radius-xl);
+  box-shadow: var(--fc-shadow-raised);
 }
 
 .demo-rule {
@@ -216,75 +217,14 @@
   border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
 }
 
-/* ---------------------------------------------------------------------------
- * Usage snippet
- *
- * A demo that only renders is a screenshot with extra steps. Every section
- * shows the markup and wiring that produced what is above it, so a reader can
- * copy the working minimum instead of reverse-engineering it from the output.
- *
- * The snippet is a real <pre><code>, not styled text: it is selectable, it
- * survives a high-contrast mode, and a screen reader announces it as code.
- * --- */
+/* Usage examples share the shipped code surface, tokens, and highlighter. */
 .demo-snippet {
-  margin-block-start: var(--fc-space-4);
-  border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
-  border-radius: var(--fc-radius-md);
-  /* Kept outside .fc-code deliberately: a snippet is chrome *about* the code
-     component, and reusing .fc-code here would make the demo's own furniture
-     indistinguishable from the thing it is demonstrating. */
-  background-color: var(--fc-color-bg-subtle);
-  overflow: hidden;
-}
-
-.demo-snippet__bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--fc-space-2);
-  padding-block: var(--fc-space-1) var(--fc-space-1);
-  padding-inline: var(--fc-space-3);
-  border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
-  background-color: var(--fc-color-bg-surface);
-}
-
-.demo-snippet__lang {
-  font-family: var(--fc-font-family-mono);
-  font-size: var(--fc-font-size-xs);
-  color: var(--fc-color-text-muted);
-  text-transform: lowercase;
-}
-
-.demo-snippet__copy {
-  font-family: var(--fc-font-family-sans);
-  font-size: var(--fc-font-size-xs);
-  padding: var(--fc-space-1) var(--fc-space-3);
-  border-radius: var(--fc-radius-sm);
-  border: var(--fc-border-width-thin) solid var(--fc-color-border-default);
-  background-color: var(--fc-color-bg-surface);
-  color: var(--fc-color-text-default);
-  cursor: pointer;
-  min-block-size: var(--fc-size-target-min);
-}
-
-.demo-snippet__copy:hover {
-  background-color: var(--fc-color-bg-raised);
-}
-
-.demo-snippet__copy:focus-visible {
-  outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring);
-  outline-offset: var(--fc-space-0-5);
+  margin-block-start: var(--fc-space-5);
 }
 
 .demo-snippet__pre {
   margin: 0;
-  padding: var(--fc-space-3) var(--fc-space-4);
-  overflow-x: auto;
-  font-family: var(--fc-font-family-mono);
-  font-size: var(--fc-font-size-xs);
-  line-height: var(--fc-line-height-snug);
-  color: var(--fc-color-text-default);
-  tab-size: 2;
+  font: inherit;
 }
 
 /* The live region under each interactive component. `role="status"` is polite by
@@ -527,4 +467,93 @@
   flex: 1 1 0;
   min-inline-size: 0;
   padding: var(--fc-space-4);
+}
+
+
+.demo-hero {
+  padding-block: var(--fc-space-8) var(--fc-space-10);
+}
+
+.demo-eyebrow {
+  margin-block: 0 var(--fc-space-4);
+  color: var(--fc-color-accent-text);
+  font-size: var(--fc-font-size-sm);
+  font-weight: var(--fc-font-weight-semibold);
+}
+
+.demo-hero__title {
+  max-inline-size: 22ch;
+  margin-block: 0 var(--fc-space-5);
+  font-size: clamp(var(--fc-font-size-3xl), 5vi, var(--fc-font-size-5xl));
+  line-height: var(--fc-line-height-tight);
+  font-weight: var(--fc-font-weight-semibold);
+  text-wrap: balance;
+}
+
+.demo-hero__features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fc-space-3) var(--fc-space-6);
+  margin-block: var(--fc-space-6) 0;
+  padding: 0;
+  list-style: none;
+  color: var(--fc-color-text-muted);
+  font-size: var(--fc-font-size-sm);
+}
+
+.demo-nav__list a {
+  min-block-size: var(--fc-size-target-min);
+}
+
+
+/* The base measure is for prose; the component workbench uses the viewport. */
+body {
+  max-inline-size: none;
+  padding-inline: clamp(var(--fc-space-2), 2vi, var(--fc-space-8));
+}
+
+.fc-container {
+  --fc-container-max: none;
+}
+
+
+.demo-shell {
+  container: demo-shell / inline-size;
+  border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  border-radius: var(--fc-radius-xl);
+  overflow: clip;
+  background-color: var(--fc-color-bg-canvas);
+  box-shadow: var(--fc-shadow-raised);
+}
+
+.demo-shell__body {
+  display: flex;
+  align-items: stretch;
+  min-block-size: 26rem;
+}
+
+.demo-shell__body > .fc-nav {
+  flex-shrink: 0;
+  block-size: auto;
+}
+
+.demo-shell__content {
+  flex: 1;
+  min-inline-size: 0;
+  padding: clamp(var(--fc-space-4), 3vi, var(--fc-space-8));
+}
+
+.demo-shell__content .demo-note {
+  margin-block-end: var(--fc-space-6);
+}
+
+@container demo-shell (inline-size < 40rem) {
+  .demo-shell__body {
+    flex-direction: column;
+  }
+
+  .demo-shell__body > .fc-nav {
+    border-inline-end: 0;
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  }
 }

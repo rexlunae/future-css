@@ -52,7 +52,9 @@
   .fc-chat {
     display: flex;
     flex-direction: column;
-    gap: var(--fc-space-4);
+    gap: var(--fc-chat-gap, var(--fc-space-4));
+    background-color: var(--fc-chat-bg, var(--fc-color-bg-canvas));
+    color: var(--fc-chat-fg, var(--fc-color-text-default));
     block-size: 100%;
     min-block-size: 0;
     /* Keeps a long thread scrollable while the composer stays pinned. */
@@ -81,7 +83,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--fc-space-2);
-    max-inline-size: var(--fc-size-measure, 65ch);
+    max-inline-size: var(--fc-chat-message-measure, var(--fc-size-measure, 65ch));
     min-inline-size: 0;
   }
 
@@ -336,13 +338,13 @@
 
   /* Thumbs up/down and similar toggles: aria-pressed is the state. */
   .fc-msg__action[aria-pressed="true"] {
-    color: var(--fc-color-accent-text);
-    background-color: var(--fc-color-accent-bg-subtle);
+    color: var(--fc-color-selected-fg);
+    background-color: var(--fc-color-selected-bg);
   }
 
   .fc-msg__action:disabled,
   .fc-msg__action[aria-disabled="true"] {
-    color: var(--fc-color-text-subtle);
+    color: var(--fc-color-disabled-fg);
     background-color: transparent;
     cursor: not-allowed;
   }

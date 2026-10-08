@@ -13,6 +13,8 @@ visible. It is described in [AGENTS.md](../AGENTS.md) and referenced below.
 
 ---
 
+See [Component contracts](COMPONENT-CONTRACTS.md) for all six required documentation sections for every shipped component, including complete fixture markup and no-JS fallbacks.
+
 ## The component contract
 
 Every component in this system implements the same contract. A component that cannot meet
@@ -1358,3 +1360,120 @@ arrays of numbers; no `js-sys`. 71 parity tests compare it against the JS twin.
 One documented limitation: `order_entries_js` breaks ties by *input* order,
 because paths never cross into WASM. The caller must present entries sorted by
 path. A parity test caught this divergence and now pins the contract.
+
+
+Code surfaces clip their header and gutter backgrounds to the shared outer
+radius. The source clears the base inline-code decoration so only the enclosing
+surface owns its background and corners. A numbered surface reserves a shrinking
+source column; an optional header spans both columns. The demo's usage snippets
+use this same `fc-code` surface and `renderHighlighted`, retaining the original
+source text for selection and copying. Every demo section includes usage markup;
+its viewport-width workbench keeps a shorter measure only on introductory prose.
+
+
+## Masthead
+
+`masthead.css` provides an application header. `.fc-masthead__brand` contains
+an optional `.fc-masthead__mark`, `.fc-masthead__nav` is a list of navigation
+links, and `.fc-masthead__actions` holds existing buttons, avatars, or controls.
+The header wraps instead of hiding destinations at narrow widths. It has no
+binding or autonomous motion; child components own loading and error states.
+Current navigation reads `aria-current="page"`. Disabled links use
+`aria-disabled="true"` and omit `href`; disabled buttons use `disabled`.
+Use a page-level `<header>` for the banner landmark; a header nested within a
+section, as in the demo, belongs to that section. Give every navigation landmark
+a distinct accessible name.
+
+```html
+<header class="fc-masthead">
+  <a class="fc-masthead__brand" href="/">
+    <span class="fc-masthead__mark" aria-hidden="true">A</span>Acme
+  </a>
+  <nav aria-label="Workspace areas">
+    <ul class="fc-masthead__nav">
+      <li><a class="fc-masthead__link" href="/projects" aria-current="page">Projects</a></li>
+      <li><a class="fc-masthead__link" href="/activity">Activity</a></li>
+    </ul>
+  </nav>
+  <div class="fc-masthead__actions">
+    <button class="fc-btn fc-btn--primary" type="button">New project</button>
+  </div>
+</header>
+```
+
+The live demo's App shell section nests this header above an `fc-nav` sidebar
+and a content area. `bindNavs(document)` supplies the sidebar collapse behavior;
+the demo switches from side-by-side to stacked content when its own container
+is narrow, so the example remains usable at 400% zoom and in RTL.
+
+
+## Control groups and integrated composers
+
+`control-group.css` groups existing buttons, selects, and form controls. Give
+`.fc-control-group` `role="group"` and an accessible name; use a real
+`<fieldset>` and `<legend>` for related form fields. Each child retains its own
+Tab stop and keyboard contract. This is not a toolbar with roving focus, nor a
+tablist. `.fc-control-group__item` lets child controls shrink and wrap their text;
+`aria-pressed="true"` styles real toggle state. Applications own toggle logic.
+Use `disabled`/`aria-disabled` on each control, or a native disabled fieldset;
+putting `aria-disabled` on a wrapper alone does not disable its descendants.
+
+The default group has a subtle background and a small gap between controls.
+`--plain` removes the surface, and `--vertical` stacks items. Buttons and selects
+own hover, active, focus, disabled, loading, and error states. Groups add no
+motion, preserve child focus rings, wrap at narrow widths, and draw an edge in
+forced colors.
+
+```html
+<div class="fc-control-group" role="group" aria-label="Message tools">
+  <button class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item"
+          type="button" aria-pressed="true">Web search</button>
+  <button class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item"
+          type="button" aria-pressed="false">Research</button>
+</div>
+```
+
+`fc-composer--contained` is an optional rounded, bordered surface that integrates
+the textarea and footer controls. The default composer retains its attached-to-
+thread presentation. Place model selectors, tool groups, and attachment actions
+in `.fc-composer__tools` within `.fc-composer__row`; the send control aligns to the
+end and wraps when needed. Popovers are not clipped. The input keeps a visible
+focus ring and read-only styling, and the existing Send/Stop binding is unchanged.
+Model selection uses the existing `FutureCssSelect`; related provider/model/effort
+controls should use `FutureCssContextStrip` so their dependent state stays coherent.
+Selection and tool settings belong to the application and can be read in
+`onSubmit`. They are not implicitly sent or managed by the composer binding.
+
+```html
+<div class="fc-composer fc-composer--contained" data-fc-state="complete">
+  <label class="fc-u-visually-hidden" for="message">Message</label>
+  <textarea class="fc-composer__input" id="message" placeholder="Ask anything…"></textarea>
+  <div class="fc-composer__row">
+    <div class="fc-composer__tools">
+      <div class="fc-control-group fc-control-group--plain" role="group" aria-label="Attachments">
+        <button class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" type="button">Attach</button>
+      </div>
+      <!-- Add the named model select or tool group here. -->
+    </div>
+    <button class="fc-btn fc-btn--primary fc-composer__send" type="button">Send</button>
+  </div>
+  <p class="fc-composer__status" role="status"></p>
+</div>
+```
+
+## Typography and mixed-direction values
+
+Use `.fc-type-body-small`, `.fc-type-title`, `.fc-type-code`, `.fc-type-label`, or a named
+heading role when typography must be independent of an element's semantic role. Change
+`--fc-type-<role>` and its `-tracking` token to adopt an application ramp. Keep headings
+as real headings; a type class does not change their accessibility meaning.
+
+Wrap externally supplied mixed-direction values in `<bdi>` (preferred) or `.fc-u-bidi`:
+
+```html
+<p>Branch: <bdi>feature/new-composer</bdi></p>
+<span class="fc-u-bidi">user@example.com</span>
+```
+
+Isolation prevents a filename, identifier or user name from rearranging surrounding RTL
+text. It does not choose a writing direction for the whole component.

@@ -112,8 +112,9 @@
    * distinguishing it matters most.
    */
   .fc-git__row[data-fc-selected="true"] {
-    background-color: var(--fc-color-accent-bg-subtle);
-    box-shadow: inset 2px 0 0 0 var(--fc-color-accent-text);
+    background-color: var(--fc-color-selected-bg);
+    color: var(--fc-color-selected-fg);
+    box-shadow: inset 2px 0 0 0 var(--fc-color-selected-fg);
   }
 
   .fc-git__file-name {

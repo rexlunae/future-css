@@ -28,6 +28,7 @@ export type AcceleratorReason =
   | "unsupported-runtime"
   | "load-failed"
   | "below-threshold"
+  | "reduced-data"
   | "wasm-selected";
 
 /**
@@ -159,6 +160,8 @@ export interface AcceleratorOptions {
   baseUrl?: string;
   /** Size of the document in UTF-16 units, used by the `"auto"` heuristic. */
   documentSize?: number;
+  /** Override the browser preference for server-side rendering or app settings. */
+  reducedData?: boolean;
 }
 
 /**
@@ -178,6 +181,14 @@ export async function createAccelerator(
 
   if (!wasmSupported()) {
     return { accelerator: new JsAccelerator(), reason: "unsupported-runtime" };
+  }
+
+  const reducedData = options.reducedData ?? (
+    globalThis.matchMedia?.("(prefers-reduced-data: reduce)").matches === true ||
+    (globalThis.navigator as Navigator & { connection?: { saveData?: boolean } } | undefined)?.connection?.saveData === true
+  );
+  if (mode === "auto" && reducedData) {
+    return { accelerator: new JsAccelerator(), reason: "reduced-data" };
   }
 
   const size = options.documentSize ?? 0;

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>future-css &mdash; component demo</title>
 <link rel="stylesheet" href="/dist/future-css.css">
+<link rel="stylesheet" href="/dist/themes.css">
 <link rel="stylesheet" href="/demo/demo.css">
 </head>
 <body>
@@ -34,6 +35,8 @@
       <div class="demo-controls" role="group" aria-label="Demo settings">
         <button type="button" class="fc-btn fc-btn--subtle fc-btn--sm" data-demo-toggle="scheme"
                 aria-pressed="false"><span data-demo-label>Light</span></button>
+        <button type="button" class="fc-btn fc-btn--subtle fc-btn--sm" data-demo-toggle="contrast" aria-pressed="false">High contrast</button>
+        <button type="button" class="fc-btn fc-btn--subtle fc-btn--sm" data-demo-toggle="brand" aria-pressed="false">Forest brand</button>
         <button type="button" class="fc-btn fc-btn--subtle fc-btn--sm" data-demo-toggle="direction"
                 aria-pressed="false"><span data-demo-label>LTR</span></button>
       </div>
@@ -47,6 +50,7 @@
         <li><a href="#spinners">Spinners</a></li>
         <li><a href="#overlays">Overlays</a></li>
         <li><a href="#navigation">Navigation</a></li>
+        <li><a href="#shell">App shell</a></li>
         <li><a href="#surfaces">Cards</a></li>
         <li><a href="#editor">Editor</a></li>
         <li><a href="#table">Table</a></li>
@@ -61,6 +65,7 @@
         <li><a href="#git">Git surface</a></li>
         <li><a href="#strip">Context strip</a></li>
         <li><a href="#composer">Composer</a></li>
+        <li><a href="#control-groups">Control groups</a></li>
         <li><a href="#select">Select</a></li>
         <li><a href="#diff">Diff</a></li>
         <li><a href="#tokens">Tokens</a></li>
@@ -72,13 +77,24 @@
 
 <main id="main" class="fc-container demo-main">
 
-  <p class="demo-lede">
-    Every component below is the real thing, wired to its real bindings. Nothing here
-    is a screenshot or a static mock &mdash; the editor tracks your selection, the grid
-    navigates by keyboard, and the menu returns focus to whatever opened it. Switch the
-    theme or flip to RTL at any time; every component follows without a single
-    direction-specific rule.
-  </p>
+  <div class="demo-hero">
+    <p class="demo-eyebrow">The future-css design system</p>
+    <h2 class="demo-hero__title">Thoughtful interfaces.<br>Built on solid foundations.</h2>
+    <p class="demo-lede">
+      Clear, comfortable components for modern applications. Explore working controls,
+      rich editing, and AI conversations &mdash; with accessible states, light and dark
+      themes, and right-to-left layouts built in.
+    </p>
+    <div class="fc-cluster">
+      <a class="fc-btn fc-btn--primary" href="#buttons">Explore components <span aria-hidden="true">&darr;</span></a>
+      <a class="fc-btn fc-btn--secondary" href="#tokens">Explore tokens</a>
+    </div>
+    <ul class="demo-hero__features" aria-label="Design system foundations">
+      <li>Accessible by design</li>
+      <li>Themeable with tokens</li>
+      <li>Zero dependencies</li>
+    </ul>
+  </div>
 
   <!-- ============================ BUTTONS ============================ -->
   <section class="demo-section" id="buttons" aria-labelledby="h-buttons">
@@ -134,13 +150,13 @@
       </div>
     </div>
 
-    <div class="demo-snippet" data-demo-snippet="buttons">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">html</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="buttons">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Button markup">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>&lt;!-- Variant and size are separate classes, so they compose. --&gt;
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;!-- Variant and size are separate classes, so they compose. --&gt;
 &lt;button class="fc-btn fc-btn--primary"&gt;Save&lt;/button&gt;
 &lt;button class="fc-btn fc-btn--primary fc-btn--sm"&gt;Save&lt;/button&gt;
 
@@ -255,6 +271,96 @@
         </div>
       </form>
     </div>
+
+    <div class="demo-snippet fc-code" data-demo-snippet="forms">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Forms markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;div class="demo-panel"&gt;
+      &lt;form class="demo-form" id="demo-form" novalidate&gt;
+        &lt;div class="fc-error-summary" id="form-summary" tabindex="-1" hidden&gt;
+          &lt;h3 class="fc-error-summary__title"&gt;There is a problem&lt;/h3&gt;
+          &lt;ul class="fc-error-summary__list"&gt;
+            &lt;li&gt;&lt;a class="fc-error-summary__link" href="#f-email"&gt;Enter an email address, like ada@example.com&lt;/a&gt;&lt;/li&gt;
+          &lt;/ul&gt;
+        &lt;/div&gt;
+
+        &lt;div class="fc-field"&gt;
+          &lt;label class="fc-field__label" for="f-name"&gt;Display name&lt;/label&gt;
+          &lt;input class="fc-input" id="f-name" autocomplete="nickname" value="Ada"&gt;
+        &lt;/div&gt;
+
+        &lt;div class="fc-field"&gt;
+          &lt;label class="fc-field__label" for="f-email"&gt;Email&lt;span class="fc-field__required" aria-hidden="true"&gt;*&lt;/span&gt;&lt;/label&gt;
+          &lt;p class="fc-field__hint" id="f-email-hint"&gt;Used for sign-in. Never shown to others.&lt;/p&gt;
+          &lt;input class="fc-input" id="f-email" type="email" required autocomplete="email"
+                 aria-describedby="f-email-hint f-email-error"&gt;
+          &lt;p class="fc-field__error" id="f-email-error"&gt;&lt;/p&gt;
+        &lt;/div&gt;
+
+        &lt;div class="fc-field"&gt;
+          &lt;label class="fc-field__label" for="f-budget"&gt;Monthly budget&lt;/label&gt;
+          &lt;div class="fc-input-group"&gt;
+            &lt;span class="fc-input-group__addon" aria-hidden="true"&gt;$&lt;/span&gt;
+            &lt;input class="fc-input-group__control" id="f-budget" inputmode="decimal" value="40"&gt;
+            &lt;span class="fc-input-group__addon"&gt;USD&lt;/span&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class="fc-field"&gt;
+          &lt;label class="fc-field__label" for="f-model"&gt;Default model&lt;/label&gt;
+          &lt;select class="fc-input" id="f-model"&gt;
+            &lt;option&gt;Balanced&lt;/option&gt;
+            &lt;option&gt;Fast&lt;/option&gt;
+            &lt;option&gt;Most capable&lt;/option&gt;
+          &lt;/select&gt;
+        &lt;/div&gt;
+
+        &lt;div class="fc-field"&gt;
+          &lt;label class="fc-field__label" for="f-prompt"&gt;System prompt&lt;span class="fc-field__optional"&gt;(optional)&lt;/span&gt;&lt;/label&gt;
+          &lt;textarea class="fc-input fc-input--autosize" id="f-prompt"
+                    placeholder="Grows as you type, with no script."&gt;&lt;/textarea&gt;
+        &lt;/div&gt;
+
+        &lt;fieldset class="fc-check-group"&gt;
+          &lt;legend class="fc-check-group__legend"&gt;Notifications&lt;/legend&gt;
+          &lt;label class="fc-check"&gt;
+            &lt;input class="fc-check__input" type="checkbox" checked&gt;
+            &lt;span class="fc-check__label"&gt;When a long run finishes&lt;/span&gt;
+          &lt;/label&gt;
+          &lt;label class="fc-check"&gt;
+            &lt;input class="fc-check__input" type="checkbox"&gt;
+            &lt;span class="fc-check__label"&gt;Weekly usage summary&lt;/span&gt;
+            &lt;span class="fc-check__hint"&gt;Sent on Mondays.&lt;/span&gt;
+          &lt;/label&gt;
+          &lt;label class="fc-check"&gt;
+            &lt;input class="fc-check__input" type="checkbox" disabled&gt;
+            &lt;span class="fc-check__label"&gt;Marketing email (unavailable)&lt;/span&gt;
+          &lt;/label&gt;
+        &lt;/fieldset&gt;
+
+        &lt;fieldset class="fc-check-group fc-check-group--inline"&gt;
+          &lt;legend class="fc-check-group__legend"&gt;Density&lt;/legend&gt;
+          &lt;label class="fc-check"&gt;&lt;input class="fc-check__input" type="radio" name="density" checked&gt;&lt;span class="fc-check__label"&gt;Comfortable&lt;/span&gt;&lt;/label&gt;
+          &lt;label class="fc-check"&gt;&lt;input class="fc-check__input" type="radio" name="density"&gt;&lt;span class="fc-check__label"&gt;Compact&lt;/span&gt;&lt;/label&gt;
+        &lt;/fieldset&gt;
+
+        &lt;label class="fc-switch-row"&gt;
+          &lt;span class="fc-switch-row__text"&gt;
+            &lt;span class="fc-switch-row__label"&gt;Show reasoning by default&lt;/span&gt;
+            &lt;span class="fc-switch-row__hint"&gt;Expands the thinking trace on every answer.&lt;/span&gt;
+          &lt;/span&gt;
+          &lt;input class="fc-switch" type="checkbox" role="switch" checked&gt;
+        &lt;/label&gt;
+
+        &lt;div class="fc-cluster"&gt;
+          &lt;button type="submit" class="fc-btn fc-btn--primary"&gt;Save settings&lt;/button&gt;
+          &lt;button type="reset" class="fc-btn fc-btn--ghost"&gt;Reset&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/form&gt;
+    &lt;/div&gt;</code></pre>
+    </div>
   </section>
 
   <!-- ============================ FEEDBACK ============================ -->
@@ -346,6 +452,91 @@
         <button type="button" class="fc-btn fc-btn--secondary" data-demo-toast="danger">Show error toast</button>
       </div>
     </div>
+
+    <div class="demo-snippet fc-code" data-demo-snippet="feedback">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Feedback markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;div class="demo-panel fc-stack"&gt;
+      &lt;div class="fc-alert fc-alert--info"&gt;
+        &lt;span class="fc-alert__icon" aria-hidden="true"&gt;i&lt;/span&gt;
+        &lt;div class="fc-alert__content"&gt;
+          &lt;p class="fc-alert__title"&gt;New models available&lt;/p&gt;
+          &lt;p class="fc-alert__body"&gt;Pick one from the context strip; your drafts are kept.&lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class="fc-alert fc-alert--success"&gt;
+        &lt;span class="fc-alert__icon" aria-hidden="true"&gt;&amp;#10003;&lt;/span&gt;
+        &lt;div class="fc-alert__content"&gt;&lt;p class="fc-alert__body"&gt;Settings saved.&lt;/p&gt;&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class="fc-alert fc-alert--warning" role="status"&gt;
+        &lt;span class="fc-alert__icon" aria-hidden="true"&gt;!&lt;/span&gt;
+        &lt;div class="fc-alert__content"&gt;
+          &lt;p class="fc-alert__title"&gt;Context window 92% full&lt;/p&gt;
+          &lt;p class="fc-alert__body"&gt;Older messages will be summarised on the next turn.&lt;/p&gt;
+          &lt;div class="fc-alert__actions"&gt;
+            &lt;button type="button" class="fc-btn fc-btn--secondary fc-btn--sm"&gt;Start a new chat&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;button type="button" class="fc-alert__dismiss" aria-label="Dismiss warning"&gt;&amp;#10005;&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div class="fc-alert fc-alert--danger"&gt;
+        &lt;span class="fc-alert__icon" aria-hidden="true"&gt;&amp;#10005;&lt;/span&gt;
+        &lt;div class="fc-alert__content"&gt;
+          &lt;p class="fc-alert__title"&gt;The tool call failed&lt;/p&gt;
+          &lt;p class="fc-alert__body"&gt;The sandbox ran out of memory after 41s.&lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;hr class="demo-rule"&gt;
+
+      &lt;div class="fc-cluster"&gt;
+        &lt;span class="fc-badge"&gt;Draft&lt;/span&gt;
+        &lt;span class="fc-badge fc-badge--accent"&gt;Beta&lt;/span&gt;
+        &lt;span class="fc-badge fc-badge--success"&gt;&lt;span class="fc-badge__dot" aria-hidden="true"&gt;&lt;/span&gt;Passing&lt;/span&gt;
+        &lt;span class="fc-badge fc-badge--warning"&gt;Rate limited&lt;/span&gt;
+        &lt;span class="fc-badge fc-badge--danger"&gt;Failed&lt;/span&gt;
+        &lt;span class="fc-badge fc-badge--info fc-badge--outline"&gt;Read only&lt;/span&gt;
+        &lt;span class="fc-badge fc-badge--solid fc-badge--count" aria-label="3 unread"&gt;3&lt;/span&gt;
+        &lt;span&gt;Press &lt;kbd class="fc-kbd"&gt;Enter&lt;/kbd&gt; to send&lt;/span&gt;
+      &lt;/div&gt;
+
+      &lt;div class="fc-cluster" role="group" aria-label="Filter by language"&gt;
+        &lt;button type="button" class="fc-tag" aria-pressed="true"&gt;TypeScript&lt;/button&gt;
+        &lt;button type="button" class="fc-tag" aria-pressed="false"&gt;Rust&lt;/button&gt;
+        &lt;button type="button" class="fc-tag" aria-pressed="false"&gt;CSS&lt;/button&gt;
+        &lt;span class="fc-tag"&gt;&lt;span class="fc-tag__label"&gt;reviewer: ada&lt;/span&gt;
+          &lt;button type="button" class="fc-tag__remove" aria-label="Remove reviewer: ada"&gt;&amp;#215;&lt;/button&gt;&lt;/span&gt;
+      &lt;/div&gt;
+
+      &lt;hr class="demo-rule"&gt;
+
+      &lt;div class="fc-cluster"&gt;
+        &lt;span role="status"&gt;&lt;span class="fc-spinner" aria-hidden="true"&gt;&lt;/span&gt;
+          &lt;span class="fc-u-visually-hidden"&gt;Loading&lt;/span&gt;&lt;/span&gt;
+        &lt;progress class="fc-progress" value="64" max="100" aria-label="Upload progress" style="max-inline-size: 12rem"&gt;&lt;/progress&gt;
+        &lt;progress class="fc-progress" aria-label="Indexing" style="max-inline-size: 12rem"&gt;&lt;/progress&gt;
+      &lt;/div&gt;
+
+      &lt;div class="demo-skeleton" aria-busy="true" aria-label="Loading message"&gt;
+        &lt;span class="fc-skeleton fc-skeleton--circle"&gt;&lt;/span&gt;
+        &lt;div&gt;
+          &lt;span class="fc-skeleton fc-skeleton--text"&gt;&lt;/span&gt;
+          &lt;span class="fc-skeleton fc-skeleton--text"&gt;&lt;/span&gt;
+          &lt;span class="fc-skeleton fc-skeleton--text"&gt;&lt;/span&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;hr class="demo-rule"&gt;
+
+      &lt;div class="fc-cluster"&gt;
+        &lt;button type="button" class="fc-btn fc-btn--secondary" data-demo-toast="success"&gt;Show success toast&lt;/button&gt;
+        &lt;button type="button" class="fc-btn fc-btn--secondary" data-demo-toast="action"&gt;Toast with undo&lt;/button&gt;
+        &lt;button type="button" class="fc-btn fc-btn--secondary" data-demo-toast="danger"&gt;Show error toast&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;</code></pre>
+    </div>
   </section>
 
   <!-- ============================ SPINNERS ============================ -->
@@ -395,6 +586,51 @@
         <span>Inline, in a sentence: <span class="fc-spinner fc-spinner--xs fc-spinner--current" aria-hidden="true"></span> saving&hellip;</span>
         <span class="fc-shimmer-text">Running tests</span>
       </div>
+    </div>
+
+    <div class="demo-snippet fc-code" data-demo-snippet="spinners">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Spinners markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;div class="demo-panel fc-stack"&gt;
+      &lt;ul class="demo-spinners"&gt;
+        &lt;li&gt;&lt;span class="fc-spinner fc-spinner--lg" aria-hidden="true"&gt;&lt;/span&gt;&lt;span&gt;Ring&lt;br&gt;&lt;small&gt;loading&lt;/small&gt;&lt;/span&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;span class="fc-spinner fc-spinner--arc fc-spinner--lg" aria-hidden="true"&gt;&lt;/span&gt;&lt;span&gt;Arc&lt;br&gt;&lt;small&gt;loading, softer&lt;/small&gt;&lt;/span&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;span class="fc-spinner fc-spinner--dots fc-spinner--lg" aria-hidden="true"&gt;&lt;span&gt;&lt;/span&gt;&lt;span&gt;&lt;/span&gt;&lt;span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span&gt;Dots&lt;br&gt;&lt;small&gt;typing&lt;/small&gt;&lt;/span&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;span class="fc-spinner fc-spinner--pulse fc-spinner--lg" aria-hidden="true"&gt;&lt;/span&gt;&lt;span&gt;Pulse&lt;br&gt;&lt;small&gt;live, listening&lt;/small&gt;&lt;/span&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;span class="fc-spinner fc-spinner--bars fc-spinner--lg" aria-hidden="true"&gt;&lt;span&gt;&lt;/span&gt;&lt;span&gt;&lt;/span&gt;&lt;span&gt;&lt;/span&gt;&lt;span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span&gt;Bars&lt;br&gt;&lt;small&gt;streaming&lt;/small&gt;&lt;/span&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;span class="fc-spinner fc-spinner--orbit fc-spinner--lg" aria-hidden="true"&gt;&lt;/span&gt;&lt;span&gt;Orbit&lt;br&gt;&lt;small&gt;indexing, syncing&lt;/small&gt;&lt;/span&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;span class="fc-spinner fc-spinner--sparkle fc-spinner--lg" aria-hidden="true"&gt;&lt;/span&gt;&lt;span&gt;Sparkle&lt;br&gt;&lt;small&gt;thinking&lt;/small&gt;&lt;/span&gt;&lt;/li&gt;
+      &lt;/ul&gt;
+
+      &lt;hr class="demo-rule"&gt;
+
+      &lt;div class="fc-stack fc-stack--2" id="demo-agent-steps"&gt;
+        &lt;div class="fc-agent-status" data-fc-kind="agent-status" data-fc-state="complete"&gt;
+          &lt;span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"&gt;&lt;/span&gt;
+          &lt;span class="fc-agent-status__label" role="status"&gt;Read 14 files&lt;/span&gt;
+          &lt;span class="fc-agent-status__meta"&gt;2s&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class="fc-agent-status" data-fc-kind="agent-status" data-fc-state="running" id="demo-agent-live"&gt;
+          &lt;span class="fc-spinner fc-spinner--sparkle fc-spinner--sm" aria-hidden="true"&gt;&lt;/span&gt;
+          &lt;span class="fc-agent-status__label" role="status"&gt;Searching 12 sources&lt;/span&gt;
+          &lt;span class="fc-agent-status__meta" data-demo-elapsed&gt;0s&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class="fc-msg" data-fc-role="assistant" data-fc-state="pending"&gt;
+          &lt;span class="fc-cluster fc-cluster--2"&gt;
+            &lt;span class="fc-spinner fc-spinner--dots fc-spinner--muted" aria-hidden="true"&gt;&lt;span&gt;&lt;/span&gt;&lt;span&gt;&lt;/span&gt;&lt;span&gt;&lt;/span&gt;&lt;/span&gt;
+            &lt;span class="fc-u-text-muted"&gt;Assistant is typing&lt;/span&gt;
+          &lt;/span&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class="fc-cluster"&gt;
+        &lt;button type="button" class="fc-btn fc-btn--secondary" id="demo-agent-next"&gt;Next step&lt;/button&gt;
+        &lt;span&gt;Inline, in a sentence: &lt;span class="fc-spinner fc-spinner--xs fc-spinner--current" aria-hidden="true"&gt;&lt;/span&gt; saving&amp;hellip;&lt;/span&gt;
+        &lt;span class="fc-shimmer-text"&gt;Running tests&lt;/span&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;</code></pre>
     </div>
   </section>
 
@@ -455,6 +691,59 @@
           inline end, so it opens on the left in RTL with no extra rule.</p>
       </div>
     </dialog>
+
+    <div class="demo-snippet fc-code" data-demo-snippet="overlays">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Overlays markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;div class="demo-panel fc-cluster"&gt;
+      &lt;button type="button" class="fc-btn fc-btn--danger" data-demo-open="demo-dialog"&gt;Delete chat&amp;hellip;&lt;/button&gt;
+      &lt;button type="button" class="fc-btn fc-btn--secondary" data-demo-open="demo-sheet"&gt;Open run inspector&lt;/button&gt;
+      &lt;button type="button" class="fc-btn fc-btn--secondary" popovertarget="demo-popover"&gt;Sampling&lt;/button&gt;
+
+      &lt;span class="fc-tooltip"&gt;
+        &lt;button type="button" class="fc-btn fc-btn--ghost fc-btn--icon" aria-label="Copy"&gt;&amp;#10697;&lt;/button&gt;
+        &lt;span class="fc-tooltip__bubble"&gt;Copy to clipboard&lt;/span&gt;
+      &lt;/span&gt;
+
+      &lt;div class="fc-popover" id="demo-popover" popover&gt;
+        &lt;p class="fc-popover__title"&gt;Sampling&lt;/p&gt;
+        &lt;div class="fc-field"&gt;
+          &lt;label class="fc-field__label" for="p-temp"&gt;Temperature&lt;/label&gt;
+          &lt;input class="fc-input fc-input--sm" id="p-temp" type="number" step="0.1" min="0" max="2" value="0.7"&gt;
+        &lt;/div&gt;
+        &lt;div class="fc-popover__footer"&gt;
+          &lt;button type="button" class="fc-btn fc-btn--primary fc-btn--sm" popovertarget="demo-popover" popovertargetaction="hide"&gt;Done&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;dialog class="fc-dialog fc-dialog--sm" id="demo-dialog" aria-labelledby="dlg-title" aria-describedby="dlg-desc"&gt;
+      &lt;header class="fc-dialog__header"&gt;
+        &lt;h3 class="fc-dialog__title" id="dlg-title"&gt;Delete this chat?&lt;/h3&gt;
+      &lt;/header&gt;
+      &lt;div class="fc-dialog__body" id="dlg-desc"&gt;
+        The conversation and its 14 attachments will be removed for everyone. This cannot be undone.
+      &lt;/div&gt;
+      &lt;footer class="fc-dialog__footer"&gt;
+        &lt;button type="button" class="fc-btn fc-btn--secondary" data-demo-close autofocus&gt;Cancel&lt;/button&gt;
+        &lt;button type="button" class="fc-btn fc-btn--danger" data-demo-close&gt;Delete&lt;/button&gt;
+      &lt;/footer&gt;
+    &lt;/dialog&gt;
+
+    &lt;dialog class="fc-dialog fc-dialog--sheet" id="demo-sheet" aria-labelledby="sheet-title"&gt;
+      &lt;header class="fc-dialog__header"&gt;
+        &lt;h3 class="fc-dialog__title" id="sheet-title"&gt;Run inspector&lt;/h3&gt;
+        &lt;button type="button" class="fc-dialog__close" data-demo-close aria-label="Close run inspector"&gt;&amp;#10005;&lt;/button&gt;
+      &lt;/header&gt;
+      &lt;div class="fc-dialog__body fc-stack"&gt;
+        &lt;div class="fc-cluster"&gt;&lt;span class="fc-badge fc-badge--success"&gt;complete&lt;/span&gt;&lt;span class="fc-badge"&gt;4 tool calls&lt;/span&gt;&lt;/div&gt;
+        &lt;p&gt;A side sheet is the same element as a dialog with a different geometry. It docks to the
+          inline end, so it opens on the left in RTL with no extra rule.&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/dialog&gt;</code></pre>
+    </div>
   </section>
 
   <!-- =========================== NAVIGATION =========================== -->
@@ -552,9 +841,178 @@
         <p class="demo-status" id="nav-status" role="status"></p>
       </div>
     </div>
+
+    <div class="demo-snippet fc-code" data-demo-snippet="navigation">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Navigation markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;div class="demo-panel fc-stack"&gt;
+      &lt;nav class="fc-breadcrumb" aria-label="Breadcrumb"&gt;
+        &lt;ol class="fc-breadcrumb__list"&gt;
+          &lt;li class="fc-breadcrumb__item"&gt;&lt;a class="fc-breadcrumb__link" href="#navigation"&gt;Projects&lt;/a&gt;&lt;/li&gt;
+          &lt;li class="fc-breadcrumb__item"&gt;&lt;a class="fc-breadcrumb__link" href="#navigation"&gt;future-css&lt;/a&gt;&lt;/li&gt;
+          &lt;li class="fc-breadcrumb__item"&gt;&lt;a class="fc-breadcrumb__link" aria-current="page"&gt;Navigation&lt;/a&gt;&lt;/li&gt;
+        &lt;/ol&gt;
+      &lt;/nav&gt;
+
+      &lt;div class="fc-tabs" id="demo-tabs"&gt;
+        &lt;div class="fc-tabs__list" role="tablist" aria-label="Answer view"&gt;
+          &lt;button type="button" class="fc-tabs__tab" role="tab" aria-selected="true"&gt;Preview&lt;/button&gt;
+          &lt;button type="button" class="fc-tabs__tab" role="tab"&gt;Code&lt;/button&gt;
+          &lt;button type="button" class="fc-tabs__tab" role="tab"&gt;Problems &lt;span class="fc-tabs__count"&gt;2&lt;/span&gt;&lt;/button&gt;
+          &lt;button type="button" class="fc-tabs__tab" role="tab" aria-disabled="true"&gt;Deploy&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div class="fc-tabs__panel"&gt;The rendered answer.&lt;/div&gt;
+        &lt;div class="fc-tabs__panel"&gt;The source behind it.&lt;/div&gt;
+        &lt;div class="fc-tabs__panel"&gt;Two lint warnings.&lt;/div&gt;
+        &lt;div class="fc-tabs__panel"&gt;Deploys are disabled for this project.&lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class="fc-tabs" id="demo-segmented"&gt;
+        &lt;div class="fc-tabs__list fc-tabs__list--segmented" role="tablist" aria-label="Range"&gt;
+          &lt;button type="button" class="fc-tabs__tab" role="tab" aria-selected="true"&gt;Day&lt;/button&gt;
+          &lt;button type="button" class="fc-tabs__tab" role="tab"&gt;Week&lt;/button&gt;
+          &lt;button type="button" class="fc-tabs__tab" role="tab"&gt;Month&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div class="fc-tabs__panel"&gt;Usage today.&lt;/div&gt;
+        &lt;div class="fc-tabs__panel"&gt;Usage this week.&lt;/div&gt;
+        &lt;div class="fc-tabs__panel"&gt;Usage this month.&lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;nav class="fc-pagination" aria-label="Pagination"&gt;
+        &lt;ul class="fc-pagination__list"&gt;
+          &lt;li&gt;&lt;a class="fc-pagination__link fc-pagination__link--prev" aria-disabled="true"&gt;Previous&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a class="fc-pagination__link" href="#navigation" aria-current="page"&gt;1&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a class="fc-pagination__link" href="#navigation"&gt;2&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a class="fc-pagination__link" href="#navigation"&gt;3&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;span class="fc-pagination__gap" aria-hidden="true"&gt;&amp;hellip;&lt;/span&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a class="fc-pagination__link" href="#navigation"&gt;12&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a class="fc-pagination__link fc-pagination__link--next" href="#navigation"&gt;Next&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/nav&gt;
+    &lt;/div&gt;
+
+    &lt;div class="demo-panel demo-nav-frame" id="demo-nav-frame"&gt;
+      &lt;nav class="fc-nav" id="demo-nav" aria-label="Workspace"&gt;
+        &lt;div class="fc-nav__header"&gt;
+          &lt;span class="fc-nav__title"&gt;Workspace&lt;/span&gt;
+          &lt;button class="fc-nav__toggle" type="button" aria-label="Sidebar" aria-expanded="true"&gt;&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;ul class="fc-nav__list"&gt;
+          &lt;li&gt;&lt;a class="fc-nav__link" href="#navigation" aria-current="page"&gt;&lt;svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"&gt;&lt;path d="M3 4h14v9H8l-4 3v-3H3z"/&gt;&lt;/svg&gt;&lt;span class="fc-nav__label"&gt;Chats&lt;/span&gt;&lt;span class="fc-nav__meta"&gt;3&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;
+            &lt;a class="fc-nav__link" href="#navigation" aria-current="true"&gt;&lt;svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"&gt;&lt;path d="M2 5h6l2 2h8v9H2z"/&gt;&lt;/svg&gt;&lt;span class="fc-nav__label"&gt;Projects&lt;/span&gt;&lt;/a&gt;
+            &lt;ul class="fc-nav__list fc-nav__list--nested"&gt;
+              &lt;li&gt;&lt;a class="fc-nav__link" href="#navigation"&gt;&lt;span class="fc-nav__label"&gt;future-css&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+              &lt;li&gt;&lt;a class="fc-nav__link" href="#navigation"&gt;&lt;span class="fc-nav__label"&gt;A project whose name is long enough to wrap&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+            &lt;/ul&gt;
+          &lt;/li&gt;
+          &lt;li&gt;&lt;a class="fc-nav__link" aria-disabled="true"&gt;&lt;svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"&gt;&lt;path d="M2 5h16v10H2zM2 8h16"/&gt;&lt;/svg&gt;&lt;span class="fc-nav__label"&gt;Billing&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;details class="fc-nav__group" open&gt;
+          &lt;summary class="fc-nav__group-label"&gt;Recent&lt;/summary&gt;
+          &lt;ul class="fc-nav__list"&gt;
+            &lt;li&gt;&lt;a class="fc-nav__link" href="#navigation"&gt;&lt;svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"&gt;&lt;path d="M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM10 6v4l3 2"/&gt;&lt;/svg&gt;&lt;span class="fc-nav__label"&gt;Release notes&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+          &lt;/ul&gt;
+        &lt;/details&gt;
+        &lt;div class="fc-nav__footer"&gt;
+          &lt;ul class="fc-nav__list"&gt;
+            &lt;li&gt;&lt;a class="fc-nav__link" href="#navigation"&gt;&lt;svg class="fc-nav__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"&gt;&lt;path d="M10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM10 2v2M10 16v2M2 10h2M16 10h2M4.3 4.3l1.4 1.4M14.3 14.3l1.4 1.4M4.3 15.7l1.4-1.4M14.3 5.7l1.4-1.4"/&gt;&lt;/svg&gt;&lt;span class="fc-nav__label"&gt;Settings&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+          &lt;/ul&gt;
+        &lt;/div&gt;
+      &lt;/nav&gt;
+      &lt;div class="demo-nav-frame__main"&gt;
+        &lt;p class="demo-note"&gt;
+          The sidebar is links, so Tab walks it and nothing else is needed. The toggle's
+          &lt;code&gt;aria-expanded&lt;/code&gt; is the only collapse state: the rail reads it through
+          &lt;code&gt;:has()&lt;/code&gt;, and labels stay as each link's accessible name. Flip to RTL
+          and the sidebar, its current-page bar and the toggle all move to the other edge.
+        &lt;/p&gt;
+        &lt;p class="demo-status" id="nav-status" role="status"&gt;&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;</code></pre>
+    </div>
   </section>
 
   <!-- ============================= SURFACES ============================= -->
+  <section class="demo-section" id="shell" aria-labelledby="h-shell">
+    <div class="demo-section__head"><h2 class="demo-h2" id="h-shell">Masthead &amp; application sidebar</h2><p class="demo-note">A nested app shell using the shipped masthead and navigation sidebar. The header wraps naturally; the sidebar uses its real collapse binding.</p></div>
+    <div class="demo-shell">
+<header class="fc-masthead">
+  <a class="fc-masthead__brand" href="#shell">
+    <span class="fc-masthead__mark" aria-hidden="true">fc</span>
+    Acme workspace
+  </a>
+  <nav aria-label="Workspace areas">
+    <ul class="fc-masthead__nav">
+      <li><a class="fc-masthead__link" href="#shell" aria-current="page">Workspace</a></li>
+      <li><a class="fc-masthead__link" href="#table">Activity</a></li>
+      <li><a class="fc-masthead__link" aria-disabled="true">Admin</a></li>
+    </ul>
+  </nav>
+  <div class="fc-masthead__actions">
+    <a class="fc-btn fc-btn--secondary fc-btn--sm" href="#composer">New message</a>
+    <span class="fc-avatar fc-avatar--sm" role="img" aria-label="Ada Lovelace">AL</span>
+  </div>
+</header>
+<div class="demo-shell__body">
+<nav class="fc-nav" id="shell-nav" aria-label="Application sidebar">
+  <div class="fc-nav__header">
+    <span class="fc-nav__title">Your workspace</span>
+    <button class="fc-nav__toggle" type="button" aria-label="Application sidebar" aria-expanded="true" aria-controls="shell-nav"></button>
+  </div>
+  <ul class="fc-nav__list">
+    <li><a class="fc-nav__link" href="#shell" aria-current="page"><span class="fc-nav__icon" aria-hidden="true">◈</span><span class="fc-nav__label">Overview</span></a></li>
+    <li><a class="fc-nav__link" href="#chat"><span class="fc-nav__icon" aria-hidden="true">▤</span><span class="fc-nav__label">Conversations</span><span class="fc-nav__meta">3</span></a></li>
+    <li><a class="fc-nav__link" href="#git"><span class="fc-nav__icon" aria-hidden="true">⌘</span><span class="fc-nav__label">Projects</span></a></li>
+  </ul>
+  <div class="fc-nav__footer"><a class="fc-nav__link" href="#forms"><span class="fc-nav__icon" aria-hidden="true">⚙</span><span class="fc-nav__label">Settings</span></a></div>
+</nav>
+<div class="demo-shell__content">
+  <p class="demo-eyebrow">Workspace / Overview</p>
+  <h3>Good morning, Ada.</h3>
+  <p class="demo-note">A little structure, a lot of room to work. Collapse the sidebar, switch themes, or flip the direction to explore the shell.</p>
+  <div class="fc-grid-auto">
+    <article class="fc-card"><div class="fc-card__header"><h4 class="fc-card__title">Recent conversations</h4></div><div class="fc-card__body"><p>Design review and release planning, all in one workspace.</p></div><div class="fc-card__footer"><a class="fc-btn fc-btn--secondary" href="#chat">Open conversations</a></div></article>
+    <article class="fc-card"><div class="fc-card__header"><h4 class="fc-card__title">Project activity</h4></div><div class="fc-card__body"><p>Review changes and keep your next release moving.</p></div><div class="fc-card__footer"><a class="fc-btn fc-btn--secondary" href="#git">Review changes</a></div></article>
+  </div>
+</div>
+</div>
+</div>
+    <div class="demo-snippet fc-code" data-demo-snippet="shell"><div class="fc-code__bar"><span class="fc-code__lang">html</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="App shell markup">Copy</button></div><pre class="demo-snippet__pre"><code class="fc-code__source">&lt;header class="fc-masthead"&gt;
+  &lt;a class="fc-masthead__brand" href="#shell"&gt;
+    &lt;span class="fc-masthead__mark" aria-hidden="true"&gt;fc&lt;/span&gt;
+    Acme workspace
+  &lt;/a&gt;
+  &lt;nav aria-label="Workspace areas"&gt;
+    &lt;ul class="fc-masthead__nav"&gt;
+      &lt;li&gt;&lt;a class="fc-masthead__link" href="#shell" aria-current="page"&gt;Workspace&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a class="fc-masthead__link" href="#table"&gt;Activity&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a class="fc-masthead__link" aria-disabled="true"&gt;Admin&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/nav&gt;
+  &lt;div class="fc-masthead__actions"&gt;
+    &lt;a class="fc-btn fc-btn--secondary fc-btn--sm" href="#composer"&gt;New message&lt;/a&gt;
+    &lt;span class="fc-avatar fc-avatar--sm" role="img" aria-label="Ada Lovelace"&gt;AL&lt;/span&gt;
+  &lt;/div&gt;
+&lt;/header&gt;
+&lt;nav class="fc-nav" id="shell-nav" aria-label="Application sidebar"&gt;
+  &lt;div class="fc-nav__header"&gt;
+    &lt;span class="fc-nav__title"&gt;Your workspace&lt;/span&gt;
+    &lt;button class="fc-nav__toggle" type="button" aria-label="Application sidebar" aria-expanded="true" aria-controls="shell-nav"&gt;&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;ul class="fc-nav__list"&gt;
+    &lt;li&gt;&lt;a class="fc-nav__link" href="#shell" aria-current="page"&gt;&lt;span class="fc-nav__icon" aria-hidden="true"&gt;◈&lt;/span&gt;&lt;span class="fc-nav__label"&gt;Overview&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a class="fc-nav__link" href="#chat"&gt;&lt;span class="fc-nav__icon" aria-hidden="true"&gt;▤&lt;/span&gt;&lt;span class="fc-nav__label"&gt;Conversations&lt;/span&gt;&lt;span class="fc-nav__meta"&gt;3&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a class="fc-nav__link" href="#git"&gt;&lt;span class="fc-nav__icon" aria-hidden="true"&gt;⌘&lt;/span&gt;&lt;span class="fc-nav__label"&gt;Projects&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+  &lt;/ul&gt;
+  &lt;div class="fc-nav__footer"&gt;&lt;a class="fc-nav__link" href="#forms"&gt;&lt;span class="fc-nav__icon" aria-hidden="true"&gt;⚙&lt;/span&gt;&lt;span class="fc-nav__label"&gt;Settings&lt;/span&gt;&lt;/a&gt;&lt;/div&gt;
+&lt;/nav&gt;</code></pre></div>
+    <div class="demo-snippet fc-code" data-demo-snippet="shell-js"><div class="fc-code__bar"><span class="fc-code__lang">js</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Sidebar wiring">Copy</button></div><pre class="demo-snippet__pre"><code class="fc-code__source">import { bindNavs } from "future-css/nav";
+bindNavs(document);</code></pre></div>
+  </section>
+
   <section class="demo-section" id="surfaces" aria-labelledby="h-surfaces">
     <div class="demo-section__head">
       <h2 class="demo-h2" id="h-surfaces">Cards and surfaces</h2>
@@ -647,6 +1105,95 @@
         </div>
       </div>
     </div>
+
+    <div class="demo-snippet fc-code" data-demo-snippet="surfaces">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Cards and surfaces markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;div class="demo-panel fc-stack"&gt;
+      &lt;div class="fc-grid-auto"&gt;
+        &lt;article class="fc-card fc-card--elevated"&gt;
+          &lt;div class="fc-card__header"&gt;
+            &lt;span class="fc-avatar fc-avatar--square" aria-hidden="true"&gt;&amp;#10022;&lt;/span&gt;
+            &lt;div class="fc-card__heading"&gt;
+              &lt;h3 class="fc-card__title"&gt;&lt;a class="fc-card__link" href="#surfaces"&gt;Research agent&lt;/a&gt;&lt;/h3&gt;
+              &lt;p class="fc-card__subtitle"&gt;Reads the web, cites sources&lt;/p&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class="fc-card__body"&gt;&lt;p&gt;The whole card is clickable; only the title is the link.&lt;/p&gt;&lt;/div&gt;
+          &lt;div class="fc-card__footer"&gt;
+            &lt;span class="fc-badge fc-badge--success"&gt;Ready&lt;/span&gt;
+          &lt;/div&gt;
+        &lt;/article&gt;
+
+        &lt;label class="fc-card"&gt;
+          &lt;div class="fc-card__header"&gt;
+            &lt;div class="fc-card__heading"&gt;
+              &lt;span class="fc-card__title"&gt;Team plan&lt;/span&gt;
+              &lt;span class="fc-card__subtitle"&gt;Shared projects and admin controls&lt;/span&gt;
+            &lt;/div&gt;
+            &lt;input type="radio" name="demo-plan" class="fc-check__input" checked&gt;
+          &lt;/div&gt;
+          &lt;div class="fc-card__body"&gt;&lt;p&gt;Selected state comes from the radio inside.&lt;/p&gt;&lt;/div&gt;
+        &lt;/label&gt;
+
+        &lt;label class="fc-card"&gt;
+          &lt;div class="fc-card__header"&gt;
+            &lt;div class="fc-card__heading"&gt;
+              &lt;span class="fc-card__title"&gt;Personal plan&lt;/span&gt;
+              &lt;span class="fc-card__subtitle"&gt;One seat&lt;/span&gt;
+            &lt;/div&gt;
+            &lt;input type="radio" name="demo-plan" class="fc-check__input"&gt;
+          &lt;/div&gt;
+          &lt;div class="fc-card__body"&gt;&lt;p&gt;A large target for a single choice.&lt;/p&gt;&lt;/div&gt;
+        &lt;/label&gt;
+      &lt;/div&gt;
+
+      &lt;article class="fc-card"&gt;
+        &lt;div class="fc-card__layout"&gt;
+          &lt;div class="fc-card__media demo-media" aria-hidden="true"&gt;&lt;/div&gt;
+          &lt;div&gt;
+            &lt;div class="fc-card__header"&gt;
+              &lt;div class="fc-card__heading"&gt;
+                &lt;h3 class="fc-card__title"&gt;Container-aware layout&lt;/h3&gt;
+                &lt;p class="fc-card__subtitle"&gt;Resize the window: the switch follows this card's width.&lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class="fc-card__body"&gt;&lt;p&gt;Put the same card in a sidebar and it stacks, at any viewport size.&lt;/p&gt;&lt;/div&gt;
+            &lt;div class="fc-card__footer fc-card__footer--divided"&gt;
+              &lt;div class="fc-avatar-group" aria-label="Shared with 3 people" role="img"&gt;
+                &lt;span class="fc-avatar fc-avatar--sm"&gt;AL&lt;/span&gt;
+                &lt;span class="fc-avatar fc-avatar--sm fc-avatar--neutral"&gt;GH&lt;/span&gt;
+                &lt;span class="fc-avatar fc-avatar--sm"&gt;KJ&lt;/span&gt;
+              &lt;/div&gt;
+              &lt;button type="button" class="fc-btn fc-btn--secondary fc-btn--sm"&gt;Share&lt;/button&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/article&gt;
+
+      &lt;div&gt;
+        &lt;details class="fc-disclosure" name="demo-faq" open&gt;
+          &lt;summary class="fc-disclosure__summary"&gt;Does this need JavaScript?&lt;/summary&gt;
+          &lt;div class="fc-disclosure__content"&gt;No. The disclosure is a details element, and the accordion behaviour comes from the shared name attribute.&lt;/div&gt;
+        &lt;/details&gt;
+        &lt;details class="fc-disclosure" name="demo-faq"&gt;
+          &lt;summary class="fc-disclosure__summary"&gt;Does find-in-page reach closed sections?&lt;/summary&gt;
+          &lt;div class="fc-disclosure__content"&gt;Yes. The browser opens the section that contains the match.&lt;/div&gt;
+        &lt;/details&gt;
+      &lt;/div&gt;
+
+      &lt;div class="fc-card fc-card--subtle"&gt;
+        &lt;div class="fc-empty fc-empty--compact"&gt;
+          &lt;div class="fc-empty__icon" aria-hidden="true"&gt;&amp;#9906;&lt;/div&gt;
+          &lt;h3 class="fc-empty__title"&gt;No chats match &amp;ldquo;quarterly&amp;rdquo;&lt;/h3&gt;
+          &lt;p class="fc-empty__body"&gt;Try a shorter search, or look in archived chats.&lt;/p&gt;
+          &lt;div class="fc-empty__actions"&gt;&lt;button type="button" class="fc-btn fc-btn--secondary fc-btn--sm"&gt;Clear search&lt;/button&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;</code></pre>
+    </div>
   </section>
 
   <!-- ============================ EDITOR ============================ -->
@@ -709,13 +1256,13 @@
       Ready. The bindings are plain TypeScript &mdash; no build step, no bundler, no WASM.
     </p>
 
-    <div class="demo-snippet" data-demo-snippet="editor">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">js</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="editor">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">js</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Editor wiring">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>import { FutureCssEditor } from "future-css/editor";
+      <pre class="demo-snippet__pre"><code class="fc-code__source">import { FutureCssEditor } from "future-css/editor";
 
 const editor = new FutureCssEditor({
   root: "#editor-root",
@@ -738,13 +1285,13 @@ const editor = new FutureCssEditor({
 editor.applyMark("bold");</code></pre>
     </div>
 
-    <div class="demo-snippet" data-demo-snippet="editor-markup">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">html</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="editor-markup">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Editor markup">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>&lt;div class="fc-editor"&gt;
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;div class="fc-editor"&gt;
   &lt;div class="fc-toolbar" role="toolbar" aria-label="Formatting"&gt;
     &lt;!-- The glyph is decorative; the name is real text. --&gt;
     &lt;button class="fc-toolbar__item" data-fc-mark="bold" aria-pressed="false"&gt;
@@ -802,6 +1349,40 @@ editor.applyMark("bold");</code></pre>
       <div class="fc-dl__item"><dt>Duration</dt><dd class="fc-dl__num">14.2 s</dd></div>
       <div class="fc-dl__item"><dt>Commit</dt><dd><code>9f2c1e04b7a3d58e6f1c2b9a0d4e7f3c8b1a6d5e</code></dd></div>
     </dl>
+
+    <div class="demo-snippet fc-code" data-demo-snippet="table">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Table and description list markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;div class="fc-table-wrap" role="region" aria-labelledby="demo-table-cap" tabindex="0"&gt;
+      &lt;table class="fc-table fc-table--sticky fc-table--striped" id="demo-table"&gt;
+        &lt;caption id="demo-table-cap"&gt;Agent runs&lt;/caption&gt;
+        &lt;thead&gt;
+          &lt;tr&gt;
+            &lt;th scope="col" aria-sort="ascending"&gt;&lt;button class="fc-table__sort" type="button"&gt;Run&lt;/button&gt;&lt;/th&gt;
+            &lt;th scope="col"&gt;&lt;button class="fc-table__sort" type="button"&gt;State&lt;/button&gt;&lt;/th&gt;
+            &lt;th scope="col" class="fc-table__cell--num"&gt;&lt;button class="fc-table__sort" type="button"&gt;Tokens&lt;/button&gt;&lt;/th&gt;
+            &lt;th scope="col" class="fc-table__cell--num"&gt;&lt;button class="fc-table__sort" type="button"&gt;Cost&lt;/button&gt;&lt;/th&gt;
+            &lt;th scope="col"&gt;&lt;button class="fc-table__sort" type="button"&gt;Updated&lt;/button&gt;&lt;/th&gt;
+          &lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody&gt;
+          &lt;tr&gt;&lt;th scope="row"&gt;Index docs&lt;/th&gt;&lt;td&gt;&lt;span class="fc-badge fc-badge--success"&gt;complete&lt;/span&gt;&lt;/td&gt;&lt;td class="fc-table__cell--num"&gt;12,480&lt;/td&gt;&lt;td class="fc-table__cell--num"&gt;0.19&lt;/td&gt;&lt;td data-fc-sort-value="120"&gt;2 min ago&lt;/td&gt;&lt;/tr&gt;
+          &lt;tr aria-selected="true"&gt;&lt;th scope="row"&gt;Refactor parser&lt;/th&gt;&lt;td&gt;&lt;span class="fc-badge fc-badge--info"&gt;running&lt;/span&gt;&lt;/td&gt;&lt;td class="fc-table__cell--num"&gt;88,012&lt;/td&gt;&lt;td class="fc-table__cell--num"&gt;1.32&lt;/td&gt;&lt;td data-fc-sort-value="5"&gt;just now&lt;/td&gt;&lt;/tr&gt;
+          &lt;tr&gt;&lt;th scope="row"&gt;Summarize thread&lt;/th&gt;&lt;td&gt;&lt;span class="fc-badge fc-badge--danger"&gt;error&lt;/span&gt;&lt;/td&gt;&lt;td class="fc-table__cell--num"&gt;940&lt;/td&gt;&lt;td class="fc-table__cell--num"&gt;0.01&lt;/td&gt;&lt;td data-fc-sort-value="3600"&gt;1 h ago&lt;/td&gt;&lt;/tr&gt;
+          &lt;tr&gt;&lt;th scope="row"&gt;Triage issues&lt;/th&gt;&lt;td&gt;&lt;span class="fc-badge fc-badge--success"&gt;complete&lt;/span&gt;&lt;/td&gt;&lt;td class="fc-table__cell--num"&gt;9&lt;/td&gt;&lt;td class="fc-table__cell--num"&gt;0.00&lt;/td&gt;&lt;td data-fc-sort-value="86400"&gt;yesterday&lt;/td&gt;&lt;/tr&gt;
+        &lt;/tbody&gt;
+      &lt;/table&gt;
+    &lt;/div&gt;
+    &lt;p class="demo-status" id="table-status" role="status"&gt;&lt;/p&gt;
+
+    &lt;dl class="fc-dl fc-dl--divided"&gt;
+      &lt;div class="fc-dl__item"&gt;&lt;dt&gt;Model&lt;/dt&gt;&lt;dd&gt;Large, extended thinking&lt;/dd&gt;&lt;/div&gt;
+      &lt;div class="fc-dl__item"&gt;&lt;dt&gt;Duration&lt;/dt&gt;&lt;dd class="fc-dl__num"&gt;14.2 s&lt;/dd&gt;&lt;/div&gt;
+      &lt;div class="fc-dl__item"&gt;&lt;dt&gt;Commit&lt;/dt&gt;&lt;dd&gt;&lt;code&gt;9f2c1e04b7a3d58e6f1c2b9a0d4e7f3c8b1a6d5e&lt;/code&gt;&lt;/dd&gt;&lt;/div&gt;
+    &lt;/dl&gt;</code></pre>
+    </div>
   </section>
 
   <section class="demo-section" id="grid" aria-labelledby="h-grid">
@@ -863,13 +1444,13 @@ editor.applyMark("bold");</code></pre>
       Double-click a cell to edit it. Escape restores the original value.
     </p>
 
-    <div class="demo-snippet" data-demo-snippet="grid">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">html</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="grid">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Grid markup">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>&lt;!-- Row and column counts live in attributes so the binding knows the
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;!-- Row and column counts live in attributes so the binding knows the
      shape without counting children. --&gt;
 &lt;div class="fc-grid" role="grid" aria-label="Deployment status"
      data-fc-rowcount="2" data-fc-colcount="3"&gt;
@@ -960,13 +1541,13 @@ editor.applyMark("bold");</code></pre>
 
     <p class="demo-status" id="menu-status" role="status">No action chosen yet.</p>
 
-    <div class="demo-snippet" data-demo-snippet="menu">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">js</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="menu">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">js</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Menu wiring">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>import { FutureCssMenu } from "future-css/menu";
+      <pre class="demo-snippet__pre"><code class="fc-code__source">import { FutureCssMenu } from "future-css/menu";
 
 const menu = new FutureCssMenu({
   root:   document.querySelector("#demo-menu"),
@@ -981,13 +1562,13 @@ const menu = new FutureCssMenu({
 });</code></pre>
     </div>
 
-    <div class="demo-snippet" data-demo-snippet="menu-markup">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">html</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="menu-markup">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Menu markup">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>&lt;!-- The trigger owns the expanded state. aria-controls points at the menu,
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;!-- The trigger owns the expanded state. aria-controls points at the menu,
      and aria-haspopup tells AT what will appear. --&gt;
 &lt;button class="fc-btn fc-btn--secondary" aria-haspopup="menu"
         aria-expanded="false" aria-controls="demo-menu"&gt;Open menu&lt;/button&gt;
@@ -1097,13 +1678,13 @@ const menu = new FutureCssMenu({
       </div>
     </div>
 
-    <div class="demo-snippet" data-demo-snippet="chat">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">html</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="chat">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Message markup">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>&lt;!-- role="log" so AT announces new turns without interrupting. --&gt;
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;!-- role="log" so AT announces new turns without interrupting. --&gt;
 &lt;div class="fc-chat" role="log" aria-label="Conversation" tabindex="0"&gt;
   &lt;!-- State is data, not class. An agent reads these; CSS reads the same
        attributes. Never derive appearance from a class that can drift. --&gt;
@@ -1183,6 +1764,45 @@ const menu = new FutureCssMenu({
         <li><button type="button" class="fc-suggestion fc-suggestion--pill">Which layer is largest?</button></li>
       </ul>
     </div>
+
+    <div class="demo-snippet fc-code" data-demo-snippet="answer">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="An answer, end to end markup">Copy</button>
+      </div>
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;div class="demo-panel fc-stack"&gt;
+      &lt;ul class="fc-suggestions fc-suggestions--grid" aria-label="Suggested prompts"&gt;
+        &lt;li&gt;&lt;button type="button" class="fc-suggestion"&gt;&lt;span class="fc-suggestion__title"&gt;Summarise this repository&lt;/span&gt;&lt;span class="fc-suggestion__hint"&gt;in five bullet points&lt;/span&gt;&lt;/button&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;button type="button" class="fc-suggestion"&gt;&lt;span class="fc-suggestion__title"&gt;Find accessibility gaps&lt;/span&gt;&lt;span class="fc-suggestion__hint"&gt;in the new components&lt;/span&gt;&lt;/button&gt;&lt;/li&gt;
+      &lt;/ul&gt;
+
+      &lt;article class="fc-msg" data-fc-kind="message" data-fc-role="assistant" data-fc-state="complete"&gt;
+        &lt;details class="fc-reasoning" id="demo-reasoning" data-fc-kind="reasoning" data-fc-state="streaming"&gt;
+          &lt;summary class="fc-reasoning__summary"&gt;
+            &lt;span class="fc-reasoning__label"&gt;Thinking&lt;/span&gt;
+            &lt;span class="fc-reasoning__duration" data-demo-duration&gt;&lt;/span&gt;
+          &lt;/summary&gt;
+          &lt;div class="fc-reasoning__body"&gt;The user wants the bundle size. PLAN.md records it, and the build prints it. Cite both, and note that the figure is uncompressed.&lt;/div&gt;
+        &lt;/details&gt;
+        &lt;div class="fc-msg__body"&gt;The bundle is shipped unminified on purpose&lt;a class="fc-cite" href="#demo-src-1" aria-label="Source 1: Development plan"&gt;1&lt;/a&gt;, so it stays readable in devtools; consumers minify at their own boundary&lt;a class="fc-cite" href="#demo-src-2" aria-label="Source 2: Build orchestrator"&gt;2&lt;/a&gt;.&lt;/div&gt;
+        &lt;ol class="fc-sources" aria-label="Sources"&gt;
+          &lt;li class="fc-source" id="demo-src-1"&gt;&lt;a class="fc-source__link" href="#demo-src-1"&gt;&lt;span class="fc-source__index"&gt;1&lt;/span&gt;&lt;span class="fc-source__title"&gt;Development plan&lt;/span&gt;&lt;span class="fc-source__domain"&gt;docs/PLAN.md&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+          &lt;li class="fc-source" id="demo-src-2"&gt;&lt;a class="fc-source__link" href="#demo-src-2"&gt;&lt;span class="fc-source__index"&gt;2&lt;/span&gt;&lt;span class="fc-source__title"&gt;Build orchestrator&lt;/span&gt;&lt;span class="fc-source__domain"&gt;src/build/build.ts&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+        &lt;/ol&gt;
+        &lt;div class="fc-msg__actions" role="toolbar" aria-label="Message actions"&gt;
+          &lt;button type="button" class="fc-msg__action" aria-label="Copy"&gt;&amp;#10697;&lt;/button&gt;
+          &lt;button type="button" class="fc-msg__action" aria-label="Good response" aria-pressed="false"&gt;&amp;#128077;&lt;/button&gt;
+          &lt;button type="button" class="fc-msg__action" aria-label="Bad response" aria-pressed="false"&gt;&amp;#128078;&lt;/button&gt;
+          &lt;button type="button" class="fc-msg__action"&gt;&amp;#8635; Retry&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/article&gt;
+
+      &lt;ul class="fc-suggestions" aria-label="Follow-up suggestions"&gt;
+        &lt;li&gt;&lt;button type="button" class="fc-suggestion fc-suggestion--pill"&gt;How big is it minified?&lt;/button&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;button type="button" class="fc-suggestion fc-suggestion--pill"&gt;Which layer is largest?&lt;/button&gt;&lt;/li&gt;
+      &lt;/ul&gt;
+    &lt;/div&gt;</code></pre>
+    </div>
   </section>
 
   <!-- ============================ TOOL CALLS ============================ -->
@@ -1249,13 +1869,13 @@ const menu = new FutureCssMenu({
       </div>
     </div>
 
-    <div class="demo-snippet" data-demo-snippet="tool-call">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">html</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="tool-call">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Tool call markup">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>&lt;!-- Valid data-fc-state values: pending, queued, streaming, running,
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;!-- Valid data-fc-state values: pending, queued, streaming, running,
      complete, aborted, denied, error. All are styled, not just "rest". --&gt;
 &lt;div class="fc-tool" data-fc-kind="tool-call" data-fc-id="t-1" data-fc-seq="1"
      data-fc-state="complete" data-fc-ts="2026-10-04T09:12:05Z"&gt;
@@ -1345,13 +1965,13 @@ const menu = new FutureCssMenu({
       </div>
     </div>
 
-    <div class="demo-snippet" data-demo-snippet="terminal">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">html</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="terminal">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Terminal markup">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>&lt;!-- A terminal keeps its own palette and stays dark in BOTH schemes: it
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;!-- A terminal keeps its own palette and stays dark in BOTH schemes: it
      emulates another program. ANSI slots are hue-fixed by protocol, and all 19
      pairings are contrast-checked at build time in both schemes. --&gt;
 &lt;div class="fc-terminal" data-fc-state="connected"&gt;
@@ -1433,13 +2053,13 @@ const menu = new FutureCssMenu({
       Unsafe schemes are refused: try <code>javascript:alert(1)</code> in the address bar.
     </p>
 
-    <div class="demo-snippet" data-demo-snippet="webview">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">js</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="webview">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">js</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Webview wiring">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>import { FutureCssWebview } from "future-css/webview";
+      <pre class="demo-snippet__pre"><code class="fc-code__source">import { FutureCssWebview } from "future-css/webview";
 import { isSafeUrl } from "future-css/urls";
 
 const webview = new FutureCssWebview({
@@ -1456,13 +2076,13 @@ webview.navigate("/demo/page.html");
 webview.back();</code></pre>
     </div>
 
-    <div class="demo-snippet" data-demo-snippet="webview-markup">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">html</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="webview-markup">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Webview markup">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>&lt;div class="fc-webview" data-fc-home="/demo/page.html" data-fc-state="idle"&gt;
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;div class="fc-webview" data-fc-home="/demo/page.html" data-fc-state="idle"&gt;
   &lt;div class="fc-webview__toolbar"&gt;
     &lt;!-- data-fc-action is what the binding listens for; aria-label carries
          the name, since the glyph itself is decorative. --&gt;
@@ -1535,13 +2155,13 @@ webview.back();</code></pre>
 
     <p class="demo-status" id="code-status" role="status"></p>
 
-    <div class="demo-snippet" data-demo-snippet="code">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">html</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="code">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Code block markup">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>&lt;div class="fc-code fc-code--numbered" data-fc-lang="typescript"&gt;
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;div class="fc-code fc-code--numbered" data-fc-lang="typescript"&gt;
   &lt;!-- line numbers are decoration --&gt;
   &lt;div class="fc-code__gutter" aria-hidden="true"&gt;&lt;/div&gt;
   &lt;code class="fc-code__source"&gt;&lt;/code&gt;
@@ -1590,13 +2210,13 @@ webview.back();</code></pre>
     </div>
     <p class="demo-status" id="git-status" role="status"></p>
 
-    <div class="demo-snippet" data-demo-snippet="git">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">js</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="git">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">js</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Git surface">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>import { FutureCssGitSurface } from "future-css/git";
+      <pre class="demo-snippet__pre"><code class="fc-code__source">import { FutureCssGitSurface } from "future-css/git";
 
 const git = new FutureCssGitSurface({
   root: "#git-root",
@@ -1679,13 +2299,13 @@ const git = new FutureCssGitSurface({
 
     <p class="demo-status" id="strip-status" role="status"></p>
 
-    <div class="demo-snippet" data-demo-snippet="strip">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">js</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="strip">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">js</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Context strip wiring">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>import { FutureCssContextStrip } from "future-css/context-strip";
+      <pre class="demo-snippet__pre"><code class="fc-code__source">import { FutureCssContextStrip } from "future-css/context-strip";
 
 const strip = new FutureCssContextStrip({
   root: "#strip-root",
@@ -1736,7 +2356,7 @@ const strip = new FutureCssContextStrip({
       </p>
     </div>
 
-    <div class="fc-composer" id="composer-root" data-fc-state="idle">
+    <div class="fc-composer fc-composer--contained" id="composer-root" data-fc-state="idle">
       <label class="fc-u-visually-hidden" for="composer-input">Message</label>
       <!--
         A real <textarea>. An IME-composed character inserted into a
@@ -1749,10 +2369,23 @@ const strip = new FutureCssContextStrip({
       <ul class="fc-composer__attachments" id="composer-attachments"></ul>
 
       <div class="fc-composer__row">
-        <div class="fc-composer__tools">
-          <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm"
-                  id="composer-attach" aria-label="Attach files">Attach</button>
-        </div>
+<div class="fc-composer__tools">
+  <div class="fc-control-group fc-control-group--plain" role="group" aria-label="Message context">
+    <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" id="composer-attach" aria-label="Attach files">＋ Attach</button>
+    <button type="button" class="fc-select fc-control-group__item" id="composer-model" data-fc-value="balanced" aria-label="Composer model">
+  <span class="fc-select__value">Balanced</span><span class="fc-select__chevron" aria-hidden="true">▾</span>
+</button>
+<div class="fc-select__list" id="composer-model-list" role="listbox" aria-label="Composer model options">
+  <div class="fc-select__option" role="option" data-fc-value="balanced"><span class="fc-select__option-label">Balanced</span></div>
+  <div class="fc-select__option" role="option" data-fc-value="fast"><span class="fc-select__option-label">Fast</span></div>
+  <div class="fc-select__option" role="option" data-fc-value="reasoning"><span class="fc-select__option-label">Reasoning</span></div>
+</div>
+  </div>
+  <div class="fc-control-group" role="group" aria-label="Message tools">
+    <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" id="composer-search" aria-pressed="false">Web search</button>
+    <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" id="composer-research" aria-pressed="false">Deep research</button>
+  </div>
+</div>
         <!--
           One control, two meanings. A separate Stop button would be a second tab
           stop where the user expects one, and it would linger as a dead control
@@ -1765,42 +2398,71 @@ const strip = new FutureCssContextStrip({
       <p class="fc-composer__status" id="composer-status" role="status"></p>
     </div>
 
+    <p class="demo-status" id="composer-context-status" role="status"></p>
     <p class="demo-status" id="composer-attachments-status" role="status"></p>
 
-    <div class="demo-snippet" data-demo-snippet="composer">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">html</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="composer">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Composer markup">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>&lt;div class="fc-composer" data-fc-state="idle"&gt;
-  &lt;!-- A real &lt;textarea&gt;, not contenteditable: an IME-composed character
-       fails silently in a contenteditable region. --&gt;
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;div class="fc-composer fc-composer--contained" data-fc-state="idle"&gt;
   &lt;label class="fc-u-visually-hidden" for="composer-input"&gt;Message&lt;/label&gt;
-  &lt;textarea class="fc-composer__input" id="composer-input" rows="2"&gt;&lt;/textarea&gt;
-
-  &lt;!-- A list, so AT announces how many are attached. --&gt;
+  &lt;textarea class="fc-composer__input" id="composer-input" rows="2" placeholder="Ask anything…"&gt;&lt;/textarea&gt;
   &lt;ul class="fc-composer__attachments" id="composer-attachments"&gt;&lt;/ul&gt;
-
   &lt;div class="fc-composer__row"&gt;
-    &lt;!-- One control, two meanings. Replacing the button would move focus. --&gt;
-    &lt;button class="fc-btn fc-btn--primary fc-composer__send"
-            id="composer-send" data-fc-state="idle" disabled&gt;Send&lt;/button&gt;
+    &lt;div class="fc-composer__tools"&gt;
+  &lt;div class="fc-control-group fc-control-group--plain" role="group" aria-label="Message context"&gt;
+    &lt;button type="button" class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" id="composer-attach" aria-label="Attach files"&gt;＋ Attach&lt;/button&gt;
+    &lt;button type="button" class="fc-select fc-control-group__item" id="composer-model" data-fc-value="balanced" aria-label="Composer model"&gt;
+  &lt;span class="fc-select__value"&gt;Balanced&lt;/span&gt;&lt;span class="fc-select__chevron" aria-hidden="true"&gt;▾&lt;/span&gt;
+&lt;/button&gt;
+&lt;div class="fc-select__list" id="composer-model-list" role="listbox" aria-label="Composer model options"&gt;
+  &lt;div class="fc-select__option" role="option" data-fc-value="balanced"&gt;&lt;span class="fc-select__option-label"&gt;Balanced&lt;/span&gt;&lt;/div&gt;
+  &lt;div class="fc-select__option" role="option" data-fc-value="fast"&gt;&lt;span class="fc-select__option-label"&gt;Fast&lt;/span&gt;&lt;/div&gt;
+  &lt;div class="fc-select__option" role="option" data-fc-value="reasoning"&gt;&lt;span class="fc-select__option-label"&gt;Reasoning&lt;/span&gt;&lt;/div&gt;
+&lt;/div&gt;
   &lt;/div&gt;
-
-  &lt;!-- Always present and updated in place: a live region that gains content
-       announces, one that gains and loses silently does not. --&gt;
-  &lt;p class="fc-composer__status" role="status"&gt;&lt;/p&gt;
+  &lt;div class="fc-control-group" role="group" aria-label="Message tools"&gt;
+    &lt;button type="button" class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" id="composer-search" aria-pressed="false"&gt;Web search&lt;/button&gt;
+    &lt;button type="button" class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" id="composer-research" aria-pressed="false"&gt;Deep research&lt;/button&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+    &lt;button type="button" class="fc-btn fc-btn--primary fc-composer__send" id="composer-send" disabled&gt;Send&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;p class="fc-composer__status" id="composer-status" role="status"&gt;&lt;/p&gt;
 &lt;/div&gt;</code></pre>
     </div>
 
-    <div class="demo-snippet" data-demo-snippet="composer-js">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">js</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="composer-options"><div class="fc-code__bar"><span class="fc-code__lang">js</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Composer controls wiring">Copy</button></div><pre class="demo-snippet__pre"><code class="fc-code__source">import { FutureCssSelect } from "future-css/select";
+import { FutureCssComposer } from "future-css/composer";
+
+const model = new FutureCssSelect({
+  invoker: "#composer-model", list: "#composer-model-list",
+});
+for (const id of ["composer-search", "composer-research"]) {
+  document.getElementById(id).addEventListener("click", (event) =&gt; {
+    const button = event.currentTarget;
+    button.setAttribute("aria-pressed", String(button.getAttribute("aria-pressed") !== "true"));
+  });
+}
+new FutureCssComposer({
+  root: "#composer-root",
+  onSubmit: (text, attachments) =&gt; {
+    const tools = [...document.querySelectorAll('#composer-root [aria-pressed="true"]')]
+      .map((button) =&gt; button.id);
+    console.log({ text, attachments, model: model.value, tools });
+  },
+});</code></pre></div>
+
+    <div class="demo-snippet fc-code" data-demo-snippet="composer-js">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">js</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Composer wiring">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>import { FutureCssComposer } from "future-css/composer";
+      <pre class="demo-snippet__pre"><code class="fc-code__source">import { FutureCssComposer } from "future-css/composer";
 
 const composer = new FutureCssComposer({
   root: "#composer-root",
@@ -1829,6 +2491,29 @@ composer.removeAttachment(0);
   </section>
 
   <!-- ============================= SELECT ============================= -->
+  <section class="demo-section" id="control-groups" aria-labelledby="h-control-groups">
+    <div class="demo-section__head"><h2 class="demo-h2" id="h-control-groups">Control groups</h2><p class="demo-note">Related controls share a quiet surface and consistent spacing. Each control retains its own keyboard behavior. Groups wrap, can stack vertically, and use ARIA for pressed state.</p></div>
+    <div class="demo-panel">
+      <div class="fc-control-group" role="group" aria-label="Text formatting">
+  <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" data-demo-format="bold" aria-pressed="false">Bold</button>
+  <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" data-demo-format="italic" aria-pressed="false">Italic</button>
+  <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" disabled>Underline unavailable</button>
+</div>
+      <p id="group-preview">A well-composed interface makes room for the work.</p>
+      <p class="demo-status" id="group-status" role="status"></p>
+      <div class="fc-control-group fc-control-group--vertical" role="group" aria-label="Export states">
+        <span class="fc-control-group__label">Export</span>
+        <button type="button" class="fc-btn fc-btn--secondary fc-control-group__item" aria-disabled="true">PDF unavailable</button>
+        <button type="button" class="fc-btn fc-btn--ghost fc-control-group__item" aria-busy="true"><span class="fc-btn__spinner" aria-hidden="true"></span>Preparing archive…</button>
+      </div>
+    </div>
+    <div class="demo-snippet fc-code" data-demo-snippet="control-groups"><div class="fc-code__bar"><span class="fc-code__lang">html</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Control group markup">Copy</button></div><pre class="demo-snippet__pre"><code class="fc-code__source">&lt;div class="fc-control-group" role="group" aria-label="Text formatting"&gt;
+  &lt;button type="button" class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" data-demo-format="bold" aria-pressed="false"&gt;Bold&lt;/button&gt;
+  &lt;button type="button" class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" data-demo-format="italic" aria-pressed="false"&gt;Italic&lt;/button&gt;
+  &lt;button type="button" class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" disabled&gt;Underline unavailable&lt;/button&gt;
+&lt;/div&gt;</code></pre></div>
+  </section>
+
   <section class="demo-section" id="select" aria-labelledby="h-select">
     <div class="demo-section__head">
       <h2 class="demo-h2" id="h-select">Select</h2>
@@ -1936,13 +2621,13 @@ composer.removeAttachment(0);
       <p class="demo-status" id="effort-select-status" role="status"></p>
     </div>
 
-    <div class="demo-snippet" data-demo-snippet="select">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">html</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="select">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">html</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Select markup">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>&lt;!-- A &lt;button&gt;, not a div: that buys form participation,
+      <pre class="demo-snippet__pre"><code class="fc-code__source">&lt;!-- A &lt;button&gt;, not a div: that buys form participation,
      Space/Enter activation, the platform focus ring, and correct
      forced-colors rendering. --&gt;
 &lt;button type="button" class="fc-select" data-fc-value="opus-5"&gt;
@@ -1968,13 +2653,13 @@ composer.removeAttachment(0);
 &lt;/div&gt;</code></pre>
     </div>
 
-    <div class="demo-snippet" data-demo-snippet="select-js">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">js</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="select-js">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">js</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Select wiring">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>import { FutureCssSelect } from "future-css/select";
+      <pre class="demo-snippet__pre"><code class="fc-code__source">import { FutureCssSelect } from "future-css/select";
 
 const select = new FutureCssSelect({
   invoker: "#model-select",
@@ -2033,13 +2718,13 @@ await select.useWasm("/dist/wasm/fc-select/web/fc_select.js");
 
     <p class="demo-status" id="diff-status" role="status"></p>
 
-    <div class="demo-snippet" data-demo-snippet="diff">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">js</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="diff">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">js</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Diff wiring">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>import { diffLines, diffStats } from "future-css/diff";
+      <pre class="demo-snippet__pre"><code class="fc-code__source">import { diffLines, diffStats } from "future-css/diff";
 
 const lines = diffLines(before, after);   // Myers, O(N*D)
 const { added, removed } = diffStats(lines);
@@ -2084,13 +2769,13 @@ for (const line of lines) {
 
     <div class="fc-grid-auto" id="token-grid"></div>
 
-    <div class="demo-snippet" data-demo-snippet="tokens">
-      <div class="demo-snippet__bar">
-        <span class="demo-snippet__lang">css</span>
-        <button type="button" class="demo-snippet__copy"
+    <div class="demo-snippet fc-code" data-demo-snippet="tokens">
+      <div class="fc-code__bar">
+        <span class="fc-code__lang">css</span>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
                 data-snippet-label="Token usage">Copy</button>
       </div>
-      <pre class="demo-snippet__pre"><code>/* Components reference SEMANTIC tokens only. A primitive is an
+      <pre class="demo-snippet__pre"><code class="fc-code__source">/* Components reference SEMANTIC tokens only. A primitive is an
    implementation detail a theme may remap -- referencing one directly
    means the theme cannot change it. */
 .my-panel {

@@ -104,13 +104,13 @@
    * than one that never looks active.
    */
   .fc-toolbar__item[aria-pressed="true"] {
-    background-color: var(--fc-color-accent-bg-subtle);
-    color: var(--fc-color-accent-text);
+    background-color: var(--fc-color-selected-bg);
+    color: var(--fc-color-selected-fg);
     border-color: var(--fc-color-accent-border);
   }
 
   .fc-toolbar__item:disabled {
-    color: var(--fc-color-text-subtle);
+    color: var(--fc-color-disabled-fg);
     cursor: not-allowed;
   }
 

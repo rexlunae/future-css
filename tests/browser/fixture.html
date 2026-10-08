@@ -275,7 +275,8 @@
 
 </div>
   <div class="fc-table-wrap" id="table-wrap" role="region" aria-labelledby="table-cap" tabindex="0" style="max-inline-size: 20rem">
-    <table class="fc-table fc-table--sticky" id="table-root" lang="sv">
+    <!-- An explicit wide table keeps the overflow assertion independent of font metrics and prose wrapping. -->
+    <table class="fc-table fc-table--sticky" id="table-root" lang="sv" style="min-inline-size: 40rem">
       <caption id="table-cap">Runs</caption>
       <thead>
         <tr>

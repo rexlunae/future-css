@@ -561,6 +561,23 @@
     </div>
   </section>
 
+  <section class="fx" id="fx-masthead" data-fixture="masthead" aria-labelledby="fx-masthead-h">
+    <h2 class="fx__title" id="fx-masthead-h">Masthead <code class="fx__file">masthead.css</code></h2>
+    <header class="fc-masthead">
+      <a class="fc-masthead__brand" href="#fx-masthead"><span class="fc-masthead__mark" aria-hidden="true">fc</span>Workspace with a long name</a>
+      <nav aria-label="Masthead fixture"><ul class="fc-masthead__nav">
+        <li><a class="fc-masthead__link" href="#fx-masthead" aria-current="page">Current</a></li>
+        <li><a class="fc-masthead__link" href="#fx-masthead">Rest / hover / active / focus</a></li>
+        <li><a class="fc-masthead__link" aria-disabled="true">Unavailable</a></li>
+        <li><button class="fc-masthead__link" type="button" disabled>Disabled</button></li>
+      </ul></nav>
+      <div class="fc-masthead__actions">
+        <button class="fc-btn fc-btn--primary" type="button" aria-busy="true"><span class="fc-btn__spinner" aria-hidden="true"></span>Saving…</button>
+        <span class="fc-badge fc-badge--danger">Sync error</span>
+      </div>
+    </header>
+  </section>
+
   <section class="fx" id="fx-nav" data-fixture="nav" aria-labelledby="fx-nav-h">
     <h2 class="fx__title" id="fx-nav-h">Navigation sidebar <code class="fx__file">nav.css</code></h2>
     <div class="fx__states">
@@ -1356,9 +1373,52 @@
     </div>
   </section>
 
+  <section class="fx" id="fx-control-group" data-fixture="control-group" aria-labelledby="fx-control-group-h">
+    <h2 class="fx__title" id="fx-control-group-h">Control groups <code class="fx__file">control-group.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state"><figcaption class="fx__caption">Rest, pressed, disabled, loading, and long labels</figcaption><div class="fx__body">
+        <div class="fc-control-group" role="group" aria-label="Tool choices">
+          <button class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" type="button" aria-pressed="true">Web search</button>
+          <button class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" type="button" aria-pressed="false">An extremely long tool name that must wrap instead of widening the page</button>
+          <button class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" type="button" disabled>Disabled</button>
+          <button class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" type="button" aria-disabled="true">Unavailable</button>
+          <button class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" type="button" aria-busy="true"><span class="fc-btn__spinner" aria-hidden="true"></span>Loading</button>
+        </div>
+      </div></figure>
+      <figure class="fx__state"><figcaption class="fx__caption">Vertical form fields, disabled natively</figcaption><div class="fx__body">
+        <fieldset class="fc-control-group fc-control-group--vertical" disabled>
+          <legend class="fc-control-group__label">Settings</legend>
+          <label class="fc-control-group__label" for="fx-group-model">Model</label>
+          <select class="fc-input fc-control-group__item" id="fx-group-model"><option>Balanced</option></select>
+          <button class="fc-btn fc-btn--secondary fc-control-group__item" type="button">Apply</button>
+        </fieldset>
+      </div></figure>
+      <figure class="fx__state"><figcaption class="fx__caption">Plain group with an error</figcaption><div class="fx__body">
+        <div class="fc-control-group fc-control-group--plain" role="group" aria-label="Recovery">
+          <span class="fc-badge fc-badge--danger">Export failed</span>
+          <button class="fc-btn fc-btn--secondary fc-control-group__item" type="button">Retry</button>
+        </div>
+      </div></figure>
+    </div>
+  </section>
+
   <section class="fx" id="fx-composer" data-fixture="composer" aria-labelledby="fx-composer-h">
     <h2 class="fx__title" id="fx-composer-h">Chat composer <code class="fx__file">composer.css</code></h2>
     <div class="fx__states">
+      <figure class="fx__state fx__state--wide" data-fx-state="contained with grouped controls"><figcaption class="fx__caption">Contained with grouped controls</figcaption><div class="fx__body">
+        <div class="fc-composer fc-composer--contained" data-fc-state="complete">
+          <textarea class="fc-composer__input" aria-label="Contained message" placeholder="Ask anything…"></textarea>
+          <div class="fc-composer__row"><div class="fc-composer__tools">
+            <div class="fc-control-group fc-control-group--plain" role="group" aria-label="Message context">
+              <button class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" type="button">Attach</button>
+              <button class="fc-select fc-control-group__item" type="button" role="combobox" aria-expanded="false" aria-label="Model"><span class="fc-select__value">Balanced</span><span class="fc-select__chevron" aria-hidden="true">▾</span></button>
+            </div>
+            <div class="fc-control-group" role="group" aria-label="Tools"><button class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" type="button" aria-pressed="true">Web search</button><button class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" type="button" aria-pressed="false">Research</button></div>
+          </div><button class="fc-btn fc-btn--primary fc-composer__send" type="button">Send</button></div>
+          <p class="fc-composer__status">Ready</p>
+        </div>
+      </div></figure>
+
       <figure class="fx__state" data-fx-state="idle, empty">
         <figcaption class="fx__caption">idle, empty</figcaption>
         <div class="fx__body">
@@ -1392,7 +1452,7 @@
       <figure class="fx__state" data-fx-state="running: send becomes stop">
         <figcaption class="fx__caption">running: send becomes stop</figcaption>
         <div class="fx__body">
-          <div class="fc-composer" data-fc-state="running">
+          <div class="fc-composer fc-composer--contained" data-fc-state="running">
             <textarea class="fc-composer__input" rows="2" aria-label="Message, running" readonly>Summarise the thread</textarea>
             <div class="fc-composer__row">
               <div class="fc-composer__tools"><button type="button" class="fc-btn fc-btn--ghost fc-btn--sm">Attach</button></div>
@@ -1405,7 +1465,7 @@
       <figure class="fx__state" data-fx-state="dragging a file over">
         <figcaption class="fx__caption">dragging a file over</figcaption>
         <div class="fx__body">
-          <div class="fc-composer" data-fc-state="idle" data-fc-dragging="true">
+          <div class="fc-composer fc-composer--contained" data-fc-state="idle" data-fc-dragging="true">
             <textarea class="fc-composer__input" rows="2" aria-label="Message, idle"></textarea>
             <div class="fc-composer__row">
               <div class="fc-composer__tools"><button type="button" class="fc-btn fc-btn--ghost fc-btn--sm">Attach</button></div>

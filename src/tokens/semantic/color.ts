@@ -225,6 +225,9 @@ export const contrastPairs: readonly ContrastPair[] = [
   { usage: "Muted text on a muted (hovered) surface", fg: "text-muted", bg: "bg-muted", min: 4.5 },
   { usage: "Muted text on a sunken surface", fg: "text-muted", bg: "bg-sunken", min: 4.5 },
   // The navigation sidebar sits on bg-subtle: links, headings and counts.
+  { usage: "Filled field text on its fill", fg: "text-default", bg: "bg-subtle", min: 4.5 },
+  { usage: "Filled field underline on its fill (WCAG 1.4.11)", fg: "border-interactive", bg: "bg-subtle", min: 3 },
+  { usage: "Hovered filled field text on its fill", fg: "text-default", bg: "bg-muted", min: 4.5 },
   { usage: "Muted text on a subtle surface (sidebar)", fg: "text-muted", bg: "bg-subtle", min: 4.5 },
   { usage: "De-emphasised text on a subtle surface (sidebar)", fg: "text-subtle", bg: "bg-subtle", min: 4.5 },
   // Overlays (dialog, popover, toast) sit on bg-raised, which is a different

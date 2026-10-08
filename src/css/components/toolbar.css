@@ -1,0 +1,205 @@
+/*!
+ * future-css -- toolbar
+ *
+ * A row of controls that act on one thing: formatting for an editor, actions
+ * for a selection, tools for a canvas. Material's docked and floating
+ * toolbars, and the rich text editor's formatting bar, are this component.
+ *
+ *   <div class="fc-toolbar fc-toolbar--floating" role="toolbar" aria-label="Selection">
+ *     <button class="fc-toolbar__item" type="button" aria-pressed="false">Bold</button>
+ *     <span class="fc-toolbar__divider" role="separator"></span>
+ *     <button class="fc-toolbar__item fc-toolbar__item--icon" type="button" aria-label="Delete">…</button>
+ *   </div>
+ *
+ * `role="toolbar"` with roving tabindex: one item is tabbable and the arrow
+ * keys move within, so a screen-reader user does not tab through every
+ * button on every visit. The `toolbar` binding provides that; without it
+ * every item is a plain tab stop, which is slower but complete.
+ *
+ * Pressed state is `aria-pressed`, not a class, so the drawn and announced
+ * states cannot disagree.
+ */
+
+@layer fc.components {
+  .fc-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fc-space-1);
+    padding: var(--fc-space-2);
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    background-color: var(--fc-color-bg-subtle);
+    /* Wraps rather than scrolling, so it stays usable on a phone. */
+    min-inline-size: 0;
+  }
+
+  .fc-toolbar__item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fc-space-1-5);
+
+    /* 24px by default, the WCAG 2.2 minimum, for a dense formatting bar; the
+       docked and floating forms raise it to the shared control size. */
+    min-inline-size: var(--fc-toolbar-item-size, var(--fc-size-target-min));
+    min-block-size: var(--fc-toolbar-item-size, var(--fc-size-target-min));
+    padding-inline: var(--fc-space-2);
+
+    background-color: transparent;
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid transparent;
+    border-radius: var(--fc-toolbar-item-radius, var(--fc-radius-sm));
+
+    font-family: inherit;
+    font-size: var(--fc-font-size-sm);
+    font-weight: var(--fc-font-weight-medium);
+    line-height: 1;
+    cursor: pointer;
+
+    transition:
+      background-color var(--fc-duration-fast) var(--fc-easing-standard),
+      border-color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  @media (hover: hover) {
+    .fc-toolbar__item:hover {
+      background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-hover-overlay) * 100%), transparent);
+    }
+  }
+
+  .fc-toolbar__item:active {
+    background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 100%), transparent);
+  }
+
+  .fc-toolbar__item[aria-pressed="true"] {
+    background-color: var(--fc-color-selected-bg);
+    color: var(--fc-color-selected-fg);
+    border-color: var(--fc-color-accent-border);
+  }
+
+  .fc-toolbar__item:disabled,
+  .fc-toolbar__item[aria-disabled="true"] {
+    background-color: transparent;
+    color: var(--fc-color-disabled-fg);
+    cursor: not-allowed;
+  }
+
+  /* aria-disabled items keep their tab stop in the roving order, per the APG
+     toolbar pattern, but do not act. */
+  .fc-toolbar__item[aria-disabled="true"] {
+    pointer-events: none;
+  }
+
+  /* A visible text label inside an item, set in the UI face even when the
+     item's glyph is not. */
+  .fc-toolbar__label {
+    font-family: var(--fc-font-family-sans);
+  }
+
+  /* Icon-only items stay square so the hit area matches the glyph. */
+  .fc-toolbar__item--icon {
+    padding-inline: var(--fc-space-1-5);
+  }
+
+  /* A visual separator between groups. Its geometry comes from properties the
+     toolbar sets, so a vertical toolbar turns it without reaching into it. */
+  .fc-toolbar__divider {
+    inline-size: var(--fc-toolbar-divider-inline, var(--fc-border-width-thin));
+    block-size: var(--fc-toolbar-divider-block, auto);
+    align-self: stretch;
+    margin-inline: var(--fc-toolbar-divider-margin-inline, var(--fc-space-1));
+    margin-block: var(--fc-toolbar-divider-margin-block, 0);
+    background-color: var(--fc-color-border-default);
+  }
+
+  /* ---- Docked ---------------------------------------------------------- */
+
+  /*
+   * Docked to the block-end of its scroll container, full width, for the
+   * actions of a whole screen. Sticky rather than fixed, so it belongs to its
+   * region and never covers another one's content.
+   */
+  .fc-toolbar--docked {
+    --fc-toolbar-item-size: var(--fc-size-target-comfortable);
+    --fc-toolbar-item-radius: var(--fc-radius-lg);
+
+    position: sticky;
+    inset-block-end: 0;
+    z-index: var(--fc-z-sticky);
+    justify-content: space-around;
+    padding-block-end: max(var(--fc-space-2), env(safe-area-inset-bottom));
+    background-color: var(--fc-color-bg-surface);
+    border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-block-end: 0;
+  }
+
+  /* ---- Floating -------------------------------------------------------- */
+
+  /* A pill that floats over content: actions for a selection or a canvas. */
+  .fc-toolbar--floating {
+    --fc-toolbar-item-size: var(--fc-size-target-comfortable);
+    --fc-toolbar-item-radius: var(--fc-radius-full);
+
+    display: inline-flex;
+    /* Its own width even in a stretching parent: a floating bar that spans
+       the column reads as a docked one. */
+    inline-size: fit-content;
+    max-inline-size: 100%;
+    padding: var(--fc-space-1);
+    background-color: var(--fc-color-bg-raised);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-toolbar-radius, var(--fc-radius-full));
+    box-shadow: var(--fc-shadow-floating);
+  }
+
+  /*
+   * Vertical is the orientation the role announces, so the layout follows
+   * `aria-orientation` and the two cannot disagree. The binding reads the
+   * same attribute to pick Up/Down over Left/Right.
+   */
+  .fc-toolbar[aria-orientation="vertical"] {
+    --fc-toolbar-divider-inline: auto;
+    --fc-toolbar-divider-block: var(--fc-border-width-thin);
+    --fc-toolbar-divider-margin-inline: 0;
+    --fc-toolbar-divider-margin-block: var(--fc-space-1);
+    /* A tall pill has semicircular ends wider than its items; a rounded
+       rectangle keeps the shape without wasting the ends. */
+    --fc-toolbar-radius: var(--fc-radius-2xl);
+
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  /*
+   * The group background and the pressed tint are both discarded, so the
+   * pressed state needs Highlight to stay distinguishable -- otherwise a
+   * screen-reader user hears "pressed" while a sighted user in high contrast
+   * sees nothing at all.
+   */
+  @media (forced-colors: active) {
+    .fc-toolbar {
+      background-color: Canvas;
+      border-color: CanvasText;
+    }
+
+    .fc-toolbar__item[aria-pressed="true"] {
+      background-color: Highlight;
+      color: HighlightText;
+      border-color: Highlight;
+    }
+
+    .fc-toolbar__item:disabled,
+    .fc-toolbar__item[aria-disabled="true"] {
+      color: GrayText;
+    }
+
+    .fc-toolbar__divider {
+      background-color: CanvasText;
+    }
+  }
+
+  /* Motion: colour transitions only, zeroed by the reset under reduced motion. */
+}

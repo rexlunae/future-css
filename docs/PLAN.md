@@ -22,7 +22,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | A. WASM foundations | Started | Rust workspace, 8 crates, accelerator abstraction |
 | B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
 | C. Token roles and themes | Not started | State tokens, override points, theme tier, type roles |
-| D. Material 3 parity | Started | Mapping done; D1 (actions) mostly shipped |
+| D. Material 3 parity | Started | Mapping done; D1 to D5 shipped except the connected button group |
 | 4. Verification | Not started | Visual regression, browser matrix, docs site |
 | 5. Platform expansion | Not started | Email build, print, native tokens |
 | 6. Release | Not started | Publishing, versioning, governance |
@@ -515,31 +515,32 @@ Status is **Shipped** (an existing component covers it), **Gap** (scheduled belo
 | Communication | Badges | `fc-badge`, `fc-badge--count` | Shipped |
 | | Loading indicator | `fc-spinner` family | Shipped |
 | | Progress, linear | `fc-progress` | Shipped |
-| | Progress, circular determinate | the spinners are indeterminate only | Gap, D4 |
+| | Progress, circular determinate | `fc-progress-ring` | Shipped, D4 |
 | | Snackbar | `fc-toast` with `__action`, toast binding | Shipped |
 | | Tooltips, plain and rich | `fc-tooltip`; a rich tooltip is an `fc-popover` | Shipped |
 | Containment | Cards: elevated, filled, outlined | `fc-card--elevated`, `--subtle`, default | Shipped |
 | | Dialogs, basic and full-screen | `fc-dialog`, `--fullscreen` | Shipped |
 | | Side sheets | `fc-dialog--sheet` | Shipped |
-| | Bottom sheets | none | Gap, D4 |
-| | Carousel | none | Gap, D4 |
-| | Dividers | bare `<hr>` in `base.css`; no inset or vertical form | Gap, D2 |
-| | Lists | none: `fc-nav` and `fc-menu` are lists with a single job | Gap, D2 |
+| | Bottom sheets | `fc-dialog--bottom`, modal or standard, with `__handle` | Shipped, D4 |
+| | Carousel | `fc-carousel` (multi-browse, `--hero`, `--free`), `carousel` binding for the buttons | Shipped, D4 |
+| | Dividers | `fc-divider`, `--inset`, `--middle`, `--vertical` | Shipped, D2 |
+| | Lists | `fc-list`: static, linked, button and control rows, one to three lines | Shipped, D2 |
 | Navigation | Top app bar | `fc-masthead` | Shipped |
 | | Navigation drawer | `fc-nav` | Shipped |
 | | Navigation rail | `fc-nav` rail (toggle's `aria-expanded`) | Shipped |
-| | Navigation bar (bottom) | none | Gap, D3 |
-| | Toolbars (docked and floating) | the editor toolbar only, not a general one | Gap, D3 |
-| | Search: bar and view | none; `fc-select` filters a fixed list | Gap, D3 |
+| | Navigation bar (bottom) | `fc-navbar` | Shipped, D3 |
+| | Toolbars (docked and floating) | `fc-toolbar`, `--docked`, `--floating`, `toolbar` binding | Shipped, D3 |
+| | Search: bar and view | `fc-search` | Shipped, D3 |
 | | Tabs, primary and secondary | `fc-tabs`, tabs binding | Shipped |
 | Selection | Checkbox, radio, switch | `fc-check`, `fc-switch` | Shipped |
-| | Chips: assist, filter, input, suggestion | `fc-tag` and `fc-suggestion` cover display and prompts only | Gap, D2 |
+| | Chips: assist, filter, input, suggestion | `button.fc-tag` (assist), `fc-tag[aria-pressed]` (filter), `fc-tag__remove` (input), `fc-suggestion--pill` (suggestion) | Shipped |
 | | Menus | `fc-menu` and its binding (context and anchored) | Shipped |
-| | Sliders | none | Gap, D2 |
-| | Date pickers | none | Gap, D5 |
-| | Time pickers | none | Gap, D5 |
+| | Sliders | `fc-slider` on `<input type="range">`, `slider` binding for the fill | Shipped, D2 |
+| | Date pickers | `fc-datepicker` and native `<input type="date">` | Shipped, D5; range selection deferred |
+| | Time pickers | native `<input type="time">` and `fc-timepicker` input mode | Shipped, D5 |
+| | Time picker clock dial | none | Divergent: a dial is a pointer gesture with no keyboard or screen-reader equivalent beyond the input mode it duplicates, and its hit targets shrink below the minimum on small screens |
 | Text inputs | Text fields: outlined | `fc-input` in `fc-field` | Shipped |
-| | Text fields: filled | none | Gap, D4 |
+| | Text fields: filled | `fc-input--filled` | Shipped, D4 |
 | | Floating label | label above the input | Divergent: a label that moves into the field is unreadable while empty at small sizes and adds motion for no information; the persistent label is the accessible form |
 | Colour | Dynamic colour from a seed | none | Divergent, see Phase C: cannot be contrast-checked at build time |
 
@@ -561,35 +562,45 @@ API, `<dialog>`, scroll snap); a binding ships only where the platform has no an
 - [x] FAB menu: the FAB as a popover invoker opening a column of actions
 
 **D2. Lists and selection**
-- [ ] List (`fc-list`): one-, two- and three-line items with leading and trailing slots,
+- [x] List (`fc-list`): one-, two- and three-line items with leading and trailing slots,
   static, linked and interactive (checkbox or switch in the trailing slot)
-- [ ] Divider (`fc-divider`): full, inset, and vertical, on `<hr>` or `role="separator"`
-- [ ] Chips (`fc-chip`): assist, filter (`aria-pressed` or a checkbox), input (with a
-  remove button), and suggestion
-- [ ] Slider (`fc-slider`) on `<input type="range">`, with a value label and tick marks
-  from `<datalist>`; RTL fill direction verified
+- [x] Divider (`fc-divider`): full, inset, and vertical, on `<hr>` or `role="separator"`
+- [x] Chips: on inspection already covered. `fc-tag` as a button is an assist chip, with
+  `aria-pressed` a filter chip, and with `__remove` an input chip; `fc-suggestion--pill`
+  is the suggestion chip. No new component
+- [x] Slider (`fc-slider`) on `<input type="range">`, with an `<output>` value and a
+  visible scale; a small `slider` binding draws the fill, which Blink and WebKit have no
+  pseudo-element for. RTL fill direction verified
 
 **D3. Navigation**
-- [ ] Navigation bar (`fc-navbar`): three to five destinations at the block end, labels
+- [x] Navigation bar (`fc-navbar`): three to five destinations at the block end, labels
   always visible, `aria-current="page"` as the selected state
-- [ ] Toolbar (`fc-toolbar`): docked and floating, with a binding for the APG roving
-  tabindex contract, generalised from the editor's
-- [ ] Search (`fc-search`): a search bar with leading and trailing slots, and a search
+- [x] Toolbar (`fc-toolbar`): docked and floating, with a binding for the APG roving
+  tabindex contract, generalised from the editor's. The toolbar moved out of
+  `editor.css` into `toolbar.css`, and the editor binding now uses the same roving
+  contract its CSS comment always promised
+- [x] Search (`fc-search`): a search bar with leading and trailing slots, and a search
   view that shows suggestions or results beneath it, on `role="search"`
 
 **D4. Containment and feedback**
-- [ ] Bottom sheet (`fc-dialog--bottom`): modal and non-modal, with a drag handle
+- [x] Bottom sheet (`fc-dialog--bottom`): modal and non-modal, with a drag handle
   that is decorative, never the only way to close
-- [ ] Carousel (`fc-carousel`): scroll-snap track, keyboard reachable, no autoplay
-- [ ] Circular determinate progress (`fc-progress-ring`), driven by a value the markup
+- [x] Carousel (`fc-carousel`): scroll-snap track, keyboard reachable, no autoplay
+- [x] Circular determinate progress (`fc-progress-ring`), driven by a value the markup
   states, so it is never a spinner pretending to know
-- [ ] Filled text field variant (`fc-input--filled`)
+- [x] Filled text field variant (`fc-input--filled`), with its fill and underline
+  declared as contrast pairs
 
 **D5. Pickers**
-- [ ] Date picker: a calendar grid with the APG date-grid keyboard contract, and the
-  native `<input type="date">` styled as the text-entry path and the no-JS fallback
-- [ ] Time picker: native `<input type="time">` styled, plus an input-mode picker
-  (hours, minutes, period) for locales that need the period stated
+- [x] Date picker (`fc-datepicker`): a calendar grid with the APG date-grid keyboard
+  contract in a `datepicker` binding (arrows, Home/End, Page Up/Down, Shift+Page for
+  years, RTL), month and weekday names from `Intl`, the locale's first day of the week,
+  and min, max and per-day unavailability. The native `<input type="date">` is styled as
+  the text-entry path and the no-JS fallback. Range selection is deferred until someone
+  needs it; it changes the value from one date to two and the grid's selection model
+- [x] Time picker: native `<input type="time">` styled, plus an input-mode layout
+  (`fc-timepicker`: hours, minutes, an `fc-segmented` period) for locales that need the
+  period stated. The clock dial is Divergent, see the table
 
 **Exit criteria**
 

@@ -1,0 +1,208 @@
+/*!
+ * future-css -- slider
+ *
+ * A value picked from a range by dragging: temperature, volume, a top-p.
+ * Built on `<input type="range">`, so keyboard (arrows, Page Up/Down, Home,
+ * End), the slider role, `aria-valuenow`, and form submission all come from
+ * the platform:
+ *
+ *   <div class="fc-slider">
+ *     <input class="fc-slider__input" type="range" id="temp"
+ *            min="0" max="2" step="0.1" value="0.7" aria-labelledby="temp-label">
+ *     <output class="fc-slider__value" for="temp">0.7</output>
+ *     <ol class="fc-slider__marks" aria-hidden="true"><li>0</li><li>1</li><li>2</li></ol>
+ *   </div>
+ *
+ * The filled part of the track is drawn from `--fc-slider-pct`, which the
+ * `slider` binding sets on input (Firefox draws it natively). Without the
+ * binding the track is unfilled and the thumb alone shows the value, which is
+ * complete information, just less of it.
+ *
+ * Marks are a visible scale, hidden from assistive technology because the
+ * input already announces its value; `<datalist>` would be the semantic form,
+ * but no engine renders one under a styled range.
+ */
+
+@layer fc.components {
+  .fc-slider {
+    --fc-slider-thumb: 1.25rem;
+    --fc-slider-track: 0.375rem;
+    /* Both declared as 3:1 boundaries against a surface (WCAG 1.4.11): the
+       checked-control colour and the off-switch track. */
+    --fc-slider-fill: var(--fc-color-accent-border);
+    --fc-slider-rest: var(--fc-color-border-strong);
+
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--fc-space-3);
+    max-inline-size: 100%;
+  }
+
+  .fc-slider__input {
+    -webkit-appearance: none;
+    appearance: none;
+    inline-size: 100%;
+    /* The input box is the hit target, taller than the track it draws. */
+    block-size: var(--fc-size-target-comfortable);
+    margin: 0;
+    padding: 0;
+    /* The base layer draws a field border on inputs; a range has no field. */
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    touch-action: pan-y;
+  }
+
+  /*
+   * The track. A gradient with a hard stop at the value: filled before it,
+   * rest after. The direction is physical because the browser fills a range
+   * from the left in LTR and from the right in RTL; the :dir(rtl) branch
+   * below follows it.
+   */
+  .fc-slider__input::-webkit-slider-runnable-track {
+    block-size: var(--fc-slider-track);
+    border-radius: var(--fc-radius-full);
+    background: linear-gradient(to right, var(--fc-slider-fill) var(--fc-slider-pct, 0%), var(--fc-slider-rest) var(--fc-slider-pct, 0%));
+  }
+
+  .fc-slider__input:dir(rtl)::-webkit-slider-runnable-track {
+    background: linear-gradient(to left, var(--fc-slider-fill) var(--fc-slider-pct, 0%), var(--fc-slider-rest) var(--fc-slider-pct, 0%));
+  }
+
+  .fc-slider__input::-moz-range-track {
+    block-size: var(--fc-slider-track);
+    border-radius: var(--fc-radius-full);
+    background-color: var(--fc-slider-rest);
+  }
+
+  .fc-slider__input::-moz-range-progress {
+    block-size: var(--fc-slider-track);
+    border-radius: var(--fc-radius-full);
+    background-color: var(--fc-slider-fill);
+  }
+
+  /*
+   * The thumb carries a ring of the surface colour, so it stays distinct from
+   * the filled track it sits on.
+   */
+  .fc-slider__input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    inline-size: var(--fc-slider-thumb);
+    block-size: var(--fc-slider-thumb);
+    margin-block-start: calc((var(--fc-slider-track) - var(--fc-slider-thumb)) / 2);
+    background-color: var(--fc-slider-fill);
+    border: var(--fc-border-width-thick) solid var(--fc-color-bg-surface);
+    border-radius: var(--fc-radius-full);
+    box-shadow: var(--fc-shadow-raised);
+    transition: scale var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-slider__input::-moz-range-thumb {
+    inline-size: var(--fc-slider-thumb);
+    block-size: var(--fc-slider-thumb);
+    background-color: var(--fc-slider-fill);
+    border: var(--fc-border-width-thick) solid var(--fc-color-bg-surface);
+    border-radius: var(--fc-radius-full);
+    box-shadow: var(--fc-shadow-raised);
+  }
+
+  @media (hover: hover) {
+    .fc-slider__input:hover {
+      --fc-slider-fill: var(--fc-color-accent-bg-hover);
+    }
+  }
+
+  /* Dragging enlarges the thumb, so it stays visible under a fingertip. */
+  .fc-slider__input:active::-webkit-slider-thumb {
+    scale: 1.15;
+  }
+
+  .fc-slider__input:active {
+    --fc-slider-fill: var(--fc-color-accent-bg-active);
+  }
+
+  .fc-slider__input:disabled {
+    --fc-slider-fill: var(--fc-color-disabled-fg);
+    --fc-slider-rest: var(--fc-color-disabled-border);
+    cursor: not-allowed;
+  }
+
+  .fc-slider__input[aria-invalid="true"] {
+    --fc-slider-fill: var(--fc-color-danger-bg);
+  }
+
+  .fc-slider__value {
+    min-inline-size: 3ch;
+    color: var(--fc-color-text-default);
+    font-size: var(--fc-font-size-sm);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+
+  /*
+   * Inset by half a thumb on each side, which is where the browser puts the
+   * track's ends, so the first and last marks sit under the thumb's extremes.
+   */
+  .fc-slider__marks {
+    display: flex;
+    grid-column: 1;
+    justify-content: space-between;
+    margin: 0;
+    padding: 0;
+    padding-inline: calc(var(--fc-slider-thumb) / 2);
+    list-style: none;
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Each mark is centred on its point rather than starting at it. */
+  .fc-slider__marks > li {
+    inline-size: 0;
+    display: flex;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  /*
+   * Reduced motion: the thumb does not grow. The reset zeroes the duration, so
+   * the growth would jump; the larger thumb is not needed to see it either.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .fc-slider__input:active::-webkit-slider-thumb {
+      scale: 1;
+    }
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  /*
+   * Gradients and shadows are dropped in forced colors. The track and thumb
+   * are restated in system colours, so the value is still visible.
+   */
+  @media (forced-colors: active) {
+    .fc-slider__input::-webkit-slider-runnable-track {
+      background: CanvasText;
+    }
+
+    .fc-slider__input::-webkit-slider-thumb {
+      background-color: Highlight;
+      border-color: Canvas;
+    }
+
+    .fc-slider__input::-moz-range-track {
+      background-color: CanvasText;
+    }
+
+    .fc-slider__input::-moz-range-thumb,
+    .fc-slider__input::-moz-range-progress {
+      background-color: Highlight;
+    }
+
+    .fc-slider__input:disabled::-webkit-slider-thumb {
+      background-color: GrayText;
+    }
+  }
+}

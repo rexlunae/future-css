@@ -184,11 +184,15 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         import('/src/js/tooltip.js'),
         import('/src/js/table.js'),
         import('/src/js/nav.js'),
-      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt, tl, nv]) => {
+        import('/src/js/slider.js'),
+        import('/src/js/toolbar.js'),
+        import('/src/js/carousel.js'),
+        import('/src/js/datepicker.js'),
+      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt, tl, nv, sl, tr, cr, dp]) => {
         globalThis.E = e; globalThis.M = m; globalThis.G = g; globalThis.W = w;
         globalThis.H = h; globalThis.D = d; globalThis.S = s;
         globalThis.C = c; globalThis.K = k; globalThis.IT = it;
-        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt; globalThis.TL = tl; globalThis.NV = nv;
+        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt; globalThis.TL = tl; globalThis.NV = nv; globalThis.SL = sl; globalThis.TR = tr; globalThis.CR = cr; globalThis.DP = dp;
         return 'ok';
       })
     `);
@@ -3234,6 +3238,210 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
   });
 
   // ------------------------------------------------------------------- nav
+
+  // -------------------------------------------------------------- toolbar
+
+  it("gives a toolbar one tab stop and moves through it with the arrows", async () => {
+    // The roving tabindex contract: arrows wrap, Home/End jump, natively
+    // disabled items are skipped, aria-disabled ones are not, RTL reverses
+    // Left/Right, and a vertical toolbar uses Up/Down.
+    await loadBindings();
+    const r = await evaluate(`
+      const bar = document.createElement('div');
+      bar.className = 'fc-toolbar';
+      bar.setAttribute('role', 'toolbar');
+      bar.setAttribute('aria-label', 'Tools');
+      bar.innerHTML = '<button type="button" class="fc-toolbar__item">A</button>'
+        + '<button type="button" class="fc-toolbar__item" disabled>B</button>'
+        + '<button type="button" class="fc-toolbar__item" aria-disabled="true">C</button>'
+        + '<input class="fc-input" aria-label="Find">'
+        + '<button type="button" class="fc-toolbar__item">D</button>';
+      document.body.appendChild(bar);
+      const unbind = TR.bindToolbar(bar);
+      const name = () => document.activeElement.textContent || document.activeElement.getAttribute('aria-label');
+      const stops = [...bar.querySelectorAll('button:not(:disabled), input')].filter((el) => el.tabIndex === 0).map((el) => el.textContent || 'input');
+      const key = (k) => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
+      const seen = [];
+      bar.querySelector('button').focus();
+      key('ArrowRight'); seen.push(name());
+      key('ArrowRight'); seen.push(name());
+      // The text field keeps its arrows for its caret.
+      key('ArrowRight'); seen.push(name());
+      bar.querySelector('button:last-child').focus();
+      key('ArrowRight'); seen.push(name());
+      key('End'); seen.push(name());
+      key('Home'); seen.push(name());
+      const stopAfter = [...bar.querySelectorAll('button:not(:disabled)')].filter((el) => el.tabIndex === 0).map((el) => el.textContent);
+      bar.dir = 'rtl';
+      key('ArrowLeft'); const rtl = name();
+      bar.dir = '';
+      bar.setAttribute('aria-orientation', 'vertical');
+      key('ArrowDown'); const vertical = name();
+      unbind();
+      bar.remove();
+      return { stops, seen, stopAfter, rtl, vertical };
+    `);
+    assert.deepEqual(r.stops, ["A"], "one tab stop");
+    assert.deepEqual(r.seen, ["C", "Find", "Find", "A", "D", "A"]);
+    assert.deepEqual(r.stopAfter, ["A"], "the tab stop follows focus");
+    assert.equal(r.rtl, "C", "in RTL, Left moves forward");
+    assert.equal(r.vertical, "Find", "a vertical toolbar moves with Down");
+  });
+
+  // ------------------------------------------------------------- carousel
+
+  it("shows carousel controls only when bound, and disables each at its end", async () => {
+    // A previous button that looks pressable at the start of the track does
+    // nothing when pressed; aria-disabled says so. In RTL the track scrolls
+    // with negative scrollLeft, which the end detection must handle.
+    await loadBindings();
+    const r = await evaluate(`
+      const make = (dir) => {
+        const c = document.createElement('section');
+        c.className = 'fc-carousel';
+        c.dir = dir;
+        c.style.inlineSize = '300px';
+        c.innerHTML = '<div class="fc-carousel__controls" hidden>'
+          + '<button class="fc-btn" type="button" data-fc-carousel="prev" aria-label="Previous">p</button>'
+          + '<button class="fc-btn" type="button" data-fc-carousel="next" aria-label="Next">n</button></div>'
+          + '<ul class="fc-carousel__track" tabindex="0" style="scroll-behavior: auto; scroll-snap-type: none">'
+          + [1, 2, 3, 4, 5, 6].map((i) => '<li class="fc-carousel__item" style="flex-basis: 140px; block-size: 40px">' + i + '</li>').join('')
+          + '</ul>';
+        document.body.appendChild(c);
+        return c;
+      };
+      const state = (c) => [c.querySelector('[data-fc-carousel="prev"]').getAttribute('aria-disabled'),
+                            c.querySelector('[data-fc-carousel="next"]').getAttribute('aria-disabled')];
+      const settle = () => new Promise((res) => setTimeout(res, 60));
+      const out = {};
+      for (const dir of ['ltr', 'rtl']) {
+        const c = make(dir);
+        const hiddenBefore = c.querySelector('.fc-carousel__controls').hidden;
+        const unbind = CR.bindCarousel(c);
+        const at = [hiddenBefore, c.querySelector('.fc-carousel__controls').hidden, ...state(c)];
+        c.querySelector('[data-fc-carousel="next"]').click();
+        await settle();
+        const track = c.querySelector('.fc-carousel__track');
+        const moved = Math.abs(track.scrollLeft) > 0;
+        const mid = state(c);
+        // Page to the end.
+        for (let i = 0; i < 6; i++) { c.querySelector('[data-fc-carousel="next"]').click(); await settle(); }
+        const end = state(c);
+        unbind();
+        c.remove();
+        out[dir] = { at, moved, mid, end };
+      }
+      return out;
+    `);
+    for (const dir of ["ltr", "rtl"]) {
+      assert.deepEqual(r[dir].at, [true, false, "true", "false"], `${dir}: controls revealed, prev disabled at the start`);
+      assert.equal(r[dir].moved, true, `${dir}: next scrolls the track`);
+      assert.deepEqual(r[dir].mid, ["false", "false"], `${dir}: both enabled mid-track`);
+      assert.deepEqual(r[dir].end, ["false", "true"], `${dir}: next disabled at the end`);
+    }
+  });
+
+  // ----------------------------------------------------------- datepicker
+
+  it("renders a date picker month and walks it with the date grid keys", async () => {
+    // One tab stop on the focused day; arrows by day and week, swapped in
+    // RTL; Home/End to the week's ends; PageDown to the next month, clamped
+    // to its length; selection on the gridcell; unavailable days reachable
+    // but not selectable.
+    await loadBindings();
+    const r = await evaluate(`
+      const root = document.createElement('div');
+      root.className = 'fc-datepicker';
+      document.body.appendChild(root);
+      const changes = [];
+      const p = DP.bindDatePicker(root, {
+        today: '2026-01-15', value: '2026-01-31', locale: 'en-US', firstDayOfWeek: 0,
+        max: '2026-03-10', isDisabled: (iso) => iso === '2026-02-02', onChange: (iso) => changes.push(iso),
+      });
+      const focused = () => document.activeElement.dataset.fcDate;
+      const key = (k, extra = {}) => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, ...extra }));
+      const out = {
+        title: root.querySelector('.fc-datepicker__title').textContent,
+        heads: [...root.querySelectorAll('th')].map((th) => th.textContent + '/' + th.abbr).join(' '),
+        stops: [...root.querySelectorAll('.fc-datepicker__day')].filter((b) => b.tabIndex === 0).map((b) => b.dataset.fcDate),
+        today: root.querySelector('[aria-current="date"]').dataset.fcDate,
+        selectedCell: root.querySelector('[aria-selected="true"] button').dataset.fcDate,
+        value: root.dataset.fcValue,
+      };
+      p.focus();
+      key('ArrowRight'); out.right = focused();
+      out.titleAfter = root.querySelector('.fc-datepicker__title').textContent;
+      key('ArrowRight'); key('Enter');
+      document.activeElement.click(); out.disabledClick = [p.value, changes.length];
+      key('ArrowUp'); out.up = focused();
+      key('Home'); out.home = focused();
+      key('End'); out.end = focused();
+      p.value = '2026-01-31'; p.focus();
+      key('PageDown'); out.pageDown = focused();
+      key('PageDown', { shiftKey: true }); out.clampedToMax = focused();
+      root.dir = 'rtl'; p.value = '2026-01-14'; p.focus();
+      key('ArrowRight'); out.rtlRight = focused();
+      root.dir = '';
+      document.activeElement.click();
+      out.selected = [p.value, changes.slice(-1)[0], root.querySelector('[aria-selected="true"] button').dataset.fcDate];
+      p.destroy();
+      root.remove();
+      return out;
+    `);
+    assert.equal(r.title, "January 2026");
+    assert.equal(r.heads.split(" ")[0], "S/Sunday", "narrow name shown, full name as the header's abbr");
+    assert.deepEqual(r.stops, ["2026-01-31"], "one tab stop, on the selected day");
+    assert.equal(r.today, "2026-01-15");
+    assert.equal(r.selectedCell, "2026-01-31");
+    assert.equal(r.value, "2026-01-31", "the selection is mirrored for machine readers");
+    assert.equal(r.right, "2026-02-01", "Right crosses into the next month");
+    assert.equal(r.titleAfter, "February 2026");
+    assert.deepEqual(r.disabledClick, ["2026-01-31", 0], "an unavailable day takes focus but not selection");
+    assert.equal(r.up, "2026-01-26");
+    assert.equal(r.home, "2026-01-25", "Home goes to the first day of the week (Sunday here)");
+    assert.equal(r.end, "2026-01-31");
+    assert.equal(r.pageDown, "2026-02-28", "PageDown keeps the day, clamped to the shorter month");
+    assert.equal(r.clampedToMax, "2026-03-10", "Shift+PageDown clamps to max");
+    assert.equal(r.rtlRight, "2026-01-13", "in RTL, Right goes back a day");
+    assert.deepEqual(r.selected, ["2026-01-13", "2026-01-13", "2026-01-13"]);
+  });
+
+  // --------------------------------------------------------------- slider
+
+  it("fills the slider track to the value and mirrors it in its output", async () => {
+    // Blink has no pseudo-element for the filled part of a range track, so the
+    // fill is the binding's job; a stale fill would show one value while the
+    // input announces another.
+    await loadBindings();
+    const r = await evaluate(`
+      const wrap = document.createElement('div');
+      wrap.className = 'fc-slider';
+      wrap.innerHTML = '<input class="fc-slider__input" type="range" id="sl-temp" min="0" max="2" step="0.1" value="0.5" aria-label="Temperature">'
+        + '<output class="fc-slider__value" for="sl-temp">?</output>';
+      document.body.appendChild(wrap);
+      const input = wrap.querySelector('input');
+      const output = wrap.querySelector('output');
+      const unbind = SL.bindSliders(document);
+      const initial = [input.style.getPropertyValue('--fc-slider-pct'), output.value];
+      input.value = '1.5';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      const moved = [input.style.getPropertyValue('--fc-slider-pct'), output.value];
+      // Degenerate and out-of-range values clamp rather than drawing past the track.
+      const flat = document.createElement('input');
+      flat.type = 'range'; flat.min = '5'; flat.max = '5'; flat.value = '5';
+      const extremes = [SL.sliderPercent(flat)];
+      unbind();
+      input.value = '2';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      const afterUnbind = output.value;
+      wrap.remove();
+      return { initial, moved, extremes, afterUnbind };
+    `);
+    assert.deepEqual(r.initial, ["25%", "0.5"]);
+    assert.deepEqual(r.moved, ["75%", "1.5"]);
+    assert.deepEqual(r.extremes, ["0%"]);
+    assert.equal(r.afterUnbind, "1.5", "the returned function removes the listener");
+  });
 
   it("collapses the sidebar to a rail from aria-expanded, keeping link names", async () => {
     await loadBindings();

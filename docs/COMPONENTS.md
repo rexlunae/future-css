@@ -1560,3 +1560,271 @@ A FAB menu is a FAB with `popovertarget` and a `.fc-fab-menu` popover of
 focus. Items are plain buttons in tab order rather than a `role="menu"`: three to six
 actions do not need a menu's arrow-key contract. While open, the FAB shows the selected
 colours. The menu fades in without sliding under reduced motion.
+
+## List
+
+`list.css` is the general list: settings, contacts, files, results. Rows have an optional
+leading slot (icon, avatar, thumbnail), up to three lines of text (`__overline`,
+`__headline`, `__supporting`), and a trailing slot for meta or a control.
+
+```html
+<ul class="fc-list fc-list--divided">
+  <li class="fc-list__item">
+    <span class="fc-list__leading" aria-hidden="true">…</span>
+    <span class="fc-list__content">
+      <a class="fc-list__action fc-list__headline" href="/settings/privacy" aria-current="page">Privacy</a>
+      <span class="fc-list__supporting">Who can see your conversations</span>
+    </span>
+  </li>
+  <li>
+    <label class="fc-list__item">
+      <span class="fc-list__content"><span class="fc-list__headline">Web search</span></span>
+      <span class="fc-list__trailing"><input class="fc-switch" type="checkbox" role="switch"></span>
+    </label>
+  </li>
+</ul>
+```
+
+A row is static, an action row (one `.fc-list__action`, a link or button, whose
+`::after` covers the row so the whole row is the target while the accessible name stays
+the headline), or a control row (`.fc-list__item` on a `<label>`). The focus ring is drawn
+around the row. Selection is `aria-current` or `aria-selected="true"` on the action;
+disabled is `disabled` or `aria-disabled` inside the row. Trailing buttons sit above the
+stretched action and stay clickable. Supporting text clamps at two lines; when it does,
+set `data-fc-truncated="true"` and keep the full text reachable. No binding: a list of
+links or buttons is already keyboard-operable, and a list that needs arrow-key focus is a
+listbox (`fc-select`) or a menu.
+
+## Divider
+
+`divider.css`: `<hr class="fc-divider">` between sections, `--inset` to start where a
+list's text starts, `--middle` to inset both edges, and `--vertical` on an element with
+`role="separator" aria-orientation="vertical"` inside a row. `--fc-divider-space` and
+`--fc-divider-inset` adjust spacing. It uses the subtle border, which is decoration and
+exempt from non-text contrast.
+
+## Slider
+
+`slider.css` styles `<input type="range">`, so the keyboard contract, the slider role and
+the announced value come from the platform.
+
+```html
+<div class="fc-slider">
+  <input class="fc-slider__input" type="range" id="temp" min="0" max="2" step="0.1"
+         value="0.7" aria-label="Temperature">
+  <output class="fc-slider__value" for="temp">0.7</output>
+  <ol class="fc-slider__marks" aria-hidden="true"><li>0</li><li>1</li><li>2</li></ol>
+</div>
+<script type="module">
+  import { bindSliders } from "future-css/slider";
+  bindSliders(document);
+</script>
+```
+
+Blink and WebKit have no pseudo-element for the filled part of the track, so the fill
+reads `--fc-slider-pct`, which `bindSliders` keeps current and which it also mirrors into
+any `<output for>`. The output is not a live region, because the input already announces
+its value. After setting `value` from script, call `syncSlider(input)`. Without the
+binding the track is unfilled and the thumb alone shows the value; Firefox draws the fill
+natively. The fill and track colours are the declared 3:1 boundary pairs. Hover, active
+(a larger thumb, held still under reduced motion), disabled and `aria-invalid` are
+styled; forced colors restate the track and thumb in system colours. RTL fills from the
+right, as the browser does.
+
+## Toolbar
+
+`toolbar.css` is the general toolbar; the rich text editor's formatting bar is one. It
+moved out of `editor.css`, so a page that loads components one at a time loads
+`toolbar.css` with `editor.css`.
+
+```html
+<div class="fc-toolbar fc-toolbar--floating" role="toolbar" aria-label="Selection">
+  <button class="fc-toolbar__item" type="button" aria-pressed="false">Bold</button>
+  <span class="fc-toolbar__divider" role="separator"></span>
+  <button class="fc-toolbar__item fc-toolbar__item--icon" type="button" aria-label="Delete">…</button>
+</div>
+<script type="module">
+  import { bindToolbars } from "future-css/toolbar";
+  bindToolbars(document);
+</script>
+```
+
+The default is the dense bar an editor uses. `--floating` is a raised pill for a
+selection or a canvas, and `--docked` sticks to the block-end of its scroll container
+for a screen's actions; both use 40px items. `aria-orientation="vertical"` stacks it.
+`bindToolbar` makes the toolbar one tab stop: Left/Right (swapped in RTL) or Up/Down
+when vertical move between items and wrap, Home/End jump, natively disabled items are
+skipped and `aria-disabled` ones stay reachable, and a text field or select inside keeps
+its own arrow keys. Focus moving by pointer moves the tab stop too. Without the binding,
+every item is a tab stop.
+
+## Navigation bar
+
+`navbar.css` holds three to five top-level destinations at the block-end edge of a phone
+layout; swap it for `fc-nav` at a breakpoint.
+
+```html
+<nav class="fc-navbar fc-navbar--fixed" aria-label="Primary">
+  <a class="fc-navbar__item" href="/chats" aria-current="page">
+    <span class="fc-navbar__icon" aria-hidden="true">…</span>
+    <span class="fc-navbar__label">Chats</span>
+  </a>
+  <a class="fc-navbar__item" href="/inbox">
+    <span class="fc-navbar__icon" aria-hidden="true">…<span class="fc-navbar__badge">3</span></span>
+    <span class="fc-navbar__label">Inbox</span><span class="fc-u-visually-hidden">, 3 unread</span>
+  </a>
+</nav>
+```
+
+Labels are always visible. The current destination (`aria-current="page"`) gets an
+indicator behind its icon and a heavier label. A badge sits inside the hidden icon, so
+say the count in the link's name. An empty badge is a dot. `--fixed` pins the bar above
+the phone's home indicator; the page reserves the space. A disabled destination is an
+anchor with no `href` and `aria-disabled="true"`.
+
+## Search
+
+`search.css` is a search bar with an optional view beneath it for recent searches,
+suggestions or results.
+
+```html
+<form class="fc-search" role="search" action="/search">
+  <div class="fc-search__bar">
+    <span class="fc-search__icon" aria-hidden="true">…</span>
+    <input class="fc-search__input" type="search" name="q" aria-label="Search conversations"
+           placeholder="Search conversations">
+    <span class="fc-search__trailing">…</span>
+  </div>
+  <div class="fc-search__view" role="region" aria-label="Recent searches">
+    <p class="fc-search__view-label">Recent</p>
+    <ul class="fc-list">…</ul>
+  </div>
+</form>
+```
+
+The view opens while focus is inside the search, with no script, and floats over the
+content below. `data-fc-open="true"` or `"false"` holds it open or closed, `--docked` puts
+it in the page flow (a full-screen search on a phone), and `aria-busy="true"` dims stale
+results while new ones load. Its contents are links or buttons, so Tab reaches them; when
+suggestions should be chosen with arrow keys, use `fc-select`'s combobox instead. The
+focus ring is drawn on the bar. Disabled and `aria-invalid` are styled.
+
+## Bottom sheet
+
+`fc-dialog--bottom` docks a dialog to the block-end edge at every width, edge to edge on
+a phone and a centred 40rem panel above that. Open it with `showModal()` for a modal
+sheet or `show()` for a standard sheet that leaves the page usable. It slides up on open
+and down on close, with no script. `.fc-dialog__handle` is a decorative drag handle;
+nothing makes it draggable, so every sheet keeps a close button or `closedby="any"`.
+
+```html
+<dialog class="fc-dialog fc-dialog--bottom" id="share" aria-labelledby="share-title" closedby="any">
+  <div class="fc-dialog__handle" aria-hidden="true"></div>
+  <header class="fc-dialog__header">
+    <h2 class="fc-dialog__title" id="share-title">Share conversation</h2>
+    <button class="fc-dialog__close" type="button" commandfor="share" command="close" aria-label="Close">✕</button>
+  </header>
+  <div class="fc-dialog__body">…</div>
+</dialog>
+```
+
+## Progress ring
+
+`fc-progress-ring` (in `loading.css`) is circular determinate progress. There is no
+native circular element, so the role and values are ARIA, and the drawn value is
+`--fc-progress-value` (0 to 100) stated beside them; update both in the same write. It
+only shows a known amount; use a spinner when the amount is unknown. `--sm`, `--lg` and
+`--error` are available, and value changes animate because the property is registered.
+
+```html
+<div class="fc-progress-ring" role="progressbar" aria-label="Uploading"
+     aria-valuemin="0" aria-valuemax="100" aria-valuenow="42" style="--fc-progress-value: 42">
+  <span class="fc-progress-ring__label">42%</span>
+</div>
+```
+
+## Filled text field
+
+`fc-input--filled` is a tinted field with an underline instead of an outline, for dense
+forms. Invalid, disabled and focus states are the same as `fc-input`'s. The fill and the
+underline are declared contrast pairs. The label stays above the field; floating labels
+are a deliberate divergence (see `PLAN.md`, Phase D).
+
+## Carousel
+
+`carousel.css` is a scroll-snap row: touch, trackpad and arrow keys on the focused track
+scroll it with no script.
+
+```html
+<section class="fc-carousel" aria-roledescription="carousel" aria-label="Templates">
+  <div class="fc-carousel__controls" hidden>
+    <button class="fc-btn fc-btn--secondary fc-btn--icon" type="button" data-fc-carousel="prev" aria-label="Previous">‹</button>
+    <button class="fc-btn fc-btn--secondary fc-btn--icon" type="button" data-fc-carousel="next" aria-label="Next">›</button>
+  </div>
+  <ul class="fc-carousel__track" tabindex="0" aria-label="Templates">
+    <li class="fc-carousel__item" aria-roledescription="slide" aria-label="1 of 4">
+      <img src="…" alt="…"><p class="fc-carousel__caption">Weekly report</p>
+    </li>
+  </ul>
+</section>
+<script type="module">
+  import { bindCarousels } from "future-css/carousel";
+  bindCarousels(document);
+</script>
+```
+
+The default multi-browse layout shows the next item peeking in; `--hero` shows one large
+item and `--free` turns off snapping. `--fc-carousel-item` sets item width. The buttons
+ship `hidden` and `bindCarousel` reveals them, pages by most of the visible width, and
+sets `aria-disabled` at each end, in both directions. Captions sit on the inverse surface,
+so they stay legible over any image. It never autoplays.
+
+## Date and time pickers
+
+`datepicker.css` styles a month calendar. The `datepicker` binding renders it and owns
+the WAI-ARIA date-grid keyboard contract.
+
+```html
+<div class="fc-datepicker" id="due"></div>
+<script type="module">
+  import { bindDatePicker } from "future-css/datepicker";
+  const picker = bindDatePicker(document.getElementById("due"), {
+    value: "2026-10-21",
+    min: "2026-10-01",
+    isDisabled: (iso) => [0, 6].includes(new Date(iso).getUTCDay()),
+    onChange: (iso) => form.elements.due.value = iso,
+  });
+</script>
+```
+
+Values are ISO `YYYY-MM-DD` strings, compared as calendar dates with no time zone. Month
+and weekday names come from `Intl` in the page's `lang` (or `locale`), and the week
+starts on the locale's first day unless `firstDayOfWeek` says otherwise. Arrow keys move
+by day and week, Home and End to the week's ends, Page Up and Down by month, and with
+Shift by year, mirrored in RTL. The selection is `aria-selected="true"` on the cell,
+today is `aria-current="date"`, and unavailable days are `aria-disabled` so the arrow keys
+still reach them. The root mirrors the selection as `data-fc-value`.
+
+The calendar is for browsing. For entering a known date, and wherever script is absent,
+use the native input, which `field.css` styles:
+
+```html
+<input class="fc-input" type="date" name="due">
+<input class="fc-input" type="time" name="start">
+```
+
+For a time where the period must be stated explicitly, `fc-timepicker` lays out hour and
+minute fields with an `fc-segmented` period. The row is isolated left to right, since
+times read hours first in every script:
+
+```html
+<fieldset class="fc-timepicker">
+  <legend class="fc-field__label">Start time</legend>
+  <input class="fc-input fc-timepicker__unit" inputmode="numeric" aria-label="Hour" value="09" maxlength="2">
+  <span class="fc-timepicker__separator" aria-hidden="true">:</span>
+  <input class="fc-input fc-timepicker__unit" inputmode="numeric" aria-label="Minute" value="30" maxlength="2">
+  <fieldset class="fc-segmented">…AM / PM…</fieldset>
+</fieldset>
+```
+
+Material's clock dial is not offered; see the Phase D table in `docs/PLAN.md`.

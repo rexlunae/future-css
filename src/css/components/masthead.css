@@ -1,0 +1,141 @@
+/*!
+ * future-css -- masthead
+ *
+ * An application header, independent of the page layout. Links keep normal
+ * navigation semantics; buttons, search, and menus reuse their own components.
+ * Wrap rather than hide destinations when a narrow container runs out of room.
+ */
+@layer fc.components {
+  .fc-masthead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fc-space-3) var(--fc-space-6);
+    min-inline-size: 0;
+    padding: var(--fc-space-3) var(--fc-space-4);
+    background-color: var(--fc-color-bg-surface);
+    color: var(--fc-color-text-default);
+    border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  }
+
+  .fc-masthead__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-3);
+    min-inline-size: var(--fc-size-target-min);
+    min-block-size: var(--fc-size-target-comfortable);
+    max-inline-size: 100%;
+    padding-inline: var(--fc-space-1);
+    color: var(--fc-color-text-default);
+    border-radius: var(--fc-radius-md);
+    font-weight: var(--fc-font-weight-semibold);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+
+  .fc-masthead__mark {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    inline-size: var(--fc-size-target-comfortable);
+    block-size: var(--fc-size-target-comfortable);
+    background-color: var(--fc-color-accent-bg);
+    color: var(--fc-color-text-on-accent);
+    border-radius: var(--fc-radius-lg);
+    font-size: var(--fc-font-size-sm);
+  }
+
+  .fc-masthead__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fc-space-1);
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fc-masthead__link {
+    display: inline-flex;
+    align-items: center;
+    min-inline-size: var(--fc-size-target-min);
+    min-block-size: var(--fc-size-target-comfortable);
+    padding: var(--fc-space-2) var(--fc-space-3);
+    border: var(--fc-border-width-thin) solid transparent;
+    border-radius: var(--fc-radius-md);
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-sm);
+    font-weight: var(--fc-font-weight-medium);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+
+  .fc-masthead__brand:hover,
+  .fc-masthead__link:hover {
+    background-color: var(--fc-color-bg-subtle);
+    color: var(--fc-color-text-default);
+  }
+
+  .fc-masthead__brand:active,
+  .fc-masthead__link:active {
+    background-color: var(--fc-color-bg-muted);
+  }
+
+  .fc-masthead__link[aria-current="page"] {
+    background-color: var(--fc-color-accent-bg-subtle);
+    color: var(--fc-color-accent-text);
+    border-block-end-color: var(--fc-color-accent-border);
+  }
+
+  .fc-masthead__brand:focus-visible,
+  .fc-masthead__link:focus-visible {
+    outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring);
+    outline-offset: var(--fc-space-0-5);
+  }
+
+  .fc-masthead__brand:disabled,
+  .fc-masthead__brand[aria-disabled="true"],
+  .fc-masthead__link:disabled,
+  .fc-masthead__link[aria-disabled="true"] {
+    background-color: transparent;
+    color: var(--fc-color-disabled-fg);
+    border-color: transparent;
+    opacity: 1;
+    cursor: not-allowed;
+  }
+
+  .fc-masthead__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fc-space-2);
+    min-inline-size: 0;
+    margin-inline-start: auto;
+  }
+
+  /* No autonomous motion or lifecycle: child controls own loading and errors.
+     Disabled links should omit href; aria-disabled alone does not cancel navigation. */
+  @media (forced-colors: active) {
+    .fc-masthead {
+      border-color: CanvasText;
+    }
+
+    .fc-masthead__link[aria-current="page"] {
+      color: LinkText;
+      border-block-end-color: Highlight;
+    }
+
+    .fc-masthead__mark {
+      background-color: Highlight;
+      color: HighlightText;
+    }
+
+    .fc-masthead__brand[aria-disabled="true"],
+    .fc-masthead__link[aria-disabled="true"],
+    .fc-masthead__brand:disabled,
+    .fc-masthead__link:disabled {
+      color: GrayText;
+      opacity: 1;
+    }
+  }
+}

@@ -1,0 +1,26 @@
+/*!
+ * future-css -- optional print foundation
+ *
+ * Import after tokens. Applications mark interactive chrome with fc-print-hide
+ * and choose page breaks; the library cannot decide which content is disposable.
+ */
+@layer fc.tokens {
+  @media print {
+    :root, [data-fc-theme] { color-scheme: light; }
+  }
+}
+@layer fc.utilities {
+  @media print {
+    .fc-print-link::after { content: " (" attr(href) ")"; overflow-wrap: anywhere; }
+    .fc-print-hide { display: none !important; }
+    .fc-print-keep { break-inside: avoid; }
+    .fc-print-break { break-before: page; }
+    .fc-print-content {
+      color: var(--fc-color-text-default);
+      background-color: var(--fc-color-bg-surface);
+      box-shadow: none;
+      overflow: visible;
+      max-inline-size: none;
+    }
+  }
+}

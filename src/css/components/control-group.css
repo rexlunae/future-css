@@ -1,0 +1,97 @@
+/*!
+ * future-css -- control group
+ *
+ * A named collection of related controls, not a toolbar keyboard model.
+ * Buttons and selects retain their own states and Tab stops. Use role="group"
+ * with an accessible name, or a fieldset/legend for related form fields.
+ */
+@layer fc.components {
+  .fc-control-group {
+    display: inline-flex;
+    flex-direction: var(--fc-control-group-direction, row);
+    flex-wrap: wrap;
+    align-items: var(--fc-control-group-align, center);
+    gap: var(--fc-space-1);
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    margin: 0;
+    padding: var(--fc-space-1);
+    background-color: var(--fc-color-bg-subtle);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-lg);
+    --fc-select-block-size: 2rem;
+  }
+
+  .fc-control-group--plain {
+    padding: 0;
+    background-color: transparent;
+    border-color: transparent;
+  }
+
+  .fc-control-group--vertical {
+    --fc-control-group-direction: column;
+    --fc-control-group-align: stretch;
+  }
+
+  .fc-control-group__label {
+    padding-inline: var(--fc-space-2);
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-sm);
+    font-weight: var(--fc-font-weight-medium);
+    overflow-wrap: anywhere;
+  }
+
+  .fc-control-group__item {
+    inline-size: auto;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* Pressed state belongs to the real control, never a parallel selected class. */
+  .fc-control-group__item[aria-pressed="true"] {
+    background-color: var(--fc-color-selected-bg);
+    color: var(--fc-color-selected-fg);
+    border-color: var(--fc-color-accent-border);
+    font-weight: var(--fc-font-weight-semibold);
+  }
+
+  .fc-control-group__item[aria-pressed="true"]:hover:not(:disabled, [aria-disabled="true"]) {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .fc-control-group__item[aria-pressed="true"]:active:not(:disabled, [aria-disabled="true"]) {
+    box-shadow: inset 0 0 0 var(--fc-border-width-thin) var(--fc-color-accent-border);
+  }
+
+  .fc-control-group__item:disabled,
+  .fc-control-group__item[aria-disabled="true"] {
+    background-color: var(--fc-color-disabled-bg);
+    color: var(--fc-color-disabled-fg);
+    border-color: var(--fc-color-disabled-border);
+    cursor: not-allowed;
+  }
+
+  /* The wrapper has no hover, active, or loading state: its controls own those
+     states and focus rings. No autonomous motion is introduced here. */
+  @media (forced-colors: active) {
+    .fc-control-group {
+      border-color: CanvasText;
+    }
+
+    .fc-control-group__item[aria-pressed="true"] {
+      background-color: Highlight;
+      color: HighlightText;
+      border-color: Highlight;
+    }
+
+    .fc-control-group__item:disabled,
+    .fc-control-group__item[aria-disabled="true"] {
+      color: GrayText;
+      border-color: GrayText;
+    }
+  }
+}

@@ -186,11 +186,12 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         import('/src/js/nav.js'),
         import('/src/js/slider.js'),
         import('/src/js/toolbar.js'),
-      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt, tl, nv, sl, tr]) => {
+        import('/src/js/carousel.js'),
+      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt, tl, nv, sl, tr, cr]) => {
         globalThis.E = e; globalThis.M = m; globalThis.G = g; globalThis.W = w;
         globalThis.H = h; globalThis.D = d; globalThis.S = s;
         globalThis.C = c; globalThis.K = k; globalThis.IT = it;
-        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt; globalThis.TL = tl; globalThis.NV = nv; globalThis.SL = sl; globalThis.TR = tr;
+        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt; globalThis.TL = tl; globalThis.NV = nv; globalThis.SL = sl; globalThis.TR = tr; globalThis.CR = cr;
         return 'ok';
       })
     `);
@@ -3284,6 +3285,59 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.deepEqual(r.stopAfter, ["A"], "the tab stop follows focus");
     assert.equal(r.rtl, "C", "in RTL, Left moves forward");
     assert.equal(r.vertical, "Find", "a vertical toolbar moves with Down");
+  });
+
+  // ------------------------------------------------------------- carousel
+
+  it("shows carousel controls only when bound, and disables each at its end", async () => {
+    // A previous button that looks pressable at the start of the track does
+    // nothing when pressed; aria-disabled says so. In RTL the track scrolls
+    // with negative scrollLeft, which the end detection must handle.
+    await loadBindings();
+    const r = await evaluate(`
+      const make = (dir) => {
+        const c = document.createElement('section');
+        c.className = 'fc-carousel';
+        c.dir = dir;
+        c.style.inlineSize = '300px';
+        c.innerHTML = '<div class="fc-carousel__controls" hidden>'
+          + '<button class="fc-btn" type="button" data-fc-carousel="prev" aria-label="Previous">p</button>'
+          + '<button class="fc-btn" type="button" data-fc-carousel="next" aria-label="Next">n</button></div>'
+          + '<ul class="fc-carousel__track" tabindex="0" style="scroll-behavior: auto; scroll-snap-type: none">'
+          + [1, 2, 3, 4, 5, 6].map((i) => '<li class="fc-carousel__item" style="flex-basis: 140px; block-size: 40px">' + i + '</li>').join('')
+          + '</ul>';
+        document.body.appendChild(c);
+        return c;
+      };
+      const state = (c) => [c.querySelector('[data-fc-carousel="prev"]').getAttribute('aria-disabled'),
+                            c.querySelector('[data-fc-carousel="next"]').getAttribute('aria-disabled')];
+      const settle = () => new Promise((res) => setTimeout(res, 60));
+      const out = {};
+      for (const dir of ['ltr', 'rtl']) {
+        const c = make(dir);
+        const hiddenBefore = c.querySelector('.fc-carousel__controls').hidden;
+        const unbind = CR.bindCarousel(c);
+        const at = [hiddenBefore, c.querySelector('.fc-carousel__controls').hidden, ...state(c)];
+        c.querySelector('[data-fc-carousel="next"]').click();
+        await settle();
+        const track = c.querySelector('.fc-carousel__track');
+        const moved = Math.abs(track.scrollLeft) > 0;
+        const mid = state(c);
+        // Page to the end.
+        for (let i = 0; i < 6; i++) { c.querySelector('[data-fc-carousel="next"]').click(); await settle(); }
+        const end = state(c);
+        unbind();
+        c.remove();
+        out[dir] = { at, moved, mid, end };
+      }
+      return out;
+    `);
+    for (const dir of ["ltr", "rtl"]) {
+      assert.deepEqual(r[dir].at, [true, false, "true", "false"], `${dir}: controls revealed, prev disabled at the start`);
+      assert.equal(r[dir].moved, true, `${dir}: next scrolls the track`);
+      assert.deepEqual(r[dir].mid, ["false", "false"], `${dir}: both enabled mid-track`);
+      assert.deepEqual(r[dir].end, ["false", "true"], `${dir}: next disabled at the end`);
+    }
   });
 
   // --------------------------------------------------------------- slider

@@ -148,6 +148,93 @@
     }
   }
 
+  /* ---- Progress ring --------------------------------------------------- */
+
+  /*
+   * Circular determinate progress: an upload, a context window filling up.
+   * There is no native circular element, so the role and values are ARIA,
+   * and the drawn value is a custom property the markup states beside them:
+   *
+   *   <div class="fc-progress-ring" role="progressbar" aria-label="Uploading"
+   *        aria-valuemin="0" aria-valuemax="100" aria-valuenow="42"
+   *        style="--fc-progress-value: 42">
+   *     <span class="fc-progress-ring__label">42%</span>
+   *   </div>
+   *
+   * It only ever shows a known amount; an unknown one is a spinner, so the
+   * ring never pretends to know. Whoever updates `aria-valuenow` updates the
+   * property in the same write.
+   */
+  .fc-progress-ring {
+    --fc-progress-ring-size: 2.5rem;
+    --fc-progress-ring-width: 0.25rem;
+    --fc-progress-ring-fill: var(--fc-color-accent-border);
+
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    inline-size: var(--fc-progress-ring-size);
+    block-size: var(--fc-progress-ring-size);
+    color: var(--fc-color-text-default);
+    font-size: var(--fc-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    /* Animates between values because the property is registered below. */
+    transition: --fc-progress-value var(--fc-duration-slow) var(--fc-easing-standard);
+  }
+
+  /*
+   * Registered as a number so a change of value interpolates rather than
+   * jumping; unregistered custom properties cannot transition.
+   */
+  @property --fc-progress-value {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 0;
+  }
+
+  /*
+   * A conic fill cut to a ring by a radial mask. The fill starts at the top
+   * and runs clockwise in both directions, like a clock face, which is how a
+   * circular gauge is read in RTL scripts too.
+   */
+  .fc-progress-ring::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--fc-radius-full);
+    background: conic-gradient(
+      var(--fc-progress-ring-fill) calc(var(--fc-progress-value, 0) * 1%),
+      var(--fc-color-bg-muted) 0
+    );
+    /* A mask reads only alpha, so any opaque colour cuts the same ring. */
+    mask: radial-gradient(
+      farthest-side,
+      transparent calc(100% - var(--fc-progress-ring-width) - 0.5px),
+      currentColor calc(100% - var(--fc-progress-ring-width))
+    );
+  }
+
+  .fc-progress-ring__label {
+    position: relative;
+  }
+
+  .fc-progress-ring--sm {
+    --fc-progress-ring-size: 1.5rem;
+    --fc-progress-ring-width: 0.1875rem;
+  }
+
+  .fc-progress-ring--lg {
+    --fc-progress-ring-size: 4rem;
+    --fc-progress-ring-width: 0.375rem;
+    font-size: var(--fc-font-size-sm);
+  }
+
+  /* A failed run keeps its ring at the point it stopped, in the danger colour. */
+  .fc-progress-ring--error {
+    --fc-progress-ring-fill: var(--fc-color-danger-border);
+  }
+
   /* ---- Reduced motion -------------------------------------------------- */
 
   /*
@@ -181,6 +268,17 @@
     }
 
     .fc-progress {
+      border: var(--fc-border-width-thin) solid CanvasText;
+    }
+
+    /* Gradient colours are not forced, so the ring restates them itself. */
+    .fc-progress-ring {
+      --fc-progress-ring-fill: Highlight;
+      forced-color-adjust: none;
+      color: CanvasText;
+    }
+
+    .fc-progress-ring::before {
       border: var(--fc-border-width-thin) solid CanvasText;
     }
   }

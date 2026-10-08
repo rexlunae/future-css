@@ -91,6 +91,7 @@ const BUNDLE_ORDER: ReadonlyArray<readonly [source: string, publishedAs: string]
   ["components/toolbar.css", "components/toolbar.css"],
   ["components/navbar.css", "components/navbar.css"],
   ["components/search.css", "components/search.css"],
+  ["components/carousel.css", "components/carousel.css"],
   ["type.css", "type.css"],
   ["utilities.css", "utilities.css"],
 ];

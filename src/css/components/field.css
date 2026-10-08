@@ -199,6 +199,31 @@
   }
 
   /*
+   * Filled: a tinted field with an underline, Material's filled text field.
+   * Reads as a field among dense controls where a full outline would add a
+   * box to a page of boxes. The underline is the boundary that has to meet
+   * 3:1 (WCAG 1.4.11), declared against the fill in the contrast contract.
+   */
+  .fc-input--filled {
+    background-color: var(--fc-color-bg-subtle);
+    border-color: transparent;
+    border-block-end-color: var(--fc-color-border-interactive);
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+  }
+
+  /* Not on an invalid or disabled field, whose own borders must survive hover. */
+  .fc-input--filled:hover:not([aria-invalid="true"], :user-invalid, :disabled) {
+    background-color: var(--fc-color-bg-muted);
+    border-color: transparent;
+    border-block-end-color: var(--fc-color-text-default);
+  }
+
+  .fc-input--filled:focus-visible:not([aria-invalid="true"], :user-invalid) {
+    border-block-end-color: var(--fc-color-accent-border);
+  }
+
+  /*
    * Native select. The chevron is two gradients rather than an inline SVG,
    * because an SVG data URI would carry a literal colour that cannot follow the
    * theme. `currentColor` keeps it in step with the text in every scheme.

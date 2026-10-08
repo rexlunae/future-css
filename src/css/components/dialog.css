@@ -242,6 +242,61 @@
     }
   }
 
+  /*
+   * A bottom sheet, docked to the block-end edge at every width: secondary
+   * actions, a share sheet, details for a selection. Opened with
+   * `showModal()` it is modal; with `show()` it is a standard sheet that
+   * leaves the page usable, which is why it is fixed rather than relying on
+   * the top layer to position it.
+   */
+  .fc-dialog--bottom {
+    --fc-dialog-size: 40rem;
+
+    position: fixed;
+    inset-block: auto 0;
+    inset-inline: 0;
+    /* Edge to edge on a phone, a centred 40rem panel on wider screens. */
+    inline-size: min(100%, var(--fc-dialog-size));
+    margin-block: auto 0;
+    margin-inline: auto;
+    max-block-size: min(90dvh, 48rem);
+    padding-block-end: env(safe-area-inset-bottom);
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+    border-block-end-width: 0;
+    translate: 0 100%;
+    opacity: 1;
+    scale: 1;
+  }
+
+  .fc-dialog--bottom[open] {
+    translate: 0 0;
+  }
+
+  @starting-style {
+    .fc-dialog--bottom[open] {
+      translate: 0 100%;
+      opacity: 1;
+      scale: 1;
+    }
+  }
+
+  /*
+   * The drag handle is decorative: it says "this is a sheet" but nothing here
+   * makes it draggable, and a sheet that could only be closed by dragging
+   * would shut out keyboard and switch users. Every sheet keeps a close
+   * button or `closedby="any"`.
+   */
+  .fc-dialog__handle {
+    flex-shrink: 0;
+    inline-size: 2rem;
+    block-size: 0.25rem;
+    margin-block: var(--fc-space-2) 0;
+    margin-inline: auto;
+    background-color: var(--fc-color-border-strong);
+    border-radius: var(--fc-radius-full);
+  }
+
   /* On a phone the sheet is the whole screen; a 28rem panel would not fit. */
   @media (width < 36rem) {
     .fc-dialog--sheet {
@@ -249,7 +304,7 @@
     }
 
     /* A centred dialog becomes a bottom sheet, within thumb reach. */
-    .fc-dialog:not(.fc-dialog--sheet, .fc-dialog--fullscreen) {
+    .fc-dialog:not(.fc-dialog--sheet, .fc-dialog--fullscreen, .fc-dialog--bottom) {
       inline-size: 100%;
       margin-block-end: 0;
       border-end-start-radius: 0;
@@ -271,6 +326,10 @@
 
     .fc-dialog__footer {
       border-block-start-color: CanvasText;
+    }
+
+    .fc-dialog__handle {
+      background-color: CanvasText;
     }
   }
   /* A solid backdrop preserves separation when the user rejects translucency. */

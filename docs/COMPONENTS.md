@@ -1708,3 +1708,73 @@ it in the page flow (a full-screen search on a phone), and `aria-busy="true"` di
 results while new ones load. Its contents are links or buttons, so Tab reaches them; when
 suggestions should be chosen with arrow keys, use `fc-select`'s combobox instead. The
 focus ring is drawn on the bar. Disabled and `aria-invalid` are styled.
+
+## Bottom sheet
+
+`fc-dialog--bottom` docks a dialog to the block-end edge at every width, edge to edge on
+a phone and a centred 40rem panel above that. Open it with `showModal()` for a modal
+sheet or `show()` for a standard sheet that leaves the page usable. It slides up on open
+and down on close, with no script. `.fc-dialog__handle` is a decorative drag handle;
+nothing makes it draggable, so every sheet keeps a close button or `closedby="any"`.
+
+```html
+<dialog class="fc-dialog fc-dialog--bottom" id="share" aria-labelledby="share-title" closedby="any">
+  <div class="fc-dialog__handle" aria-hidden="true"></div>
+  <header class="fc-dialog__header">
+    <h2 class="fc-dialog__title" id="share-title">Share conversation</h2>
+    <button class="fc-dialog__close" type="button" commandfor="share" command="close" aria-label="Close">✕</button>
+  </header>
+  <div class="fc-dialog__body">…</div>
+</dialog>
+```
+
+## Progress ring
+
+`fc-progress-ring` (in `loading.css`) is circular determinate progress. There is no
+native circular element, so the role and values are ARIA, and the drawn value is
+`--fc-progress-value` (0 to 100) stated beside them; update both in the same write. It
+only shows a known amount; use a spinner when the amount is unknown. `--sm`, `--lg` and
+`--error` are available, and value changes animate because the property is registered.
+
+```html
+<div class="fc-progress-ring" role="progressbar" aria-label="Uploading"
+     aria-valuemin="0" aria-valuemax="100" aria-valuenow="42" style="--fc-progress-value: 42">
+  <span class="fc-progress-ring__label">42%</span>
+</div>
+```
+
+## Filled text field
+
+`fc-input--filled` is a tinted field with an underline instead of an outline, for dense
+forms. Invalid, disabled and focus states are the same as `fc-input`'s. The fill and the
+underline are declared contrast pairs. The label stays above the field; floating labels
+are a deliberate divergence (see `PLAN.md`, Phase D).
+
+## Carousel
+
+`carousel.css` is a scroll-snap row: touch, trackpad and arrow keys on the focused track
+scroll it with no script.
+
+```html
+<section class="fc-carousel" aria-roledescription="carousel" aria-label="Templates">
+  <div class="fc-carousel__controls" hidden>
+    <button class="fc-btn fc-btn--secondary fc-btn--icon" type="button" data-fc-carousel="prev" aria-label="Previous">‹</button>
+    <button class="fc-btn fc-btn--secondary fc-btn--icon" type="button" data-fc-carousel="next" aria-label="Next">›</button>
+  </div>
+  <ul class="fc-carousel__track" tabindex="0" aria-label="Templates">
+    <li class="fc-carousel__item" aria-roledescription="slide" aria-label="1 of 4">
+      <img src="…" alt="…"><p class="fc-carousel__caption">Weekly report</p>
+    </li>
+  </ul>
+</section>
+<script type="module">
+  import { bindCarousels } from "future-css/carousel";
+  bindCarousels(document);
+</script>
+```
+
+The default multi-browse layout shows the next item peeking in; `--hero` shows one large
+item and `--free` turns off snapping. `--fc-carousel-item` sets item width. The buttons
+ship `hidden` and `bindCarousel` reveals them, pages by most of the visible width, and
+sets `aria-disabled` at each end, in both directions. Captions sit on the inverse surface,
+so they stay legible over any image. It never autoplays.

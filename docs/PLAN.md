@@ -22,7 +22,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | A. WASM foundations | Started | Rust workspace, 8 crates, accelerator abstraction |
 | B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
 | C. Token roles and themes | Not started | State tokens, override points, theme tier, type roles |
-| D. Material 3 parity | Started | Mapping done; D1 to D3 shipped |
+| D. Material 3 parity | Started | Mapping done; D1 to D4 shipped |
 | 4. Verification | Not started | Visual regression, browser matrix, docs site |
 | 5. Platform expansion | Not started | Email build, print, native tokens |
 | 6. Release | Not started | Publishing, versioning, governance |
@@ -515,14 +515,14 @@ Status is **Shipped** (an existing component covers it), **Gap** (scheduled belo
 | Communication | Badges | `fc-badge`, `fc-badge--count` | Shipped |
 | | Loading indicator | `fc-spinner` family | Shipped |
 | | Progress, linear | `fc-progress` | Shipped |
-| | Progress, circular determinate | the spinners are indeterminate only | Gap, D4 |
+| | Progress, circular determinate | `fc-progress-ring` | Shipped, D4 |
 | | Snackbar | `fc-toast` with `__action`, toast binding | Shipped |
 | | Tooltips, plain and rich | `fc-tooltip`; a rich tooltip is an `fc-popover` | Shipped |
 | Containment | Cards: elevated, filled, outlined | `fc-card--elevated`, `--subtle`, default | Shipped |
 | | Dialogs, basic and full-screen | `fc-dialog`, `--fullscreen` | Shipped |
 | | Side sheets | `fc-dialog--sheet` | Shipped |
-| | Bottom sheets | none | Gap, D4 |
-| | Carousel | none | Gap, D4 |
+| | Bottom sheets | `fc-dialog--bottom`, modal or standard, with `__handle` | Shipped, D4 |
+| | Carousel | `fc-carousel` (multi-browse, `--hero`, `--free`), `carousel` binding for the buttons | Shipped, D4 |
 | | Dividers | `fc-divider`, `--inset`, `--middle`, `--vertical` | Shipped, D2 |
 | | Lists | `fc-list`: static, linked, button and control rows, one to three lines | Shipped, D2 |
 | Navigation | Top app bar | `fc-masthead` | Shipped |
@@ -539,7 +539,7 @@ Status is **Shipped** (an existing component covers it), **Gap** (scheduled belo
 | | Date pickers | none | Gap, D5 |
 | | Time pickers | none | Gap, D5 |
 | Text inputs | Text fields: outlined | `fc-input` in `fc-field` | Shipped |
-| | Text fields: filled | none | Gap, D4 |
+| | Text fields: filled | `fc-input--filled` | Shipped, D4 |
 | | Floating label | label above the input | Divergent: a label that moves into the field is unreadable while empty at small sizes and adds motion for no information; the persistent label is the accessible form |
 | Colour | Dynamic colour from a seed | none | Divergent, see Phase C: cannot be contrast-checked at build time |
 
@@ -582,12 +582,13 @@ API, `<dialog>`, scroll snap); a binding ships only where the platform has no an
   view that shows suggestions or results beneath it, on `role="search"`
 
 **D4. Containment and feedback**
-- [ ] Bottom sheet (`fc-dialog--bottom`): modal and non-modal, with a drag handle
+- [x] Bottom sheet (`fc-dialog--bottom`): modal and non-modal, with a drag handle
   that is decorative, never the only way to close
-- [ ] Carousel (`fc-carousel`): scroll-snap track, keyboard reachable, no autoplay
-- [ ] Circular determinate progress (`fc-progress-ring`), driven by a value the markup
+- [x] Carousel (`fc-carousel`): scroll-snap track, keyboard reachable, no autoplay
+- [x] Circular determinate progress (`fc-progress-ring`), driven by a value the markup
   states, so it is never a spinner pretending to know
-- [ ] Filled text field variant (`fc-input--filled`)
+- [x] Filled text field variant (`fc-input--filled`), with its fill and underline
+  declared as contrast pairs
 
 **D5. Pickers**
 - [ ] Date picker: a calendar grid with the APG date-grid keyboard contract, and the

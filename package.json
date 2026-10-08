@@ -44,6 +44,7 @@
     "./tooltip": "./src/js/tooltip.ts",
     "./slider": "./src/js/slider.ts",
     "./toolbar": "./src/js/toolbar.ts",
+    "./carousel": "./src/js/carousel.ts",
     "./type": "./dist/type.css",
     "./themes": "./dist/themes.css",
     "./print": "./dist/print.css",

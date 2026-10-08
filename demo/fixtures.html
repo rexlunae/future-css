@@ -101,6 +101,23 @@
           </div>
         </div>
       </figure>
+      <figure class="fx__state" data-fx-state="filled: rest, invalid, disabled">
+        <figcaption class="fx__caption">filled: rest, invalid, disabled</figcaption>
+        <div class="fx__body">
+          <div class="fc-field">
+            <label class="fc-field__label" for="fx-in-f1">Project name</label>
+            <input class="fc-input fc-input--filled" id="fx-in-f1" value="Atlas">
+          </div>
+          <div class="fc-field">
+            <label class="fc-field__label" for="fx-in-f2">Budget</label>
+            <input class="fc-input fc-input--filled" id="fx-in-f2" value="-4" aria-invalid="true">
+          </div>
+          <div class="fc-field">
+            <label class="fc-field__label" for="fx-in-f3">Owner</label>
+            <input class="fc-input fc-input--filled" id="fx-in-f3" value="Locked" disabled>
+          </div>
+        </div>
+      </figure>
       <figure class="fx__state" data-fx-state="required, placeholder">
         <figcaption class="fx__caption">required, placeholder</figcaption>
         <div class="fx__body">
@@ -392,6 +409,19 @@
               <header class="fc-dialog__header"><h3 class="fc-dialog__title" id="fx-sheet-t">Run inspector</h3>
                 <button type="button" class="fc-dialog__close" aria-label="Close run inspector">&#10005;</button></header>
               <div class="fc-dialog__body"><p>Docks to the inline end.</p></div>
+            </dialog>
+          </div>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="bottom sheet, with handle">
+        <figcaption class="fx__caption">bottom sheet, with handle</figcaption>
+        <div class="fx__body">
+          <div class="fx-overlay">
+            <dialog class="fc-dialog fc-dialog--bottom" open aria-labelledby="fx-bottom-t">
+              <div class="fc-dialog__handle" aria-hidden="true"></div>
+              <header class="fc-dialog__header"><h3 class="fc-dialog__title" id="fx-bottom-t">Share conversation</h3>
+                <button type="button" class="fc-dialog__close" aria-label="Close">&#10005;</button></header>
+              <div class="fc-dialog__body"><p>Anyone with the link can read it.</p></div>
             </dialog>
           </div>
         </div>
@@ -759,6 +789,16 @@
           <progress class="fc-progress" value="64" max="100" aria-label="Upload"></progress>
           <progress class="fc-progress" aria-label="Indexing"></progress>
           <progress class="fc-progress fc-progress--sm" value="20" max="100" aria-label="Quota"></progress>
+        </div>
+      </figure>
+      <figure class="fx__state" data-fx-state="progress ring: sizes, empty, full, error">
+        <figcaption class="fx__caption">progress ring: sizes, empty, full, error</figcaption>
+        <div class="fx__body">
+          <span class="fc-progress-ring fc-progress-ring--sm" role="progressbar" aria-label="Context used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="30" style="--fc-progress-value: 30"></span>
+          <span class="fc-progress-ring" role="progressbar" aria-label="Upload" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="--fc-progress-value: 0"><span class="fc-progress-ring__label">0%</span></span>
+          <span class="fc-progress-ring fc-progress-ring--lg" role="progressbar" aria-label="Indexing" aria-valuemin="0" aria-valuemax="100" aria-valuenow="64" style="--fc-progress-value: 64"><span class="fc-progress-ring__label">64%</span></span>
+          <span class="fc-progress-ring fc-progress-ring--lg" role="progressbar" aria-label="Done" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" style="--fc-progress-value: 100"><span class="fc-progress-ring__label">100%</span></span>
+          <span class="fc-progress-ring fc-progress-ring--lg fc-progress-ring--error" role="progressbar" aria-label="Upload failed" aria-valuemin="0" aria-valuemax="100" aria-valuenow="45" style="--fc-progress-value: 45"><span class="fc-progress-ring__label">45%</span></span>
         </div>
       </figure>
     </div>
@@ -1654,6 +1694,38 @@
         <div class="fc-search" role="search">
           <div class="fc-search__bar"><span class="fc-search__icon" aria-hidden="true">&#9906;</span><input class="fc-search__input" type="search" aria-label="Search by date" value="2026-13-40" aria-invalid="true"></div>
         </div>
+      </div></figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-carousel" data-fixture="carousel" aria-labelledby="fx-carousel-h">
+    <h2 class="fx__title" id="fx-carousel-h">Carousel <code class="fx__file">carousel.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="multi-browse, controls shown"><figcaption class="fx__caption">multi-browse, controls shown</figcaption><div class="fx__body">
+        <section class="fc-carousel" aria-roledescription="carousel" aria-label="Templates">
+          <div class="fc-carousel__controls">
+            <button class="fc-btn fc-btn--secondary fc-btn--icon fc-btn--sm" type="button" data-fc-carousel="prev" aria-label="Previous" aria-disabled="true">&#8249;</button>
+            <button class="fc-btn fc-btn--secondary fc-btn--icon fc-btn--sm" type="button" data-fc-carousel="next" aria-label="Next">&#8250;</button>
+          </div>
+          <ul class="fc-carousel__track" tabindex="0" aria-label="Templates">
+            <li class="fc-carousel__item" aria-roledescription="slide" aria-label="1 of 4" style="block-size: 8rem"><p class="fc-carousel__caption"><a href="#t1" style="color: inherit">Weekly report</a></p></li>
+            <li class="fc-carousel__item" aria-roledescription="slide" aria-label="2 of 4" style="block-size: 8rem"><p class="fc-carousel__caption">Meeting notes with a long title that wraps</p></li>
+            <li class="fc-carousel__item" aria-roledescription="slide" aria-label="3 of 4" style="block-size: 8rem"><p class="fc-carousel__caption">Code review</p></li>
+            <li class="fc-carousel__item" aria-roledescription="slide" aria-label="4 of 4" style="block-size: 8rem"><p class="fc-carousel__caption">Release plan</p></li>
+          </ul>
+        </section>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="hero, no binding (controls hidden)"><figcaption class="fx__caption">hero, no binding (controls hidden)</figcaption><div class="fx__body">
+        <section class="fc-carousel fc-carousel--hero" aria-roledescription="carousel" aria-label="Featured">
+          <div class="fc-carousel__controls" hidden>
+            <button class="fc-btn fc-btn--secondary fc-btn--icon fc-btn--sm" type="button" data-fc-carousel="prev" aria-label="Previous">&#8249;</button>
+            <button class="fc-btn fc-btn--secondary fc-btn--icon fc-btn--sm" type="button" data-fc-carousel="next" aria-label="Next">&#8250;</button>
+          </div>
+          <ul class="fc-carousel__track" tabindex="0" aria-label="Featured">
+            <li class="fc-carousel__item" aria-roledescription="slide" aria-label="1 of 2" style="block-size: 10rem"><p class="fc-carousel__caption">Featured: agents that write tests</p></li>
+            <li class="fc-carousel__item" aria-roledescription="slide" aria-label="2 of 2" style="block-size: 10rem"><p class="fc-carousel__caption">New: the context strip</p></li>
+          </ul>
+        </section>
       </div></figure>
     </div>
   </section>

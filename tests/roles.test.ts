@@ -20,7 +20,9 @@ import { typeRoles } from "../src/tokens/index.ts";
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 const cssDir = join(root, "src", "css");
-const read = (path: string) => readFileSync(join(cssDir, path), "utf8");
+// Comments are stripped so a slot named in prose cannot stand in for one read in code.
+const stripComments = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "");
+const read = (path: string) => stripComments(readFileSync(join(cssDir, path), "utf8"));
 
 /**
  * The slot table from docs/TOKENS.md ("Component slots"), with the semantic
@@ -51,10 +53,14 @@ const SLOTS: Record<string, Record<string, string>> = {
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+/** A read of `slot` whose fallback is exactly `fallback`, not a longer name sharing its prefix. */
+const slotPattern = (slot: string, fallback: string, flags = "") =>
+  new RegExp(`var\\(--fc-${escape(slot)},\\s*var\\(--fc-${escape(fallback)}\\s*[,)]`, flags);
+
 const allCss = (dir: string): string =>
   readdirSync(dir, { withFileTypes: true })
     .map((entry) =>
-      entry.isDirectory() ? allCss(join(dir, entry.name)) : entry.name.endsWith(".css") ? readFileSync(join(dir, entry.name), "utf8") : "",
+      entry.isDirectory() ? allCss(join(dir, entry.name)) : entry.name.endsWith(".css") ? stripComments(readFileSync(join(dir, entry.name), "utf8")) : "",
     )
     .join("\n");
 
@@ -62,12 +68,13 @@ describe("component slots", () => {
   for (const [file, slots] of Object.entries(SLOTS)) {
     const css = read(file);
     for (const [slot, fallback] of Object.entries(slots)) {
-      it(`${file} reads --fc-${slot} over --fc-${fallback}`, () => {
-        assert.match(
-          css,
-          new RegExp(`var\\(--fc-${escape(slot)},\\s*var\\(--fc-${escape(fallback)}\\b`),
-          `--fc-${slot} must be read with --fc-${fallback} as its fallback`,
-        );
+      it(`${file} reads --fc-${slot} over --fc-${fallback} everywhere`, () => {
+        // Every read, not just one: a slot honoured in the rest state but
+        // dropped from :hover is still a broken override.
+        const reads = css.match(new RegExp(`var\\(--fc-${escape(slot)}[,)]`, "g")) ?? [];
+        const withFallback = css.match(slotPattern(slot, fallback, "g")) ?? [];
+        assert.ok(reads.length > 0, `--fc-${slot} is never read`);
+        assert.equal(withFallback.length, reads.length, `a read of --fc-${slot} lacks the --fc-${fallback} fallback`);
       });
     }
   }
@@ -81,17 +88,32 @@ describe("component slots", () => {
     }
   });
 
-  it("does not catch a slot read without a fallback", () => {
-    // The false-positive guard: a bare var() must not satisfy the pattern.
-    const pattern = new RegExp(`var\\(--fc-chat-bg,\\s*var\\(--fc-color-bg-canvas\\b`);
+  it("rejects a missing, misspelled or commented-out fallback", () => {
+    const pattern = slotPattern("chat-bg", "color-bg-canvas");
+    assert.match("background-color: var(--fc-chat-bg, var(--fc-color-bg-canvas));", pattern);
     assert.doesNotMatch("background-color: var(--fc-chat-bg);", pattern);
     assert.doesNotMatch("background-color: var(--fc-color-bg-canvas);", pattern);
+    assert.doesNotMatch("background-color: var(--fc-chat-bg, var(--fc-color-bg-canvas-typo));", pattern);
+    assert.doesNotMatch(stripComments("/* var(--fc-chat-bg, var(--fc-color-bg-canvas)) */"), pattern);
   });
 });
+
+/** The role vocabulary docs/TOKENS.md promises consumers. */
+const DOCUMENTED_ROLES = [
+  "body", "body-small", "title",
+  "heading-1", "heading-2", "heading-3", "heading-4", "heading-5", "heading-6",
+  "code", "label",
+];
 
 describe("type roles", () => {
   const roles = Object.keys(typeRoles);
   const typeCss = read("type.css");
+
+  it("defines exactly the documented roles", () => {
+    // Pinned separately from typeRoles: deriving both sides from the token map
+    // would let a role vanish from tokens, classes and test at once.
+    assert.deepEqual([...roles].sort(), [...DOCUMENTED_ROLES].sort());
+  });
 
   it("gives every role a class that applies its font and tracking", () => {
     for (const role of roles) {

@@ -1630,3 +1630,81 @@ natively. The fill and track colours are the declared 3:1 boundary pairs. Hover,
 (a larger thumb, held still under reduced motion), disabled and `aria-invalid` are
 styled; forced colors restate the track and thumb in system colours. RTL fills from the
 right, as the browser does.
+
+## Toolbar
+
+`toolbar.css` is the general toolbar; the rich text editor's formatting bar is one. It
+moved out of `editor.css`, so a page that loads components one at a time loads
+`toolbar.css` with `editor.css`.
+
+```html
+<div class="fc-toolbar fc-toolbar--floating" role="toolbar" aria-label="Selection">
+  <button class="fc-toolbar__item" type="button" aria-pressed="false">Bold</button>
+  <span class="fc-toolbar__divider" role="separator"></span>
+  <button class="fc-toolbar__item fc-toolbar__item--icon" type="button" aria-label="Delete">…</button>
+</div>
+<script type="module">
+  import { bindToolbars } from "future-css/toolbar";
+  bindToolbars(document);
+</script>
+```
+
+The default is the dense bar an editor uses. `--floating` is a raised pill for a
+selection or a canvas, and `--docked` sticks to the block-end of its scroll container
+for a screen's actions; both use 40px items. `aria-orientation="vertical"` stacks it.
+`bindToolbar` makes the toolbar one tab stop: Left/Right (swapped in RTL) or Up/Down
+when vertical move between items and wrap, Home/End jump, natively disabled items are
+skipped and `aria-disabled` ones stay reachable, and a text field or select inside keeps
+its own arrow keys. Focus moving by pointer moves the tab stop too. Without the binding,
+every item is a tab stop.
+
+## Navigation bar
+
+`navbar.css` holds three to five top-level destinations at the block-end edge of a phone
+layout; swap it for `fc-nav` at a breakpoint.
+
+```html
+<nav class="fc-navbar fc-navbar--fixed" aria-label="Primary">
+  <a class="fc-navbar__item" href="/chats" aria-current="page">
+    <span class="fc-navbar__icon" aria-hidden="true">…</span>
+    <span class="fc-navbar__label">Chats</span>
+  </a>
+  <a class="fc-navbar__item" href="/inbox">
+    <span class="fc-navbar__icon" aria-hidden="true">…<span class="fc-navbar__badge">3</span></span>
+    <span class="fc-navbar__label">Inbox</span><span class="fc-u-visually-hidden">, 3 unread</span>
+  </a>
+</nav>
+```
+
+Labels are always visible. The current destination (`aria-current="page"`) gets an
+indicator behind its icon and a heavier label. A badge sits inside the hidden icon, so
+say the count in the link's name. An empty badge is a dot. `--fixed` pins the bar above
+the phone's home indicator; the page reserves the space. A disabled destination is an
+anchor with no `href` and `aria-disabled="true"`.
+
+## Search
+
+`search.css` is a search bar with an optional view beneath it for recent searches,
+suggestions or results.
+
+```html
+<form class="fc-search" role="search" action="/search">
+  <div class="fc-search__bar">
+    <span class="fc-search__icon" aria-hidden="true">…</span>
+    <input class="fc-search__input" type="search" name="q" aria-label="Search conversations"
+           placeholder="Search conversations">
+    <span class="fc-search__trailing">…</span>
+  </div>
+  <div class="fc-search__view" role="region" aria-label="Recent searches">
+    <p class="fc-search__view-label">Recent</p>
+    <ul class="fc-list">…</ul>
+  </div>
+</form>
+```
+
+The view opens while focus is inside the search, with no script, and floats over the
+content below. `data-fc-open="true"` or `"false"` holds it open or closed, `--docked` puts
+it in the page flow (a full-screen search on a phone), and `aria-busy="true"` dims stale
+results while new ones load. Its contents are links or buttons, so Tab reaches them; when
+suggestions should be chosen with arrow keys, use `fc-select`'s combobox instead. The
+focus ring is drawn on the bar. Disabled and `aria-invalid` are styled.

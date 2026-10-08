@@ -185,11 +185,12 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         import('/src/js/table.js'),
         import('/src/js/nav.js'),
         import('/src/js/slider.js'),
-      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt, tl, nv, sl]) => {
+        import('/src/js/toolbar.js'),
+      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt, tl, nv, sl, tr]) => {
         globalThis.E = e; globalThis.M = m; globalThis.G = g; globalThis.W = w;
         globalThis.H = h; globalThis.D = d; globalThis.S = s;
         globalThis.C = c; globalThis.K = k; globalThis.IT = it;
-        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt; globalThis.TL = tl; globalThis.NV = nv; globalThis.SL = sl;
+        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt; globalThis.TL = tl; globalThis.NV = nv; globalThis.SL = sl; globalThis.TR = tr;
         return 'ok';
       })
     `);
@@ -548,6 +549,9 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     // the same. A fresh menu, for the same reason as the arrow-navigation test.
     await loadBindings();
     const r = await evaluate(`
+      // An earlier test leaves its menu open, and its document-level Escape
+      // handler would move focus to its own trigger.
+      globalThis.m?.close();
       const wrap = document.createElement('div');
       wrap.innerHTML = \`
         <button type="button" id="mb-trigger" class="fc-btn">More</button>
@@ -3232,6 +3236,55 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
   });
 
   // ------------------------------------------------------------------- nav
+
+  // -------------------------------------------------------------- toolbar
+
+  it("gives a toolbar one tab stop and moves through it with the arrows", async () => {
+    // The roving tabindex contract: arrows wrap, Home/End jump, natively
+    // disabled items are skipped, aria-disabled ones are not, RTL reverses
+    // Left/Right, and a vertical toolbar uses Up/Down.
+    await loadBindings();
+    const r = await evaluate(`
+      const bar = document.createElement('div');
+      bar.className = 'fc-toolbar';
+      bar.setAttribute('role', 'toolbar');
+      bar.setAttribute('aria-label', 'Tools');
+      bar.innerHTML = '<button type="button" class="fc-toolbar__item">A</button>'
+        + '<button type="button" class="fc-toolbar__item" disabled>B</button>'
+        + '<button type="button" class="fc-toolbar__item" aria-disabled="true">C</button>'
+        + '<input class="fc-input" aria-label="Find">'
+        + '<button type="button" class="fc-toolbar__item">D</button>';
+      document.body.appendChild(bar);
+      const unbind = TR.bindToolbar(bar);
+      const name = () => document.activeElement.textContent || document.activeElement.getAttribute('aria-label');
+      const stops = [...bar.querySelectorAll('button:not(:disabled), input')].filter((el) => el.tabIndex === 0).map((el) => el.textContent || 'input');
+      const key = (k) => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
+      const seen = [];
+      bar.querySelector('button').focus();
+      key('ArrowRight'); seen.push(name());
+      key('ArrowRight'); seen.push(name());
+      // The text field keeps its arrows for its caret.
+      key('ArrowRight'); seen.push(name());
+      bar.querySelector('button:last-child').focus();
+      key('ArrowRight'); seen.push(name());
+      key('End'); seen.push(name());
+      key('Home'); seen.push(name());
+      const stopAfter = [...bar.querySelectorAll('button:not(:disabled)')].filter((el) => el.tabIndex === 0).map((el) => el.textContent);
+      bar.dir = 'rtl';
+      key('ArrowLeft'); const rtl = name();
+      bar.dir = '';
+      bar.setAttribute('aria-orientation', 'vertical');
+      key('ArrowDown'); const vertical = name();
+      unbind();
+      bar.remove();
+      return { stops, seen, stopAfter, rtl, vertical };
+    `);
+    assert.deepEqual(r.stops, ["A"], "one tab stop");
+    assert.deepEqual(r.seen, ["C", "Find", "Find", "A", "D", "A"]);
+    assert.deepEqual(r.stopAfter, ["A"], "the tab stop follows focus");
+    assert.equal(r.rtl, "C", "in RTL, Left moves forward");
+    assert.equal(r.vertical, "Find", "a vertical toolbar moves with Down");
+  });
 
   // --------------------------------------------------------------- slider
 

@@ -22,7 +22,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | A. WASM foundations | Started | Rust workspace, 8 crates, accelerator abstraction |
 | B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
 | C. Token roles and themes | Not started | State tokens, override points, theme tier, type roles |
-| D. Material 3 parity | Started | Mapping done; D1 and D2 shipped |
+| D. Material 3 parity | Started | Mapping done; D1 to D3 shipped |
 | 4. Verification | Not started | Visual regression, browser matrix, docs site |
 | 5. Platform expansion | Not started | Email build, print, native tokens |
 | 6. Release | Not started | Publishing, versioning, governance |
@@ -528,9 +528,9 @@ Status is **Shipped** (an existing component covers it), **Gap** (scheduled belo
 | Navigation | Top app bar | `fc-masthead` | Shipped |
 | | Navigation drawer | `fc-nav` | Shipped |
 | | Navigation rail | `fc-nav` rail (toggle's `aria-expanded`) | Shipped |
-| | Navigation bar (bottom) | none | Gap, D3 |
-| | Toolbars (docked and floating) | the editor toolbar only, not a general one | Gap, D3 |
-| | Search: bar and view | none; `fc-select` filters a fixed list | Gap, D3 |
+| | Navigation bar (bottom) | `fc-navbar` | Shipped, D3 |
+| | Toolbars (docked and floating) | `fc-toolbar`, `--docked`, `--floating`, `toolbar` binding | Shipped, D3 |
+| | Search: bar and view | `fc-search` | Shipped, D3 |
 | | Tabs, primary and secondary | `fc-tabs`, tabs binding | Shipped |
 | Selection | Checkbox, radio, switch | `fc-check`, `fc-switch` | Shipped |
 | | Chips: assist, filter, input, suggestion | `button.fc-tag` (assist), `fc-tag[aria-pressed]` (filter), `fc-tag__remove` (input), `fc-suggestion--pill` (suggestion) | Shipped |
@@ -572,11 +572,13 @@ API, `<dialog>`, scroll snap); a binding ships only where the platform has no an
   pseudo-element for. RTL fill direction verified
 
 **D3. Navigation**
-- [ ] Navigation bar (`fc-navbar`): three to five destinations at the block end, labels
+- [x] Navigation bar (`fc-navbar`): three to five destinations at the block end, labels
   always visible, `aria-current="page"` as the selected state
-- [ ] Toolbar (`fc-toolbar`): docked and floating, with a binding for the APG roving
-  tabindex contract, generalised from the editor's
-- [ ] Search (`fc-search`): a search bar with leading and trailing slots, and a search
+- [x] Toolbar (`fc-toolbar`): docked and floating, with a binding for the APG roving
+  tabindex contract, generalised from the editor's. The toolbar moved out of
+  `editor.css` into `toolbar.css`, and the editor binding now uses the same roving
+  contract its CSS comment always promised
+- [x] Search (`fc-search`): a search bar with leading and trailing slots, and a search
   view that shows suggestions or results beneath it, on `role="search"`
 
 **D4. Containment and feedback**

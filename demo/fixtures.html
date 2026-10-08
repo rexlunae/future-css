@@ -1570,6 +1570,94 @@
     </div>
   </section>
 
+  <section class="fx" id="fx-toolbar" data-fixture="toolbar" aria-labelledby="fx-toolbar-h">
+    <h2 class="fx__title" id="fx-toolbar-h">Toolbar <code class="fx__file">toolbar.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="floating: rest, pressed, disabled"><figcaption class="fx__caption">floating: rest, pressed, disabled</figcaption><div class="fx__body">
+        <div class="fc-toolbar fc-toolbar--floating" role="toolbar" aria-label="Selection">
+          <button type="button" class="fc-toolbar__item" aria-pressed="true">Bold</button>
+          <button type="button" class="fc-toolbar__item" aria-pressed="false" tabindex="-1">Italic</button>
+          <span class="fc-toolbar__divider" role="separator"></span>
+          <button type="button" class="fc-toolbar__item fc-toolbar__item--icon" tabindex="-1" aria-label="Copy">&#10697;</button>
+          <button type="button" class="fc-toolbar__item fc-toolbar__item--icon" aria-disabled="true" tabindex="-1" aria-label="Paste">&#128203;</button>
+          <button type="button" class="fc-toolbar__item fc-toolbar__item--icon" disabled aria-label="Undo">&#8630;</button>
+        </div>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="floating, vertical"><figcaption class="fx__caption">floating, vertical</figcaption><div class="fx__body">
+        <div class="fc-toolbar fc-toolbar--floating" role="toolbar" aria-label="Canvas tools" aria-orientation="vertical">
+          <button type="button" class="fc-toolbar__item fc-toolbar__item--icon" aria-pressed="true" aria-label="Select">&#10148;</button>
+          <button type="button" class="fc-toolbar__item fc-toolbar__item--icon" aria-pressed="false" tabindex="-1" aria-label="Draw">&#9998;</button>
+          <span class="fc-toolbar__divider" role="separator"></span>
+          <button type="button" class="fc-toolbar__item fc-toolbar__item--icon" tabindex="-1" aria-label="Delete">&#215;</button>
+        </div>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="docked, long labels wrap"><figcaption class="fx__caption">docked, long labels wrap</figcaption><div class="fx__body">
+        <div class="fc-toolbar fc-toolbar--docked" role="toolbar" aria-label="Message actions">
+          <button type="button" class="fc-toolbar__item">Reply</button>
+          <button type="button" class="fc-toolbar__item" tabindex="-1">Forward to everyone on the thread</button>
+          <button type="button" class="fc-toolbar__item" tabindex="-1">Archive</button>
+          <button type="button" class="fc-toolbar__item" tabindex="-1">Delete</button>
+        </div>
+      </div></figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-navbar" data-fixture="navbar" aria-labelledby="fx-navbar-h">
+    <h2 class="fx__title" id="fx-navbar-h">Navigation bar <code class="fx__file">navbar.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="current, badges, disabled"><figcaption class="fx__caption">current, badges, disabled</figcaption><div class="fx__body">
+        <nav class="fc-navbar" aria-label="Primary">
+          <a class="fc-navbar__item" href="#chats" aria-current="page"><span class="fc-navbar__icon" aria-hidden="true">&#128172;</span><span class="fc-navbar__label">Chats</span></a>
+          <a class="fc-navbar__item" href="#inbox"><span class="fc-navbar__icon" aria-hidden="true">&#128229;<span class="fc-navbar__badge">12</span></span><span class="fc-navbar__label">Inbox</span><span class="fc-u-visually-hidden">, 12 unread</span></a>
+          <a class="fc-navbar__item" href="#projects"><span class="fc-navbar__icon" aria-hidden="true">&#128193;<span class="fc-navbar__badge"></span></span><span class="fc-navbar__label">Projects</span><span class="fc-u-visually-hidden">, new activity</span></a>
+          <a class="fc-navbar__item" aria-disabled="true"><span class="fc-navbar__icon" aria-hidden="true">&#9881;</span><span class="fc-navbar__label">Settings and administration</span></a>
+        </nav>
+      </div></figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-search" data-fixture="search" aria-labelledby="fx-search-h">
+    <h2 class="fx__title" id="fx-search-h">Search <code class="fx__file">search.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="bar: rest, with trailing actions"><figcaption class="fx__caption">bar: rest, with trailing actions</figcaption><div class="fx__body">
+        <form class="fc-search" role="search" action="#" onsubmit="return false">
+          <div class="fc-search__bar">
+            <span class="fc-search__icon" aria-hidden="true">&#9906;</span>
+            <input class="fc-search__input" type="search" aria-label="Search conversations" placeholder="Search conversations">
+            <span class="fc-search__trailing"><button class="fc-btn fc-btn--ghost fc-btn--icon fc-btn--sm" type="button" aria-label="Search by voice">&#127908;</button></span>
+          </div>
+          <div class="fc-search__view" role="region" aria-label="Recent searches">
+            <p class="fc-search__view-label">Recent</p>
+            <ul class="fc-list"><li class="fc-list__item"><span class="fc-list__content"><a class="fc-list__action fc-list__headline" href="#q">deploy checklist</a></span></li></ul>
+          </div>
+        </form>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="view open (docked), busy"><figcaption class="fx__caption">view open (docked), busy</figcaption><div class="fx__body">
+        <form class="fc-search" role="search" action="#" onsubmit="return false">
+          <div class="fc-search__bar">
+            <span class="fc-search__icon" aria-hidden="true">&#9906;</span>
+            <input class="fc-search__input" type="search" aria-label="Search files" value="quarterly">
+          </div>
+          <div class="fc-search__view fc-search__view--docked" role="region" aria-label="Suggestions" data-fc-open="true" aria-busy="true">
+            <p class="fc-search__view-label">Suggestions</p>
+            <ul class="fc-list">
+              <li class="fc-list__item"><span class="fc-list__content"><a class="fc-list__action fc-list__headline" href="#q1">Quarterly plan</a><span class="fc-list__supporting">Shared with you</span></span></li>
+              <li class="fc-list__item"><span class="fc-list__content"><a class="fc-list__action fc-list__headline" href="#q2">Quarterly review notes with an unusually long file name</a></span></li>
+            </ul>
+          </div>
+        </form>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="disabled, invalid"><figcaption class="fx__caption">disabled, invalid</figcaption><div class="fx__body">
+        <div class="fc-search" role="search">
+          <div class="fc-search__bar"><span class="fc-search__icon" aria-hidden="true">&#9906;</span><input class="fc-search__input" type="search" aria-label="Search (offline)" placeholder="Offline" disabled></div>
+        </div>
+        <div class="fc-search" role="search">
+          <div class="fc-search__bar"><span class="fc-search__icon" aria-hidden="true">&#9906;</span><input class="fc-search__input" type="search" aria-label="Search by date" value="2026-13-40" aria-invalid="true"></div>
+        </div>
+      </div></figure>
+    </div>
+  </section>
+
   <section class="fx" id="fx-composer" data-fixture="composer" aria-labelledby="fx-composer-h">
     <h2 class="fx__title" id="fx-composer-h">Chat composer <code class="fx__file">composer.css</code></h2>
     <div class="fx__states">

@@ -1,0 +1,197 @@
+/*!
+ * future-css -- search
+ *
+ * Material's search bar and search view: a prominent field for searching an
+ * app's content, and a panel beneath it for suggestions, recent searches, or
+ * results.
+ *
+ *   <form class="fc-search" role="search" action="/search">
+ *     <div class="fc-search__bar">
+ *       <span class="fc-search__icon" aria-hidden="true">…</span>
+ *       <input class="fc-search__input" type="search" name="q"
+ *              aria-label="Search conversations" placeholder="Search conversations">
+ *       <span class="fc-search__trailing">…</span>
+ *     </div>
+ *     <div class="fc-search__view" aria-label="Recent searches" role="region">
+ *       <ul class="fc-list">…</ul>
+ *     </div>
+ *   </form>
+ *
+ * `role="search"` (or the `<search>` element) makes it a landmark. The view
+ * holds ordinary links and buttons, so it needs no listbox contract; when the
+ * suggestions should be picked with arrow keys instead, use `fc-select`, whose
+ * combobox does exactly that.
+ *
+ * The view shows while focus is inside the search, with no script, and can
+ * be held open or closed with `data-fc-open`. Its loading state is
+ * `aria-busy="true"` on the view.
+ */
+
+@layer fc.components {
+  .fc-search {
+    position: relative;
+    display: block;
+    max-inline-size: 100%;
+  }
+
+  .fc-search__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-2);
+    /* The shared control height, so a search bar lines up with buttons. */
+    min-block-size: var(--fc-size-target-comfortable);
+    padding-inline: var(--fc-space-3) var(--fc-space-1);
+    background-color: var(--fc-color-bg-surface);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-interactive);
+    border-radius: var(--fc-radius-full);
+    transition:
+      border-color var(--fc-duration-fast) var(--fc-easing-standard),
+      box-shadow var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  @media (hover: hover) {
+    .fc-search__bar:hover {
+      border-color: color-mix(in oklab, var(--fc-color-border-interactive), var(--fc-color-text-default) 40%);
+    }
+  }
+
+  /*
+   * The ring is drawn on the bar, the shape a user sees as the field. The
+   * input inside keeps a transparent outline rather than none, so forced
+   * colors, which repaints outline colours, still draws a ring on it.
+   */
+  .fc-search__bar:has(:focus-visible) {
+    border-color: var(--fc-color-accent-border);
+    outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring);
+    outline-offset: var(--fc-space-0-5);
+  }
+
+  .fc-search__input:focus-visible {
+    outline-color: transparent;
+  }
+
+  .fc-search__icon {
+    display: inline-grid;
+    flex-shrink: 0;
+    place-items: center;
+    color: var(--fc-color-text-muted);
+  }
+
+  .fc-search__input {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    min-block-size: var(--fc-size-target-min);
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    border: 0;
+    font: inherit;
+    font-size: var(--fc-font-size-md);
+  }
+
+  .fc-search__input::placeholder {
+    color: var(--fc-color-text-subtle);
+  }
+
+  /* The UA cancel button duplicates a clear control the trailing slot can
+     name properly ("Clear search"), and is unstyled. */
+  .fc-search__input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .fc-search__trailing {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: var(--fc-space-1);
+  }
+
+  .fc-search__bar:has(:disabled) {
+    background-color: var(--fc-color-disabled-bg);
+    color: var(--fc-color-disabled-fg);
+    border-color: var(--fc-color-disabled-border);
+    cursor: not-allowed;
+  }
+
+  .fc-search__bar:has([aria-invalid="true"]) {
+    border-color: var(--fc-color-danger-border);
+  }
+
+  /* ---- View ------------------------------------------------------------ */
+
+  /*
+   * The view overlays the content below rather than pushing it down, so the
+   * page does not jump when focus enters the field.
+   */
+  .fc-search__view {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: calc(100% + var(--fc-space-1));
+    z-index: var(--fc-z-dropdown);
+    display: var(--fc-search-view, none);
+    max-block-size: min(60vh, 28rem);
+    overflow-y: auto;
+    overscroll-behavior-block: contain;
+    padding-block: var(--fc-space-1);
+    background-color: var(--fc-color-bg-raised);
+    color: var(--fc-color-text-default);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-xl);
+    box-shadow: var(--fc-shadow-overlay);
+  }
+
+  /* Focus inside the search opens the view, through a property it reads. */
+  .fc-search:focus-within {
+    --fc-search-view: block;
+  }
+
+  .fc-search__view[data-fc-open="true"] {
+    display: block;
+  }
+
+  /* Held closed by the app, focus or not (a query with nothing to suggest). */
+  .fc-search__view[data-fc-open="false"] {
+    display: none;
+  }
+
+  /* Results are being fetched: the stale list stays readable but recedes. */
+  .fc-search__view[aria-busy="true"] {
+    opacity: 0.7;
+  }
+
+  .fc-search__view-label {
+    margin: 0;
+    padding-block: var(--fc-space-2) var(--fc-space-1);
+    padding-inline: var(--fc-space-4);
+    color: var(--fc-color-text-muted);
+    font-size: var(--fc-font-size-xs);
+    font-weight: var(--fc-font-weight-medium);
+  }
+
+  /* Docked: the view is part of the page, for a full-screen search on a phone. */
+  .fc-search__view--docked {
+    position: static;
+    margin-block-start: var(--fc-space-2);
+    box-shadow: none;
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  @media (forced-colors: active) {
+    .fc-search__bar,
+    .fc-search__view {
+      border-color: CanvasText;
+    }
+
+    .fc-search__bar:has(:disabled) {
+      color: GrayText;
+      border-color: GrayText;
+    }
+  }
+
+  /* Motion: border and shadow transitions only, zeroed by the reset under
+     reduced motion. */
+}

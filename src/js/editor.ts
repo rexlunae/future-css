@@ -34,6 +34,7 @@ import {
   selectionFullyMarked,
 } from "./selection.ts";
 import { checkUrl } from "./urls.ts";
+import { bindToolbar } from "./toolbar.ts";
 
 /** The marks this editor supports. Mirrors the `Mark` enum in fc-rich-text. */
 export type Mark =
@@ -101,6 +102,8 @@ export class FutureCssEditor {
       throw new Error("future-css: editor has no .fc-editor__content region");
     }
     this.toolbar = this.root.querySelector<HTMLElement>(".fc-toolbar");
+    // The arrow-key contract the toolbar's role promises.
+    if (this.toolbar) bindToolbar(this.toolbar);
 
     this.wireToolbar();
     this.wireSelectionTracking();

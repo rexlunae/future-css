@@ -43,99 +43,8 @@
     box-shadow: 0 0 0 var(--fc-space-0-5) var(--fc-color-focus-ring-offset);
   }
 
-  /* ---- Toolbar ----------------------------------------------------------- */
-
-  /*
-   * `role="toolbar"` with roving tabindex: one item is tabbable and the arrows
-   * move within. Without that, a screen-reader user tabs through every button
-   * in the toolbar on every visit.
-   */
-  .fc-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--fc-space-1);
-    padding: var(--fc-space-2);
-    border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
-    background-color: var(--fc-color-bg-subtle);
-    /* Wraps rather than scrolling, so it stays usable on a phone. */
-    min-inline-size: 0;
-  }
-
-  .fc-toolbar__item {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--fc-space-1-5);
-
-    /* 24px minimum: WCAG 2.2 target size. */
-    min-inline-size: var(--fc-size-target-min);
-    min-block-size: var(--fc-size-target-min);
-    padding-inline: var(--fc-space-2);
-
-    background-color: transparent;
-    color: var(--fc-color-text-default);
-    border: var(--fc-border-width-thin) solid transparent;
-    border-radius: var(--fc-radius-sm);
-
-    font-family: inherit;
-    font-size: var(--fc-font-size-sm);
-    font-weight: var(--fc-font-weight-medium);
-    line-height: 1;
-    cursor: pointer;
-
-    transition:
-      background-color var(--fc-duration-fast) var(--fc-easing-standard),
-      border-color var(--fc-duration-fast) var(--fc-easing-standard);
-  }
-
-  .fc-toolbar__item:hover {
-    background-color: var(--fc-color-bg-muted);
-  }
-
-  .fc-toolbar__item:active {
-    background-color: var(--fc-color-bg-subtle);
-  }
-
-  /*
-   * The pressed state, driven by `[aria-pressed]` so the visual and the
-   * announced state are one thing. A separate `.is-active` class would let them
-   * drift, and a button that looks active but announces "not pressed" is worse
-   * than one that never looks active.
-   */
-  .fc-toolbar__item[aria-pressed="true"] {
-    background-color: var(--fc-color-selected-bg);
-    color: var(--fc-color-selected-fg);
-    border-color: var(--fc-color-accent-border);
-  }
-
-  .fc-toolbar__item:disabled {
-    color: var(--fc-color-disabled-fg);
-    cursor: not-allowed;
-  }
-
-  /*
-   * The visible label. Hidden from sight but exposed to assistive technology, so
-   * a "B" button is announced as "Bold" rather than as the letter B -- which is
-   * meaningless to a screen-reader user and to anyone who has lost the ability to
-   * associate a glyph with a formatting name.
-   */
-  .fc-toolbar__label {
-    font-family: var(--fc-font-family-sans);
-  }
-
-  /* Icon-only items stay square so the hit area matches the glyph. */
-  .fc-toolbar__item--icon {
-    padding-inline: var(--fc-space-1-5);
-  }
-
-  /* A visual separator between groups; hidden from the accessibility tree. */
-  .fc-toolbar__divider {
-    inline-size: var(--fc-border-width-thin);
-    align-self: stretch;
-    margin-inline: var(--fc-space-1);
-    background-color: var(--fc-color-border-default);
-  }
+  /* The toolbar is `fc-toolbar` (toolbar.css), the general component; the
+     editor's sits inside its border. */
 
   /* ---- Editing region ---------------------------------------------------- */
 
@@ -319,23 +228,9 @@
   /*
    * Forced colors.
    *
-   * The toolbar's group background and the pressed tint are both discarded, so
-   * the pressed state needs a border to stay distinguishable -- otherwise a
-   * screen-reader user hears "pressed" while a sighted user in high contrast sees
-   * nothing at all.
+   * The toolbar's own forced-colors block lives in toolbar.css.
    */
   @media (forced-colors: active) {
-    .fc-toolbar {
-      background-color: Canvas;
-      border-block-end-color: CanvasText;
-    }
-
-    .fc-toolbar__item[aria-pressed="true"] {
-      background-color: Highlight;
-      color: HighlightText;
-      border-color: Highlight;
-    }
-
     .fc-prose pre {
       background-color: Canvas;
       border-color: CanvasText;

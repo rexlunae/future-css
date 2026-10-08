@@ -23,6 +23,7 @@ import {
   ansiContrastPairs,
   checkAnsiContrast,
 } from "../src/tokens/semantic/terminal.ts";
+import { themeSets } from "../src/tokens/semantic/themes.ts";
 import { contrastRatio, oklchToHex } from "../src/tokens/color-utils.ts";
 import { ramps } from "../src/tokens/palette.ts";
 
@@ -60,6 +61,19 @@ describe("contrast contract", () => {
     const white = { l: 1, c: 0, h: 0 };
     const gray = { l: 0.5, c: 0, h: 0 };
     assert.equal(contrastRatio(white, gray), contrastRatio(gray, white));
+  });
+});
+
+describe("themes", () => {
+  it("keeps the selected surface distinct from the surface in every theme", () => {
+    // A theme that collapses the two shows a selected row as unselected,
+    // with nothing in the contrast pairs to catch it.
+    for (const [theme, colors] of Object.entries(themeSets)) {
+      for (const scheme of ["light", "dark"] as const) {
+        const ratio = contrastRatio(colors["selected-bg"]![scheme], colors["bg-surface"]![scheme]);
+        assert.ok(ratio > 1.05, `${theme} ${scheme}: selected-bg matches bg-surface (${ratio.toFixed(2)}:1)`);
+      }
+    }
   });
 });
 

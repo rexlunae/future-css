@@ -1,0 +1,14 @@
+/*! future-css -- optional named type roles */
+@layer fc.utilities {
+  .fc-type-body { font: var(--fc-type-body); letter-spacing: var(--fc-type-body-tracking); }
+  .fc-type-body-small { font: var(--fc-type-body-small); letter-spacing: var(--fc-type-body-small-tracking); }
+  .fc-type-title { font: var(--fc-type-title); letter-spacing: var(--fc-type-title-tracking); }
+  .fc-type-heading-1 { font: var(--fc-type-heading-1); letter-spacing: var(--fc-type-heading-1-tracking); }
+  .fc-type-heading-2 { font: var(--fc-type-heading-2); letter-spacing: var(--fc-type-heading-2-tracking); }
+  .fc-type-heading-3 { font: var(--fc-type-heading-3); letter-spacing: var(--fc-type-heading-3-tracking); }
+  .fc-type-heading-4 { font: var(--fc-type-heading-4); letter-spacing: var(--fc-type-heading-4-tracking); }
+  .fc-type-heading-5 { font: var(--fc-type-heading-5); letter-spacing: var(--fc-type-heading-5-tracking); }
+  .fc-type-heading-6 { font: var(--fc-type-heading-6); letter-spacing: var(--fc-type-heading-6-tracking); }
+  .fc-type-code { font: var(--fc-type-code); letter-spacing: var(--fc-type-code-tracking); }
+  .fc-type-label { font: var(--fc-type-label); letter-spacing: var(--fc-type-label-tracking); }
+}

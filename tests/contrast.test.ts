@@ -71,7 +71,11 @@ describe("themes", () => {
     for (const [theme, colors] of Object.entries(themeSets)) {
       for (const scheme of ["light", "dark"] as const) {
         const ratio = contrastRatio(colors["selected-bg"]![scheme], colors["bg-surface"]![scheme]);
-        assert.ok(ratio > 1.05, `${theme} ${scheme}: selected-bg matches bg-surface (${ratio.toFixed(2)}:1)`);
+        // The default and brand themes draw selection as a soft tint, with
+        // check marks and indicators carrying the state. High contrast has no
+        // soft tints, so its fill must be a real non-text boundary (1.4.11).
+        const min = theme === "high-contrast" ? 3 : 1.05;
+        assert.ok(ratio >= min, `${theme} ${scheme}: selected-bg is ${ratio.toFixed(2)}:1 against bg-surface, below ${min}`);
       }
     }
   });

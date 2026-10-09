@@ -4,7 +4,7 @@ Phased roadmap with exit criteria. Each phase ends with a gate that can be check
 judgment call.
 
 **Current status: Phase 2 complete, Phase 3 and Phase C mostly delivered, Phase A
-(WASM size) in progress.** Phases 0 and 1 are complete. Form controls, overlays, navigation, and
+(WASM size) complete.** Phases 0 and 1 are complete. Form controls, overlays, navigation, and
 the status family now exist as CSS, with bindings where the platform does not already
 provide the behavior. The Rust/WASM
 layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
@@ -19,7 +19,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | 1. Token system | Complete | Palette, semantic layer, contrast contract, compiler |
 | 2. Core CSS | Complete | Reset, base, layout, utilities, every Phase 2 component, and the fixture page |
 | 3. Component set | Mostly delivered | Forms, overlays, tabs, breadcrumb, pagination, loading, cards, table, description list, sidebar; axe-core pass remains |
-| A. WASM size | In progress | Rust workspace, 8 crates, accelerator abstraction; every module but `fc-rich-text` within budget on the shipped basis |
+| A. WASM size | Complete | Primitive ABI 2 boundaries, eight shipped binaries under unchanged enforced budgets |
 | B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
 | C. Token roles and themes | Mostly delivered | State tokens, override points, high-contrast and brand theme sets, type roles; reduced-transparency and reduced-data remain |
 | D. Material 3 parity | Complete | Every M3 component Shipped or Divergent with its reason |
@@ -29,7 +29,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 
 ### Working now
 
-Measured on 2026-10-06 against `main` at `bd5ed5d` (after #24 and #25), with the WASM modules built and
+Historical baseline, superseded for WASM by Phase A below. Measured on 2026-10-06 against `main` at `bd5ed5d` (after #24 and #25), with the WASM modules built and
 headless Chrome present (without either, the WASM and browser suites skip):
 
 ```
@@ -45,34 +45,10 @@ deliberately readable so engineers can debug it in devtools, and consumers minif
 their own boundary. The budget gates what one page pays rather than the full bundle; see
 [Performance budget](#performance-budget).
 
-**Eight crates, eight `.wasm` files, seven importable modules.** `fc-core` and
-`fc-model` both emit into the `fc-model` module, so eight build entries produce seven
-modules that JavaScript can import. On the shipped basis (post-bindgen, the bytes a
-consumer downloads; see [WASM.md](WASM.md#what-actually-ships)) two modules are still
-over budget. `fc-context-menu` was the largest by a wide margin until #25:
-
-```
-fc-context-menu    21.7 KB shipped   (raw  40.2 KB)   primitives only, was 81.3
-fc-select          38.4 KB shipped   (raw  62.1 KB)   primitives only, was 50.0
-fc-diff            33.7 KB shipped   (raw  54.4 KB)   primitives only
-```
-
-The raw basis made `js-sys` look like the whole story; the shipped basis shows that
-bindgen strips most of it, and that two primitives-only modules are still over. Phase A
-now targets where the shipped bytes are, not where the raw ones were. `fc-context-menu` and
-`fc-select` both cut size by leaving case folding to JavaScript, which already ships the
-Unicode tables; see [WASM.md](WASM.md#what-actually-ships).
-
-Since 2026-10-08 `fc-diff` and `fc-select` build without std, which drops std's panic
-formatting, and avoid the substring searcher whose panics linked the rest of it (measured
-without wasm-opt, so ~10% above the figures above):
-
-```
-fc-diff            20.9 KB shipped   (raw  37.7 KB)   was 36.8 / 54.4, now within budget
-fc-select          27.5 KB shipped   (raw  47.4 KB)   was 41.5 / 62.1, now within budget
-```
-
-See [WASM.md](WASM.md#no-std-for-primitives-only-crates).
+**Current WASM status (2026-10-09).** Eight crates emit eight binaries across seven
+module directories. All eight meet their unchanged shipped-byte budgets, enforced by
+`build:wasm`. Raw compiler sizes remain diagnostic. Primitive ABI 2 boundaries and
+UTF-16 parity tests are delivered; see [WASM.md](WASM.md) and Phase A below.
 
 Verified: contrast contract enforced in both schemes · all ramps validated · linter
 verified against both violations and legitimate patterns · WASM modules instantiate and
@@ -258,7 +234,7 @@ rather than treating dialogs as a quick win.
 
 ---
 
-## Phase A -- WASM size reduction (in progress)
+## Phase A -- WASM size reduction (complete)
 
 **Goal.** Get each WASM module from ~350-420 KB to its ~30-45 KB budget. Everything else
 in the WASM plan depends on this, because a 400 KB download to open a context menu is not
@@ -269,7 +245,7 @@ Delivered:
 - Rust workspace with eight crates, each a `cdylib`. `fc-core` is emitted into the
   `fc-model` module directory rather than getting one of its own, so eight crates
   produce **eight** `.wasm` files across **seven** importable modules.
-- 132 unit tests covering the algorithms.
+- 133 unit tests covering the algorithms.
 - A JS accelerator abstraction with a pure-JS fallback, so the modules are optional.
 - **`fc-context-menu` off `js-sys`**: 411.6 KB to 40.2 KB raw (79.8 to 21.7 KB
   shipped), under budget. It no longer depends on `fc-core` or serde, folds case
@@ -278,7 +254,7 @@ Delivered:
 - **A measured size report in the build output**, because the dominant cost is invisible
   in source and only obvious in the numbers.
 - **`fc-diff` and `fc-select` without std** (2026-10-08): 36.8 to 20.9 KB and 41.5 to
-  27.5 KB shipped, both within budget on that basis. A `bare` crate feature drops std, so
+  27.4 KB shipped, both within budget on that basis. A `bare` crate feature drops std, so
   panics trap without linking std's message formatting, and both crates scan bytes where
   `str::replace` and `str::contains` brought the two-way searcher and its slicing panics.
   Native builds and `cargo test` are unchanged; see
@@ -296,26 +272,18 @@ The problem, measured rather than guessed:
 LTO cannot remove it because wasm-bindgen's glue enumerates the WebIDL surface rather
 than tree-shaking to the used subset.
 
-Remaining:
+Completed on 2026-10-08:
 
-- Re-derive the budgets on the **shipped** basis. The raw (pre-bindgen) basis now
-  overstates the wire by 2–18x — see the table in docs/WASM.md — and three
-  modules exceeded their budgets on shipped bytes (`fc-context-menu` 81.3 KB,
-  `fc-select` 50.0, `fc-diff` 34.8). `fc-context-menu` is now at 21.7 and
-  `fc-select` at 38.4, and since the `bare` builds `fc-select` and `fc-diff` are under
-  too. On the shipped basis only `fc-rich-text` (45.9 KB with wasm-opt, 52.1 without,
-  against 49) is still over. On the raw basis `fc-diff` and `fc-select` remain 3 and 12 KB
-  over, most of it wasm-bindgen's own descriptor section, which never ships. Whether to
-  move the budgets to the shipped basis is the maintainer's call, not a side effect of a
-  size change.
-- Apply the `bare` pattern to `fc-git` and `fc-context-menu`, which are already
-  primitives-only, and to the js-sys crates once their boundaries are.
-- Replace `js_sys::Array` / `Vec<JsValue>` returns with flat primitives: numbers, strings,
-  and typed arrays. A range crosses as four numbers, not an object.
-- Drop `serde-wasm-bindgen` in favour of hand-written `to_js` for the few shapes crossing
-  the boundary. Serde's machinery is not free, and it is only paying for itself if the
-  boundary grows.
-- Re-measure, and turn the budgets into a build failure once they are met.
+- Apply `bare` to git and context menu as well as diff/select.
+- Remove `js-sys` and `serde-wasm-bindgen` dependencies throughout the workspace.
+  Ranges/cells cross as flat typed arrays; rich text crosses as explicit JSON strings.
+- Enforce the same numeric budgets against actual shipped bytes; missing/oversized
+  artifacts fail the build. Raw descriptor sizes remain visible in the report.
+- Test every replacement/split offset around surrogate pairs, serialized control
+  characters, grid coordinates, tagged errors and exact artifact sizes. Fix the
+  replacement-result and rich-text span rebasing bugs those tests exposed.
+
+This changes the core ABI to 2; see [MIGRATION.md](MIGRATION.md).
 
 Exit criteria: **every module within budget**, and the parity tests still passing. The
 parity suite is the safety net for this entire phase, because rewriting the boundary is

@@ -117,6 +117,8 @@ impl TextBuffer {
         }
         let b0 = utf16_to_byte(&self.text, start);
         let b1 = utf16_to_byte(&self.text, end);
+        // The returned caret range must start where the boundary-clamped edit did.
+        let start = self.text[..b0].encode_utf16().count();
         self.text.replace_range(b0..b1, replacement);
         let inserted: usize = replacement.chars().map(char::len_utf16).sum();
         Ok(Range16 { start, end: start + inserted })
@@ -172,12 +174,9 @@ impl TextBuffer {
 // 100,000-character document would be orders of magnitude slower than one call
 // into Rust.
 
-/// Packs a range into a two-element JS array.
-fn range_to_js(r: Range16) -> JsValue {
-    let arr = js_sys::Array::new();
-    arr.push(&JsValue::from_f64(r.start as f64));
-    arr.push(&JsValue::from_f64(r.end as f64));
-    arr.into()
+// Typed coordinates avoid JS object allocation and preserve exact UTF-16 offsets.
+fn range_to_js(r: Range16) -> Vec<u32> {
+    vec![r.start as u32, r.end as u32]
 }
 
 #[wasm_bindgen]
@@ -208,10 +207,10 @@ impl TextBuffer {
         self.char_count()
     }
 
-    /// Returns `[start, end]` pairs, one per line.
+    /// Returns flat `[start, end, ...]` coordinates, one pair per line.
     #[wasm_bindgen(js_name = lines16)]
-    pub fn js_lines16(&self) -> Vec<JsValue> {
-        self.lines16().into_iter().map(range_to_js).collect()
+    pub fn js_lines16(&self) -> Vec<u32> {
+        self.lines16().into_iter().flat_map(range_to_js).collect()
     }
 
     #[wasm_bindgen(js_name = slice16)]
@@ -227,14 +226,14 @@ impl TextBuffer {
         start: usize,
         end: usize,
         replacement: &str,
-    ) -> Result<JsValue, JsValue> {
+    ) -> Result<Vec<u32>, JsValue> {
         self.replace16(start, end, replacement)
             .map(range_to_js)
             .map_err(Into::into)
     }
 
     #[wasm_bindgen(js_name = lineAt)]
-    pub fn js_line_at(&self, offset: usize) -> Result<JsValue, JsValue> {
+    pub fn js_line_at(&self, offset: usize) -> Result<Vec<u32>, JsValue> {
         self.line_at(offset).map(range_to_js).map_err(Into::into)
     }
 

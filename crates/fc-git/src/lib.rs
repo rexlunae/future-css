@@ -32,6 +32,31 @@
 //! recorded because it is the same boundary and a future change must not quietly
 //! diverge.
 
+// `no_std` on wasm, for size rather than portability. std's panic runtime
+// formats every message it could print -- `Debug` for ranges, char escaping,
+// integer padding -- and links all of it the moment any bounds check can fail,
+// which is most of this module's bytes and none of its behaviour. With
+// `panic = "abort"` a panic was already a trap, so the handler below traps
+// without formatting anything first.
+#![cfg_attr(all(target_arch = "wasm32", feature = "bare", not(test)), no_std)]
+
+extern crate alloc;
+
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
+
+#[cfg(all(target_arch = "wasm32", feature = "bare", not(test)))]
+#[panic_handler]
+fn panic(_: &core::panic::PanicInfo) -> ! {
+    core::arch::wasm32::unreachable()
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "bare", not(test)))]
+#[global_allocator]
+static ALLOC: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
+
+
 use wasm_bindgen::prelude::*;
 
 /// Where a file is in its lifecycle. Matches the JS `IndexState`.

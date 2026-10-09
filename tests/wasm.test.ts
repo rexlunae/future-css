@@ -21,7 +21,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { before, describe, it } from "node:test";
 
-import { JsAccelerator } from "../src/js/accelerator.ts";
+import { JsAccelerator, CORE_ABI_VERSION } from "../src/js/accelerator.ts";
 import { diffLines, diffStats } from "../src/js/diff.ts";
 import { summarizeStatus, orderEntries, diffCounts } from "../src/js/git.ts";
 import { SELECT_WASM_ABI, SelectModel, WasmSelectModel, isCompatibleSelectModule } from "../src/js/select.ts";
@@ -45,7 +45,7 @@ type WasmModule = {
     charCount: () => number;
     countChars: (start: number, end: number) => number;
     slice16: (start: number, end: number) => string;
-    lines16: () => unknown[];
+    lines16: () => Uint32Array;
     text: string;
   };
 };
@@ -66,7 +66,7 @@ describe("WASM module", { skip: built ? false : "run `npm run build:wasm` first"
     assert.equal(typeof mod.abiVersion(), "number");
     // A hard check against the known value: a mismatch here means the JS and
     // WASM layers were built from different sources.
-    assert.equal(mod.abiVersion(), 1);
+    assert.equal(mod.abiVersion(), CORE_ABI_VERSION);
   });
 
   it("constructs a buffer and reports UTF-16 length", async () => {
@@ -93,7 +93,7 @@ describe("WASM module", { skip: built ? false : "run `npm run build:wasm` first"
   it("returns one range per line", async () => {
     const mod = await loadModule();
     const buf = new mod.TextBuffer("one\ntwo\nthree");
-    assert.equal(buf.lines16().length, 3);
+    assert.deepEqual([...buf.lines16()], [0, 3, 4, 7, 8, 13]);
   });
 });
 

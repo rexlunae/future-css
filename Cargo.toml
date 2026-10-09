@@ -40,10 +40,8 @@ wasm-bindgen = { version = "=0.2.118", default-features = false }
 # The allocator std itself links on wasm32-unknown-unknown, named directly so a
 # `no_std` crate keeps the same allocator without linking std's panic runtime.
 dlmalloc = { version = "0.2", features = ["global"] }
-js-sys = "0.3"
 wasm-bindgen-futures = "0.4"
 serde = { version = "1", features = ["derive"] }
-serde-wasm-bindgen = "0.6"
 console_error_panic_hook = "0.1"
 
 # Size is a design constraint here, not a preference: these modules ship over

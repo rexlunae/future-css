@@ -830,3 +830,7 @@ why the contract verifies three palettes separately rather than trusting one.
 If three things get done next: component override points, the high-contrast token tier,
 and composite type styles — in that order. The first two unblock adoption; the third
 unblocks design review.
+
+## RustyClaw
+
+The [2026-10-09 source audit](RUSTYCLAW-COVERAGE.md) maps the desktop, terminal and shared view elements to shipped components, including metric, transfer, approval, user-prompt and device-auth.

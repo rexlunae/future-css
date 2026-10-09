@@ -1855,3 +1855,53 @@ times read hours first in every script:
 ```
 
 Material's clock dial is not offered; see the Phase D table in `docs/PLAN.md`.
+
+## metric
+
+See [RustyClaw semantic coverage](RUSTYCLAW-COVERAGE.md) and [all states](../demo/fixtures.html#fx-metric).
+
+```html
+<section class="fc-metric" data-fc-kind="metric" data-fc-id="example" data-fc-seq="1" data-fc-state="pending" data-fc-ts="2026-10-09T12:00:00Z">
+<dl class="fc-metric"><dt class="fc-metric__title">Input tokens</dt><dd class="fc-metric__value"><data value="12480">12,480</data></dd><dd class="fc-metric__meta">This session · exact total</dd></dl>
+</section>
+```
+
+## transfer
+
+See [RustyClaw semantic coverage](RUSTYCLAW-COVERAGE.md) and [all states](../demo/fixtures.html#fx-transfer).
+
+```html
+<section class="fc-transfer" data-fc-kind="transfer" data-fc-id="example" data-fc-seq="1" data-fc-state="pending" data-fc-ts="2026-10-09T12:00:00Z">
+<h3 class="fc-transfer__title">Model download</h3><p class="fc-transfer__meta"><bdi>models/example.gguf</bdi> · 40 MB of 100 MB</p><progress class="fc-progress" max="100" value="40" aria-label="Model download">40%</progress><div class="fc-transfer__actions"><button class="fc-btn fc-btn--secondary" type="button" disabled>Cancel (fixture)</button></div>
+</section>
+```
+
+## approval
+
+See [RustyClaw semantic coverage](RUSTYCLAW-COVERAGE.md) and [all states](../demo/fixtures.html#fx-approval).
+
+```html
+<section class="fc-approval" data-fc-kind="approval" data-fc-id="example" data-fc-seq="1" data-fc-state="pending" data-fc-ts="2026-10-09T12:00:00Z">
+<h3 class="fc-approval__title">Allow read_file?</h3><p>Scope: the selected project, once.</p><details class="fc-disclosure"><summary class="fc-disclosure__summary">Full arguments</summary><div class="fc-code"><pre class="fc-code__source"><code>{"path":"README.md"}</code></pre></div></details><div class="fc-approval__actions"><button class="fc-btn fc-btn--secondary" type="button" disabled>Deny (fixture)</button><button class="fc-btn fc-btn--primary" type="button" disabled>Allow once (fixture)</button></div>
+</section>
+```
+
+## user-prompt
+
+See [RustyClaw semantic coverage](RUSTYCLAW-COVERAGE.md) and [all states](../demo/fixtures.html#fx-user-prompt).
+
+```html
+<section class="fc-user-prompt" data-fc-kind="user-prompt" data-fc-id="example" data-fc-seq="1" data-fc-state="pending" data-fc-ts="2026-10-09T12:00:00Z">
+<h3 class="fc-user-prompt__title">Choose a workspace</h3><fieldset><legend>Where should the agent work?</legend><label class="fc-check"><input class="fc-check__input" type="radio" name="workspace-STATE" value="current" checked><span class="fc-check__label">Current project</span></label><label class="fc-check"><input class="fc-check__input" type="radio" name="workspace-STATE" value="new"><span class="fc-check__label">New directory</span></label></fieldset><div class="fc-user-prompt__actions"><button class="fc-btn fc-btn--primary" type="submit">Answer</button><button class="fc-btn fc-btn--secondary" type="reset">Reset</button></div>
+</section>
+```
+
+## device-auth
+
+See [RustyClaw semantic coverage](RUSTYCLAW-COVERAGE.md) and [all states](../demo/fixtures.html#fx-device-auth).
+
+```html
+<section class="fc-device-auth" data-fc-kind="device-auth" data-fc-id="example" data-fc-seq="1" data-fc-state="pending" data-fc-ts="2026-10-09T12:00:00Z">
+<h3 class="fc-device-auth__title">Connect your device</h3><p>Open the provider’s verification page and enter this example code.</p><a class="fc-btn fc-btn--secondary" href="https://example.com/activate">Verification page</a><code class="fc-device-auth__code">ABCD-1234</code><p class="fc-device-auth__meta">Expires in 5 minutes. Codes are sensitive; never put them in data attributes.</p>
+</section>
+```

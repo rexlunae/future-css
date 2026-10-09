@@ -94,6 +94,11 @@ const BUNDLE_ORDER: ReadonlyArray<readonly [source: string, publishedAs: string]
   ["components/search.css", "components/search.css"],
   ["components/carousel.css", "components/carousel.css"],
   ["components/datepicker.css", "components/datepicker.css"],
+  ["components/metric.css", "components/metric.css"],
+  ["components/transfer.css", "components/transfer.css"],
+  ["components/approval.css", "components/approval.css"],
+  ["components/user-prompt.css", "components/user-prompt.css"],
+  ["components/device-auth.css", "components/device-auth.css"],
   ["type.css", "type.css"],
   ["utilities.css", "utilities.css"],
 ];

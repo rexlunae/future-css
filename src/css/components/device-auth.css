@@ -6,6 +6,7 @@
 @layer fc.components {
   .fc-device-auth {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--fc-space-3);
     min-inline-size: 0;
     padding: var(--fc-space-4);

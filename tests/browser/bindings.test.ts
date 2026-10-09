@@ -2885,6 +2885,36 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     } finally { await send('Emulation.clearDeviceMetricsOverride'); }
   });
 
+  it("keeps long approval arguments inspectable at narrow widths in both directions", async () => {
+    try {
+      await send('Emulation.setDeviceMetricsOverride', {width:320,height:900,deviceScaleFactor:1,mobile:false});
+      for (const page of ['/demo/rustyclaw.html', '/demo/fixtures.html']) {
+        await send('Page.navigate', {url: `${server.origin}${page}`});
+        await new Promise(r => setTimeout(r, 800));
+        for (const dir of ['ltr', 'rtl']) {
+          const result = await evaluate(`
+            document.documentElement.dir=${JSON.stringify(dir)};
+            const approval=document.querySelector('.fc-approval');
+            const details=approval.querySelector('details'); details.open=true;
+            const source=approval.querySelector('.fc-code__source');
+            const text=JSON.stringify({path:'workspace/'+'directory-'.repeat(80)+'README.md'});
+            source.querySelector('code').textContent=text;
+            const range=document.createRange();range.selectNodeContents(source.querySelector('code'));
+            const box=source.getBoundingClientRect();
+            const rects=[...range.getClientRects()];
+            return {text:source.textContent, expected:text, wraps:getComputedStyle(source).whiteSpace,
+              contained:rects.every(r=>r.left>=box.left-1&&r.right<=box.right+1),
+              overflow:document.documentElement.scrollWidth>innerWidth, offenders:[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).slice(-10).map(e=>e.className)};
+          `);
+          assert.equal(result.text, result.expected);
+          assert.equal(result.wraps, 'pre-wrap');
+          assert.equal(result.contained, true, `${page}: ${dir} arguments clipped`);
+          assert.equal(result.overflow, false, `${page}: ${dir} page overflow ${JSON.stringify(result.offenders)}`);
+        }
+      }
+    } finally {await send('Emulation.clearDeviceMetricsOverride');}
+  });
+
   it("renders all fixtures under reduced motion and forced colors", async () => {
     try {
       await send("Page.navigate", { url: `${server.origin}/demo/fixtures.html` });

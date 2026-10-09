@@ -1882,7 +1882,7 @@ See [RustyClaw semantic coverage](RUSTYCLAW-COVERAGE.md) and [all states](../dem
 
 ```html
 <section class="fc-approval" data-fc-kind="approval" data-fc-id="example" data-fc-seq="1" data-fc-state="pending" data-fc-ts="2026-10-09T12:00:00Z">
-<h3 class="fc-approval__title">Allow read_file?</h3><p>Scope: the selected project, once.</p><details class="fc-disclosure"><summary class="fc-disclosure__summary">Full arguments</summary><pre class="fc-code"><code>{"path":"README.md"}</code></pre></details><div class="fc-approval__actions"><button class="fc-btn fc-btn--secondary" type="button" disabled>Deny (fixture)</button><button class="fc-btn fc-btn--primary" type="button" disabled>Allow once (fixture)</button></div>
+<h3 class="fc-approval__title">Allow read_file?</h3><p>Scope: the selected project, once.</p><details class="fc-disclosure"><summary class="fc-disclosure__summary">Full arguments</summary><div class="fc-code"><pre class="fc-code__source"><code>{"path":"README.md"}</code></pre></div></details><div class="fc-approval__actions"><button class="fc-btn fc-btn--secondary" type="button" disabled>Deny (fixture)</button><button class="fc-btn fc-btn--primary" type="button" disabled>Allow once (fixture)</button></div>
 </section>
 ```
 

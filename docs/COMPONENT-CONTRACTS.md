@@ -1421,7 +1421,7 @@ See [markup and lifecycle examples](../demo/fixtures.html#fx-metric). The root g
 
 ### States
 
-All eight data-fc-state values have fixtures. Pending/queued/running/streaming use an accent edge; error/denied use the danger boundary; complete uses double and aborted dashed borders. Visible status text is required. Controls inherit hover, active, focus-visible, disabled and aria-disabled from their component.
+All eight data-fc-state values have fixtures. Pending/queued/running/streaming use an accent edge; error/denied use the danger boundary; complete uses double and aborted dashed borders. Visible status text is required. Long-content and empty fixtures exercise expanded arguments, destinations, labels and unavailable values. Controls inherit hover, active, focus-visible, disabled and aria-disabled from their component.
 
 ### Accessibility
 
@@ -1447,7 +1447,7 @@ See [markup and lifecycle examples](../demo/fixtures.html#fx-transfer). The root
 
 ### States
 
-All eight data-fc-state values have fixtures. Pending/queued/running/streaming use an accent edge; error/denied use the danger boundary; complete uses double and aborted dashed borders. Visible status text is required. Controls inherit hover, active, focus-visible, disabled and aria-disabled from their component.
+All eight data-fc-state values have fixtures. Pending/queued/running/streaming use an accent edge; error/denied use the danger boundary; complete uses double and aborted dashed borders. Visible status text is required. Long-content and empty fixtures exercise expanded arguments, destinations, labels and unavailable values. Controls inherit hover, active, focus-visible, disabled and aria-disabled from their component.
 
 ### Accessibility
 
@@ -1473,7 +1473,7 @@ See [markup and lifecycle examples](../demo/fixtures.html#fx-approval). The root
 
 ### States
 
-All eight data-fc-state values have fixtures. Pending/queued/running/streaming use an accent edge; error/denied use the danger boundary; complete uses double and aborted dashed borders. Visible status text is required. Controls inherit hover, active, focus-visible, disabled and aria-disabled from their component.
+All eight data-fc-state values have fixtures. Pending/queued/running/streaming use an accent edge; error/denied use the danger boundary; complete uses double and aborted dashed borders. Visible status text is required. Long-content and empty fixtures exercise expanded arguments, destinations, labels and unavailable values. Controls inherit hover, active, focus-visible, disabled and aria-disabled from their component.
 
 ### Accessibility
 
@@ -1499,7 +1499,7 @@ See [markup and lifecycle examples](../demo/fixtures.html#fx-user-prompt). The r
 
 ### States
 
-All eight data-fc-state values have fixtures. Pending/queued/running/streaming use an accent edge; error/denied use the danger boundary; complete uses double and aborted dashed borders. Visible status text is required. Controls inherit hover, active, focus-visible, disabled and aria-disabled from their component.
+All eight data-fc-state values have fixtures. Pending/queued/running/streaming use an accent edge; error/denied use the danger boundary; complete uses double and aborted dashed borders. Visible status text is required. Long-content and empty fixtures exercise expanded arguments, destinations, labels and unavailable values. Controls inherit hover, active, focus-visible, disabled and aria-disabled from their component.
 
 ### Accessibility
 
@@ -1525,7 +1525,7 @@ See [markup and lifecycle examples](../demo/fixtures.html#fx-device-auth). The r
 
 ### States
 
-All eight data-fc-state values have fixtures. Pending/queued/running/streaming use an accent edge; error/denied use the danger boundary; complete uses double and aborted dashed borders. Visible status text is required. Controls inherit hover, active, focus-visible, disabled and aria-disabled from their component.
+All eight data-fc-state values have fixtures. Pending/queued/running/streaming use an accent edge; error/denied use the danger boundary; complete uses double and aborted dashed borders. Visible status text is required. Long-content and empty fixtures exercise expanded arguments, destinations, labels and unavailable values. Controls inherit hover, active, focus-visible, disabled and aria-disabled from their component.
 
 ### Accessibility
 

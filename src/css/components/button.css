@@ -40,8 +40,8 @@
     padding-block: var(--fc-space-2);
     padding-inline: var(--fc-space-4);
 
-    border: var(--fc-border-width-thin) solid transparent;
-    border-radius: var(--fc-radius-lg);
+    border: var(--fc-border-width-control, var(--fc-border-width-thin)) solid transparent;
+    border-radius: var(--fc-btn-radius, var(--fc-radius-lg));
 
     font-family: inherit;
     font-size: var(--fc-font-size-sm);
@@ -72,14 +72,15 @@
    * respond, because a control that moves when it cannot act is lying.
    */
   .fc-btn:active:not(:disabled, [aria-disabled="true"], [aria-busy="true"]) {
-    scale: 0.97;
+    scale: var(--fc-btn-press-scale, 0.97);
   }
 
   /* ---- Sizes ----------------------------------------------------------- */
 
   .fc-btn--sm {
     min-block-size: 2rem;
-    border-radius: var(--fc-radius-md);
+    --fc-btn-radius: var(--fc-radius-md);
+    --fc-btn-corner-limit: 1rem;
     padding-block: var(--fc-space-1);
     padding-inline: var(--fc-space-3);
     font-size: var(--fc-font-size-xs);
@@ -121,7 +122,8 @@
 
   /* Default / primary. The faint shadow lifts it off the page as the one
      action to take. */
-  .fc-btn--primary {
+  .fc-btn--primary,
+  .fc-btn--ok {
     background-color: var(--fc-btn-primary-bg, var(--fc-color-accent-bg));
     color: var(--fc-btn-primary-fg, var(--fc-color-text-on-accent));
     border-color: var(--fc-btn-primary-border, var(--fc-color-accent-border));
@@ -129,14 +131,16 @@
   }
 
   /* Secondary: an outlined button that sits beside a primary without competing. */
-  .fc-btn--secondary {
+  .fc-btn--secondary,
+  .fc-btn--cancel {
     background-color: var(--fc-color-bg-surface);
     color: var(--fc-color-text-default);
     border-color: var(--fc-color-border-interactive);
   }
 
   /* Ghost: no chrome until interacted with. Low affordance -- use sparingly. */
-  .fc-btn--ghost {
+  .fc-btn--ghost,
+  .fc-btn--tertiary {
     background-color: transparent;
     color: var(--fc-color-text-default);
     border-color: transparent;
@@ -161,16 +165,20 @@
   }
 
   @media (hover: hover) {
-    .fc-btn--primary:hover {
+    .fc-btn--primary:hover,
+    .fc-btn--ok:hover {
       background-color: var(--fc-btn-primary-bg-hover, var(--fc-color-accent-bg-hover));
     }
 
-    .fc-btn--secondary:hover {
+    .fc-btn--secondary:hover,
+    .fc-btn--cancel:hover {
       border-color: color-mix(in oklab, var(--fc-color-border-interactive), var(--fc-color-text-default) 40%);
     }
 
     .fc-btn--secondary:hover,
-    .fc-btn--ghost:hover {
+    .fc-btn--cancel:hover,
+    .fc-btn--ghost:hover,
+    .fc-btn--tertiary:hover {
       background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-hover-overlay) * 100%), transparent);
     }
 
@@ -186,13 +194,16 @@
 
   /* Pressed. After the hover block, because a pressed button is also hovered
      and the two have equal specificity. */
-  .fc-btn--primary:active {
+  .fc-btn--primary:active,
+  .fc-btn--ok:active {
     background-color: var(--fc-btn-primary-bg-active, var(--fc-color-accent-bg-active));
     box-shadow: none;
   }
 
   .fc-btn--secondary:active,
-  .fc-btn--ghost:active {
+  .fc-btn--cancel:active,
+  .fc-btn--ghost:active,
+  .fc-btn--tertiary:active {
     background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 100%), transparent);
   }
 
@@ -290,7 +301,8 @@
       border-color: ButtonBorder;
     }
 
-    .fc-btn--primary {
+    .fc-btn--primary,
+    .fc-btn--ok {
       background-color: Highlight;
       color: HighlightText;
       border-color: Highlight;

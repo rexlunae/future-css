@@ -23,16 +23,19 @@ an opaque blob — it is readable CSS you can debug in devtools.
 architecture, the reset and base layers, the layout primitives, the linter, the
 accessibility contract, and an optional Rust/WASM layer.
 
-Thirty-seven components have their CSS. The general set: button, form field and input
+Fifty-four components have their CSS. The general set: button, form field and input
 group, checkbox / radio / switch, card, badge and tag, alert, dialog and side sheet,
 popover and tooltip, toast, tabs, breadcrumb, pagination, spinners (ring, arc,
 typing dots, pulse, stream bars, orbit, sparkle), skeleton, progress, avatar, empty state, disclosure, navigation sidebar, data table with sorting, and description list. The AI-chat set: chat surface, message
 actions, agent status row, reasoning trace, citations and sources, suggested prompts, tool call / step
 trace, composer, context strip, select/listbox, code block, diff viewer, git surface,
 terminal, rich text editor, context menu, data grid, and embedded browser chrome.
+App chrome and compound controls include masthead, control group, navbar, toolbar,
+button group, split button, segmented buttons, FAB, list, search, divider, slider,
+carousel, datepicker, theme picker, multiselect, and form variants.
 
-Thirteen ship browser bindings -- editor, menu, grid, webview, select, composer, context
-strip, git surface, tabs, toast, tooltip, table, and nav -- covered by tests in a real headless
+Nineteen ship browser bindings -- editor, menu, grid, webview, select, composer, context
+strip, git surface, tabs, toast, tooltip, table, nav, slider, toolbar, carousel, datepicker, theme picker, and multiselect -- covered by tests in a real headless
 Chrome. Overlays use the platform (`<dialog>`, the popover API, `<details>`) and need no
 script. See [the development plan](docs/PLAN.md) for what is done, what is next, and
 what is deliberately out of scope.
@@ -208,3 +211,5 @@ AGENTS.md          Operating instructions for autonomous contributors
 ## License
 
 MIT
+
+Twenty-one stock designs ship in the optional themes stylesheet, including Helix. The theme picker supports independent palettes and schemes, validated custom TOML, versioned installation, and explicit schema migrations. See [the theme guide](docs/THEMES.md).

@@ -51,11 +51,25 @@
     "./print": "./dist/print.css",
     "./email": "./dist/email.css",
     "./tokens.json": "./dist/tokens.json",
-    "./wide-gamut": "./dist/wide-gamut.css"
+    "./wide-gamut": "./dist/wide-gamut.css",
+    "./theme-picker": "./src/js/theme-picker.ts",
+    "./theme-presets": "./src/js/theme-presets.ts",
+    "./theme-presets.json": "./dist/theme-presets.json",
+    "./theme-contract.json": "./dist/theme-contract.json",
+    "./theme-toml": "./src/js/theme-toml.ts",
+    "./theme-schema": "./src/js/theme-schema.ts",
+    "./theme-schema.json": "./dist/theme-schema.json",
+    "./theme-migrations": "./src/js/theme-migrations.ts",
+    "./theme-tools": "./tools/theme-files.mjs",
+    "./multiselect": "./src/js/multiselect.ts"
   },
   "files": [
     "dist",
-    "src/js"
+    "src/js",
+    "tools/check-theme.mjs",
+    "tools/install-theme.mjs",
+    "tools/migrate-theme.mjs",
+    "tools/theme-files.mjs"
   ],
   "scripts": {
     "build": "npm run build:css && npm run build:wasm",

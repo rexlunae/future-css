@@ -19,7 +19,7 @@
  */
 
 import { contrastRatio, type Oklch } from "../color-utils.ts";
-import { accent, danger, info, neutral, success, warning } from "../palette.ts";
+import { accent, danger, info, neutral, success, warning, prideStripes } from "../palette.ts";
 
 export interface ContrastPair {
   /** Human-readable description of where this pair is used. */
@@ -150,6 +150,14 @@ export const semanticColors = {
   "info-bg-subtle": { light: info["50"]!, dark: info["950"]! },
   "info-border": { light: info["600"]!, dark: info["400"]! },
 
+  // Rainbow fills have their own checked label pairing, independent of statuses.
+  "pride-red": prideStripes.red,
+  "pride-orange": prideStripes.orange,
+  "pride-yellow": prideStripes.yellow,
+  "pride-green": prideStripes.green,
+  "pride-blue": prideStripes.blue,
+  "pride-violet": prideStripes.violet,
+
   // ---- Focus --------------------------------------------------------------
   // Two tokens rather than one so high-contrast modes can swap in a
   // double-color ring that stays visible on any background.
@@ -176,6 +184,8 @@ const darkSet: Record<string, Oklch> = Object.fromEntries(
  * legality fails CI instead of shipping.
  */
 export const contrastPairs: readonly ContrastPair[] = [
+  ...Object.keys(prideStripes).map(name=>({usage:`Pride label on ${name} stripe`,fg:'text-on-accent',bg:`pride-${name}`,min:4.5})),
+  { usage: "Theme masthead focus ring", fg: "focus-ring", bg: "selected-bg", min: 3 },
   { usage: "Default text inside selected rows", fg: "text-default", bg: "selected-bg", min: 4.5 },
   { usage: "Secondary text inside selected rows", fg: "text-muted", bg: "selected-bg", min: 4.5 },
   { usage: "Subtle text inside selected rows", fg: "text-subtle", bg: "selected-bg", min: 4.5 },

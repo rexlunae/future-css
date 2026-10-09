@@ -265,8 +265,10 @@
   }
 
   .fc-nav__link[aria-current="page"] {
-    color: var(--fc-color-accent-text);
-    background-color: var(--fc-color-accent-bg-subtle);
+    color: var(--fc-nav-selected-fg, var(--fc-color-accent-text));
+    background-color: var(--fc-nav-selected-bg, var(--fc-color-accent-bg-subtle));
+    --fc-nav-meta-fg: var(--fc-nav-selected-fg, var(--fc-color-text-subtle));
+    --fc-nav-link-focus: var(--fc-nav-selected-fg, var(--fc-color-focus-ring));
     border-inline-start-color: var(--fc-color-accent-border);
     font-weight: var(--fc-font-weight-medium);
   }

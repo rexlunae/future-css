@@ -27,16 +27,18 @@
   .fc-split-btn {
     display: inline-flex;
     align-items: stretch;
-    /* A hairline gap rather than a divider element: it reads as a seam on
-       every variant, solid or outlined, without a colour of its own. */
-    gap: var(--fc-space-0-5);
+    /* Adjoining borders form the separator without an extra painted gap. */
+    gap: 0;
+    --fc-btn-press-scale: 1;
     max-inline-size: 100%;
   }
 
   /* Logical corner longhands, so the seam stays between the two in RTL. */
   .fc-split-btn__action {
-    border-start-end-radius: var(--fc-radius-sm);
-    border-end-end-radius: var(--fc-radius-sm);
+    border-start-start-radius: min(var(--fc-btn-radius, var(--fc-radius-lg)), var(--fc-btn-corner-limit, calc(var(--fc-size-target-comfortable) / 2)));
+    border-end-start-radius: min(var(--fc-btn-radius, var(--fc-radius-lg)), var(--fc-btn-corner-limit, calc(var(--fc-size-target-comfortable) / 2)));
+    border-start-end-radius: var(--fc-joined-inner-radius, 0);
+    border-end-end-radius: var(--fc-joined-inner-radius, 0);
     min-inline-size: 0;
     /* fc-btn never wraps; a shrunk action would paint its label over the
        toggle, so a long or translated label wraps inside it instead. */
@@ -45,19 +47,35 @@
   }
 
   .fc-split-btn__toggle {
-    border-start-start-radius: var(--fc-radius-sm);
-    border-end-start-radius: var(--fc-radius-sm);
+    border-start-end-radius: min(var(--fc-btn-radius, var(--fc-radius-lg)), var(--fc-btn-corner-limit, calc(var(--fc-size-target-comfortable) / 2)));
+    border-end-end-radius: min(var(--fc-btn-radius, var(--fc-radius-lg)), var(--fc-btn-corner-limit, calc(var(--fc-size-target-comfortable) / 2)));
+    border-start-start-radius: var(--fc-joined-inner-radius, 0);
+    border-end-start-radius: var(--fc-joined-inner-radius, 0);
   }
 
   /*
    * The toggle's open state is its `aria-expanded`, the attribute the menu
    * binding already maintains, so the drawn and announced states agree. Open,
-   * it turns fully round: the shape change says "this one is open" without
-   * relying on colour.
+   * the chevron flips while the joined edge retains its shape.
    */
   .fc-split-btn__toggle[aria-expanded="true"] {
     --fc-split-btn-chevron: 225deg;
-    border-radius: var(--fc-radius-full);
+  }
+
+  /* Overlapping one border removes doubled seams without clipping focus rings. */
+  .fc-split-btn__action:not(:first-child) {
+    margin-inline-start: calc(-1 * var(--fc-border-width-control, var(--fc-border-width-thin)));
+  }
+  .fc-split-btn__action:focus-visible {
+    position: relative;
+    z-index: var(--fc-z-raised);
+  }
+  .fc-split-btn__toggle:not(:first-child) {
+    margin-inline-start: calc(-1 * var(--fc-border-width-control, var(--fc-border-width-thin)));
+  }
+  .fc-split-btn__toggle:focus-visible {
+    position: relative;
+    z-index: var(--fc-z-raised);
   }
 
   .fc-split-btn__chevron {
@@ -87,7 +105,7 @@
   }
 
   /* Forced colors: each half is a `.fc-btn`, whose forced-colors block draws
-     its border; the seam is a gap, which survives as background. */
+     its border; the shared border remains visible. */
   @media (forced-colors: active) {
     .fc-split-btn__toggle[aria-expanded="true"] {
       border-color: Highlight;

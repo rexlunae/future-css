@@ -198,6 +198,12 @@
   line-height: var(--fc-line-height-tight);
 }
 
+.demo-h3 {
+  margin-block: var(--fc-space-5) var(--fc-space-3);
+  font-size: var(--fc-font-size-lg);
+  line-height: var(--fc-line-height-tight);
+}
+
 .demo-note {
   max-inline-size: 68ch;
   margin: 0;
@@ -208,8 +214,8 @@
 
 .demo-panel {
   padding: clamp(var(--fc-space-4), 3vi, var(--fc-space-6));
-  background-color: var(--fc-color-bg-surface);
-  border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+  background-color: var(--fc-card-bg, var(--fc-color-bg-surface));
+  border: var(--fc-border-width-surface, var(--fc-border-width-thin)) var(--fc-card-border-style, solid) var(--fc-card-border, var(--fc-color-border-subtle));
   border-radius: var(--fc-radius-xl);
   box-shadow: var(--fc-shadow-raised);
 }

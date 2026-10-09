@@ -290,6 +290,11 @@
     border-inline-start-color: transparent;
   }
 
+  .fc-select__option-icon { flex: none; font-size: var(--fc-font-size-lg); }
+  .fc-select__option-content { display: grid; gap: var(--fc-space-0-5); min-inline-size: 0; }
+  .fc-select__option-description { font-size: var(--fc-font-size-xs); color: inherit; overflow-wrap: anywhere; }
+  .fc-select__option-meta { margin-inline-start: auto; font-size: var(--fc-font-size-xs); color: inherit; overflow-wrap: anywhere; }
+
   /* ---- Groups -------------------------------------------------------------- */
 
   /*

@@ -42,6 +42,7 @@ function status(selector, message) {
 // direction needs no component-level rule anywhere.
 // ---------------------------------------------------------------------------
 
+let themePicker;
 const root = document.documentElement;
 const schemeButton = $("[data-demo-toggle='scheme']");
 const directionButton = $("[data-demo-toggle='direction']");
@@ -51,6 +52,7 @@ const directionButton = $("[data-demo-toggle='direction']");
 // pair, that single attribute re-themes the palette. A theme switcher in any
 // app built on this system needs no other CSS.
 schemeButton?.addEventListener("click", () => {
+  if(themePicker){themePicker.setState({scheme:themePicker.value.scheme==='dark'?'light':'dark'});return;}
   const dark = !root.dataset.fcTheme?.endsWith("dark");
   const contrast = $("[data-demo-toggle=contrast]")?.getAttribute("aria-pressed") === "true";
   root.dataset.fcTheme = (contrast ? "high-contrast-" : "") + (dark ? "dark" : "light");
@@ -61,6 +63,7 @@ schemeButton?.addEventListener("click", () => {
 });
 
 $("[data-demo-toggle=contrast]")?.addEventListener("click", event => {
+  if(themePicker){themePicker.setState({contrast:themePicker.value.contrast==='high'?'system':'high'});return;}
   const button = event.currentTarget;
   const contrast = button.getAttribute("aria-pressed") !== "true";
   button.setAttribute("aria-pressed", String(contrast));
@@ -68,6 +71,7 @@ $("[data-demo-toggle=contrast]")?.addEventListener("click", event => {
   renderTokens();
 });
 $("[data-demo-toggle=brand]")?.addEventListener("click", event => {
+  if(themePicker){themePicker.setState({palette:themePicker.value.palette==='forest'?'default':'forest'});return;}
   const button = event.currentTarget;
   const forest = button.getAttribute("aria-pressed") !== "true";
   button.setAttribute("aria-pressed", String(forest));
@@ -707,7 +711,7 @@ for (const id of ["composer-search", "composer-research"]) {
 for (const button of document.querySelectorAll("[data-demo-format]")) {
   button.addEventListener("click", () => {
     button.setAttribute("aria-pressed", String(button.getAttribute("aria-pressed") !== "true"));
-    let content = document.createTextNode("A well-composed interface makes room for the work.");
+    let content = document.createTextNode($("#group-preview").textContent);
     for (const control of document.querySelectorAll('[data-demo-format][aria-pressed="true"]')) {
       const wrapper = document.createElement(control.dataset.demoFormat === "bold" ? "strong" : "em");
       wrapper.append(content);
@@ -717,6 +721,26 @@ for (const button of document.querySelectorAll("[data-demo-format]")) {
     status("#group-status", "Formatting updated.");
   });
 }
+
+for (const button of document.querySelectorAll("[data-demo-align]")) {
+  button.addEventListener("click", () => {
+    for (const peer of document.querySelectorAll("[data-demo-align]")) {
+      peer.setAttribute("aria-pressed", String(peer === button));
+    }
+    $("#group-preview").style.textAlign = button.dataset.demoAlign;
+    status("#group-status", `${button.textContent.trim()} alignment selected.`);
+  });
+}
+$("#joined-preview-clear").addEventListener("click", () => {
+  $("#joined-preview-text").value = "";
+  $("#joined-preview-text").focus();
+});
+$("#joined-preview-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  $("#group-preview").textContent = $("#joined-preview-text").value;
+  for (const button of document.querySelectorAll("[data-demo-format]")) button.setAttribute("aria-pressed", "false");
+  status("#group-status", "Preview text updated.");
+});
 
 const composer = new FutureCssComposer({
   root: "#composer-root",
@@ -909,10 +933,16 @@ bindTooltips(document);
 // `commandfor`/`command` would open these with no script; the listeners below
 // cover browsers that do not have invoker commands yet.
 for (const opener of document.querySelectorAll("[data-demo-open]")) {
-  opener.addEventListener("click", () => document.getElementById(opener.dataset.demoOpen)?.showModal());
+  opener.addEventListener("click", () => {
+    const dialog = document.getElementById(opener.dataset.demoOpen);
+    if (!dialog) return;
+    dialog.returnValue = "";
+    dialog.showModal();
+    dialog.dataset.fcOpen = "true";
+  });
 }
 for (const closer of document.querySelectorAll("[data-demo-close]")) {
-  closer.addEventListener("click", () => closer.closest("dialog")?.close());
+  closer.addEventListener("click", () => closer.closest("dialog")?.close(closer.value || "cancel"));
 }
 
 // The reasoning trace streams for a few seconds, then completes: the shimmer is
@@ -971,3 +1001,63 @@ $("#demo-agent-next")?.addEventListener("click", () => {
   stepStarted = Date.now();
   elapsed.textContent = "0s";
 });
+
+// The public picker drives the same tokens as application consumers.
+import { FutureCssThemePicker } from "/src/js/theme-picker.js";
+const themeContract = await fetch('/dist/theme-contract.json').then(response=>response.json());
+themePicker = new FutureCssThemePicker({root:'#theme-picker', contract:themeContract, storageKey:'future-css-demo-theme', onChange: state => {
+  $("[data-demo-toggle=contrast]")?.setAttribute('aria-pressed',String(state.contrast==='high'));
+  $("[data-demo-toggle=brand]")?.setAttribute('aria-pressed',String(state.palette==='forest'));
+  schemeButton?.setAttribute('aria-pressed',String(state.scheme === 'dark'));
+  schemeButton?.querySelector('[data-demo-label]').replaceChildren(state.scheme === 'system' ? 'System' : state.scheme === 'dark' ? 'Dark' : 'Light');
+  renderTokens();
+}});
+
+import { bindMenuButton } from "/src/js/menu.js";
+import { FutureCssMultiselect } from "/src/js/multiselect.js";
+bindMenuButton($("#export-toggle"), "#export-menu");
+bindMenuButton($("#actions-toggle"), "#actions-menu");
+$("#export-default").addEventListener("click", () => status("#advanced-status", "PDF export selected."));
+$("#export-menu").addEventListener("click", event => {
+  const item = event.target.closest("[data-export]");
+  if (item) status("#advanced-status", `${item.dataset.export} export selected.`);
+});
+$("#actions-menu").addEventListener("click", event => {
+  const item = event.target.closest("[data-document-action]");
+  if (item) status("#advanced-status", `${item.dataset.documentAction} selected.`);
+});
+for (const button of document.querySelectorAll('[data-demo-confirm]')) button.addEventListener('click', () => status('#advanced-status', button.dataset.demoConfirm === 'ok' ? 'Changes confirmed.' : 'Changes cancelled.'));
+new FutureCssSelect({invoker:'#rich-plan',list:'#rich-plan-options',onChange:value => status('#advanced-status', `${value} plan selected.`)});
+new FutureCssMultiselect({root:'#demo-multiselect',onChange:values => status('#advanced-status', `${values.length} members selected.`)});
+
+
+let savedPreferences = {style: "concise", sources: true, language: "en"};
+for (const dialog of document.querySelectorAll('dialog[id^="recipe-"]')) {
+  dialog.addEventListener('close', () => {
+    dialog.dataset.fcOpen = 'false';
+    dialog.dataset.fcSeq = String(Number(dialog.dataset.fcSeq || 0) + 1);
+    dialog.dataset.fcTs = new Date().toISOString();
+    dialog.dataset.fcState = 'complete';
+    const result = dialog.returnValue;
+    if (dialog.id === 'recipe-settings') {
+      const form = $('#recipe-settings-form');
+      if (result === 'save') {
+        const values = new FormData(form);
+        savedPreferences = {style: values.get('style'), sources: values.has('sources'), language: values.get('language')};
+        status('#dialog-recipe-status', 'Conversation preferences saved for this demo.');
+      } else {
+        for (const radio of form.querySelectorAll('[name="style"]')) radio.checked = radio.value === savedPreferences.style;
+        form.elements.sources.checked = savedPreferences.sources;
+        form.elements.language.value = savedPreferences.language;
+        status('#dialog-recipe-status', 'Preferences dismissed; saved settings retained.');
+      }
+    } else if (dialog.id === 'recipe-create' && result === 'create') {
+      const values = new FormData($('#recipe-create-form'));
+      status('#dialog-recipe-status', `Project “${values.get('name')}” created for this demo.`);
+    } else if (dialog.id === 'recipe-confirm' && result === 'confirm') {
+      status('#dialog-recipe-status', 'Project archived for this demo.');
+    } else if (dialog.id === 'recipe-notice' && result === 'ok') {
+      status('#dialog-recipe-status', 'Workspace notice acknowledged.');
+    } else status('#dialog-recipe-status', 'Dialog dismissed; no action applied.');
+  });
+}

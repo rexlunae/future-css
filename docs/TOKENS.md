@@ -386,6 +386,9 @@ remain the build-time contrast baseline. P3 hardware review remains a release ch
 | --- | --- | --- |
 | Primary button | `--fc-btn-primary-bg`, `-bg-hover`, `-bg-active`, `-fg`, `-border` | Corresponding accent roles |
 | Chat | `--fc-chat-bg`, `-fg`, `-gap`, `-message-measure` | Canvas, default text, space-4, size-measure |
+| Card | `--fc-card-bg`, `--fc-card-shadow` | Surface, no shadow |
+| Masthead | `--fc-masthead-bg`, `-fg`, `-muted`, `-disabled-fg`, `-interaction-bg`, `-focus` | Surface and corresponding text/focus roles |
+| Navigation | `--fc-nav-selected-bg`, `-selected-fg`, `-meta-fg`, `-link-focus` | Selected surface, accent text, muted text, focus ring |
 | Composer | `--fc-composer-bg`, `-fg`, `-radius` | Surface, default text, radius-2xl |
 
 Prefixes in the table apply to each suffix. Set the complete color pair and interaction

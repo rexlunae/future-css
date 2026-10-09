@@ -27,7 +27,7 @@
     min-inline-size: 0;
     background-color: var(--fc-code-bg);
     color: var(--fc-code-fg);
-    border: var(--fc-border-width-thin) solid var(--fc-code-border-default);
+    border: var(--fc-border-width-surface, var(--fc-border-width-thin)) solid var(--fc-code-border-default);
     border-radius: var(--fc-radius-lg);
     /* Child surfaces must follow the outer curve without painting over its border. */
     overflow: clip;

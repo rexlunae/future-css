@@ -14,11 +14,10 @@
  * Every button keeps its own Tab stop and its own state: this is a visual
  * join, not a composite widget. A set where exactly one value is chosen and
  * submitted with a form is `fc-segmented`, on native radios; a loose cluster
- * of controls that should not look joined is `fc-control-group`.
+ * of mixed controls is `fc-control-group`, with an optional joined modifier.
  *
- * Its own component rather than a control-group modifier because the joined
- * corners override the button's radius per position, which a modifier could
- * only do by reaching into its items. Load after `button.css` (the bundle
+ * Dedicated parts keep position-specific corners independent of the general
+ * control group and its mixed fields. Load after `button.css` (the bundle
  * does): the corners win at equal specificity by coming later.
  */
 
@@ -26,53 +25,44 @@
   .fc-button-group {
     display: inline-flex;
     align-items: stretch;
-    /* A hairline gap, so each button still reads as its own target. */
-    gap: var(--fc-space-0-5);
+    /* Each adjoining border shares one seam. */
+    gap: 0;
+    --fc-btn-press-scale: 1;
     min-inline-size: 0;
     max-inline-size: 100%;
   }
 
   /*
    * Inner corners are tight and outer corners round, so the row reads as one
-   * pill cut into segments. Logical corner longhands keep the round ends on
+   * continuous shape separated into targets. Logical corner longhands keep the round ends on
    * the outside in RTL.
    */
   .fc-button-group__item {
     flex: 1 1 auto;
     min-inline-size: 0;
-    border-radius: var(--fc-radius-sm);
+    border-radius: var(--fc-joined-inner-radius, 0);
     /* fc-btn never wraps; a long or translated label wraps inside its own
        segment rather than pushing the row past a narrow screen. */
     white-space: normal;
     overflow-wrap: anywhere;
-    /* fc-btn's list plus the corner change; a transition declaration
-       replaces the button's rather than adding to it. */
-    transition:
-      background-color var(--fc-duration-fast) var(--fc-easing-standard),
-      border-color var(--fc-duration-fast) var(--fc-easing-standard),
-      color var(--fc-duration-fast) var(--fc-easing-standard),
-      box-shadow var(--fc-duration-fast) var(--fc-easing-standard),
-      scale var(--fc-duration-fast) var(--fc-easing-standard),
-      border-radius var(--fc-duration-fast) var(--fc-easing-standard);
+
   }
 
   .fc-button-group__item:first-child {
-    border-start-start-radius: var(--fc-radius-full);
-    border-end-start-radius: var(--fc-radius-full);
+    border-start-start-radius: min(var(--fc-btn-radius, var(--fc-radius-lg)), var(--fc-btn-corner-limit, calc(var(--fc-size-target-comfortable) / 2)));
+    border-end-start-radius: min(var(--fc-btn-radius, var(--fc-radius-lg)), var(--fc-btn-corner-limit, calc(var(--fc-size-target-comfortable) / 2)));
   }
 
   .fc-button-group__item:last-child {
-    border-start-end-radius: var(--fc-radius-full);
-    border-end-end-radius: var(--fc-radius-full);
+    border-start-end-radius: min(var(--fc-btn-radius, var(--fc-radius-lg)), var(--fc-btn-corner-limit, calc(var(--fc-size-target-comfortable) / 2)));
+    border-end-end-radius: min(var(--fc-btn-radius, var(--fc-radius-lg)), var(--fc-btn-corner-limit, calc(var(--fc-size-target-comfortable) / 2)));
   }
 
   /*
-   * The pressed segment rounds fully, Material's shape change for selection.
-   * The shape and the fill together carry the state, so it does not rest on
-   * colour alone (WCAG 1.4.1).
+   * Selection changes the fill and pressed semantics without breaking the seam.
+   * aria-pressed carries the state independently of color.
    */
   .fc-button-group__item[aria-pressed="true"] {
-    border-radius: var(--fc-radius-full);
     background-color: var(--fc-color-selected-bg);
     color: var(--fc-color-selected-fg);
     border-color: var(--fc-color-accent-border);
@@ -93,6 +83,15 @@
     color: var(--fc-color-disabled-fg);
     border-color: var(--fc-color-disabled-border);
     cursor: not-allowed;
+  }
+
+  /* Overlapping one border removes doubled seams without clipping focus rings. */
+  .fc-button-group__item:not(:first-child) {
+    margin-inline-start: calc(-1 * var(--fc-border-width-control, var(--fc-border-width-thin)));
+  }
+  .fc-button-group__item:focus-visible {
+    position: relative;
+    z-index: var(--fc-z-raised);
   }
 
   /* ---- Forced colors --------------------------------------------------- */

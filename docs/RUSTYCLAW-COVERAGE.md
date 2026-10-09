@@ -20,7 +20,7 @@ Paths below are relative to `crates/rustyclaw-desktop/src/components/` unless ma
 | `pairing.rs`: public key/fingerprint, QR, host/port, connection phases | device-auth, code, field, button, progress, alert | QR is an optional image with a text/link alternative; renderer supplied by host, no new QR dependency |
 | `hatching.rs`: agent name/personality | dialog, field, button | Existing native form |
 | `new_project.rs`, `edit_dialogs.rs`, `dir_picker.rs`: names, folder picker, inheritance toggle | dialog, field/input-group, check, select, button | Native host folder picker or editable path fallback; no fake browser filesystem access |
-| `user_prompt.rs`: text, confirm, single/multiple choice, multi-field questions, dismiss | **user-prompt**, field, check, button | New named inline form, all five input types; never intercept Enter on another action |
+| `user_prompt.rs`: text, confirm, single/multiple choice, multi-field questions, dismiss | **user-prompt**, field, check, multiselect, button | New named inline form, all five input types; never intercept Enter on another action |
 | `tool_approval.rs`: requested operation, full arguments, allow/deny | **approval**, disclosure, code, button | New approval content with full inspection and explicit scope; pending does not imply permission |
 | `approvals.rs`: queue and request status | table, approval, badge, empty-state | Existing queue composition plus new request content |
 | `analytics.rs`: totals, latency, per-model and per-session tables | **metric**, table, empty-state | New scalar summary with exact machine-readable native data value |
@@ -35,7 +35,7 @@ Paths below are relative to `crates/rustyclaw-desktop/src/components/` unless ma
 | `cron.rs`: name, schedule, prompt, provider/model/thread, run/pause/edit/delete | table, field, context-strip, select, button, dialog, badge | Existing; schedule is explicit text with help, not an invented calendar value |
 | `secrets.rs`: inventory, policy, reveal challenge, values, add/delete | table, badge, field, dialog, button, alert, code | Existing; sensitive values only in text/input properties, reveal lifecycle belongs to host |
 | `services.rs`: managed services, health, ports | table, badge, description-list, empty-state | Existing |
-| `settings.rs`: credentials, provider definitions, appearance, reconnect | field, input-group, segmented, button-group, dialog, alert | Existing |
+| `settings.rs`: credentials, provider definitions, appearance, reconnect | field, input-group, theme-picker, button-group, dialog, alert | Existing |
 | `skills.rs`, `tools_config.rs`, TUI `tool_perms_dialog`: enablement and permissions | table, check/switch, badge, button, select | Existing; native checked/disabled state |
 | `swarm_panel.rs`: swarm cards, member roles/state, counts, stop/create | card, list, agent-status, badge, button, approval | Existing; textual member hierarchy rather than decorative topology |
 | `plugin_panel.rs`: tabs, title, refresh/actions, arbitrary JSON values | tabs, card, description-list, list, code, empty-state | Existing; render untrusted values as text |
@@ -70,13 +70,11 @@ These are source-confirmed findings with reproduction instructions, not claims o
 
 ## Verification
 
-The original shared-checkout run passed 521 JavaScript/browser tests and 133 Rust
-tests with axe enabled and zero skips. That checkout also contained unrelated
-in-progress work. The isolated PR against main also passed `npm run check`: 478
-JavaScript/browser tests and 133 Rust tests, zero skips.
-
+`FC_AXE_SOURCE=/tmp/fc-validation-tools/node_modules/axe-core/axe.min.js npm run check`
+passed on 2026-10-09: 521 JavaScript/browser tests, 133 Rust tests, zero skips.
 Chrome exercised the new fixture states at 320px in both schemes/directions,
 focus rings, forced colors and reduced motion. Axe reported no serious/critical
-findings across the shared checkout's fixtures, main demo and RustyClaw recipes.
+findings across fixtures, the main demo and RustyClaw recipes. A separate targeted
+browser pass also verified recipe overflow at 320px after adding that assertion.
 New components measure 1.2–1.4 KB minified each, under the unchanged 7 KB budget.
 Native RustyClaw execution and manual screen-reader review were not performed.

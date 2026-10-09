@@ -831,6 +831,15 @@ If three things get done next: component override points, the high-contrast toke
 and composite type styles — in that order. The first two unblock adoption; the third
 unblocks design review.
 
+## Implementation audit, 2026-10-08
+
+The historical conclusions above describe the original survey. Phase C is now
+complete: state/disabled tokens, component override slots, high-contrast and brand
+themes, composite type roles, elevation/depth, bidi isolation, wide-gamut output,
+token descriptions and reduced-transparency/data preferences are implemented and
+covered by the build/tests. See PLAN.md for current status and the recorded
+divergences; the earlier “next” recommendations are no longer pending work.
+
 ## RustyClaw
 
 The [2026-10-09 source audit](RUSTYCLAW-COVERAGE.md) maps the desktop, terminal and shared view elements to shipped components, including metric, transfer, approval, user-prompt and device-auth.

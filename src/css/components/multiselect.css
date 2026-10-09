@@ -1,0 +1,25 @@
+/* Native disclosure and checkboxes preserve keyboard and form behavior without JS.
+   No animation is introduced, so reduced-motion needs no component override. */
+@layer fc.components {
+  .fc-multiselect { min-inline-size: 0; border: var(--fc-border-width-thin) solid var(--fc-color-border-interactive); border-radius: var(--fc-radius-lg); background-color: var(--fc-color-bg-surface); color: var(--fc-color-text-default); }
+  .fc-multiselect__summary { min-block-size: var(--fc-size-target-comfortable); padding: var(--fc-space-3); cursor: pointer; overflow-wrap: anywhere; }
+  .fc-multiselect__summary:hover { background-color: var(--fc-color-bg-subtle); }
+  .fc-multiselect__summary:active { background-color: var(--fc-color-bg-muted); }
+  .fc-multiselect__summary:focus-visible { outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring); outline-offset: var(--fc-space-0-5); }
+  .fc-multiselect__panel { display: grid; gap: var(--fc-space-3); padding: var(--fc-space-3); border-block-start: var(--fc-border-width-thin) solid var(--fc-color-border-interactive); }
+  .fc-multiselect__options { display: grid; gap: var(--fc-space-2); max-block-size: 20rem; overflow: auto; padding: var(--fc-space-1); }
+  .fc-multiselect__option { display: flex; align-items: start; gap: var(--fc-space-3); min-block-size: var(--fc-size-target-comfortable); padding: var(--fc-space-3); border: var(--fc-border-width-thin) solid var(--fc-color-border-interactive); border-radius: var(--fc-radius-md); cursor: pointer; }
+  .fc-multiselect__option:hover { background-color: var(--fc-color-bg-subtle); }
+  .fc-multiselect__option:active { background-color: var(--fc-color-bg-muted); }
+  .fc-multiselect__option:has(:checked) { background-color: var(--fc-color-selected-bg); border-color: var(--fc-color-accent-border); }
+  .fc-multiselect__option:has(:focus-visible) { outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring); outline-offset: var(--fc-space-0-5); }
+  .fc-multiselect__option:has(:disabled), .fc-multiselect__option:has([aria-disabled="true"]) { background-color: var(--fc-color-disabled-bg); color: var(--fc-color-disabled-fg); cursor: not-allowed; }
+  .fc-multiselect__content { display: grid; gap: var(--fc-space-1); min-inline-size: 0; overflow-wrap: anywhere; }
+  .fc-multiselect__description { font-size: var(--fc-font-size-sm); color: inherit; }
+  .fc-multiselect__actions { display: flex; gap: var(--fc-space-2); flex-wrap: wrap; }
+  @media (forced-colors: active) {
+    .fc-multiselect, .fc-multiselect__option { border-color: ButtonBorder; }
+    .fc-multiselect__option:has(:checked) { outline: var(--fc-border-width-thin) solid Highlight; }
+    .fc-multiselect__option:has(:disabled) { color: GrayText; }
+  }
+}

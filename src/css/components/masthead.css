@@ -13,8 +13,8 @@
     gap: var(--fc-space-3) var(--fc-space-6);
     min-inline-size: 0;
     padding: var(--fc-space-3) var(--fc-space-4);
-    background-color: var(--fc-color-bg-surface);
-    color: var(--fc-color-text-default);
+    background-color: var(--fc-masthead-bg, var(--fc-color-bg-surface));
+    color: var(--fc-masthead-fg, var(--fc-color-text-default));
     border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
   }
 
@@ -26,7 +26,7 @@
     min-block-size: var(--fc-size-target-comfortable);
     max-inline-size: 100%;
     padding-inline: var(--fc-space-1);
-    color: var(--fc-color-text-default);
+    color: var(--fc-masthead-fg, var(--fc-color-text-default));
     border-radius: var(--fc-radius-md);
     font-weight: var(--fc-font-weight-semibold);
     text-decoration: none;
@@ -63,7 +63,7 @@
     padding: var(--fc-space-2) var(--fc-space-3);
     border: var(--fc-border-width-thin) solid transparent;
     border-radius: var(--fc-radius-md);
-    color: var(--fc-color-text-muted);
+    color: var(--fc-masthead-muted, var(--fc-color-text-muted));
     font-size: var(--fc-font-size-sm);
     font-weight: var(--fc-font-weight-medium);
     text-decoration: none;
@@ -72,13 +72,13 @@
 
   .fc-masthead__brand:hover,
   .fc-masthead__link:hover {
-    background-color: var(--fc-color-bg-subtle);
-    color: var(--fc-color-text-default);
+    background-color: var(--fc-masthead-interaction-bg, var(--fc-color-bg-subtle));
+    color: var(--fc-masthead-fg, var(--fc-color-text-default));
   }
 
   .fc-masthead__brand:active,
   .fc-masthead__link:active {
-    background-color: var(--fc-color-bg-muted);
+    background-color: var(--fc-masthead-interaction-bg, var(--fc-color-bg-muted));
   }
 
   .fc-masthead__link[aria-current="page"] {
@@ -89,7 +89,7 @@
 
   .fc-masthead__brand:focus-visible,
   .fc-masthead__link:focus-visible {
-    outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring);
+    outline: var(--fc-border-width-focus) solid var(--fc-masthead-focus, var(--fc-color-focus-ring));
     outline-offset: var(--fc-space-0-5);
   }
 
@@ -98,7 +98,7 @@
   .fc-masthead__link:disabled,
   .fc-masthead__link[aria-disabled="true"] {
     background-color: transparent;
-    color: var(--fc-color-disabled-fg);
+    color: var(--fc-masthead-disabled-fg, var(--fc-color-disabled-fg));
     border-color: transparent;
     opacity: 1;
     cursor: not-allowed;

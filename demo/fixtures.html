@@ -52,7 +52,7 @@
       <figure class="fx__state" data-fx-state="rest, every variant">
         <figcaption class="fx__caption">rest, every variant</figcaption>
         <div class="fx__body">
-          <button type="button" class="fc-btn fc-btn--primary">primary</button> <button type="button" class="fc-btn fc-btn--secondary">secondary</button> <button type="button" class="fc-btn fc-btn--ghost">ghost</button> <button type="button" class="fc-btn fc-btn--subtle">subtle</button> <button type="button" class="fc-btn fc-btn--danger">danger</button>
+          <button type="button" class="fc-btn fc-btn--primary">primary</button> <button type="button" class="fc-btn fc-btn--secondary">secondary</button> <button type="button" class="fc-btn fc-btn--ghost">ghost</button><button type="button" class="fc-btn fc-btn--tertiary">tertiary</button><button type="button" class="fc-btn fc-btn--ok">OK</button><button type="button" class="fc-btn fc-btn--cancel">Cancel</button> <button type="button" class="fc-btn fc-btn--subtle">subtle</button> <button type="button" class="fc-btn fc-btn--danger">danger</button>
         </div>
       </figure>
       <figure class="fx__state" data-fx-state="sizes">
@@ -285,6 +285,7 @@
         </div>
       </figure>
     </div>
+    <article class="fc-card fc-card--feature"><h3>Theme feature surface</h3><p>Color and elevation ship with the library.</p></article>
   </section>
 
   <section class="fx" id="fx-badge" data-fixture="badge" aria-labelledby="fx-badge-h">
@@ -427,7 +428,22 @@
         </div>
       </figure>
     </div>
-  </section>
+<figure class="fx__state" data-fx-state="dialog recipe"><figcaption class="fx__caption">Dialog recipe</figcaption><div class="fx__body"><div class="fx-overlay"><dialog open class="fc-dialog fc-dialog--sm" id="fx-recipe-notice" aria-labelledby="fx-recipe-notice-title" aria-describedby="fx-recipe-notice-description" data-fc-kind="dialog" data-fc-id="fx-recipe-notice">
+<header class="fc-dialog__header"><h3 class="fc-dialog__title" id="fx-recipe-notice-title">Workspace ready</h3><button class="fc-dialog__close" type="button" value="cancel" aria-label="Close information">×</button></header>
+<div class="fc-dialog__body" tabindex="0"><p class="fc-dialog__description" id="fx-recipe-notice-description">Your workspace is ready. Invite teammates or start a new conversation.</p><div class="fc-alert fc-alert--success"><span aria-hidden="true">✓</span><div>Your preferences are saved locally for this demo.</div></div></div>
+<footer class="fc-dialog__footer"><button class="fc-btn fc-btn--ok" type="button" value="ok">OK</button></footer></dialog></div></div></figure>
+<figure class="fx__state" data-fx-state="dialog recipe"><figcaption class="fx__caption">Dialog recipe</figcaption><div class="fx__body"><div class="fx-overlay"><dialog open class="fc-dialog fc-dialog--sm" id="fx-recipe-confirm" aria-labelledby="fx-recipe-confirm-title" aria-describedby="fx-recipe-confirm-description" data-fc-kind="dialog" data-fc-id="fx-recipe-confirm">
+<header class="fc-dialog__header"><h3 class="fc-dialog__title" id="fx-recipe-confirm-title">Archive this project?</h3><button class="fc-dialog__close" type="button" value="cancel" aria-label="Close confirmation">×</button></header>
+<div class="fc-dialog__body" tabindex="0"><p class="fc-dialog__description" id="fx-recipe-confirm-description">The project will leave your active list. You can restore it from the archive.</p><dl class="fc-dl"><div class="fc-dl__item"><dt>Project</dt><dd>Design system refresh</dd></div></dl></div>
+<footer class="fc-dialog__footer"><button class="fc-btn fc-btn--cancel" type="button" value="cancel">Cancel</button><button class="fc-btn fc-btn--primary" type="button" value="confirm">Archive project</button></footer></dialog></div></div></figure>
+<figure class="fx__state" data-fx-state="dialog recipe"><figcaption class="fx__caption">Dialog recipe</figcaption><div class="fx__body"><div class="fx-overlay"><dialog open class="fc-dialog" id="fx-recipe-create" aria-labelledby="fx-recipe-create-title" aria-describedby="fx-recipe-create-description" data-fc-kind="dialog" data-fc-id="fx-recipe-create">
+<header class="fc-dialog__header"><h3 class="fc-dialog__title" id="fx-recipe-create-title">Create a project</h3><button class="fc-dialog__close" type="button" value="cancel" aria-label="Close form dialog">×</button></header>
+<div class="fc-dialog__body"><p class="fc-dialog__description" id="fx-recipe-create-description">Give this project a name. Required fields use native browser validation.</p><form method="dialog" id="fx-recipe-create-form" class="fc-stack"><label class="fc-field"><span class="fc-field__label">Project name (required)</span><input class="fc-input" name="name" required maxlength="80" autocomplete="off"></label><label class="fc-field"><span class="fc-field__label">Description (optional)</span><textarea class="fc-input fc-input--soft" name="description" rows="3" maxlength="240"></textarea></label></form></div>
+<footer class="fc-dialog__footer"><button class="fc-btn fc-btn--cancel" type="submit" form="fx-recipe-create-form" value="cancel" formnovalidate>Cancel</button><button class="fc-btn fc-btn--ok" type="submit" form="fx-recipe-create-form" value="create">Create project</button></footer></dialog></div></div></figure>
+<figure class="fx__state" data-fx-state="dialog recipe"><figcaption class="fx__caption">Dialog recipe</figcaption><div class="fx__body"><div class="fx-overlay"><dialog open class="fc-dialog fc-dialog--lg" id="fx-recipe-settings" aria-labelledby="fx-recipe-settings-title" aria-describedby="fx-recipe-settings-description" data-fc-kind="dialog" data-fc-id="fx-recipe-settings">
+<header class="fc-dialog__header"><h3 class="fc-dialog__title" id="fx-recipe-settings-title">Conversation preferences</h3><button class="fc-dialog__close" type="button" value="cancel" aria-label="Close preferences">×</button></header>
+<div class="fc-dialog__body"><p class="fc-dialog__description" id="fx-recipe-settings-description">Choose how this conversation behaves. Changes apply when you select Save preferences.</p><form method="dialog" id="fx-recipe-settings-form" class="fc-stack"><fieldset class="fc-stack"><legend>Response style</legend><label class="fc-choice"><input class="fc-check__input" type="radio" name="style" value="concise" checked><span class="fc-choice__content"><strong>Concise</strong><span class="fc-choice__description">Short answers with the essential details.</span></span></label><label class="fc-choice"><input class="fc-check__input" type="radio" name="style" value="detailed"><span class="fc-choice__content"><strong>Detailed</strong><span class="fc-choice__description">More context, reasoning and examples.</span></span></label></fieldset><label class="fc-check"><input class="fc-check__input" type="checkbox" name="sources" checked><span class="fc-check__label">Show source links</span></label><label class="fc-field fc-field--inline"><span class="fc-field__label">Language</span><select class="fc-input" name="language"><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option></select></label></form></div>
+<footer class="fc-dialog__footer"><button class="fc-btn fc-btn--cancel" type="submit" form="fx-recipe-settings-form" value="cancel" formnovalidate>Cancel</button><button class="fc-btn fc-btn--ok" type="submit" form="fx-recipe-settings-form" value="save">Save preferences</button></footer></dialog></div></div></figure>  </section>
 
   <section class="fx" id="fx-popover" data-fixture="popover" aria-labelledby="fx-popover-h">
     <h2 class="fx__title" id="fx-popover-h">Popover and tooltip <code class="fx__file">popover.css</code></h2>
@@ -776,7 +792,7 @@
       <figure class="fx__state" data-fx-state="skeletons">
         <figcaption class="fx__caption">skeletons</figcaption>
         <div class="fx__body">
-          <div aria-busy="true" aria-label="Loading message" class="fx-row">
+          <div role="group" aria-busy="true" aria-label="Loading message" class="fx-row">
             <span class="fc-skeleton fc-skeleton--circle"></span>
             <span class="fx-grow"><span class="fc-skeleton fc-skeleton--text"></span><span class="fc-skeleton fc-skeleton--text"></span></span>
           </div>
@@ -1224,7 +1240,7 @@
         <figcaption class="fx__caption">empty list</figcaption>
         <div class="fx__body">
           <div class="fx-overlay fx-overlay--short">
-          <div class="fc-select__list" role="listbox" aria-label="Filtered" data-fc-open="true"><div class="fc-select__empty">No matches</div></div>
+          <div class="fc-select__list" role="listbox" aria-label="Filtered" data-fc-open="true"><div class="fc-select__empty" role="option" aria-disabled="true">No matches</div></div>
           </div>
         </div>
       </figure>
@@ -1341,7 +1357,7 @@
         <figcaption class="fx__caption">connected, exit 0</figcaption>
         <div class="fx__body">
           <div dir="ltr" class="fc-terminal fx-term" data-fc-state="connected">
-            <div class="fc-terminal__output" role="log" aria-label="Terminal output, connected">
+            <div class="fc-terminal__output" tabindex="0" role="log" aria-label="Terminal output, connected">
               <div class="fc-terminal__line"><span class="fc-terminal__bold">$</span> npm test</div>
               <div class="fc-terminal__line"><span class="fc-term-ansi-green">pass</span> 18 <span class="fc-terminal__dim">dim</span> <span class="fc-terminal__italic">italic</span> <span class="fc-terminal__underline">underline</span> <span class="fc-terminal__strike">strike</span> <span class="fc-terminal__inverse">inverse</span></div>
               <div class="fc-terminal__line"><span class="fc-term-ansi-red">fail</span> <span class="fc-terminal__text--danger">1 test failed</span> <span class="fc-term-ansi-yellow">warn</span> <span class="fc-term-ansi-blue">info</span> <span class="fc-term-ansi-magenta">mag</span> <span class="fc-term-ansi-cyan">cyan</span></div>
@@ -1356,7 +1372,7 @@
         <figcaption class="fx__caption">disconnected, exit 1</figcaption>
         <div class="fx__body">
           <div dir="ltr" class="fc-terminal fx-term" data-fc-state="disconnected">
-            <div class="fc-terminal__output" role="log" aria-label="Terminal output, disconnected">
+            <div class="fc-terminal__output" tabindex="0" role="log" aria-label="Terminal output, disconnected">
               <div class="fc-terminal__line"><span class="fc-terminal__bold">$</span> npm test</div>
               <div class="fc-terminal__line"><span class="fc-term-ansi-green">pass</span> 18 <span class="fc-terminal__dim">dim</span> <span class="fc-terminal__italic">italic</span> <span class="fc-terminal__underline">underline</span> <span class="fc-terminal__strike">strike</span> <span class="fc-terminal__inverse">inverse</span></div>
               <div class="fc-terminal__line"><span class="fc-term-ansi-red">fail</span> <span class="fc-terminal__text--danger">1 test failed</span> <span class="fc-term-ansi-yellow">warn</span> <span class="fc-term-ansi-blue">info</span> <span class="fc-term-ansi-magenta">mag</span> <span class="fc-term-ansi-cyan">cyan</span></div>
@@ -1416,6 +1432,14 @@
   <section class="fx" id="fx-control-group" data-fixture="control-group" aria-labelledby="fx-control-group-h">
     <h2 class="fx__title" id="fx-control-group-h">Control groups <code class="fx__file">control-group.css</code></h2>
     <div class="fx__states">
+      <figure class="fx__state"><figcaption class="fx__caption">Joined text field and actions</figcaption><div class="fx__body">
+        <label class="fc-field__label" for="fx-joined-text">Search</label>
+        <div class="fc-control-group fc-control-group--joined" role="group" aria-label="Search actions">
+          <button class="fc-btn fc-btn--secondary fc-control-group__joined-item" type="button">Clear</button>
+          <input class="fc-input fc-control-group__joined-item fc-control-group__control" id="fx-joined-text" type="text" value="Projects">
+          <button class="fc-btn fc-btn--primary fc-control-group__joined-item" type="button">Search</button>
+        </div>
+      </div></figure>
       <figure class="fx__state"><figcaption class="fx__caption">Rest, pressed, disabled, loading, and long labels</figcaption><div class="fx__body">
         <div class="fc-control-group" role="group" aria-label="Tool choices">
           <button class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" type="button" aria-pressed="true">Web search</button>
@@ -1613,7 +1637,7 @@
       <figure class="fx__state" data-fx-state="buttons with a trailing action"><figcaption class="fx__caption">buttons with a trailing action</figcaption><div class="fx__body">
         <ul class="fc-list">
           <li class="fc-list__item"><span class="fc-list__content"><button class="fc-list__action fc-list__headline" type="button">Draft reply to the infrastructure review thread with a long title</button><span class="fc-list__supporting">Yesterday</span></span><span class="fc-list__trailing"><button class="fc-btn fc-btn--ghost fc-btn--icon fc-btn--sm" type="button" aria-label="Delete draft">&#215;</button></span></li>
-          <li class="fc-list__item"><span class="fc-list__content"><button class="fc-list__action fc-list__headline" type="button" aria-selected="true">Selected draft</button></span></li>
+          <li class="fc-list__item"><span class="fc-list__content"><button class="fc-list__action fc-list__headline" type="button" aria-current="true">Selected draft</button></span></li>
         </ul>
       </div></figure>
     </div>
@@ -1889,15 +1913,15 @@
     <div class="fx__states">
       <figure class="fx__state fx__state--wide" data-fx-state="numbered, wrapping">
         <figcaption class="fx__caption">numbered, wrapping</figcaption>
-        <div class="fx__body"><div dir="ltr" class="fc-code fc-code--numbered" data-fx-code="typescript" data-fc-lang="typescript"><div class="fc-code__gutter" aria-hidden="true"></div><code class="fc-code__source"></code></div></div>
+        <div class="fx__body"><div dir="ltr" class="fc-code fc-code--numbered" data-fx-code="typescript" data-fc-lang="typescript"><div class="fc-code__gutter" aria-hidden="true"></div><code class="fc-code__source" tabindex="0"></code></div></div>
       </figure>
       <figure class="fx__state fx__state--wide" data-fx-state="scrolling">
         <figcaption class="fx__caption">scrolling</figcaption>
-        <div class="fx__body"><div dir="ltr" class="fc-code fc-code--scroll" data-fx-code="css" data-fc-lang="css" tabindex="0" role="region" aria-label="CSS sample"><code class="fc-code__source"></code></div></div>
+        <div class="fx__body"><div dir="ltr" class="fc-code fc-code--scroll" data-fx-code="css" data-fc-lang="css" tabindex="0" role="region" aria-label="CSS sample"><code class="fc-code__source" tabindex="0"></code></div></div>
       </figure>
       <figure class="fx__state" data-fx-state="unsupported language">
         <figcaption class="fx__caption">unsupported language</figcaption>
-        <div class="fx__body"><div dir="ltr" class="fc-code fc-code--unsupported" data-fc-lang="cobol"><div class="fc-code__bar"><span class="fc-code__lang">cobol</span></div><code class="fc-code__source">DISPLAY &#39;HELLO&#39;.</code></div></div>
+        <div class="fx__body"><div dir="ltr" class="fc-code fc-code--unsupported" data-fc-lang="cobol"><div class="fc-code__bar"><span class="fc-code__lang">cobol</span></div><code class="fc-code__source" tabindex="0">DISPLAY &#39;HELLO&#39;.</code></div></div>
       </figure>
     </div>
   </section>
@@ -1923,18 +1947,44 @@
     <div class="fx__states">
       <figure class="fx__state fx__state--wide" data-fx-state="every file state">
         <figcaption class="fx__caption">every file state</figcaption>
-        <div class="fx__body"><div class="fc-git" id="fx-git-tree"><div class="fc-git__header"><span class="fc-git__branch"></span><span class="fc-git__summary"></span></div><div class="fc-git__files" role="listbox" aria-label="Changed files"></div></div></div>
+        <div class="fx__body"><div class="fc-git" id="fx-git-tree"><div class="fc-git__header"><span class="fc-git__branch"></span><span class="fc-git__summary"></span></div><div class="fc-git__files" role="group" aria-label="Changed files"></div></div></div>
       </figure>
       <figure class="fx__state" data-fx-state="clean tree">
         <figcaption class="fx__caption">clean tree</figcaption>
-        <div class="fx__body"><div class="fc-git" id="fx-git-clean"><div class="fc-git__header"><span class="fc-git__branch"></span><span class="fc-git__summary"></span></div><div class="fc-git__files" role="listbox" aria-label="Changed files, clean"></div></div></div>
+        <div class="fx__body"><div class="fc-git" id="fx-git-clean"><div class="fc-git__header"><span class="fc-git__branch"></span><span class="fc-git__summary"></span></div><div class="fc-git__files" role="group" aria-label="Changed files, clean"></div></div></div>
       </figure>
       <figure class="fx__state" data-fx-state="unborn branch">
         <figcaption class="fx__caption">unborn branch</figcaption>
-        <div class="fx__body"><div class="fc-git" id="fx-git-unborn"><div class="fc-git__header"><span class="fc-git__branch"></span><span class="fc-git__summary"></span></div><div class="fc-git__files" role="listbox" aria-label="Changed files, unborn"></div></div></div>
+        <div class="fx__body"><div class="fc-git" id="fx-git-unborn"><div class="fc-git__header"><span class="fc-git__branch"></span><span class="fc-git__summary"></span></div><div class="fc-git__files" role="group" aria-label="Changed files, unborn"></div></div></div>
       </figure>
     </div>
   </section>
+
+<section class="fx" id="fx-theme-picker" data-fixture="theme-picker"><h2>Theme picker</h2><div class="fx__body"><div class="fc-theme-picker"><fieldset class="fc-theme-picker__themes"><legend class="fc-theme-picker__legend">Design theme</legend><label class="fc-theme-picker__option"><input class="fc-check" type="radio" name="fixture-theme" checked><span><strong class="fc-theme-picker__name">Future</strong><span class="fc-theme-picker__description">Balanced corners and soft elevation.</span></span></label><label class="fc-theme-picker__option"><input class="fc-check" type="radio" name="fixture-theme"><span class="fc-theme-picker__name">Clarity</span></label><label class="fc-theme-picker__option"><input class="fc-check" type="radio" name="fixture-theme" disabled><span class="fc-theme-picker__name">Unavailable theme</span></label><label class="fc-theme-picker__option" aria-disabled="true"><input class="fc-check" type="radio" name="fixture-theme" disabled><span class="fc-theme-picker__name">Disabled import</span></label></fieldset><div class="fc-theme-picker__controls"><label class="fc-theme-picker__field">Color scheme<select class="fc-input"><option>Follow system</option><option>Light</option><option>Dark</option></select></label></div><p class="fc-theme-picker__status" role="status">Future · light</p></div></div></section>
+
+<section class="fx" data-fixture="multiselect" id="fx-multiselect" aria-label="Multiselect"><h2>Multiselect</h2><details class="fc-multiselect" id="fx-members" open>
+<summary class="fc-multiselect__summary">Project members · <span data-fc-selection-summary>Choose members</span></summary>
+<div class="fc-multiselect__panel">
+<label class="fc-field"><span class="fc-field__label">Find members</span><input class="fc-input" type="search" data-fc-filter placeholder="Search names or roles"></label>
+<div class="fc-multiselect__actions"><button class="fc-btn fc-btn--secondary fc-btn--sm" type="button" data-fc-selection-action="all">Select visible</button><button class="fc-btn fc-btn--tertiary fc-btn--sm" type="button" data-fc-selection-action="clear">Clear</button></div>
+<fieldset class="fc-multiselect__options"><legend>Available members</legend>
+<label class="fc-multiselect__option"><input class="fc-check__input" type="checkbox" name="members" value="ada" checked><span class="fc-multiselect__content"><strong>Ada Lovelace</strong><span class="fc-multiselect__description">Maintainer · Design systems</span></span></label>
+<label class="fc-multiselect__option"><input class="fc-check__input" type="checkbox" name="members" value="grace"><span class="fc-multiselect__content"><strong>Grace Hopper</strong><span class="fc-multiselect__description">Reviewer · Compilers</span></span></label>
+<label class="fc-multiselect__option"><input class="fc-check__input" type="checkbox" name="members" value="alan" disabled><span class="fc-multiselect__content"><strong>Alan Turing</strong><span class="fc-multiselect__description">Unavailable · Access pending</span></span></label>
+</fieldset><p data-fc-empty hidden>No matching members. Existing selections are kept.</p>
+</div></details></section>
+
+<section class="fx" data-fixture="form-variants" id="fx-form-variants" aria-label="Form variants"><h2>Form variants</h2><label class="fc-field">Unavailable soft field<input class="fc-input fc-input--soft" disabled value="Unavailable"></label><label class="fc-field">Invalid underlined field<input class="fc-input fc-input--underlined" aria-invalid="true" aria-describedby="variant-error" value="Missing a title"></label><p class="fc-field__error" id="variant-error">Enter a valid title.</p><div class="fc-stack">
+<label class="fc-field"><span class="fc-field__label">Outlined email</span><input class="fc-input" type="email" placeholder="ada@example.com"></label>
+<label class="fc-field"><span class="fc-field__label">Filled project name</span><input class="fc-input fc-input--filled" placeholder="New workspace"></label>
+<label class="fc-field"><span class="fc-field__label">Soft search</span><input class="fc-input fc-input--soft" type="search" placeholder="Search projects"></label>
+<label class="fc-field"><span class="fc-field__label">Underlined title</span><input class="fc-input fc-input--underlined" placeholder="Untitled document"></label>
+<label class="fc-field fc-field--inline"><span class="fc-field__label">Compact timezone</span><select class="fc-input fc-input--sm"><option>Pacific time</option><option>UTC</option></select></label>
+<fieldset class="fc-stack"><legend>Workspace visibility</legend>
+<label class="fc-choice"><input class="fc-check__input" type="radio" name="visibility" value="private" checked><span class="fc-choice__content"><strong>Private</strong><span class="fc-choice__description">Only invited members can view this workspace.</span></span></label>
+<label class="fc-choice"><input class="fc-check__input" type="radio" name="visibility" value="team"><span class="fc-choice__content"><strong>Team</strong><span class="fc-choice__description">Everyone in your organization can join.</span></span></label>
+<label class="fc-choice"><input class="fc-check__input" type="radio" name="visibility" value="public" disabled><span class="fc-choice__content"><strong>Public · unavailable</strong><span class="fc-choice__description">Your plan does not include public workspaces.</span></span></label>
+</fieldset></div></section>
 
 <section class="fx" id="fx-metric" data-fixture="metric" aria-labelledby="fx-metric-h"><h2 class="fx__title" id="fx-metric-h">metric</h2><div class="fx__states"><figure class="fx__state" data-fx-state="pending"><figcaption class="fx__caption">pending</figcaption><div class="fx__body"><article class="fc-metric" data-fc-kind="metric" aria-label="metric example: pending" data-fc-id="metric-pending" data-fc-seq="161" data-fc-state="pending" data-fc-ts="2026-10-09T12:00:00Z"><p>pending</p><dl><dt class="fc-metric__title">Input tokens</dt><dd class="fc-metric__value"><data value="12480">12,480</data></dd><dd class="fc-metric__meta">This session · exact total</dd></dl></article></div></figure>
 <figure class="fx__state" data-fx-state="queued"><figcaption class="fx__caption">queued</figcaption><div class="fx__body"><article class="fc-metric" data-fc-kind="metric" aria-label="metric example: queued" data-fc-id="metric-queued" data-fc-seq="658" data-fc-state="queued" data-fc-ts="2026-10-09T12:00:00Z"><p>queued</p><dl><dt class="fc-metric__title">Input tokens</dt><dd class="fc-metric__value"><data value="12480">12,480</data></dd><dd class="fc-metric__meta">This session · exact total</dd></dl></article></div></figure>

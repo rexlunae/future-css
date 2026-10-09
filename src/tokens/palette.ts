@@ -166,3 +166,11 @@ export const rampSteps: readonly string[] = [
   "950",
   "1000",
 ];
+
+/** Independent rainbow hues keep Pride decoration separate from status colors. */
+export const prideStripes = Object.fromEntries(
+  [['red',25,0.52,0.2],['orange',55,0.54,0.15],['yellow',95,0.55,0.12],['green',150,0.5,0.15],['blue',255,0.5,0.2],['violet',305,0.5,0.2]].map(([name,hue,lightness,chroma])=>[name,{
+    light:{l:Number(lightness),c:Number(chroma),h:Number(hue)},
+    dark:{l:0.8,c:name==='yellow'?0.09:0.12,h:Number(hue)},
+  }]),
+) as Record<'red'|'orange'|'yellow'|'green'|'blue'|'violet',{light:Oklch;dark:Oklch}>;

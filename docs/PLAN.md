@@ -3,11 +3,10 @@
 Phased roadmap with exit criteria. Each phase ends with a gate that can be checked, not a
 judgment call.
 
-**Current status: Phase 2 complete, Phase 3 and Phase C mostly delivered, Phase A
-(WASM size) in progress.** Phases 0 and 1 are complete. Form controls, overlays, navigation, and
-the status family now exist as CSS, with bindings where the platform does not already
-provide the behavior. The Rust/WASM
-layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
+**Current status: foundations, core CSS, token roles/themes and Material 3 component
+parity are complete. All eight WASM binaries meet the unchanged shipped-size budgets.
+Verification and release preparation are delivered in part; the unchecked items below
+remain open rather than being inferred from a Chrome pass.**
 
 ---
 
@@ -19,60 +18,41 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | 1. Token system | Complete | Palette, semantic layer, contrast contract, compiler |
 | 2. Core CSS | Complete | Reset, base, layout, utilities, every Phase 2 component, and the fixture page |
 | 3. Component set | Mostly delivered | Forms, overlays, tabs, breadcrumb, pagination, loading, cards, table, description list, sidebar; axe-core pass remains |
-| A. WASM size | In progress | Rust workspace, 8 crates, accelerator abstraction; every module but `fc-rich-text` within budget on the shipped basis |
-| B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
-| C. Token roles and themes | Mostly delivered | State tokens, override points, high-contrast and brand theme sets, type roles; reduced-transparency and reduced-data remain |
+| A. WASM size | Complete | Primitive boundaries, all eight binaries within shipped budgets, hard build gate and parity tests |
+| B. Complex components | JS paths delivered | Editor/menu/grid/webview bindings and pure data modules; editor/grid Rust integration remains optional future work |
+| C. Token roles and themes | Complete | State and type roles, override points, brand/high-contrast themes, reduced-transparency and optional-WASM data preferences |
 | D. Material 3 parity | Complete | Every M3 component Shipped or Divergent with its reason |
 | 4. Verification | Started | Overflow assertions, size budgets, generated token reference; visual regression and browser matrix remain |
-| 5. Platform expansion | Mostly delivered | Print foundation, email foundation, Swift and Kotlin tokens, Figma variables; vertical writing, APCA and cognitive guidance remain |
-| 6. Release | Not started | Publishing, versioning, governance |
+| 5. Platform expansion | Mostly delivered | Print foundation, email foundation, Swift and Kotlin tokens, Figma variables; cognitive guidance; vertical writing and APCA remain |
+| 6. Release | Prepared, unpublished | Versioning/support policy, contribution review and migration tooling; registry/CDN publication remains |
+
+Twenty-one stock designs and the theme picker are delivered, including a Helix-inspired design.
+Custom themes use validated, versioned TOML with installation and explicit schema
+migrations; see [THEMES.md](THEMES.md).
+
+Expanded controls are delivered: tertiary/OK/Cancel button variants, working menu
+and split-button demos, descriptive single selections, native searchable multiselect,
+and alternate form presentations.
+
+Four native dialog recipes are delivered with validated forms, confirmation focus,
+cancellation and saved-preference behavior, and browser/axe coverage at 320px.
 
 ### Working now
 
-Measured on 2026-10-06 against `main` at `bd5ed5d` (after #24 and #25), with the WASM modules built and
-headless Chrome present (without either, the WASM and browser suites skip):
+Audited on 2026-10-08 with Chrome and the WASM toolchain present:
 
-```
-npm run build        167 tokens (91 theme-aware) + 39-file bundle, 276.2 KB
-                     8 Rust crates, 8 .wasm files in 7 modules (over budget — see Phase A)
-npm run lint         15 rules, 0 violations across 39 files
-npm test             416 tests passing (incl. WASM/JS parity, bundle integrity, Chrome)
-cargo test           132 tests passing
-```
+- 218 foundation tokens (116 theme-aware), plus 6 optional Pride theme tokens, 54 component files, 60-file readable CSS bundle
+  of 408.4 KB. Consumers can load only the layers/components they use.
+- Eight Rust crates emit eight binaries across seven module directories; core and
+  model share a directory. All binaries meet their unchanged byte targets after
+  bindgen, both with and without optional wasm-opt.
+- Final `npm run check`: 517 JavaScript/browser tests and 133 Rust tests passed,
+  with zero skips. It includes contrast, architecture, documentation coverage, CSS budgets,
+  real Chrome bindings and Rust/JS boundary parity. CI additionally supplies an isolated
+  axe-core validator and requires Chrome, so neither silently skips there.
 
-The bundle figure is uncompressed and unminified, which is the shipped form: the CSS is
-deliberately readable so engineers can debug it in devtools, and consumers minify at
-their own boundary. The budget gates what one page pays rather than the full bundle; see
-[Performance budget](#performance-budget).
-
-**Eight crates, eight `.wasm` files, seven importable modules.** `fc-core` and
-`fc-model` both emit into the `fc-model` module, so eight build entries produce seven
-modules that JavaScript can import. On the shipped basis (post-bindgen, the bytes a
-consumer downloads; see [WASM.md](WASM.md#what-actually-ships)) two modules are still
-over budget. `fc-context-menu` was the largest by a wide margin until #25:
-
-```
-fc-context-menu    21.7 KB shipped   (raw  40.2 KB)   primitives only, was 81.3
-fc-select          38.4 KB shipped   (raw  62.1 KB)   primitives only, was 50.0
-fc-diff            33.7 KB shipped   (raw  54.4 KB)   primitives only
-```
-
-The raw basis made `js-sys` look like the whole story; the shipped basis shows that
-bindgen strips most of it, and that two primitives-only modules are still over. Phase A
-now targets where the shipped bytes are, not where the raw ones were. `fc-context-menu` and
-`fc-select` both cut size by leaving case folding to JavaScript, which already ships the
-Unicode tables; see [WASM.md](WASM.md#what-actually-ships).
-
-Since 2026-10-08 `fc-diff` and `fc-select` build without std, which drops std's panic
-formatting, and avoid the substring searcher whose panics linked the rest of it (measured
-without wasm-opt, so ~10% above the figures above):
-
-```
-fc-diff            20.9 KB shipped   (raw  37.7 KB)   was 36.8 / 54.4, now within budget
-fc-select          27.5 KB shipped   (raw  47.4 KB)   was 41.5 / 62.1, now within budget
-```
-
-See [WASM.md](WASM.md#no-std-for-primitives-only-crates).
+See [WASM.md](WASM.md) for the ABI 2 migration and measured sizes. Raw compiler output
+is retained as a diagnostic; shipped bytes are the enforced download budget.
 
 Verified: contrast contract enforced in both schemes · all ramps validated · linter
 verified against both violations and legitimate patterns · WASM modules instantiate and
@@ -126,7 +106,7 @@ evidence it earns its place:
 
 ---
 
-## Phase 2 -- Core CSS (in progress)
+## Phase 2 -- Core CSS (complete)
 
 Everything a document needs before components exist. The reset, the semantic element
 defaults, the layout primitives, the utilities, and the first component.
@@ -208,7 +188,7 @@ cannot recur silently.
 
 ---
 
-## Phase 3 -- Component set (not started)
+## Phase 3 -- Component set (delivered; manual release walkthrough remains)
 
 The components needed for a real application, prioritized by frequency of use.
 
@@ -258,7 +238,7 @@ rather than treating dialogs as a quick win.
 
 ---
 
-## Phase A -- WASM size reduction (in progress)
+## Phase A -- WASM size reduction (complete)
 
 **Goal.** Get each WASM module from ~350-420 KB to its ~30-45 KB budget. Everything else
 in the WASM plan depends on this, because a 400 KB download to open a context menu is not
@@ -269,7 +249,7 @@ Delivered:
 - Rust workspace with eight crates, each a `cdylib`. `fc-core` is emitted into the
   `fc-model` module directory rather than getting one of its own, so eight crates
   produce **eight** `.wasm` files across **seven** importable modules.
-- 132 unit tests covering the algorithms.
+- 133 unit tests covering the algorithms.
 - A JS accelerator abstraction with a pure-JS fallback, so the modules are optional.
 - **`fc-context-menu` off `js-sys`**: 411.6 KB to 40.2 KB raw (79.8 to 21.7 KB
   shipped), under budget. It no longer depends on `fc-core` or serde, folds case
@@ -278,7 +258,7 @@ Delivered:
 - **A measured size report in the build output**, because the dominant cost is invisible
   in source and only obvious in the numbers.
 - **`fc-diff` and `fc-select` without std** (2026-10-08): 36.8 to 20.9 KB and 41.5 to
-  27.5 KB shipped, both within budget on that basis. A `bare` crate feature drops std, so
+  27.4 KB shipped, both within budget on that basis. A `bare` crate feature drops std, so
   panics trap without linking std's message formatting, and both crates scan bytes where
   `str::replace` and `str::contains` brought the two-way searcher and its slicing panics.
   Native builds and `cargo test` are unchanged; see
@@ -296,26 +276,18 @@ The problem, measured rather than guessed:
 LTO cannot remove it because wasm-bindgen's glue enumerates the WebIDL surface rather
 than tree-shaking to the used subset.
 
-Remaining:
+Completed on 2026-10-08:
 
-- Re-derive the budgets on the **shipped** basis. The raw (pre-bindgen) basis now
-  overstates the wire by 2–18x — see the table in docs/WASM.md — and three
-  modules exceeded their budgets on shipped bytes (`fc-context-menu` 81.3 KB,
-  `fc-select` 50.0, `fc-diff` 34.8). `fc-context-menu` is now at 21.7 and
-  `fc-select` at 38.4, and since the `bare` builds `fc-select` and `fc-diff` are under
-  too. On the shipped basis only `fc-rich-text` (45.9 KB with wasm-opt, 52.1 without,
-  against 49) is still over. On the raw basis `fc-diff` and `fc-select` remain 3 and 12 KB
-  over, most of it wasm-bindgen's own descriptor section, which never ships. Whether to
-  move the budgets to the shipped basis is the maintainer's call, not a side effect of a
-  size change.
-- Apply the `bare` pattern to `fc-git` and `fc-context-menu`, which are already
-  primitives-only, and to the js-sys crates once their boundaries are.
-- Replace `js_sys::Array` / `Vec<JsValue>` returns with flat primitives: numbers, strings,
-  and typed arrays. A range crosses as four numbers, not an object.
-- Drop `serde-wasm-bindgen` in favour of hand-written `to_js` for the few shapes crossing
-  the boundary. Serde's machinery is not free, and it is only paying for itself if the
-  boundary grows.
-- Re-measure, and turn the budgets into a build failure once they are met.
+- Apply `bare` to git and context menu as well as diff/select.
+- Remove `js-sys` and `serde-wasm-bindgen` dependencies throughout the workspace.
+  Ranges/cells cross as flat typed arrays; rich text crosses as explicit JSON strings.
+- Enforce the same numeric budgets against actual shipped bytes; missing/oversized
+  artifacts fail the build. Raw descriptor sizes remain visible in the report.
+- Test every replacement/split offset around surrogate pairs, serialized control
+  characters, grid coordinates, tagged errors and exact artifact sizes. Fix the
+  replacement-result and rich-text span rebasing bugs those tests exposed.
+
+This changes the core ABI to 2; see [MIGRATION.md](MIGRATION.md).
 
 Exit criteria: **every module within budget**, and the parity tests still passing. The
 parity suite is the safety net for this entire phase, because rewriting the boundary is
@@ -331,12 +303,12 @@ Risks:
 
 ---
 
-## Phase B -- Complex components (in progress)
+## Phase B -- Complex components (JS paths delivered)
 
 **Goal.** Working UI elements for complex surfaces. The priority is the *element* --
 chrome, layout, states, accessibility -- not a feature-complete application.
 
-Delivered (CSS complete, browser bindings not yet):
+Delivered (CSS and browser bindings, with native/pure-JS behavior where appropriate):
 
 - [x] **Rich text editor** -- toolbar with roving tabindex, `aria-pressed` state,
   `.fc-prose` document styles usable standalone, all states, forced-colors block
@@ -348,17 +320,15 @@ Delivered (CSS complete, browser bindings not yet):
 - [x] **Embedded browser chrome** -- tab strip, address bar with secure indicator,
   navigation with the RTL back-arrow flip, overlay states
 - [x] **Terminal** -- output grid, ANSI palette, cursor, input line, status bar. The
-  only hue-named tokens in the system, with their own 19-pairing contrast contract.
+  only hue-named tokens in the system, with their own contrast contract, including normal-size dim text at 4.5:1.
 
-Remaining, in priority order:
-
-1. **JS bindings.** Editor, menu, grid, and webview bindings are written and covered by
-   browser tests (`tests/browser/`). Terminal, chat, tool-call, code, and diff have CSS
-   only -- their behavior is either trivial or delegated to the pure-JS modules beside
-   them (`highlight`, `diff`, `markdown`).
-2. ~~**Form field.**~~ Delivered (`fc-field`, `fc-input`, `fc-check`, `fc-switch`).
-3. ~~**Dialog.**~~ Delivered on native `<dialog>`; no manual focus trap is shipped,
-   because every supported browser has `showModal()`.
+Editor, menu, grid and webview bindings are written and covered in real Chrome.
+Terminal, chat and tool-call behavior is caller supplied; code/diff/Markdown use the
+pure JS data modules. Native form fields and `<dialog>` provide their own behavior.
+No component requires WASM. Select/menu opt into Rust with `useWasm`; rich-text and
+grid Rust models are independently tested computation libraries, not yet connected
+to their browser bindings. That acceleration integration remains future work rather
+than a claim that the existing JS-only UI is incomplete.
 
 Exit criteria: every component has a JS-only path that is fully usable and accessible;
 the WASM path is a performance option; and both are covered by the same behavior tests.
@@ -392,7 +362,7 @@ pattern to a file whose contents can contain anything.
 
 ---
 
-## Phase C -- Token roles and themes (mostly delivered)
+## Phase C -- Token roles and themes (complete)
 
 **Goal.** Close the gaps [Semantic coverage](SEMANTIC-COVERAGE.md) found against the ten
 most widely-used token systems, without giving up what makes ours checkable. That
@@ -494,10 +464,10 @@ Each is cheap and independent; none needs a new decision.
   can fall back to
 - [x] **Per-token descriptions** in `tokens.json` (Polaris), generated from the comments
   already in the TypeScript source
-- [ ] **`prefers-reduced-transparency` and `prefers-reduced-data`.** Partly done: the
-  dialog backdrop honours the first. Honour the first
-  wherever a component uses translucency; the second only once something ships that is
-  worth not loading
+- [x] **`prefers-reduced-transparency` and `prefers-reduced-data`.** The translucent
+  dialog backdrop becomes opaque. Optional WASM loading honours reduced-data and
+  connection Save-Data unless explicitly overridden; preference behavior is tested.
+
 
 Deliberately not adopted, with the reasons in the coverage document: seed-derived
 dynamic colour (Material 3) cannot be contrast-checked at build time, and
@@ -666,9 +636,9 @@ RustyClaw integration is separate work.
 - [x] Register new CSS, document contracts and add all lifecycle fixture states
 - [x] File source-confirmed RustyClaw defects with reproduction instructions (#493–495)
 
-Exit gate: `npm run check`, including real Chrome fixture overflow/focus in both
-schemes and directions. Validation details are in [the audit](RUSTYCLAW-COVERAGE.md#verification).
-Native assistive-technology review remains part of Phase 4.
+Exit gate passed on 2026-10-09: `npm run check` with axe enabled; 521 JavaScript/browser
+and 133 Rust tests, zero skips. Real Chrome covers fixture overflow/focus in both
+schemes and directions. Native assistive-technology review remains part of Phase 4.
 
 ---
 
@@ -680,11 +650,11 @@ Turning manual discipline into automation as the component count grows.
 
 - [ ] Playwright harness across Chromium, Firefox, WebKit
 - [ ] Visual regression, both schemes, both directions
-- [ ] axe-core in CI, zero critical/serious
+- [x] axe-core in CI, zero critical/serious (fixtures and working demo, both schemes/directions)
 - [x] Horizontal overflow assertion at 320px and 400% zoom (the fixture page in both
   directions and schemes, and the demo at 400%)
 - [ ] RTL layout diffing against LTR fixtures
-- [ ] Reduced-motion and forced-colors test renders
+- [x] Reduced-motion and forced-colors test renders (Chrome)
 - [x] Bundle size budget with a failure threshold (per layer, per component and per
   page, in `tests/budget.test.ts`; adopted early, in Phase 2)
 
@@ -692,8 +662,8 @@ Turning manual discipline into automation as the component count grows.
 
 - [x] Fixture page as the living component gallery
 - [x] Token reference generated from the TypeScript source (`docs/TOKEN-REFERENCE.md`)
-- [ ] Per-component documentation with all six required sections
-- [ ] Migration guide
+- [x] Per-component documentation with all six required sections ([COMPONENT-CONTRACTS.md](COMPONENT-CONTRACTS.md), coverage enforced)
+- [x] Migration guide ([MIGRATION.md](MIGRATION.md))
 
 ### Manual, per release
 
@@ -719,7 +689,7 @@ Turning manual discipline into automation as the component count grows.
 - [x] Figma variable export (`dist/figma-variables.json`)
 - [ ] Vertical writing mode (`writing-mode`) support
 - [ ] APCA contrast checking alongside WCAG 2.x
-- [ ] Cognitive accessibility guidance
+- [x] Cognitive accessibility guidance ([ACCESSIBILITY.md](ACCESSIBILITY.md))
 
 **Note on email.** It must be generated from the token source, never hand-maintained.
 Hand-maintained email CSS drifts from the tokens within months, and a design system that
@@ -729,15 +699,15 @@ the claim is that much email support and no more.
 
 ---
 
-## Phase 6 -- Release (not started)
+## Phase 6 -- Release (prepared, unpublished)
 
-- [ ] Semantic versioning, with a documented deprecation policy
-- [ ] Changesets for release notes
+- [x] Semantic versioning, with a documented deprecation policy ([RELEASE.md](RELEASE.md))
+- [x] Release notes policy: checked-in Markdown, divergent from Changesets to preserve zero dependencies ([RELEASE.md](RELEASE.md))
 - [ ] CI publishing to npm
 - [ ] CDN distribution
-- [ ] Contribution guidelines and a review process
-- [ ] Support policy: which versions get fixes, and for how long
-- [ ] Migration tooling for breaking changes
+- [x] Contribution guidelines and a review process ([CONTRIBUTING.md](../CONTRIBUTING.md))
+- [x] Support policy: which versions get fixes, and for how long ([RELEASE.md](RELEASE.md))
+- [x] Migration tooling for breaking changes (`tools/migrate-tokens.mjs`, dry-run default, backup before writes)
 
 **Versioning policy**
 
@@ -774,13 +744,13 @@ missed.
 
 | Budget (minified) | Target | Measured | Gate |
 | --- | --- | --- | --- |
-| Layers + reset + tokens + base | < 16 KB | 12.0 KB | fails the check |
-| Any single component | < 7 KB | 6.0 KB largest (`nav`) | fails the check |
-| Typical chat page | < 40 KB | 28.7 KB | fails the check |
-| Full bundle, minified | — | 135.8 KB | reported only |
-| Full bundle, minified + gzip | — | 19.7 KB | reported only |
+| Layers + reset + tokens + base | < 16 KB | 15.7 KB | fails the check |
+| Any single component | < 7 KB | 6.4 KB largest (`field`) | fails the check |
+| Typical chat page | < 40 KB | 34.4 KB | fails the check |
+| Full bundle, minified | — | 196.8 KB | reported only |
+| Full bundle, minified + gzip | — | 27.4 KB | reported only |
 
-Measured on 2026-10-07 with 37 components. "Typical chat page" is layers + reset +
+Measured on 2026-10-08 with 54 components. "Typical chat page" is layers + reset +
 tokens + base + layout + utilities plus button, chat and composer.
 
 **Why per page.** Consumers load the per-layer files in `dist/` and only the components

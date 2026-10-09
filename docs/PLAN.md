@@ -648,6 +648,30 @@ API, `<dialog>`, scroll snap); a binding ships only where the platform has no an
 
 ---
 
+## Phase E -- RustyClaw semantic coverage
+
+Source audit against RustyClaw `481a428cb7a3b82d1a5e556ffef40e3dd9f52ce3` on 2026-10-09.
+See [the complete screen/element mapping](RUSTYCLAW-COVERAGE.md) for desktop, TUI,
+shared view models and website coverage. This phase adds web equivalents to future-css;
+RustyClaw integration is separate work.
+
+- [x] Map every desktop/TUI component family to existing controls or a semantic gap
+- [x] Metric: labeled usage/latency/load summaries with exact values
+- [x] Transfer: persistent downloads/model pulls, known and unknown totals and outcomes
+- [x] Approval: operation, explicit scope, full arguments and decision actions
+- [x] User prompt: inline question form composing native text, confirm, radio, checkbox and form controls
+- [x] Device authorization: verification destination, code, expiry and status; reusable for pairing
+- [x] Reuse existing components for management tables, settings, nested navigation,
+  command search, plugin/swarm panels, credential entry, media and preview shells
+- [x] Register new CSS, document contracts and add all lifecycle fixture states
+- [x] File source-confirmed RustyClaw defects with reproduction instructions (#493–495)
+
+Exit gate: `npm run check`, including real Chrome fixture overflow/focus in both
+schemes and directions. Validation details are in [the audit](RUSTYCLAW-COVERAGE.md#verification).
+Native assistive-technology review remains part of Phase 4.
+
+---
+
 ## Phase 4 -- Verification (started)
 
 Turning manual discipline into automation as the component count grows.

@@ -1,0 +1,33 @@
+/*! future-css -- approval
+ * Content wraps rather than eliding values needed to understand or authorize work.
+ * Controls compose the button/field/check components and retain their state styles.
+ * No motion is introduced; reduced-motion needs no additional override.
+ */
+@layer fc.components {
+  .fc-approval {
+    display: grid;
+    gap: var(--fc-space-3);
+    min-inline-size: 0;
+    padding: var(--fc-space-4);
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: var(--fc-color-text-default);
+    background-color: var(--fc-color-bg-surface);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-lg);
+  }
+  .fc-approval__title { margin: 0; font-size: var(--fc-font-size-md); font-weight: var(--fc-font-weight-semibold); }
+  .fc-approval__meta { margin: 0; color: var(--fc-color-text-muted); font-size: var(--fc-font-size-sm); }
+  .fc-approval__actions { display: flex; flex-wrap: wrap; gap: var(--fc-space-2); }
+  .fc-approval[data-fc-state="error"],
+  .fc-approval[data-fc-state="denied"] { border-inline-start: var(--fc-space-1) solid var(--fc-color-danger-border); }
+  .fc-approval[data-fc-state="pending"],
+  .fc-approval[data-fc-state="queued"],
+  .fc-approval[data-fc-state="running"],
+  .fc-approval[data-fc-state="streaming"] { border-inline-start: var(--fc-space-1) solid var(--fc-color-accent-border); }
+  .fc-approval[data-fc-state="complete"] { border-style: double; }
+  .fc-approval[data-fc-state="aborted"] { border-style: dashed; }
+  @media (forced-colors: active) {
+    .fc-approval { color: CanvasText; background-color: Canvas; border-color: CanvasText; }
+  }
+}

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RustyClaw semantic recipes — future-css</title>
+<link rel="stylesheet" href="/dist/future-css.css"><link rel="stylesheet" href="/demo/fixtures.css">
+<script type="module" src="/demo/rustyclaw.js"></script>
+</head>
+<body><header class="fx-head"><h1>RustyClaw semantic recipes</h1><p>Local form examples. Native controls, explicit decisions and full content inspection.</p><a href="/demo/fixtures.html#fx-metric">All lifecycle states</a></header>
+<main class="fx-main">
+<form class="fc-approval" data-rc-example data-fc-kind="approval" data-fc-id="request-1" data-fc-seq="1" data-fc-state="pending" data-fc-ts="2026-10-09T12:00:00Z" aria-labelledby="approval-title">
+<h2 class="fc-approval__title" id="approval-title">Allow the agent to read README.md?</h2><p>Scope: this project, this request only.</p>
+<details class="fc-disclosure"><summary class="fc-disclosure__summary">Inspect all arguments</summary><pre class="fc-code"><code>{"tool":"read_file","arguments":{"path":"README.md"}}</code></pre></details>
+<p role="status">Waiting for your decision.</p><div class="fc-approval__actions"><button class="fc-btn fc-btn--secondary" type="submit" name="decision" value="deny">Deny</button><button class="fc-btn fc-btn--primary" type="submit" name="decision" value="allow">Allow once</button></div>
+</form>
+<form class="fc-user-prompt" data-rc-example data-fc-kind="user-prompt" data-fc-id="question-1" data-fc-seq="2" data-fc-state="pending" data-fc-ts="2026-10-09T12:00:00Z" aria-labelledby="question-title">
+<h2 class="fc-user-prompt__title" id="question-title">Name your project</h2><label class="fc-field__label" for="project-name">Project name (required)</label><input class="fc-input" id="project-name" name="project" required autocomplete="off"><p role="status">Waiting for an answer.</p><div class="fc-user-prompt__actions"><button class="fc-btn fc-btn--primary" type="submit">Answer</button><button class="fc-btn fc-btn--secondary" type="reset">Reset</button></div>
+</form>
+<section class="fc-transfer" data-fc-kind="transfer" data-fc-id="transfer-1" data-fc-seq="3" data-fc-state="complete" data-fc-ts="2026-10-09T12:00:00Z" aria-labelledby="transfer-title"><h2 class="fc-transfer__title" id="transfer-title">Model download complete</h2><p><bdi>models/example.gguf</bdi></p><progress class="fc-progress" max="100" value="100" aria-label="Model download">100%</progress><p class="fc-transfer__meta">100 MB received · destination stays inspectable after completion.</p></section>
+<dl class="fc-metric" data-fc-kind="metric" data-fc-id="metric-1" data-fc-seq="4" data-fc-state="complete" data-fc-ts="2026-10-09T12:00:00Z"><dt class="fc-metric__title">Session requests</dt><dd class="fc-metric__value"><data value="12">12</data></dd><dd class="fc-metric__meta">Exact total for this example session</dd></dl>
+<section class="fc-device-auth" data-fc-kind="device-auth" data-fc-id="device-1" data-fc-seq="5" data-fc-state="pending" data-fc-ts="2026-10-09T12:00:00Z" aria-labelledby="device-title"><h2 class="fc-device-auth__title" id="device-title">Device authorization example</h2><p>Enter the example code at the provider’s verification page.</p><a href="https://example.com/activate">Verification page (example.com)</a><code class="fc-device-auth__code">ABCD-1234</code><p class="fc-device-auth__meta">Expires in 5 minutes · waiting for authorization.</p></section>
+</main></body></html>

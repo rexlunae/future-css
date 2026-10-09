@@ -2844,6 +2844,47 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     } finally { await send("Emulation.setEmulatedMedia", {features:[]}); }
   });
 
+  it("keeps RustyClaw decisions explicit and validates inline answers", async () => {
+    await send("Page.navigate", { url: `${server.origin}/demo/rustyclaw.html` });
+    await new Promise(r => setTimeout(r, 800));
+    const result = await evaluate(`
+      const approval = document.querySelector('.fc-approval');
+      const prompt = document.querySelector('.fc-user-prompt');
+      const input = prompt.querySelector('input');
+      prompt.requestSubmit(prompt.querySelector('[type=submit]'));
+      const invalidState = prompt.dataset.fcState;
+      input.value = 'Example project';
+      prompt.requestSubmit(prompt.querySelector('[type=submit]'));
+      approval.requestSubmit(approval.querySelector('[value=deny]'));
+      return {
+        invalidState, promptState: prompt.dataset.fcState,
+        approvalState: approval.dataset.fcState,
+        label: input.labels[0].textContent,
+        fullArguments: approval.querySelector('details code').textContent,
+        resolvedDisabled: [...document.querySelectorAll('[data-rc-example] button')].every(b => b.disabled)
+      };
+    `);
+    assert.equal(result.invalidState, 'pending');
+    assert.equal(result.promptState, 'complete');
+    assert.equal(result.approvalState, 'denied');
+    assert.match(result.label, /Project name/);
+    assert.match(result.fullArguments, /README.md/);
+    assert.equal(result.resolvedDisabled, true);
+    try {
+      await send('Emulation.setDeviceMetricsOverride', {width:320,height:900,deviceScaleFactor:1,mobile:false});
+      for (const dir of ['ltr', 'rtl']) {
+        for (const theme of ['light', 'dark']) {
+          const overflow = await evaluate(`
+            document.documentElement.dir=${JSON.stringify(dir)};
+            document.documentElement.dataset.fcTheme=${JSON.stringify(theme)};
+            return document.documentElement.scrollWidth > innerWidth;
+          `);
+          assert.equal(overflow, false, `recipe overflow: ${dir}/${theme}`);
+        }
+      }
+    } finally { await send('Emulation.clearDeviceMetricsOverride'); }
+  });
+
   it("renders all fixtures under reduced motion and forced colors", async () => {
     try {
       await send("Page.navigate", { url: `${server.origin}/demo/fixtures.html` });

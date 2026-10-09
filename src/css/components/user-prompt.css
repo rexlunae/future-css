@@ -1,0 +1,33 @@
+/*! future-css -- user-prompt
+ * Content wraps rather than eliding values needed to understand or authorize work.
+ * Controls compose the button/field/check components and retain their state styles.
+ * No motion is introduced; reduced-motion needs no additional override.
+ */
+@layer fc.components {
+  .fc-user-prompt {
+    display: grid;
+    gap: var(--fc-space-3);
+    min-inline-size: 0;
+    padding: var(--fc-space-4);
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: var(--fc-color-text-default);
+    background-color: var(--fc-color-bg-surface);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border-radius: var(--fc-radius-lg);
+  }
+  .fc-user-prompt__title { margin: 0; font-size: var(--fc-font-size-md); font-weight: var(--fc-font-weight-semibold); }
+  .fc-user-prompt__meta { margin: 0; color: var(--fc-color-text-muted); font-size: var(--fc-font-size-sm); }
+  .fc-user-prompt__actions { display: flex; flex-wrap: wrap; gap: var(--fc-space-2); }
+  .fc-user-prompt[data-fc-state="error"],
+  .fc-user-prompt[data-fc-state="denied"] { border-inline-start: var(--fc-space-1) solid var(--fc-color-danger-border); }
+  .fc-user-prompt[data-fc-state="pending"],
+  .fc-user-prompt[data-fc-state="queued"],
+  .fc-user-prompt[data-fc-state="running"],
+  .fc-user-prompt[data-fc-state="streaming"] { border-inline-start: var(--fc-space-1) solid var(--fc-color-accent-border); }
+  .fc-user-prompt[data-fc-state="complete"] { border-style: double; }
+  .fc-user-prompt[data-fc-state="aborted"] { border-style: dashed; }
+  @media (forced-colors: active) {
+    .fc-user-prompt { color: CanvasText; background-color: Canvas; border-color: CanvasText; }
+  }
+}

@@ -26,6 +26,4 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 fc-core = { path = "../fc-core" }
 wasm-bindgen = { workspace = true, features = ["std"] }
-js-sys = { workspace = true }
 serde = { workspace = true }
-serde-wasm-bindgen = { workspace = true }

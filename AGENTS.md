@@ -126,8 +126,8 @@ So:
 - **A primitives-only crate can drop std.** `fc-diff`, `fc-select`, `fc-git` and `fc-context-menu` build
   `no_std` through a `bare` feature, which build:wasm enables in its own cargo
   invocation; std's panic formatting was most of their bytes. Never enable
-  `bare` in a build that includes a std crate: the two panic handlers collide. Phase A in `docs/PLAN.md` is
-  the work to fix that. Do not raise a budget to make the report green.
+  `bare` in a build that includes a std crate: the two panic handlers collide.
+  `build:wasm` keeps those Cargo invocations separate. Do not raise a budget to make the report green.
 - **Never run `git push -u origin HEAD:<branch>` while checked out on `main`.**
   The `-u` rewrites main's upstream to the feature branch, and when that branch
   is later deleted every pull fails with "no such ref was fetched". Push feature

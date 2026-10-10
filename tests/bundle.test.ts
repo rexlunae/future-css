@@ -205,6 +205,18 @@ describe("bundle", { skip: hasBundle ? false : "run `npm run build` first" }, ()
  * from it, and needs no build or browser.
  */
 describe("fixture page", () => {
+  it("keeps fixture IDs unique so ARIA references are unambiguous", () => {
+    const page = readFileSync(join(projectRoot, "demo", "fixtures.html"), "utf8");
+    const ids = [...page.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]);
+    const seen = new Set<string>();
+    const duplicates = ids.filter((id) => {
+      if (seen.has(id)) return true;
+      seen.add(id);
+      return false;
+    });
+    assert.deepEqual(duplicates, [], "IDs must be unique across the complete fixture document");
+  });
+
   it("has a fixture for every component", () => {
     const page = readFileSync(join(projectRoot, "demo", "fixtures.html"), "utf8");
     const fixtures = new Set([...page.matchAll(/data-fixture="([^"]+)"/g)].map((m) => m[1]));

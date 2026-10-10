@@ -76,7 +76,7 @@ Shared types (`Availability`, `Lifecycle`, `MessageRole`, `Tone`, `Orientation`,
 | `git.css` | `git` | `GitSurface` |
 | `editor.css` | `editor` | `Editor`, `Prose` |
 | `webview.css` | `webview` | `Webview` |
-| `chat.css` | `chat` | `Chat`, `MessageGroup`, `Message`, `MessagePart`, `MessageActions`, `MessageAction` |
+| `chat.css` | `chat` | `Chat`, `MessageGroup`, `Message`, `MessagePart`, `StreamingText`, `MessageActions`, `MessageAction` |
 | `composer.css` | `composer` | `Composer` |
 | `context-strip.css` | `context_strip` | `ContextStrip` |
 | `agent-status.css` | `agent_status` | `AgentStatus` |
@@ -913,8 +913,8 @@ and contrast-checked. The output region is `role="log"` with `aria-live="polite"
 the CSS doc's terminal markup, and never assertive, so a fast command does not flood the
 screen reader. The `Terminal` component owns the batching, not the producer: it keeps a
 count of lines already rendered and commits the newly appended tail of `output` at most
-once per animation frame (`behavior::batch`, a frame-throttled view over a growing
-`ReadSignal<Vec<_>>`, also used by `Chat` for streaming parts). A producer may push one
+once per animation frame (`behavior::batch`, a frame-throttled view over any growing
+signal, a `ReadSignal<Vec<_>>` here and a `ReadSignal<String>` in `StreamingText`). A producer may push one
 line at a time; the polite region still announces chunks.
 
 ### Git surface (`git.css`)
@@ -974,6 +974,9 @@ parity test, and `url` is checked before it reaches `src`. An insecure origin re
     #[props(default)] meta: Option<Element>, #[props(default)] actions: Option<Element>,
     #[props(default)] truncated: Option<Clipped>, ..FcIds, children: Element) -> Element;
 #[component] fn MessagePart(kind: PartKind, children: Element) -> Element;   // text, reasoning, tool, sources
+/// Text that is still arriving. The producer appends to the signal per token; the
+/// component renders through `behavior::batch`, so the DOM changes at most once a frame.
+#[component] fn StreamingText(text: ReadSignal<String>, #[props(default)] markdown: bool) -> Element;
 #[component] fn MessageActions(#[props(default)] persistent: bool, children: Element) -> Element;
 #[component] fn MessageAction(label: AccessibleName, icon: Element,
     #[props(default)] pressed: Option<bool>, onclick: EventHandler<MouseEvent>,
@@ -981,8 +984,10 @@ parity test, and `url` is checked before it reaches `src`. An insecure origin re
 ```
 
 `Message` renders `data-fc-kind="message"`, `data-fc-role`, `data-fc-state`, `data-fc-id`,
-`data-fc-seq`, and `data-fc-ts` through `FcData`. Streaming text is not announced per token;
-`AgentStatus` announces phase changes.
+`data-fc-seq`, and `data-fc-ts` through `FcData`. Streaming input is a
+`ReadSignal<String>` passed to `StreamingText` inside a part, so the batching boundary is
+that component: everything above it is static `Element` children. Streaming text is not
+announced per token; `AgentStatus` announces phase changes.
 
 ### Chat composer (`composer.css`)
 

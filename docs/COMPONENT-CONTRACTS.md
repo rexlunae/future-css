@@ -1082,7 +1082,7 @@ Rest, hover, active, focus-visible, disabled and application states use the [sha
 
 ### Accessibility
 
-Focusable role=separator with aria-valuenow, aria-valuemin, aria-valuemax and aria-controls naming the resized pane; arrows, Home/End and Enter follow the WAI-ARIA window splitter pattern.
+Focusable role=separator with aria-valuenow, aria-valuemin, aria-valuemax and aria-controls naming the resized pane; arrows, Home/End and Enter follow the WAI-ARIA window splitter pattern. A pane whose content can scroll needs `tabindex="0"` and a name so keyboard users can scroll it.
 
 ### Internationalization
 
@@ -1433,7 +1433,7 @@ Labels wrap and logical spacing follows direction. Native checkbox/radio keyboar
 
 ### No-JS fallback
 
-Native disclosure and form controls remain operable and submit their values. Filtering and automatic selection summaries require the optional multiselect binding.
+These are CSS presentations of native inputs, textareas, selects and checkbox/radio choice cards, so every control types, validates and submits its value with no script. No binding or WASM is involved.
 
 ### When not to use it
 

@@ -14,6 +14,15 @@ it('renames complete public names once, preserving longer names and unrelated te
   assert.throws(()=>migrateNames('',{'arbitrary':'fc-next'}));
 });
 
+it('carries BEM element and modifier classes with a renamed component', () => {
+  const result = migrateNames(
+    '<li class="fc-old__item fc-old--active fc-old-extra fc-old__item--on"> .fc-old__icon {} var(--fc-old--x) var(--fc-old)',
+    {'fc-old':'fc-new','fc-old__icon':'fc-new__glyph','fc-new':'fc-final','--fc-old':'--fc-new'});
+  assert.equal(result.source,
+    '<li class="fc-new__item fc-new--active fc-old-extra fc-new__item--on"> .fc-new__glyph {} var(--fc-old--x) var(--fc-new)');
+  assert.equal(result.count,5);
+});
+
 it('keeps the CLI dry by default and preserves an exclusive backup before writing', async () => {
   const dir = await mkdtemp(join(tmpdir(),'fc-migration-'));
   try {

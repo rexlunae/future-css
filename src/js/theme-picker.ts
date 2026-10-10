@@ -53,6 +53,12 @@ export function validateCustomTheme(input:unknown,contract?:ThemeContract): Cust
   if(Object.keys(t).some(k=>!allowed.includes(k))) throw new Error('Unknown theme setting; arbitrary CSS is not supported');
   return structuredClone(t);
 }
+/** A page may set its scheme before script loads; the picker must start from it, not reset it. */
+function schemeFromTheme(theme?:string):Partial<ThemeState> {
+  const match=/^(high-contrast-)?(system|light|dark)$/.exec(theme??'');
+  if(!match)return {};
+  return {scheme:match[2] as ThemeState['scheme'],contrast:match[1]?'high':'system'};
+}
 export interface ThemePickerOptions {
   root: HTMLElement|string; target?: HTMLElement; initial?: Partial<ThemeState>;
   storageKey?: string; contract?: ThemeContract; customThemes?: readonly unknown[]; onChange?: (state:Readonly<ThemeState>)=>void;
@@ -72,7 +78,7 @@ export class FutureCssThemePicker {
     const root=typeof options.root==='string'?document.querySelector<HTMLElement>(options.root):options.root;
     if(!root) throw new Error('Theme picker root not found');this.root=root;this.root.dataset.fcKind='theme-picker';this.root.dataset.fcId=root.id||crypto.randomUUID();this.target=options.target??document.documentElement;
     this.snapshot={design:this.target.dataset.fcDesign,palette:this.target.dataset.fcPalette,theme:this.target.dataset.fcTheme,brand:this.target.dataset.fcBrand};
-    this.state={design:this.target.dataset.fcDesign??'future',palette:this.target.dataset.fcPalette??'default',scheme:'system',contrast:'system',...options.initial};
+    this.state={design:this.target.dataset.fcDesign??'future',palette:this.target.dataset.fcPalette??'default',scheme:'system',contrast:'system',...schemeFromTheme(this.target.dataset.fcTheme),...options.initial};
     let storedCustom:unknown;
     if(options.storageKey) try { const saved=localStorage.getItem(options.storageKey);if(saved){const record=JSON.parse(saved);this.state={...this.state,...(record.state??record)};storedCustom=record.custom;} }catch{ /* Storage is optional in private/embedded contexts. */ }
     this.custom.set('custom', {schemaVersion:THEME_SCHEMA_VERSION,version:'1.0.0',id:'custom',name:'Custom',description:'Configure corners, elevation, surfaces, typography and palette.',base:'future',palette:'default'});
@@ -125,6 +131,18 @@ export class FutureCssThemePicker {
     const blob=new Blob([this.exportCustomTheme()],{type:'application/toml'});
     const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='custom.toml';link.click();URL.revokeObjectURL(url);
   };
+  private paletteItems():[string,string][]{
+    return [...themePalettes.map(p=>[p.id,p.name] as [string,string]),...[...this.custom.values()].filter(t=>t.colors).map(t=>[t.id,t.name+' palette'] as [string,string])];
+  }
+  /** The first custom color creates a palette after render; without this the select cannot show or return to it. */
+  private syncPaletteOptions(){
+    const select=this.root.querySelector<HTMLSelectElement>('select[data-fc-theme-control=palette]');if(!select)return;
+    const items=this.paletteItems();
+    if(items.length!==select.options.length||items.some(([value],i)=>select.options[i]!.value!==value)){
+      select.replaceChildren(...items.map(([value,name])=>{const option=document.createElement('option');option.value=value;option.textContent=name;return option;}));
+    }
+    select.value=this.state.palette;
+  }
   private syncColorEditor(){
     const role=this.root.querySelector<HTMLSelectElement>('[data-fc-theme-color=role]')?.value;if(!role)return;
     const custom=this.custom.get('custom')!,base=themePresets.find(p=>p.id===custom.base)!;
@@ -175,6 +193,7 @@ export class FutureCssThemePicker {
     for(const parameter of this.root.querySelectorAll<HTMLSelectElement>('[data-fc-theme-parameter]')) {
       const key=parameter.dataset.fcThemeParameter as keyof CustomTheme;parameter.value=String(draft[key]??draftBase[key as keyof typeof draftBase]);
     }
+    this.syncPaletteOptions();
     this.syncColorEditor();
     const design=this.custom.get(this.state.design)??themePresets.find(p=>p.id===this.state.design)!;
     const status=this.root.querySelector<HTMLElement>('[data-fc-theme-status]');if(status)status.textContent=`${design.name} · ${scheme}${this.preferences[2]!.matches?' · forced colors':high?' · high contrast':''}`;
@@ -243,7 +262,7 @@ export class FutureCssThemePicker {
     }
     const controls=document.createElement('div');controls.className='fc-theme-picker__controls';
     for(const [key,title,items] of [
-      ['palette','Color palette',[...themePalettes.map(p=>[p.id,p.name]),...[...this.custom.values()].filter(t=>t.colors).map(t=>[t.id,t.name+' palette'])]],
+      ['palette','Color palette',this.paletteItems()],
       ['scheme','Color scheme',[['system','Follow system'],['light','Light'],['dark','Dark']]],
       ['contrast','Contrast',[['system','Follow system'],['high','High contrast']]],
     ] as const){

@@ -44,7 +44,14 @@ export class FutureCssMultiselect {
       } else return;
       this.sync(true);
     }, {signal});
-    root.closest('form')?.addEventListener('reset', () => queueMicrotask(() => { if (!this.disposed) { this.filter(''); this.sync(false); } }), {signal});
+    // The filter may sit outside the form's reset scope, so restore its default
+    // explicitly; the visible query and the filtered options must never disagree.
+    root.closest('form')?.addEventListener('reset', () => queueMicrotask(() => {
+      if (this.disposed) return;
+      const query = root.querySelector<HTMLInputElement>('[data-fc-filter]');
+      if (query) query.value = query.defaultValue;
+      this.filter(query?.value ?? ''); this.sync(false);
+    }), {signal});
     this.filter(root.querySelector<HTMLInputElement>('[data-fc-filter]')?.value ?? '');
     this.sync(false);
   }

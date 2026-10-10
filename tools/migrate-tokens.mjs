@@ -14,8 +14,16 @@ export function migrateNames(source, renames) {
   let count = 0;
   if (!entries.length) return { source, count };
   // One pass prevents A→B, B→C from accidentally applying twice to A.
-  const pattern = new RegExp(`(?<![\\w-])(?:${entries.map(([from]) => from).sort((a,b)=>b.length-a.length).join('|')})(?![\\w-])`, 'g');
-  const migrated = source.replace(pattern, from => {count++; return renames[from];});
+  // A class's BEM parts (`__element`, `--modifier`) share its name, so they
+  // move with it; otherwise migrated markup keeps parts the new CSS no longer
+  // styles. Tokens have no parts, so a suffixed token is left alone.
+  const names = entries.map(([from]) => from).sort((a,b)=>b.length-a.length).join('|');
+  const pattern = new RegExp(`(?<![\\w-])(${names})((?:__|--)[a-z0-9][a-z0-9_-]*)?(?![\\w-])`, 'g');
+  const migrated = source.replace(pattern, (match, from, part = '') => {
+    if (part && from.startsWith('--')) return match;
+    count++;
+    return renames[from] + part;
+  });
   return {source: migrated, count};
 }
 

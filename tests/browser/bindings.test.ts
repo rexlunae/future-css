@@ -3082,9 +3082,11 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       const role=root.querySelector('[data-fc-theme-color=role]');role.value='text-default';role.dispatchEvent(new Event('change',{bubbles:true}));
       const beforeColor=picker.exportCustomTheme();root.querySelector('[data-fc-theme-color=light]').value='#ffffff';root.querySelector('[data-fc-theme-color-apply]').click();const rejected=root.dataset.fcState==='error'&&picker.exportCustomTheme()===beforeColor;
       root.querySelector('[data-fc-theme-color=light]').value=contract.palettes.rose['text-default'].light;root.querySelector('[data-fc-theme-color=dark]').value=contract.palettes.rose['text-default'].dark;root.querySelector('[data-fc-theme-color-apply]').click();const accepted=root.dataset.fcState==='complete'&&picker.value.palette==='custom';
+      const paletteSelect=root.querySelector('select[data-fc-theme-control=palette]');const paletteListed=paletteSelect.value==='custom';
+      for(const value of ['forest','custom']){paletteSelect.value=value;paletteSelect.dispatchEvent(new Event('change',{bubbles:true}));}const paletteReturned=picker.value.palette==='custom';
       picker.setState({contrast:'high'});const highClearsCustomColors=!root.querySelector('[data-fc-theme-option=custom]').style.getPropertyValue('--fc-color-text-default');
       const draft=picker.exportCustomTheme(),state=picker.value,customRadius=getComputedStyle(root.querySelector('[data-fc-theme-option="custom"]')).borderRadius;
-      picker.setState({design:'future'});const hidden=root.querySelector('[data-fc-theme-editor]').hidden;picker.destroy();region.remove();return {before,after,shown,draft,state,customRadius,hidden,rejected,accepted,highClearsCustomColors};
+      picker.setState({design:'future'});const hidden=root.querySelector('[data-fc-theme-editor]').hidden;picker.destroy();region.remove();return {before,after,shown,draft,state,customRadius,hidden,rejected,accepted,highClearsCustomColors,paletteListed,paletteReturned};
     `);
     assert.equal(result.before.length,22);assert.ok(result.before.every(option=>option.window));
     for(const option of result.before.filter(o=>['candy','arcade','pride'].includes(o.id))){assert.notEqual(option.shadow,'none');assert.equal(option.image,'none');}
@@ -3092,7 +3094,21 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(result.before.find(o=>o.id==='blueprint').radius,'0px');assert.notEqual(result.before.find(o=>o.id==='forest').radius,'0px');
     assert.deepEqual(result.before.map(o=>[o.id,o.design,o.palette,o.radius]),result.after.map(o=>[o.id,o.design,o.palette,o.radius]));
     assert.equal(result.shown,true);assert.equal(result.hidden,true);assert.equal(result.customRadius,'0px');assert.equal(result.state.design,'custom');assert.equal(result.state.palette,'custom');assert.equal(result.rejected,true);assert.equal(result.accepted,true);assert.equal(result.highClearsCustomColors,true);
+    assert.equal(result.paletteListed,true,'the first custom color adds a selectable Custom palette');assert.equal(result.paletteReturned,true,'Custom palette is reachable again after choosing a stock palette');
     assert.match(result.draft,/shape = "square"/);assert.match(result.draft,/depth = "lifted"/);assert.match(result.draft,/palette = "rose"/);
+  });
+
+  it("starts from a scheme the page set before script loaded", async () => {
+    const result=await evaluate(`
+      const {FutureCssThemePicker}=await import('/src/js/theme-picker.js');
+      const read=theme=>{const region=document.createElement('section');region.dataset.fcTheme=theme;const root=document.createElement('div');region.append(root);document.body.append(region);
+        const picker=new FutureCssThemePicker({root,target:region});const value=picker.value,applied=region.dataset.fcTheme;picker.destroy();region.remove();return {scheme:value.scheme,contrast:value.contrast,applied};};
+      return {dark:read('dark'),light:read('light'),high:read('high-contrast-dark'),unknown:read('sepia')};
+    `);
+    assert.deepEqual(result.dark,{scheme:'dark',contrast:'system',applied:'dark'});
+    assert.deepEqual(result.light,{scheme:'light',contrast:'system',applied:'light'});
+    assert.deepEqual(result.high,{scheme:'dark',contrast:'high',applied:'high-contrast-dark'});
+    assert.equal(result.unknown.scheme,'system');
   });
 
   it("loads TOML, rejects inaccessible imports, and restores custom colors after contrast preferences", async () => {
@@ -3173,14 +3189,16 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       let invalid=false;try{picker.setValues(['missing']);}catch{invalid=true;}const intact=picker.values;
       form.querySelector('[data-fc-selection-action="clear"]').click();const cleared=picker.values;
       let unavailable=false;try{picker.setValues([]);}catch{unavailable=true;}
+      const query=form.querySelector('[data-fc-filter]');query.value='Ada';query.dispatchEvent(new Event('input',{bubbles:true}));
       form.reset();await new Promise(r=>queueMicrotask(r));const reset=picker.values;
+      const resetFilter={query:query.value,hidden:[...form.querySelectorAll('.fc-multiselect__option')].filter(o=>o.hidden).length};
       const details=form.querySelector('details');details.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));const escaped=!details.open&&document.activeElement===details.querySelector('summary');
       const attrs={kind:details.dataset.fcKind,values:JSON.parse(details.dataset.fcValues),count:details.dataset.fcCount,summary:details.querySelector('[data-fc-selection-summary]').textContent};
-      picker.destroy();details.open=true;form.querySelector('input[value="grace"]').click();const native=picker.values;form.remove();return {initial,selected,posted,empty,invalid,intact,cleared,unavailable,reset,escaped,attrs,native,changes};
+      picker.destroy();details.open=true;form.querySelector('input[value="grace"]').click();const native=picker.values;form.remove();return {initial,selected,posted,empty,invalid,intact,cleared,unavailable,reset,resetFilter,escaped,attrs,native,changes};
     `);
     assert.deepEqual(result.initial,['ada','alan']);assert.deepEqual(result.selected,['ada','grace','alan']);assert.deepEqual(result.posted,['ada','grace']);
     assert.equal(result.empty,true);assert.equal(result.invalid,true);assert.deepEqual(result.intact,result.selected);assert.deepEqual(result.cleared,['alan']);assert.equal(result.unavailable,true);
-    assert.deepEqual(result.reset,['ada','alan']);assert.equal(result.escaped,true);assert.deepEqual(result.attrs,{kind:'multiselect',values:['ada','alan'],count:'2',summary:'2 chosen'});assert.deepEqual(result.native,['ada','grace','alan']);assert.equal(result.changes.length,2);
+    assert.deepEqual(result.reset,['ada','alan']);assert.deepEqual(result.resetFilter,{query:'',hidden:0},'reset clears the typed query and shows every option');assert.equal(result.escaped,true);assert.deepEqual(result.attrs,{kind:'multiselect',values:['ada','alan'],count:'2',summary:'2 chosen'});assert.deepEqual(result.native,['ada','grace','alan']);assert.equal(result.changes.length,2);
   });
 
   it("preserves descriptive select options and wires default actions separately from menus", async () => {

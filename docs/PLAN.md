@@ -39,14 +39,14 @@ cancellation and saved-preference behavior, and browser/axe coverage at 320px.
 
 ### Working now
 
-Audited on 2026-10-08 with Chrome and the WASM toolchain present:
+Audited on 2026-10-10 with Chrome and the WASM toolchain present:
 
-- 218 foundation tokens (116 theme-aware), plus 6 optional Pride theme tokens, 54 component files, 60-file readable CSS bundle
-  of 408.4 KB. Consumers can load only the layers/components they use.
+- 218 foundation tokens (116 theme-aware), plus 6 optional Pride theme tokens, 60 component files, 66-file readable CSS bundle
+  of 425.6 KB. Consumers can load only the layers/components they use.
 - Eight Rust crates emit eight binaries across seven module directories; core and
   model share a directory. All binaries meet their unchanged byte targets after
   bindgen, both with and without optional wasm-opt.
-- Final `npm run check`: 517 JavaScript/browser tests and 133 Rust tests passed,
+- Final `npm run check` with axe enabled: 532 JavaScript/browser tests and 133 Rust tests passed,
   with zero skips. It includes contrast, architecture, documentation coverage, CSS budgets,
   real Chrome bindings and Rust/JS boundary parity. CI additionally supplies an isolated
   axe-core validator and requires Chrome, so neither silently skips there.

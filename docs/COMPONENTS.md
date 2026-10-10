@@ -400,7 +400,12 @@ Notable decisions:
 
 - **The toolbar reports the mark across the *whole* selection.** A selection that is
   partly bold reads as "not bold", because a toolbar that lies about a partial
-  selection is worse than one that does not.
+  selection is worse than one that does not. Links follow the same rule.
+- **Commands only touch this editor's own text.** The selection is global, so a
+  selection in another editor, or one crossing this editor from outside, is left
+  alone rather than formatted.
+- **A mark at a bare caret applies to what is typed next.** An empty element is
+  inserted at the caret, and the next keystroke is placed inside it.
 - **Un-marking preserves the text.** `unwrap` moves children out before discarding
   the wrapper. An editor that deletes content when a user clicks "remove bold"
   loses their work.
@@ -409,6 +414,11 @@ Notable decisions:
 - **Link URLs are validated against a scheme allowlist**, and an unsafe scheme is
   refused with a reason rather than silently rewritten. `javascript:` in an
   editor-authored link is stored XSS.
+
+Call `editor.destroy()` when the host unmounts the editor. It removes every listener
+the editor added, including the document-level `selectionchange` one that would
+otherwise keep the editor alive and syncing for the life of the page. The markup and
+its content are left in place.
 
 ### Menu
 

@@ -380,6 +380,73 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(html, "before <strong></strong>after", "the empty mark goes where the caret was");
   });
 
+  it("types into a mark started at the caret", async () => {
+    // Regression. The caret saved before the insert was still valid, so restoring
+    // it put the caret back outside the new element and typing stayed plain.
+    // Typed with a real key event: Chrome moves text out of an empty inline
+    // element, and only a real keystroke runs the editor's beforeinput handling.
+    await loadBindings();
+    const type = async (setup: string) => {
+      await evaluate(`
+        globalThis.ed?.destroy();
+        globalThis.ed = new E.FutureCssEditor({ root: '#ed' });
+        const el = document.querySelector('.fc-editor__content');
+        el.focus();
+        ${setup}
+        const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+        globalThis.ed.applyMark('bold');
+      `);
+      await send("Input.dispatchKeyEvent", { type: "keyDown", key: "X", code: "KeyX", text: "X", unmodifiedText: "X", windowsVirtualKeyCode: 88 });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", key: "X", code: "KeyX", windowsVirtualKeyCode: 88 });
+      return evaluate(`return document.querySelector('.fc-editor__content').innerHTML;`);
+    };
+    // A text-node caret, then an element-node caret at the end of a paragraph.
+    const inText = await type(`
+      el.innerHTML = 'before after';
+      const r = document.createRange(); r.setStart(el.firstChild, 7); r.collapse(true);
+    `);
+    const atElement = await type(`
+      el.innerHTML = '<p>one</p><p>two</p>';
+      const r = document.createRange(); r.setStart(el.lastChild, 1); r.collapse(true);
+    `);
+    await evaluate(`globalThis.ed.destroy(); delete globalThis.ed;`);
+    assert.deepEqual([inText, atElement], ["before <strong>X</strong>after", "<p>one</p><p>two<strong>X</strong></p>"]);
+  });
+
+  it("does not report a link active when only part of the selection is linked", async () => {
+    await loadBindings();
+    const active = await evaluate(`
+      globalThis.ed = new E.FutureCssEditor({ root: '#ed' });
+      const el = document.querySelector('.fc-editor__content');
+      el.innerHTML = '<a href="https://example.com">link</a> plain';
+      const r = document.createRange(); r.setStart(el.firstChild.firstChild, 0); r.setEnd(el.lastChild, 6);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      return globalThis.ed.isMarkActive('link');
+    `);
+    assert.equal(active, false);
+  });
+
+  it("leaves its formatting alone when a selection crosses it from outside", async () => {
+    await loadBindings();
+    const html = await evaluate(`
+      globalThis.ed = new E.FutureCssEditor({ root: '#ed' });
+      const el = document.querySelector('.fc-editor__content');
+      el.innerHTML = '<h2><strong>hello</strong></h2>';
+      const above = document.createElement('p'); above.textContent = 'above';
+      const below = document.createElement('p'); below.textContent = 'below';
+      const editor = document.querySelector('#ed');
+      editor.before(above); editor.after(below);
+      const r = document.createRange(); r.setStart(above.firstChild, 0); r.setEnd(below.firstChild, 5);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      globalThis.ed.removeMark('bold');
+      globalThis.ed.toggleBlock('h2');
+      const result = el.innerHTML;
+      above.remove(); below.remove();
+      return result;
+    `);
+    assert.equal(html, "<h2><strong>hello</strong></h2>");
+  });
+
   it("keeps the caret in place when a block change ends at a block boundary", async () => {
     await loadBindings();
     const offset = await evaluate(`

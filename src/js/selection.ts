@@ -154,8 +154,10 @@ export function markedInSelection(tagName: string, fallback: Element): Element[]
     }
   };
 
+  // Only ranges wholly inside this editor: callers unwrap what this returns, and a
+  // selection that merely crosses the editor from outside is not its to change.
   for (const range of currentRanges()) {
-    collect(range);
+    if (fallback.contains(range.commonAncestorContainer)) collect(range);
   }
 
   // A COLLAPSED range intersects nothing -- `Range.intersectsNode` is false for a
@@ -166,7 +168,7 @@ export function markedInSelection(tagName: string, fallback: Element): Element[]
   const selection = window.getSelection();
   if (selection?.isCollapsed) {
     const el = elementAt(selection.anchorNode);
-    if (el && el.tagName === upper && !seen.has(el)) {
+    if (el && fallback.contains(el) && el.tagName === upper && !seen.has(el)) {
       seen.add(el);
       out.push(el);
     }

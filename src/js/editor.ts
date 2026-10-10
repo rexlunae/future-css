@@ -91,6 +91,9 @@ export class FutureCssEditor {
   /** Set during a DOM mutation so the input handler does not recurse. */
   private mutating = false;
 
+  /** An empty mark started at a caret, waiting for the next keystroke; see `insertEmptyElement`. */
+  private pendingMark: Element | null = null;
+
   /** Undoes every listener this editor added; see `destroy`. */
   private readonly cleanups: Array<() => void> = [];
 
@@ -147,7 +150,9 @@ export class FutureCssEditor {
   /** Whether `mark` covers the whole current selection. See selection.ts. */
   isMarkActive(mark: Mark): boolean {
     // Links first: they have no wrapper entry, so the lookup below returns early.
-    if (mark === "link") return this.linksInSelection().length > 0;
+    // The same whole-selection rule as the other marks: a selection that is only
+    // partly linked must not press the link button.
+    if (mark === "link") return selectionFullyMarked("A", this.content);
     const tagName = WRAPPERS[mark];
     if (!tagName) return false;
     return selectionFullyMarked(tagName, this.content);
@@ -273,6 +278,13 @@ export class FutureCssEditor {
       if (!range || !this.content.contains(range.startContainer)) return;
       range.insertNode(el);
       placeCaret(el, 0);
+      // The caret saved before the insert is still valid (the split left its text
+      // node in place), so restoring it would move the caret back outside the new
+      // element and the next keystroke would stay unmarked.
+      this.selectionAnchor = null;
+      // Even with the caret inside, Chrome moves typed text out of an empty inline
+      // element; `beforeinput` puts the first character in it instead.
+      this.pendingMark = el;
     } finally {
       this.mutating = false;
     }
@@ -328,11 +340,6 @@ export class FutureCssEditor {
    */
   private ownRanges(): Range[] {
     return currentRanges().filter((range) => this.content.contains(range.commonAncestorContainer));
-  }
-
-  /** Anchors intersecting the selection. */
-  private linksInSelection(): Element[] {
-    return markedInSelection("A", this.content);
   }
 
   /** Block elements of a given tag intersecting the selection. */
@@ -516,6 +523,25 @@ export class FutureCssEditor {
     };
     this.content.addEventListener("input", onInput);
     this.cleanups.push(() => this.content.removeEventListener("input", onInput));
+
+    const onBeforeInput = (event: InputEvent) => {
+      const mark = this.pendingMark;
+      this.pendingMark = null;
+      if (!mark || event.inputType !== "insertText" || !event.data) return;
+      const selection = window.getSelection();
+      // Only while the caret is still where the mark was started, and the mark empty.
+      if (!mark.isConnected || mark.firstChild || !selection?.isCollapsed) return;
+      if (selection.anchorNode !== mark) return;
+      event.preventDefault();
+      const text = document.createTextNode(event.data);
+      mark.append(text);
+      placeCaret(text, text.length);
+      // A cancelled `beforeinput` fires no `input`, so report the change here.
+      this.options.onChange?.(this.value);
+      this.syncToolbar();
+    };
+    this.content.addEventListener("beforeinput", onBeforeInput);
+    this.cleanups.push(() => this.content.removeEventListener("beforeinput", onBeforeInput));
   }
 
   /**

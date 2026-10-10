@@ -1005,6 +1005,14 @@ tokens, so `Message` enforces it from its state rather than leaving it to the pr
   that `Chat` owns), controlled by `announce: Completion` (`Full` by default, `Summary(String)`
   for long or structured replies, `Off` when the application announces itself). `Error` and
   `Aborted` announce the state with whatever text arrived ("Response stopped: …").
+- The text comes from data, not the DOM. `Message` provides a `MessageContext`, and every
+  `StreamingText` inside it registers its `ReadSignal<String>` there in render order (a
+  hook on mount, unregistered on drop). `Full` joins the registered signals' values in that
+  order. Other parts (tool calls, reasoning, sources) contribute nothing; their progress is
+  `AgentStatus`'s to speak. A `Full` message with no registered text announces only the
+  role and state ("Assistant replied") and reports in debug builds that it should use
+  `Summary` or a `StreamingText`. All of this is plain signals and context, so it behaves
+  the same on web and desktop; under SSR nothing transitions, so nothing is announced.
 - A message inserted already `Complete` (history, or a non-streamed reply) is an ordinary
   log addition and is not announced twice: the explicit announcement fires only on the
   `Streaming` to terminal transition.

@@ -1005,14 +1005,21 @@ tokens, so `Message` enforces it from its state rather than leaving it to the pr
   that `Chat` owns), controlled by `announce: Completion` (`Full` by default, `Summary(String)`
   for long or structured replies, `Off` when the application announces itself). `Error` and
   `Aborted` announce the state with whatever text arrived ("Response stopped: …").
-- The text comes from data, not the DOM. `Message` provides a `MessageContext`, and every
-  `StreamingText` inside it registers its `ReadSignal<String>` there in render order (a
-  hook on mount, unregistered on drop). `Full` joins the registered signals' values in that
-  order. Other parts (tool calls, reasoning, sources) contribute nothing; their progress is
-  `AgentStatus`'s to speak. A `Full` message with no registered text announces only the
-  role and state ("Assistant replied") and reports in debug builds that it should use
-  `Summary` or a `StreamingText`. All of this is plain signals and context, so it behaves
-  the same on web and desktop; under SSR nothing transitions, so nothing is announced.
+- The text comes from data, not the DOM. `Message` provides a `MessageContext` in which
+  each `StreamingText` holds one slot for its lifetime. A slot stores a memo over the
+  child's *current* props, not the signal it mounted with, so a retained child that receives
+  a new `text` signal announces the new text. Each render also records the slot's position
+  (a per-render counter in the context, the same mechanism as `use_id`), and `Full` joins
+  slots ordered by their latest position, so inserting or reordering children keeps the
+  spoken order equal to the visible order. What a slot contributes is the *accessible
+  text*: for `markdown: true` it is the plain text of the same parse used for display (link
+  text, not URLs; no syntax characters), so the spoken reply matches the shown one. Other
+  parts (tool calls, reasoning, sources) contribute nothing; their progress is
+  `AgentStatus`'s to speak. A `Full` message with no slots announces only the role and state
+  ("Assistant replied") and reports in debug builds that it should use `Summary` or a
+  `StreamingText`. All of this is signals and context, so it behaves the same on web and
+  desktop; under SSR nothing transitions, so nothing is announced. Unit tests cover
+  insertion, removal, reordering, and signal replacement before completion.
 - A message inserted already `Complete` (history, or a non-streamed reply) is an ordinary
   log addition and is not announced twice: the explicit announcement fires only on the
   `Streaming` to terminal transition.

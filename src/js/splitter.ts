@@ -86,10 +86,17 @@ function numberAttr(el: Element, name: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/**
+ * Edge splitters whose `aria-valuemax` the binding wrote from the container's
+ * size. That bound follows the layout, so it is re-measured rather than read
+ * back: a written number would freeze the container's size at bind time.
+ */
+const measuredMax = new WeakSet<HTMLElement>();
+
 /** `aria-valuemin` and `aria-valuemax`, with defaults that keep the element on the page. */
 export function splitterBounds(splitter: HTMLElement): { min: number; max: number } {
   const min = numberAttr(splitter, "aria-valuemin") ?? 0;
-  let max = numberAttr(splitter, "aria-valuemax");
+  let max = measuredMax.has(splitter) ? null : numberAttr(splitter, "aria-valuemax");
   if (max === null) {
     if (splitterUnit(splitter) === "%") max = 100;
     else {
@@ -125,15 +132,18 @@ export function splitterValue(splitter: HTMLElement): number {
  * changes, and always when `final` is set, so a drag ends with one settled event.
  */
 export function setSplitterValue(splitter: HTMLElement, value: number, final = true): number {
-  return apply(splitter, value, final, true);
+  return apply(splitter, value, final, final ? "always" : "changed");
 }
 
-function apply(splitter: HTMLElement, value: number, final: boolean, emit: boolean): number {
+type Emit = "always" | "changed" | "never";
+
+function apply(splitter: HTMLElement, value: number, final: boolean, emit: Emit): number {
   const unit = splitterUnit(splitter);
   const { min, max } = splitterBounds(splitter);
   const next = round(Math.min(max, Math.max(min, value)), unit);
   const changed = numberAttr(splitter, "aria-valuenow") !== next;
   splitter.setAttribute("aria-valuenow", String(next));
+  if (measuredMax.has(splitter) && Number.isFinite(max)) splitter.setAttribute("aria-valuemax", String(round(max, unit)));
   const target = splitterTarget(splitter);
   if (target) {
     target.style.setProperty("--fc-split-size", `${next}${unit}`);
@@ -141,7 +151,7 @@ function apply(splitter: HTMLElement, value: number, final: boolean, emit: boole
     // handle that has to bring it back.
     if (!target.contains(splitter)) target.hidden = next <= 0;
   }
-  if (emit && (changed || final)) {
+  if (emit === "always" || (emit === "changed" && changed)) {
     splitter.dispatchEvent(new CustomEvent<SplitterChange>("fc-resize", {
       bubbles: true,
       detail: { value: next, unit, final },
@@ -170,13 +180,21 @@ const restore = new WeakMap<HTMLElement, number>();
 /** Brings the target's size and the ARIA value into agreement. */
 export function syncSplitter(splitter: HTMLElement): void {
   if (numberAttr(splitter, "aria-valuenow") === null && !splitterTarget(splitter)?.getClientRects().length) return;
+  // A separator is a range widget once focusable; its bounds must be stated.
+  if (!splitter.hasAttribute("aria-valuemax") && splitterUnit(splitter) === "px") measuredMax.add(splitter);
   // Silent: binding is not a change anyone made.
-  const value = apply(splitter, splitterValue(splitter), true, false);
+  const value = apply(splitter, splitterValue(splitter), true, "never");
   const { min, max } = splitterBounds(splitter);
   if (value > min && !restore.has(splitter)) restore.set(splitter, value);
-  // A separator is a range widget once focusable; its bounds must be stated.
   if (!splitter.hasAttribute("aria-valuemin")) splitter.setAttribute("aria-valuemin", String(min));
   if (!splitter.hasAttribute("aria-valuemax") && Number.isFinite(max)) splitter.setAttribute("aria-valuemax", String(round(max, splitterUnit(splitter))));
+}
+
+/** Re-clamps a splitter whose bound is its container, after the container resized. */
+function reclamp(splitter: HTMLElement): void {
+  if (!splitter.isConnected) return;
+  // Announces only a real change: a shrink that pushed the value down.
+  apply(splitter, splitterValue(splitter), true, "changed");
 }
 
 function onKeydown(event: KeyboardEvent, splitter: HTMLElement): void {
@@ -213,7 +231,7 @@ function onKeydown(event: KeyboardEvent, splitter: HTMLElement): void {
   setSplitterValue(splitter, next, true);
 }
 
-function onPointerdown(event: PointerEvent, splitter: HTMLElement): void {
+function onPointerdown(event: PointerEvent, splitter: HTMLElement, active: Set<() => void>): void {
   if (event.button !== 0 || disabled(splitter)) return;
   const target = splitterTarget(splitter);
   if (!target) return;
@@ -251,12 +269,17 @@ function onPointerdown(event: PointerEvent, splitter: HTMLElement): void {
     splitter.removeEventListener("pointercancel", up);
     splitter.removeEventListener("keydown", cancel, true);
     if (splitter.hasPointerCapture(event.pointerId)) splitter.releasePointerCapture(event.pointerId);
+    active.delete(abort);
     const value = setSplitterValue(splitter, settle ?? splitterValue(splitter), true);
     if (value > splitterBounds(splitter).min) restore.set(splitter, value);
   };
   const up = (e: PointerEvent) => {
     if (e.pointerId === event.pointerId) end();
   };
+  // Unbinding mid-drag settles where the pointer left it, so no listener
+  // outlives the binding that installed it.
+  const abort = () => end();
+  active.add(abort);
 
   splitter.addEventListener("pointermove", move);
   splitter.addEventListener("pointerup", up);
@@ -271,12 +294,45 @@ function splitterFrom(event: Event): HTMLElement | null {
 }
 
 /**
- * Syncs every `.fc-splitter` under `root` and handles drag and keyboard for
- * them, including ones added later. Returns a function that removes the
- * listeners.
+ * Syncs every `.fc-splitter` under `root`, including ones added later, and
+ * handles drag and keyboard for them. Returns a function that ends any drag in
+ * progress and removes every listener and observer.
  */
 export function bindSplitters(root: Document | HTMLElement = document): () => void {
-  for (const splitter of root.querySelectorAll<HTMLElement>(".fc-splitter")) syncSplitter(splitter);
+  const active = new Set<() => void>();
+
+  // An edge's default bound is its container, which can resize at any time.
+  const watched = new Map<Element, Set<HTMLElement>>();
+  const resized = new ResizeObserver((entries) => {
+    for (const entry of entries) for (const splitter of watched.get(entry.target) ?? []) reclamp(splitter);
+  });
+
+  const init = (splitter: HTMLElement) => {
+    syncSplitter(splitter);
+    if (!measuredMax.has(splitter)) return;
+    const target = splitterTarget(splitter);
+    const box = target && frame(splitter, target);
+    if (!box) return;
+    if (!watched.has(box)) {
+      watched.set(box, new Set());
+      resized.observe(box);
+    }
+    watched.get(box)!.add(splitter);
+  };
+  for (const splitter of root.querySelectorAll<HTMLElement>(".fc-splitter")) init(splitter);
+
+  // Splitters added later are synced on arrival, before anyone reads or
+  // operates them: until then the drawn size and the announced one disagree.
+  const added = new MutationObserver((records) => {
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (!(node instanceof HTMLElement)) continue;
+        if (node.matches(".fc-splitter")) init(node);
+        for (const splitter of node.querySelectorAll<HTMLElement>(".fc-splitter")) init(splitter);
+      }
+    }
+  });
+  added.observe(root, { childList: true, subtree: true });
 
   const keydown = (event: Event) => {
     const splitter = splitterFrom(event);
@@ -284,11 +340,14 @@ export function bindSplitters(root: Document | HTMLElement = document): () => vo
   };
   const pointerdown = (event: Event) => {
     const splitter = splitterFrom(event);
-    if (splitter) onPointerdown(event as PointerEvent, splitter);
+    if (splitter) onPointerdown(event as PointerEvent, splitter, active);
   };
   root.addEventListener("keydown", keydown);
   root.addEventListener("pointerdown", pointerdown);
   return () => {
+    for (const abort of [...active]) abort();
+    added.disconnect();
+    resized.disconnect();
     root.removeEventListener("keydown", keydown);
     root.removeEventListener("pointerdown", pointerdown);
   };

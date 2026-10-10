@@ -3761,6 +3761,67 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.deepEqual(r.open, [5, false]);
   });
 
+  it("syncs splitters added after binding, and follows a resized container's bound", async () => {
+    // A splitter inserted later must not render at the CSS default while a
+    // screen reader hears its aria-valuenow; and a bound measured from the
+    // container must not freeze at the container's size on the day it bound.
+    await loadBindings();
+    const r = await evaluate(`
+      const host = document.createElement('div');
+      host.style.inlineSize = '400px';
+      document.body.appendChild(host);
+      const unbind = SP.bindSplitters(document);
+      host.innerHTML = '<div class="fc-split" style="block-size: 60px"><div class="fc-split__pane fc-split__pane--primary" id="sp-late">A</div>'
+        + '<div class="fc-splitter" role="separator" tabindex="0" aria-orientation="vertical" aria-controls="sp-late" aria-label="A" aria-valuenow="30"></div>'
+        + '<div class="fc-split__pane">B</div></div>'
+        + '<aside class="fc-resizable" id="sp-wide" style="--fc-split-size: 300px">P'
+        + '<div class="fc-splitter fc-splitter--edge" role="separator" tabindex="0" aria-orientation="vertical" aria-controls="sp-wide" aria-label="P"></div></aside>';
+      await new Promise((r) => setTimeout(r, 50));
+      const late = host.querySelector('#sp-late');
+      const edge = host.querySelector('.fc-splitter--edge');
+      const events = [];
+      edge.addEventListener('fc-resize', (e) => events.push(e.detail.value));
+      const out = { late: [Math.round(late.getBoundingClientRect().width), host.querySelector('.fc-splitter').getAttribute('aria-valuemax')] };
+      out.bound = edge.getAttribute('aria-valuemax');
+      host.style.inlineSize = '200px';
+      await new Promise((r) => setTimeout(r, 100));
+      out.shrunk = [edge.getAttribute('aria-valuenow'), edge.getAttribute('aria-valuemax'), [...events]];
+      host.style.inlineSize = '600px';
+      await new Promise((r) => setTimeout(r, 100));
+      edge.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true, cancelable: true }));
+      out.grown = [edge.getAttribute('aria-valuenow'), edge.getAttribute('aria-valuemax')];
+      unbind(); host.remove();
+      return out;
+    `);
+    assert.deepEqual(r.late, [120, "100"]);
+    assert.equal(r.bound, "400");
+    assert.deepEqual(r.shrunk, ["200", "200", [200]], "a shrink clamps the value and announces it once");
+    assert.deepEqual(r.grown, ["600", "600"], "End reaches the room the container now has");
+  });
+
+  it("ends a drag in progress when unbound", async () => {
+    await loadBindings();
+    const box = await evaluate(`
+      ${SPLIT("ltr")}
+      split.scrollIntoView({ block: 'center' });
+      globalThis.spUnbind = unbind;
+      globalThis.spState = () => ({ now: now(), events: events.length, wrap });
+      globalThis.spDone = () => wrap.remove();
+      const r = bar_.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    `);
+    const mouse = (type: string, x: number, buttons = 1) =>
+      send("Input.dispatchMouseEvent", { type, x, y: box.y, button: "left", buttons, clickCount: 1 });
+    await mouse("mousePressed", box.x);
+    await mouse("mouseMoved", box.x + 40);
+    const atUnbind = await evaluate(`spUnbind(); const s = spState(); return [s.now, s.events];`);
+    await mouse("mouseMoved", box.x + 120);
+    await mouse("mouseReleased", box.x + 120, 0);
+    const after = await evaluate(`const s = spState(); spDone(); return [s.now, s.events];`);
+    assert.equal(atUnbind[0], 40);
+    assert.deepEqual(after, atUnbind, "no resize and no event once unbound");
+  });
+
   it("collapses the sidebar to a rail from aria-expanded, keeping link names", async () => {
     await loadBindings();
     const result = await evaluate(`

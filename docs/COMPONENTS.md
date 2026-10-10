@@ -1698,7 +1698,7 @@ A resizable element, where the handle is its inline-end edge (or its block-end e
 | --- | --- | --- |
 | `aria-orientation` | splitter, required | `vertical` for a bar between side-by-side panes (moves along the inline axis), `horizontal` for stacked panes |
 | `aria-valuenow` | splitter | The size. Measured from the layout and written back when absent |
-| `aria-valuemin`, `aria-valuemax` | splitter | Bounds. Default 0 and 100 in a split; 0 and the container's size on an edge |
+| `aria-valuemin`, `aria-valuemax` | splitter | Bounds. Default 0 and 100 in a split; 0 and the container's size on an edge, re-measured when the container resizes |
 | `aria-disabled="true"` | splitter | Fixed size; stays focusable so the boundary can still be found |
 | `data-step` | splitter | Arrow-key step: 5 (percent) or 16 (pixels) by default; Shift moves ten steps |
 | `fc-split--stacked` | split | Panes stacked in the block direction. Needs a block size: `--fc-split-block-size`, default 20rem |
@@ -1714,7 +1714,9 @@ it right, which grows a leading pane, shrinks a trailing one, and in RTL shrinks
 inline-start pane. Dragging works with mouse, pen and touch, focuses the bar, and Escape
 mid-drag puts the size back. Every change fires a bubbling `fc-resize` event with
 `{ value, unit, final }`; `final` is false while a drag is moving, so persist on `final`.
-`setSplitterValue(splitter, value)` sets the size from script.
+`setSplitterValue(splitter, value)` sets the size from script. Splitters added under the
+bound root later are synced as they arrive, and the function `bindSplitters` returns ends
+any drag in progress before removing its listeners.
 
 A split pane at zero size is made `hidden`, so Tab cannot walk into controls nobody can
 see and its padding cannot leave a sliver drawn. The hit area is the 24px minimum target, but the layout gives it one hairline;

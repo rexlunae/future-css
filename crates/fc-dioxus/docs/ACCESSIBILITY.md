@@ -63,10 +63,15 @@ Checks in this layer:
 
 - An `Id` used for `aria-labelledby` or `aria-describedby` that no rendered element has.
 - The same `Id` rendered twice.
-- A live region announcing more than once per `live::MIN_INTERVAL` (default 1 s). The
-  CSS library's contracts say announcements happen at phase boundaries, never per token;
+- A status region (`role="status"`, `role="alert"`, or a bare `aria-live` element)
+  announcing more than once per `live::MIN_INTERVAL` (default 1 s). The CSS library's
+  contracts say status announcements happen at phase boundaries, never per token;
   streaming components route through `behavior::live`, which coalesces, and the check
-  catches anything that bypasses it.
+  catches anything that bypasses it. **`role="log"` regions are exempt**: a log (the chat
+  thread, terminal output) is additive content that screen readers queue rather than
+  re-read, and the CSS library marks both polite logs for that reason. What keeps a log
+  from flooding is `behavior::batch`, which appends at most once per frame, not this
+  interval, which would make visible output lag by a second.
 - A heading level more than one deeper than the nearest enclosing heading the library
   rendered.
 - A selected or active index that is out of range, or points at a disabled item.

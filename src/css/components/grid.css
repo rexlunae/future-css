@@ -119,10 +119,12 @@
    * too: `.fc-git__row` is a flex row at the same specificity, so an unscoped
    * rule won or lost purely on stylesheet order. Loaded per component, the git
    * rows lost their box, and `focus()` on a box-less element silently fails.
-   * A descendant rather than a child selector, because rows may sit inside a
-   * `role="rowgroup"` that the consumer also makes `display: contents`.
+   * Child selectors rather than a descendant one: rows may sit inside a
+   * `role="rowgroup"` that the consumer also makes `display: contents`, but a
+   * git surface placed in a cell has rows of its own that must keep their box.
    */
-  .fc-grid [role="row"] {
+  .fc-grid > [role="row"],
+  .fc-grid > [role="rowgroup"] > [role="row"] {
     display: contents;
   }
 

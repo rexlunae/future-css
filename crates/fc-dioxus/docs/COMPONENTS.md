@@ -978,7 +978,8 @@ parity test, and `url` is checked before it reaches `src`. An insecure origin re
 #[component] fn MessagePart(kind: PartKind, children: Element) -> Element;   // text, reasoning, tool, sources
 /// Text that is still arriving. The producer appends to the signal per token; the
 /// component renders through `behavior::batch`, so the DOM changes at most once a frame.
-#[component] fn StreamingText(text: ReadSignal<String>, #[props(default)] markdown: bool) -> Element;
+#[component] fn StreamingText(text: ReadSignal<String>, #[props(default)] markdown: bool,
+    #[props(default)] order: u32) -> Element;   // position in the completion announcement
 #[component] fn MessageActions(#[props(default)] persistent: bool, children: Element) -> Element;
 #[component] fn MessageAction(label: AccessibleName, icon: Element,
     #[props(default)] pressed: Option<bool>, onclick: EventHandler<MouseEvent>,
@@ -1008,10 +1009,12 @@ tokens, so `Message` enforces it from its state rather than leaving it to the pr
 - The text comes from data, not the DOM. `Message` provides a `MessageContext` in which
   each `StreamingText` holds one slot for its lifetime. A slot stores a memo over the
   child's *current* props, not the signal it mounted with, so a retained child that receives
-  a new `text` signal announces the new text. Each render also records the slot's position
-  (a per-render counter in the context, the same mechanism as `use_id`), and `Full` joins
-  slots ordered by their latest position, so inserting or reordering children keeps the
-  spoken order equal to the visible order. What a slot contributes is the *accessible
+  a new `text` signal announces the new text. Order is explicit data, not inferred from
+  rendering: `StreamingText` takes `order: u32` (default 0), and `Full` joins slots sorted
+  by it. Inferring order from mount or render sequence is wrong whenever one child
+  re-renders alone or a keyed child moves, so the library does not try. The common case,
+  one text per message, needs no prop; a message with two slots sharing an `order` reports
+  in debug builds, so a multi-part message cannot silently speak in the wrong order. What a slot contributes is the *accessible
   text*: for `markdown: true` it is the plain text of the same parse used for display (link
   text, not URLs; no syntax characters), so the spoken reply matches the shown one. Other
   parts (tool calls, reasoning, sources) contribute nothing; their progress is
@@ -1019,7 +1022,8 @@ tokens, so `Message` enforces it from its state rather than leaving it to the pr
   ("Assistant replied") and reports in debug builds that it should use `Summary` or a
   `StreamingText`. All of this is signals and context, so it behaves the same on web and
   desktop; under SSR nothing transitions, so nothing is announced. Unit tests cover
-  insertion, removal, reordering, and signal replacement before completion.
+  insertion, removal, keyed moves, an isolated child re-render, and signal replacement
+  before completion.
 - A message inserted already `Complete` (history, or a non-streamed reply) is an ordinary
   log addition and is not announced twice: the explicit announcement fires only on the
   `Streaming` to terminal transition.

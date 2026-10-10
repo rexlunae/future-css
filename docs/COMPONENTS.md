@@ -1715,8 +1715,8 @@ inline-start pane. Dragging works with mouse, pen and touch, focuses the bar, an
 mid-drag puts the size back. Every change fires a bubbling `fc-resize` event with
 `{ value, unit, final }`; `final` is false while a drag is moving, so persist on `final`.
 `setSplitterValue(splitter, value)` sets the size from script. Splitters added under the
-bound root later are synced as they arrive, and the function `bindSplitters` returns ends
-any drag in progress before removing its listeners.
+bound root later are synced as they arrive. `bindSplitters` returns a cleanup function,
+which ends any drag in progress and then removes its listeners and observers.
 
 A split pane at zero size is made `hidden`, so Tab cannot walk into controls nobody can
 see and its padding cannot leave a sliver drawn. The hit area is the 24px minimum target, but the layout gives it one hairline;

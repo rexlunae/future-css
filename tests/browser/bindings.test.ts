@@ -3790,6 +3790,14 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       await new Promise((r) => setTimeout(r, 100));
       edge.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true, cancelable: true }));
       out.grown = [edge.getAttribute('aria-valuenow'), edge.getAttribute('aria-valuemax')];
+      // Hiding the container is not a resize to zero: the panel keeps its size.
+      edge.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true, cancelable: true }));
+      edge.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+      host.style.display = 'none';
+      await new Promise((r) => setTimeout(r, 100));
+      host.style.display = '';
+      await new Promise((r) => setTimeout(r, 100));
+      out.reshown = [edge.getAttribute('aria-valuenow'), Math.round(host.querySelector('#sp-wide').getBoundingClientRect().width)];
       unbind(); host.remove();
       return out;
     `);
@@ -3797,6 +3805,42 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(r.bound, "400");
     assert.deepEqual(r.shrunk, ["200", "200", [200]], "a shrink clamps the value and announces it once");
     assert.deepEqual(r.grown, ["600", "600"], "End reaches the room the container now has");
+    assert.deepEqual(r.reshown, ["16", 16], "hiding and showing the container keeps the size");
+  });
+
+  it("keeps a container resize during a drag non-final", async () => {
+    // A listener persisting on `final` must not save a size the user is still moving.
+    await loadBindings();
+    const box = await evaluate(`
+      const host = document.createElement('div');
+      host.style.inlineSize = '400px';
+      host.innerHTML = '<aside class="fc-resizable" id="sp-drag" style="--fc-split-size: 300px">P'
+        + '<div class="fc-splitter fc-splitter--edge" role="separator" tabindex="0" aria-orientation="vertical" aria-controls="sp-drag" aria-label="P"></div></aside>';
+      document.body.appendChild(host);
+      host.scrollIntoView({ block: 'center' });
+      const edge = host.querySelector('.fc-splitter');
+      const unbind = SP.bindSplitters(document);
+      globalThis.spEvents = [];
+      edge.addEventListener('fc-resize', (e) => spEvents.push(e.detail));
+      globalThis.spHost = host;
+      globalThis.spDone = () => { unbind(); host.remove(); };
+      const r = edge.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    `);
+    const mouse = (type: string, x: number, buttons = 1) =>
+      send("Input.dispatchMouseEvent", { type, x, y: box.y, button: "left", buttons, clickCount: 1 });
+    await mouse("mousePressed", box.x);
+    await mouse("mouseMoved", box.x + 20);
+    const during = await evaluate(`
+      spHost.style.inlineSize = '200px';
+      await new Promise((r) => setTimeout(r, 100));
+      return spEvents.map((e) => [e.value, e.final]);
+    `);
+    await mouse("mouseReleased", box.x + 20, 0);
+    const after = await evaluate(`const e = spEvents.at(-1); spDone(); return [e.value, e.final];`);
+    assert.deepEqual(during.at(-1), [200, false], "the clamp mid-drag is not final");
+    assert.ok(during.every(([, final]: [number, boolean]) => !final), "nothing settles before release");
+    assert.deepEqual(after, [200, true]);
   });
 
   it("ends a drag in progress when unbound", async () => {

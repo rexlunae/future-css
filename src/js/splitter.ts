@@ -190,11 +190,17 @@ export function syncSplitter(splitter: HTMLElement): void {
   if (!splitter.hasAttribute("aria-valuemax") && Number.isFinite(max)) splitter.setAttribute("aria-valuemax", String(round(max, splitterUnit(splitter))));
 }
 
+/** Splitters with a pointer drag in progress. */
+const dragging = new WeakSet<HTMLElement>();
+
 /** Re-clamps a splitter whose bound is its container, after the container resized. */
-function reclamp(splitter: HTMLElement): void {
-  if (!splitter.isConnected) return;
-  // Announces only a real change: a shrink that pushed the value down.
-  apply(splitter, splitterValue(splitter), true, "changed");
+function reclamp(splitter: HTMLElement, box: Element): void {
+  // A container hidden with display: none reports zero. That is not a size
+  // anyone chose, and clamping to it would reopen the panel collapsed.
+  if (!splitter.isConnected || !box.getClientRects().length) return;
+  // Announces only a real change: a shrink that pushed the value down. Mid-drag
+  // it is not final, or a listener would persist a size the user is still moving.
+  apply(splitter, splitterValue(splitter), !dragging.has(splitter), "changed");
 }
 
 function onKeydown(event: KeyboardEvent, splitter: HTMLElement): void {
@@ -270,6 +276,7 @@ function onPointerdown(event: PointerEvent, splitter: HTMLElement, active: Set<(
     splitter.removeEventListener("keydown", cancel, true);
     if (splitter.hasPointerCapture(event.pointerId)) splitter.releasePointerCapture(event.pointerId);
     active.delete(abort);
+    dragging.delete(splitter);
     const value = setSplitterValue(splitter, settle ?? splitterValue(splitter), true);
     if (value > splitterBounds(splitter).min) restore.set(splitter, value);
   };
@@ -280,6 +287,7 @@ function onPointerdown(event: PointerEvent, splitter: HTMLElement, active: Set<(
   // outlives the binding that installed it.
   const abort = () => end();
   active.add(abort);
+  dragging.add(splitter);
 
   splitter.addEventListener("pointermove", move);
   splitter.addEventListener("pointerup", up);
@@ -304,7 +312,7 @@ export function bindSplitters(root: Document | HTMLElement = document): () => vo
   // An edge's default bound is its container, which can resize at any time.
   const watched = new Map<Element, Set<HTMLElement>>();
   const resized = new ResizeObserver((entries) => {
-    for (const entry of entries) for (const splitter of watched.get(entry.target) ?? []) reclamp(splitter);
+    for (const entry of entries) for (const splitter of watched.get(entry.target) ?? []) reclamp(splitter, entry.target);
   });
 
   const init = (splitter: HTMLElement) => {

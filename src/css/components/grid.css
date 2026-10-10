@@ -114,8 +114,13 @@
    * This is worth stating explicitly rather than leaving implicit, because the
    * failure is invisible in a screenshot of a single row and obvious only when
    * you look down a column.
+   *
+   * Scoped to the grid's own rows because other components use `role="row"`
+   * too: `.fc-git__row` is a flex row at the same specificity, so an unscoped
+   * rule won or lost purely on stylesheet order. Loaded per component, the git
+   * rows lost their box, and `focus()` on a box-less element silently fails.
    */
-  [role="row"] {
+  .fc-grid > [role="row"] {
     display: contents;
   }
 

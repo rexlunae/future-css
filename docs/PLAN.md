@@ -54,6 +54,11 @@ Audited on 2026-10-08 with Chrome and the WASM toolchain present:
 See [WASM.md](WASM.md) for the ABI 2 migration and measured sizes. Raw compiler output
 is retained as a diagnostic; shipped bytes are the enforced download budget.
 
+The bundle figure is uncompressed and unminified, which is the shipped form: the CSS is
+deliberately readable so engineers can debug it in devtools, and consumers minify at
+their own boundary. The budget gates what one page pays rather than the full bundle; see
+[Performance budget](#performance-budget).
+
 Verified: contrast contract enforced in both schemes · all ramps validated · linter
 verified against both violations and legitimate patterns · WASM modules instantiate and
 **agree with the JS implementation on every offset pair**.
@@ -224,6 +229,14 @@ The components needed for a real application, prioritized by frequency of use.
 - [x] Avatar, disclosure / accordion, skeleton, progress
 - [x] A spinner family (ring, arc, typing dots, pulse, stream bars, orbit, sparkle) and an
   agent status row driven by `data-fc-state`
+
+### Layout
+
+- [x] Splitter (`fc-splitter`): drag-to-resize on the WAI-ARIA window splitter pattern,
+  for split panes (`fc-split`, side by side or stacked, percentages) and resizable edges
+  (`fc-resizable`, pixels). A `splitter` binding supplies drag, the arrow/Home/End/Enter
+  keys with RTL-aware arrows, and an `fc-resize` event; no WASM, since the model is a
+  clamp and a ratio
 
 **Exit criteria**
 
@@ -636,9 +649,9 @@ RustyClaw integration is separate work.
 - [x] Register new CSS, document contracts and add all lifecycle fixture states
 - [x] File source-confirmed RustyClaw defects with reproduction instructions (#493–495)
 
-Exit gate passed on 2026-10-09: `npm run check` with axe enabled; 521 JavaScript/browser
-and 133 Rust tests, zero skips. Real Chrome covers fixture overflow/focus in both
-schemes and directions. Native assistive-technology review remains part of Phase 4.
+Exit gate: `npm run check`, including real Chrome fixture overflow/focus in both
+schemes and directions. Validation details are in [the audit](RUSTYCLAW-COVERAGE.md#verification).
+Native assistive-technology review remains part of Phase 4.
 
 ---
 

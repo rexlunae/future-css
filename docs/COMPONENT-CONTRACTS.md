@@ -1070,6 +1070,32 @@ Native range inputs remain editable; enhanced output and multi-thumb constraints
 
 Avoid precise values best entered as text without offering that alternative.
 
+## splitter
+
+### Anatomy
+
+The [complete markup and state examples](../demo/fixtures.html#fx-splitter) define required parts, labels and attributes. Load `future-css/components/splitter` with the token foundation.
+
+### States
+
+Rest, hover, active, focus-visible, disabled and application states use the [shared state matrix](COMPONENTS.md#the-state-matrix) where applicable. The fixture shows the component-specific states; use ARIA or `data-fc-state` as the source of truth.
+
+### Accessibility
+
+Focusable role=separator with aria-valuenow, aria-valuemin, aria-valuemax and aria-controls naming the resized pane; arrows, Home/End and Enter follow the WAI-ARIA window splitter pattern.
+
+### Internationalization
+
+Logical spacing follows `dir`. Keep full localized labels and values reachable; isolate external names with `<bdi>`. Verify this fixture at 320px in both directions before adapting its markup. Native controls follow browser direction; directional indicators are covered by the component CSS/binding.
+
+### No-JS fallback
+
+Panes render at their declared `--fc-split-size`; resizing requires the splitter binding. WASM is not used.
+
+### When not to use it
+
+Avoid a splitter for content that should simply reflow, or as the only way to reveal a collapsed pane.
+
 ## spinner
 
 ### Anatomy

@@ -70,11 +70,13 @@ These are source-confirmed findings with reproduction instructions, not claims o
 
 ## Verification
 
-`FC_AXE_SOURCE=/tmp/fc-validation-tools/node_modules/axe-core/axe.min.js npm run check`
-passed on 2026-10-09: 521 JavaScript/browser tests, 133 Rust tests, zero skips.
+The original shared-checkout run passed 521 JavaScript/browser tests and 133 Rust
+tests with axe enabled and zero skips. That checkout also contained unrelated
+in-progress work. The isolated PR against main also passed `npm run check`: 478
+JavaScript/browser tests and 133 Rust tests, zero skips.
+
 Chrome exercised the new fixture states at 320px in both schemes/directions,
 focus rings, forced colors and reduced motion. Axe reported no serious/critical
-findings across fixtures, the main demo and RustyClaw recipes. A separate targeted
-browser pass also verified recipe overflow at 320px after adding that assertion.
+findings across the shared checkout's fixtures, main demo and RustyClaw recipes.
 New components measure 1.2–1.4 KB minified each, under the unchanged 7 KB budget.
 Native RustyClaw execution and manual screen-reader review were not performed.

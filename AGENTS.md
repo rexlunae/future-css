@@ -290,17 +290,17 @@ docs/               Design documents; PLAN.md is the roadmap, WASM.md the WASM s
 
 ## Current state
 
-Pre-alpha. Foundations are built and enforced. Fifty-four CSS components are
+Pre-alpha. Foundations are built and enforced. Fifty-five CSS components are
 complete. The general set: button, connected button group, segmented button, split button, floating action
 button and FAB menu, control group, masthead, list, divider, slider, toolbar, navigation bar, search, carousel, date and time pickers, form field and input group, checkbox / radio /
 switch, card, badge and tag, alert, dialog, side sheet and bottom sheet, popover and tooltip, toast,
 tabs, breadcrumb, pagination, spinners (ring, arc, typing dots, pulse, stream bars, orbit, sparkle), skeleton, progress, avatar, empty state,
-disclosure, navigation sidebar, data table with sorting, and description list. The AI-chat set: chat surface (with message actions), agent status row, reasoning trace,
+disclosure, navigation sidebar, data table with sorting, description list, and splitter (split panes and resizable edges). The AI-chat set: chat surface (with message actions), agent status row, reasoning trace,
 citations and sources, suggested prompts, tool call / step trace, rich text editor,
 context menu, data grid, embedded browser chrome, terminal, code block, diff viewer,
-select/listbox, chat composer, context strip, git surface, and theme picker. Nineteen ship browser
+select/listbox, chat composer, context strip, git surface, and theme picker. Twenty ship browser
 bindings -- editor, menu, grid, webview, select, composer, context strip, git surface,
-tabs, toast, tooltip, table, nav, slider, toolbar, carousel, date picker, theme picker, and multiselect -- exercised by tests in a real headless Chrome. Overlays lean
+tabs, toast, tooltip, table, nav, slider, toolbar, carousel, date picker, splitter, theme picker, and multiselect -- exercised by tests in a real headless Chrome. Overlays lean
 on the platform (`<dialog>`, the popover API, `<details>`, `@starting-style`) and need
 no script. Syntax highlighting, Markdown, and line diffing ship as JS modules
 (`highlight`, `diff`, `markdown`); the diff has a Rust crate, the other two do not yet.

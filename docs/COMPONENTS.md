@@ -1682,6 +1682,77 @@ natively. The fill and track colours are the declared 3:1 boundary pairs. Hover,
 styled; forced colors restate the track and thumb in system colours. RTL fills from the
 right, as the browser does.
 
+## Splitter
+
+`splitter.css` is drag-to-resize, on the [WAI-ARIA window splitter
+pattern](https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/). One focusable
+`role="separator"` controls the size of the element its `aria-controls` names, and its
+`aria-valuenow` is that size. It comes in two layouts.
+
+A split, where the value is the primary pane's percentage of the split:
+
+```html
+<div class="fc-split">
+  <div class="fc-split__pane fc-split__pane--primary" id="files">…</div>
+  <div class="fc-splitter" role="separator" tabindex="0" aria-orientation="vertical"
+       aria-controls="files" aria-label="File list"
+       aria-valuenow="30" aria-valuemin="15" aria-valuemax="70"></div>
+  <div class="fc-split__pane">…</div>
+</div>
+```
+
+A resizable element, where the handle is its inline-end edge (or its block-end edge with
+`fc-resizable--block` and `aria-orientation="horizontal"`) and the value is in CSS pixels:
+
+```html
+<aside class="fc-resizable" id="panel">
+  …
+  <div class="fc-splitter fc-splitter--edge" role="separator" tabindex="0"
+       aria-orientation="vertical" aria-controls="panel" aria-label="Panel"
+       aria-valuemin="160" aria-valuemax="480"></div>
+</aside>
+<script type="module">
+  import { bindSplitters } from "future-css/splitter";
+  bindSplitters(document);
+  document.addEventListener("fc-resize", (e) => {
+    if (e.detail.final) localStorage.setItem("panel", e.detail.value);
+  });
+</script>
+```
+
+| Option | Where | Effect |
+| --- | --- | --- |
+| `aria-orientation` | splitter, required | `vertical` for a bar between side-by-side panes (moves along the inline axis), `horizontal` for stacked panes |
+| `aria-valuenow` | splitter | The size. Measured from the layout and written back when absent |
+| `aria-valuemin`, `aria-valuemax` | splitter | Bounds. Default 0 and 100 in a split; 0 and the container's size on an edge, re-measured when the container resizes |
+| `aria-disabled="true"` | splitter | Fixed size; stays focusable so the boundary can still be found |
+| `data-step` | splitter | Arrow-key step: 5 (percent) or 16 (pixels) by default; Shift moves ten steps |
+| `fc-split--stacked` | split | Panes stacked in the block direction. Needs a block size: `--fc-split-block-size`, default 20rem |
+| `fc-split__pane--primary` | pane | The pane the value sizes, on either side of the bar |
+| `fc-splitter--edge` | splitter | Sits on the edge of its `fc-resizable` parent; the value is in pixels |
+| `fc-resizable--block` | resizable | Resizes block size instead of inline size |
+| `--fc-split-size` | pane or resizable | The size the CSS draws. The binding keeps it equal to `aria-valuenow`; set it in markup for the first paint |
+
+Keyboard: the arrows along the bar's axis move it (a vertical bar ignores Up and Down,
+so the page still scrolls), Home and End go to the bounds, and Enter collapses to the
+minimum and restores the size from before. The arrows move the *bar*: ArrowRight moves
+it right, which grows a leading pane, shrinks a trailing one, and in RTL shrinks the
+inline-start pane. Dragging works with mouse, pen and touch, focuses the bar, and Escape
+mid-drag puts the size back. Every change fires a bubbling `fc-resize` event with
+`{ value, unit, final }`; `final` is false while a drag is moving, so persist on `final`.
+`setSplitterValue(splitter, value)` sets the size from script. Splitters added under the
+bound root later are synced as they arrive. `bindSplitters` returns a cleanup function,
+which ends any drag in progress and then removes its listeners and observers.
+
+A split pane at zero size is made `hidden`, so Tab cannot walk into controls nobody can
+see and its padding cannot leave a sliver drawn. The hit area is the 24px minimum target, but the layout gives it one hairline;
+negative margins put the panes back under it. The bar is the default border and the grip
+on it the 3:1 interactive boundary. Hover and focus turn both accent; dragging holds the
+active colour. Forced colors restate them in `CanvasText` and `Highlight`. There is no
+WASM module: the model is a clamp and a ratio, and the measuring has to happen in
+JavaScript. Without the binding the layout renders at the markup's `--fc-split-size` and
+the bar is an inert divider.
+
 ## Toolbar
 
 `toolbar.css` is the general toolbar; the rich text editor's formatting bar is one. It

@@ -43,8 +43,8 @@ and raise it.
    in this crate. The one exception is the generated copy of the CSS library's own build
    output in `assets/` (rule 5), which the crate must carry to publish and which is never
    edited. The only inline styles allowed are the custom properties the CSS reads from
-   markup (`--fc-slider-pct`, `--fc-progress-value`, `--fc-split-size`), set through a
-   typed helper.
+   markup (`--fc-slider-pct`, `--fc-progress-value`, `--fc-split-size`,
+   `--fc-split-block-size`), set through a typed helper.
 5. **`crates/fc-dioxus/assets/` is generated.** Never edit it by hand; run
    `npm run build:dioxus-assets`. A test fails when it differs from a fresh CSS build.
 6. **One declaration per modifier.** Every modifier enum goes through `fc_modifier!`.

@@ -84,7 +84,7 @@ Shared types (`Availability`, `Lifecycle`, `MessageRole`, `Tone`, `Orientation`,
 | `citation.css` | `citation` | `Cite`, `Sources`, `Source` |
 | `suggestion.css` | `suggestion` | `Suggestions`, `Suggestion` |
 | `tool-call.css` | `tool_call` | `ToolCall` |
-| splitter CSS (PR #41, not yet merged) | `splitter` | `Split`, `SplitPane`, `Splitter`, `Resizable` (see [Splitter](#splitter-pending-pr-41)) |
+| splitter | `splitter` | `Split`, `SplitPane`, `Splitter`, `Resizable` (see [Splitter](#splitter)) |
 | `metric.css`, `transfer.css`, `approval.css`, `user-prompt.css`, `device-auth.css` | `lifecycle_panel` | `Metric`, `Transfer`, `Approval`, `UserPrompt`, `DeviceAuth` (one shared implementation, below) |
 
 ---
@@ -1173,11 +1173,10 @@ as the contract says a CSS state must never imply.
 
 ---
 
-## Splitter (pending PR #41)
+## Splitter
 
-Drag-to-resize controls are arriving in the CSS library in PR #41. This entry follows the
-classes and options that PR defines; if they change before it merges, this entry changes
-with them, and the coverage test holds it on the pending list until the CSS is on `main`.
+Drag-to-resize controls from `splitter.css` and the `splitter` binding: split panes
+(`.fc-split`) and resizable edges (`.fc-resizable` with an `.fc-splitter--edge` handle).
 
 ```rust
 #[component] fn Split(#[props(default)] orientation: Orientation,  // Horizontal: side by side

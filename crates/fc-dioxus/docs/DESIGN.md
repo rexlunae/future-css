@@ -128,6 +128,7 @@ src/
     typeahead.rs      thin adapter over fc-select / fc-context-menu typeahead
     dismiss.rs        Escape, light dismiss, focus return
     live.rs           polite and assertive announcers with rate limiting
+    batch.rs          frame-throttled view over a growing signal (terminal, chat streaming)
     sort.rs           table sort comparator (port of table.ts, parity-tested)
     toast_queue.rs    max, timeout, and pause-on-hover policy (port of toast.ts)
   a11y/

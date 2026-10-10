@@ -911,8 +911,11 @@ ANSI SGR parsing (`fc-ansi`, a small pure module) turns raw output into runs wit
 `fc-term-ansi-*` colours. Colours are classes, never inline styles, so they stay themed
 and contrast-checked. The output region is `role="log"` with `aria-live="polite"`, exactly as
 the CSS doc's terminal markup, and never assertive, so a fast command does not flood the
-screen reader. Output is appended in batches per animation frame, so the polite region
-announces chunks rather than every byte.
+screen reader. The `Terminal` component owns the batching, not the producer: it keeps a
+count of lines already rendered and commits the newly appended tail of `output` at most
+once per animation frame (`behavior::batch`, a frame-throttled view over a growing
+`ReadSignal<Vec<_>>`, also used by `Chat` for streaming parts). A producer may push one
+line at a time; the polite region still announces chunks.
 
 ### Git surface (`git.css`)
 

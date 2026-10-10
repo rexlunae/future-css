@@ -57,6 +57,7 @@ fn panic(_: &core::panic::PanicInfo) -> ! {
 static ALLOC: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
 
 
+#[cfg(feature = "bindgen")]
 use wasm_bindgen::prelude::*;
 
 /// Where a file is in its lifecycle. Matches the JS `IndexState`.
@@ -270,7 +271,7 @@ const NONE: u8 = 255;
 /// Exported rather than taking a `Vec<Entry>` because that would need `js_sys` to
 /// read it off the JS side. Two flat arrays would work too; interleaving keeps the
 /// caller's construction to one loop.
-#[wasm_bindgen]
+#[cfg_attr(feature = "bindgen", wasm_bindgen)]
 pub fn summarize_status_js(codes: &[i32]) -> Vec<u32> {
     let entries: Vec<Entry> = codes
         .chunks_exact(2)
@@ -290,7 +291,7 @@ pub fn summarize_status_js(codes: &[i32]) -> Vec<u32> {
 /// side of the boundary. Feeding unsorted entries yields a plausible order that
 /// disagrees with the JS twin only where ranks tie -- which is to say it looks
 /// correct and is not.
-#[wasm_bindgen]
+#[cfg_attr(feature = "bindgen", wasm_bindgen)]
 pub fn order_entries_js(codes: &[i32]) -> Vec<u32> {
     let entries: Vec<Entry> = codes
         .chunks_exact(2)
@@ -303,7 +304,7 @@ pub fn order_entries_js(codes: &[i32]) -> Vec<u32> {
 }
 
 /// Counts added and removed lines. Returns a flat `[added, removed]`.
-#[wasm_bindgen]
+#[cfg_attr(feature = "bindgen", wasm_bindgen)]
 pub fn diff_counts_js(before: Option<String>, after: Option<String>) -> Vec<u32> {
     let (added, removed) = diff_counts(before.as_deref(), after.as_deref());
     vec![added, removed]

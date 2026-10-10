@@ -24,6 +24,7 @@
 
 use fc_core::FcError;
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "bindgen")]
 use wasm_bindgen::prelude::*;
 
 /// A cell address. Row and column are zero-based.
@@ -42,7 +43,7 @@ impl CellRef {
 /// A rectangular selection, always stored normalized: `start` is the top-left
 /// (row-major minimum) and `end` the bottom-right, whichever corner the user
 /// dragged from.
-#[wasm_bindgen]
+#[cfg_attr(feature = "bindgen", wasm_bindgen)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CellRange {
     pub start_row: usize,
@@ -147,7 +148,7 @@ impl CellRange {
 }
 
 /// A scroll viewport in cell coordinates, with a render margin.
-#[wasm_bindgen]
+#[cfg_attr(feature = "bindgen", wasm_bindgen)]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Viewport {
     pub first_row: usize,
@@ -197,7 +198,7 @@ impl Viewport {
 ///
 /// Sparse because an Office-like document is mostly empty: a million-cell sheet
 /// with 900k empty cells must not allocate a million `String`s.
-#[wasm_bindgen]
+#[cfg_attr(feature = "bindgen", wasm_bindgen)]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Grid {
     cells: std::collections::HashMap<(usize, usize), String>,
@@ -279,44 +280,44 @@ fn range_to_js(r: CellRange) -> Vec<u32> {
     vec![r.start_row as u32, r.start_col as u32, r.end_row as u32, r.end_col as u32]
 }
 
-#[wasm_bindgen]
+#[cfg_attr(feature = "bindgen", wasm_bindgen)]
 impl CellRange {
-    #[wasm_bindgen(js_name = fromCorners)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = fromCorners))]
     pub fn js_from_corners(r1: usize, c1: usize, r2: usize, c2: usize) -> CellRange {
         CellRange::from_corners(CellRef::new(r1, c1), CellRef::new(r2, c2))
     }
 
-    #[wasm_bindgen(js_name = single)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = single))]
     pub fn js_single(row: usize, col: usize) -> CellRange {
         CellRange::single(CellRef::new(row, col))
     }
 
-    #[wasm_bindgen(js_name = toArray)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = toArray))]
     pub fn js_to_array(&self) -> Vec<u32> {
         range_to_js(*self)
     }
 
-    #[wasm_bindgen(js_name = cellCount)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = cellCount))]
     pub fn js_cell_count(&self) -> u64 {
         self.cell_count()
     }
 
-    #[wasm_bindgen(js_name = contains)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = contains))]
     pub fn js_contains(&self, row: usize, col: usize) -> bool {
         self.contains(CellRef::new(row, col))
     }
 
     /// Flat `[row, col, ...]` coordinates in row-major order.
-    #[wasm_bindgen(js_name = cells)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = cells))]
     pub fn js_cells(&self) -> Vec<u32> {
         self.iter_cells().into_iter().flat_map(|c| [c.row as u32, c.col as u32]).collect()
     }
 
 }
 
-#[wasm_bindgen]
+#[cfg_attr(feature = "bindgen", wasm_bindgen)]
 impl Viewport {
-    #[wasm_bindgen(js_name = new)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = new))]
     #[allow(clippy::too_many_arguments)]
     pub fn js_new(
         first_row: usize,
@@ -328,49 +329,50 @@ impl Viewport {
         Viewport { first_row, first_col, rows, cols, overscan }
     }
 
-    #[wasm_bindgen(js_name = visibleRange)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = visibleRange))]
     pub fn js_visible_range(&self) -> Vec<u32> {
         range_to_js(self.visible_range())
     }
 
-    #[wasm_bindgen(js_name = renderRange)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = renderRange))]
     pub fn js_render_range(&self) -> Vec<u32> {
         range_to_js(self.render_range())
     }
 }
 
-#[wasm_bindgen]
+#[cfg_attr(feature = "bindgen", wasm_bindgen)]
 impl Grid {
-    #[wasm_bindgen(constructor)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(constructor))]
     pub fn js_new() -> Grid {
         Grid::new()
     }
 
-    #[wasm_bindgen(js_name = set)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = set))]
     pub fn js_set(&mut self, row: usize, col: usize, value: String) {
         self.set(CellRef::new(row, col), value);
     }
 
-    #[wasm_bindgen(js_name = get)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = get))]
     pub fn js_get(&self, row: usize, col: usize) -> Option<String> {
         self.get(CellRef::new(row, col)).map(str::to_string)
     }
 
-    #[wasm_bindgen(js_name = cellCount)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = cellCount))]
     pub fn js_len(&self) -> usize {
         self.len()
     }
 
-    #[wasm_bindgen(js_name = usedRows)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = usedRows))]
     pub fn js_used_rows(&self) -> usize {
         self.used_rows()
     }
 
-    #[wasm_bindgen(js_name = usedCols)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = usedCols))]
     pub fn js_used_cols(&self) -> usize {
         self.used_cols()
     }
 
+    #[cfg(feature = "bindgen")]
     #[wasm_bindgen(js_name = fillDown)]
     pub fn js_fill_down(
         &mut self,
@@ -383,7 +385,7 @@ impl Grid {
     }
 
     /// `count` populated cells inside a range.
-    #[wasm_bindgen(js_name = countIn)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = countIn))]
     pub fn js_count_in(&self, r1: usize, c1: usize, r2: usize, c2: usize) -> usize {
         self.count_in(CellRange::from_corners(CellRef::new(r1, c1), CellRef::new(r2, c2)))
     }

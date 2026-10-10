@@ -80,7 +80,7 @@
     "test": "node --test \"tests/**/*.test.ts\" \"tests/browser/*.test.ts\"",
     "clean": "node -e \"import('node:fs').then(fs=>fs.rmSync('dist',{recursive:true,force:true}))\"",
     "build:wasm": "node src/build/build-wasm.ts",
-    "test:rust": "cargo test",
+    "test:rust": "cargo test && cargo test --workspace --no-default-features && cargo check --workspace --no-default-features --target wasm32-unknown-unknown",
     "build:css": "node src/build/build.ts",
     "test:browser": "node --test \"tests/browser/*.test.ts\"",
     "demo": "node demo/server.mjs",

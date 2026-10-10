@@ -115,7 +115,10 @@
    * failure is invisible in a screenshot of a single row and obvious only when
    * you look down a column.
    */
-  [role="row"] {
+  /* Scoped to the grid: other components have rows too (the git surface's file
+     list), and an unscoped rule collapsed them whenever grid.css loaded after
+     their own stylesheet. */
+  .fc-grid > [role="row"] {
     display: contents;
   }
 

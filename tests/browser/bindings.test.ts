@@ -474,6 +474,19 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.deepEqual(inSelection, [true, true, false]);
   });
 
+  it("collapses only the grid's own rows", async () => {
+    await loadBindings();
+    const display = await evaluate(`
+      const outside = document.createElement('div');
+      outside.setAttribute('role', 'row');
+      document.body.append(outside);
+      const result = [getComputedStyle(outside).display, getComputedStyle(document.querySelector('#grid [role=row]')).display];
+      outside.remove();
+      return result;
+    `);
+    assert.deepEqual(display, ["block", "contents"]);
+  });
+
   it("opens an input editor when a cell is activated", async () => {
     await loadBindings();
     const hasInput = await evaluate(`

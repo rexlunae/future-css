@@ -84,7 +84,7 @@ Shared types (`Availability`, `Lifecycle`, `MessageRole`, `Tone`, `Orientation`,
 | `citation.css` | `citation` | `Cite`, `Sources`, `Source` |
 | `suggestion.css` | `suggestion` | `Suggestions`, `Suggestion` |
 | `tool-call.css` | `tool_call` | `ToolCall` |
-| `resize.css` (in progress in the CSS library) | `resize` | `SplitPane`, `ResizeHandle` (placeholder; see [Resizable elements](#resizable-elements-placeholder)) |
+| splitter CSS (PR #41, not yet merged) | `splitter` | `Split`, `SplitPane`, `Splitter`, `Resizable` (see [Splitter](#splitter-pending-pr-41)) |
 | `metric.css`, `transfer.css`, `approval.css`, `user-prompt.css`, `device-auth.css` | `lifecycle_panel` | `Metric`, `Transfer`, `Approval`, `UserPrompt`, `DeviceAuth` (one shared implementation, below) |
 
 ---
@@ -1114,30 +1114,44 @@ as the contract says a CSS state must never imply.
 
 ---
 
-## Resizable elements (placeholder)
+## Splitter (pending PR #41)
 
-Drag-to-resize controls are being added to the CSS library as a split-pane and
-resize-handle component. Class names and options are not settled, so this entry fixes only
-the shape the Rust API will take; it is filled in from the CSS when that lands, and the
-coverage test holds it on the pending list until then.
+Drag-to-resize controls are arriving in the CSS library in PR #41. This entry follows the
+classes and options that PR defines; if they change before it merges, this entry changes
+with them, and the coverage test holds it on the pending list until the CSS is on `main`.
 
 ```rust
-#[component] fn SplitPane(#[props(default)] orientation: Orientation,
-    sizes: Option<ReadSignal<Vec<Percent>>>, default_sizes: Vec<Percent>,
-    onresize: Option<EventHandler<Vec<Percent>>>,
-    #[props(default)] min: Vec<Percent>, #[props(default)] max: Vec<Percent>,
+#[component] fn Split(#[props(default)] orientation: Orientation,  // Horizontal: side by side
+    /// `--stacked`; the block size comes from `--fc-split-block-size` (default 20rem).
+    #[props(default)] stacked_block_size: Option<CssLength>,
+    children: Element) -> Element;                                // SplitPane, Splitter, SplitPane
+#[component] fn SplitPane(#[props(default)] primary: bool,        // __pane--primary, the pane the value sizes
     children: Element) -> Element;
-#[component] fn ResizeHandle(label: AccessibleName,          // "Resize sidebar"
-    #[props(default)] step: Percent,                         // arrow-key increment
+
+#[component] fn Splitter(label: AccessibleName,                   // aria-label, "Resize sidebar"
+    value: Option<ReadSignal<f64>>, default_value: f64,
+    onresize: Option<EventHandler<Resize>>,
+    min: f64, max: f64,
+    #[props(default = 1.0)] step: f64,                            // data-step; Shift moves 10 steps
+    #[props(default)] edge: bool,                                 // --edge, inside a Resizable
     #[props(default)] availability: Availability) -> Element;
+
+#[component] fn Resizable(#[props(default)] block: bool,          // --block resizes the block axis
+    children: Element) -> Element;                                // holds an edge Splitter
+
+pub struct Resize { pub value: f64, pub unit: ResizeUnit, pub final_: bool }
+pub enum ResizeUnit { Percent, Px }   // % of the split; CSS px for edge handles
 ```
 
-- The handle is a focusable `role="separator"` with `aria-valuenow`, `-valuemin`,
-  `-valuemax`, and `aria-controls`, per the APG window splitter pattern.
-- Dragging is never the only way (WCAG 2.5.7): arrow keys move by `step`, Home and End go to
-  the limits, and Enter collapses and restores.
-- The size arithmetic (clamping, distributing between neighbours, RTL inversion of the
-  inline axis) is a pure function in `behavior::resize`, unit-tested and shared with any
-  future TypeScript binding through a parity test.
-- Pointer capture goes through `DomBridge`; the virtual DOM only renders the sizes.
-
+- The handle renders the CSS contract: `role="separator"`, `tabindex="0"`,
+  `aria-orientation`, `aria-controls` pointing at the primary pane (wired through
+  context, so it cannot dangle), `aria-valuenow/min/max`, and `aria-disabled` from
+  `Availability`. The value is written to the target as `--fc-split-size`.
+- `Resize::final_` mirrors the binding's `fc-resize` event: false while dragging, true on
+  release or a key press, so an application can persist only final sizes.
+- Dragging is never the only way (WCAG 2.5.7). Arrow keys along the axis, RTL-aware, with
+  Shift for ten steps; Home and End go to the bounds; Enter collapses and restores; Escape
+  during a drag cancels it. A split pane at 0 renders `hidden`.
+- The arithmetic (`splitterBounds`, clamping, stepping, collapse and restore) is a pure
+  function in `behavior::splitter`, ported from the `splitter` binding with a parity test.
+  Pointer capture goes through `DomBridge`; the virtual DOM only renders the value.

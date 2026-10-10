@@ -103,7 +103,7 @@ a11y assertion, and coverage entry, in pull requests of about five components:
    6. Select (`fc-select`), search
    7. Toast, table
    8. Context strip, composer
-   9. Split pane and resize handle, once the CSS component lands (placeholder in COMPONENTS.md)
+   9. Splitter and resizable (`Split`, `SplitPane`, `Splitter`, `Resizable`), once PR #41 merges
 
 **Gate:** every Phase 4 component has keyboard scripts generated from its contract table, and
 the browser suite passes in all four direction and scheme combinations.

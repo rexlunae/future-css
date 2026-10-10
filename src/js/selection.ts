@@ -38,8 +38,11 @@ export function currentRanges(): Range[] {
 /** The element a range should be scoped to when searching. */
 export function rangeScope(range: Range, fallback: Element): Element {
   const root = range.commonAncestorContainer;
-  if (root instanceof Element) return root;
-  return root.parentElement ?? fallback;
+  const element = root instanceof Element ? root : root.parentElement;
+  // A selection in another editor, or anywhere outside this one, is searched within
+  // this editor only, where it intersects nothing. Returning its own ancestor would
+  // let a toolbar format a document it does not belong to.
+  return element && fallback.contains(element) ? element : fallback;
 }
 
 /**
@@ -52,6 +55,12 @@ export function rangeScope(range: Range, fallback: Element): Element {
 export function elementsIn(range: Range, fallback: Element): Element[] {
   const out: Element[] = [];
   const scope = rangeScope(range, fallback);
+  // The walker never returns its own root, so a selection wholly inside one
+  // `<strong>` would miss that `<strong>`. The scope and its ancestors contain the
+  // whole range; they count, up to but never including the editable root itself.
+  for (let el: Element | null = scope; el && el !== fallback; el = el.parentElement) {
+    out.push(el);
+  }
   const walker = document.createTreeWalker(scope, NodeFilter.SHOW_ELEMENT, null);
   let node = walker.nextNode();
   while (node) {
@@ -145,8 +154,10 @@ export function markedInSelection(tagName: string, fallback: Element): Element[]
     }
   };
 
+  // Only ranges wholly inside this editor: callers unwrap what this returns, and a
+  // selection that merely crosses the editor from outside is not its to change.
   for (const range of currentRanges()) {
-    collect(range);
+    if (fallback.contains(range.commonAncestorContainer)) collect(range);
   }
 
   // A COLLAPSED range intersects nothing -- `Range.intersectsNode` is false for a
@@ -157,7 +168,7 @@ export function markedInSelection(tagName: string, fallback: Element): Element[]
   const selection = window.getSelection();
   if (selection?.isCollapsed) {
     const el = elementAt(selection.anchorNode);
-    if (el && el.tagName === upper && !seen.has(el)) {
+    if (el && fallback.contains(el) && el.tagName === upper && !seen.has(el)) {
       seen.add(el);
       out.push(el);
     }

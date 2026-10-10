@@ -91,6 +91,12 @@ export class FutureCssEditor {
   /** Set during a DOM mutation so the input handler does not recurse. */
   private mutating = false;
 
+  /** An empty mark started at a caret, waiting for the next keystroke; see `insertEmptyElement`. */
+  private pendingMark: Element | null = null;
+
+  /** Undoes every listener this editor added; see `destroy`. */
+  private readonly cleanups: Array<() => void> = [];
+
   constructor(options: EditorOptions) {
     this.options = options;
     this.root =
@@ -103,10 +109,18 @@ export class FutureCssEditor {
     }
     this.toolbar = this.root.querySelector<HTMLElement>(".fc-toolbar");
     // The arrow-key contract the toolbar's role promises.
-    if (this.toolbar) bindToolbar(this.toolbar);
+    if (this.toolbar) this.cleanups.push(bindToolbar(this.toolbar));
 
     this.wireToolbar();
     this.wireSelectionTracking();
+  }
+
+  /**
+   * Removes every listener the editor added, for a host that unmounts it. The
+   * document and its markup are left as they are.
+   */
+  destroy(): void {
+    for (const cleanup of this.cleanups.splice(0)) cleanup();
   }
 
   /** Current document HTML. */
@@ -135,9 +149,12 @@ export class FutureCssEditor {
 
   /** Whether `mark` covers the whole current selection. See selection.ts. */
   isMarkActive(mark: Mark): boolean {
+    // Links first: they have no wrapper entry, so the lookup below returns early.
+    // The same whole-selection rule as the other marks: a selection that is only
+    // partly linked must not press the link button.
+    if (mark === "link") return selectionFullyMarked("A", this.content);
     const tagName = WRAPPERS[mark];
     if (!tagName) return false;
-    if (mark === "link") return this.linksInSelection().length > 0;
     return selectionFullyMarked(tagName, this.content);
   }
 
@@ -201,14 +218,16 @@ export class FutureCssEditor {
 
     if (!already) {
       // Wrap the innermost block that intersects the selection.
-      const range = currentRanges()[0];
+      const range = this.ownRanges()[0];
       if (range) {
         const container = elementAt(range.commonAncestorContainer)?.closest(
           "p,div,li,h1,h2,h3,h4,h5,h6,pre,blockquote",
         );
         if (container && container !== this.content) {
           const block = document.createElement(tag);
-          block.appendChild(...Array.from(container.childNodes));
+          // `append`, not `appendChild`: the latter takes one node and silently
+          // dropped every child after the first when the paragraph was replaced.
+          block.append(...Array.from(container.childNodes));
           container.replaceWith(block);
         }
       }
@@ -233,7 +252,7 @@ export class FutureCssEditor {
         this.insertEmptyElement(tagName);
         return;
       }
-      for (const range of currentRanges()) {
+      for (const range of this.ownRanges()) {
         const wrapper = document.createElement(tagName);
         try {
           range.surroundContents(wrapper);
@@ -252,8 +271,20 @@ export class FutureCssEditor {
     this.mutating = true;
     try {
       const el = document.createElement(tagName);
-      this.content.appendChild(el);
+      // At the caret, where the next keystroke lands, not at the end of the document.
+      const selection = window.getSelection();
+      const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+      // A caret in some other document is not this editor's to mark.
+      if (!range || !this.content.contains(range.startContainer)) return;
+      range.insertNode(el);
       placeCaret(el, 0);
+      // The caret saved before the insert is still valid (the split left its text
+      // node in place), so restoring it would move the caret back outside the new
+      // element and the next keystroke would stay unmarked.
+      this.selectionAnchor = null;
+      // Even with the caret inside, Chrome moves typed text out of an empty inline
+      // element; `beforeinput` puts the first character in it instead.
+      this.pendingMark = el;
     } finally {
       this.mutating = false;
     }
@@ -283,7 +314,7 @@ export class FutureCssEditor {
     this.preserveSelection();
     this.mutating = true;
     try {
-      for (const range of currentRanges()) {
+      for (const range of this.ownRanges()) {
         const anchor = document.createElement("a");
         anchor.href = href;
         // `noopener` stops a `target="_blank"` link handing the opener over;
@@ -302,9 +333,13 @@ export class FutureCssEditor {
     this.afterMutation();
   }
 
-  /** Anchors intersecting the selection. */
-  private linksInSelection(): Element[] {
-    return markedInSelection("A", this.content);
+  /**
+   * The selection's ranges that lie in this editor. The selection is global: with
+   * two editors on a page, or a selection elsewhere, a toolbar click must not wrap,
+   * link, or re-block text in a document it does not belong to.
+   */
+  private ownRanges(): Range[] {
+    return currentRanges().filter((range) => this.content.contains(range.commonAncestorContainer));
   }
 
   /** Block elements of a given tag intersecting the selection. */
@@ -366,6 +401,12 @@ export class FutureCssEditor {
     // The character offset is recorded alongside because the node reference does
     // not survive the wrapper moving the text into a new element.
     const range = selection.getRangeAt(0);
+    // Nothing to restore for a selection outside this editor; restoring "offset 0"
+    // would pull the caret into this document.
+    if (!this.content.contains(range.endContainer)) {
+      this.selectionAnchor = null;
+      return;
+    }
     const endContainer = range.endContainer;
     const endOffset = range.endOffset;
     this.selectionAnchor = {
@@ -445,7 +486,7 @@ export class FutureCssEditor {
   private wireToolbar(): void {
     if (!this.toolbar) return;
 
-    this.toolbar.addEventListener("click", (event) => {
+    const onClick = (event: Event) => {
       const button = (event.target as HTMLElement).closest<HTMLElement>(
         "[data-fc-mark], [data-fc-block]",
       );
@@ -460,19 +501,47 @@ export class FutureCssEditor {
 
       // Return focus to the text, or the user has to click back in to keep typing.
       this.content.focus();
-    });
+    };
+    const toolbar = this.toolbar;
+    toolbar.addEventListener("click", onClick);
+    this.cleanups.push(() => toolbar.removeEventListener("click", onClick));
   }
 
   private wireSelectionTracking(): void {
     // `selectionchange` fires on the document, not the element: it does not
     // bubble from the element and is not delivered to it directly.
-    document.addEventListener("selectionchange", () => this.syncToolbar());
+    const onSelectionChange = () => this.syncToolbar();
+    document.addEventListener("selectionchange", onSelectionChange);
+    // `document` outlives the editor; without removal, every editor ever mounted
+    // would keep its tree alive and keep syncing on each selection change.
+    this.cleanups.push(() => document.removeEventListener("selectionchange", onSelectionChange));
 
-    this.content.addEventListener("input", () => {
+    const onInput = () => {
       if (this.mutating) return;
       this.options.onChange?.(this.value);
       this.syncToolbar();
-    });
+    };
+    this.content.addEventListener("input", onInput);
+    this.cleanups.push(() => this.content.removeEventListener("input", onInput));
+
+    const onBeforeInput = (event: InputEvent) => {
+      const mark = this.pendingMark;
+      this.pendingMark = null;
+      if (!mark || event.inputType !== "insertText" || !event.data) return;
+      const selection = window.getSelection();
+      // Only while the caret is still where the mark was started, and the mark empty.
+      if (!mark.isConnected || mark.firstChild || !selection?.isCollapsed) return;
+      if (selection.anchorNode !== mark) return;
+      event.preventDefault();
+      const text = document.createTextNode(event.data);
+      mark.append(text);
+      placeCaret(text, text.length);
+      // A cancelled `beforeinput` fires no `input`, so report the change here.
+      this.options.onChange?.(this.value);
+      this.syncToolbar();
+    };
+    this.content.addEventListener("beforeinput", onBeforeInput);
+    this.cleanups.push(() => this.content.removeEventListener("beforeinput", onBeforeInput));
   }
 
   /**
@@ -507,13 +576,17 @@ export { closestTag };
  * editor permanently unable to accept a mark.
  */
 function characterOffsetIn(node: Node, offset: number, root: Element): number {
-  let total = 0;
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
-  let current: Node | null = walker.nextNode();
-  while (current) {
-    if (current === node) return total + offset;
-    total += current.textContent?.length ?? 0;
-    current = walker.nextNode();
+  // Measured as the text of a range from the root's start, which handles an element
+  // endpoint (a block boundary, with `offset` counting children) as well as a text
+  // one. Walking text nodes alone answered 0 for element endpoints, sending the caret
+  // to the start of the document after a block change.
+  if (!root.contains(node)) return 0;
+  try {
+    const range = document.createRange();
+    range.setStart(root, 0);
+    range.setEnd(node, offset);
+    return range.toString().length;
+  } catch {
+    return 0;
   }
-  return 0;
 }

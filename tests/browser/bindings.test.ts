@@ -318,6 +318,190 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(html, "click here", "a refused link must not be inserted");
   });
 
+  it("keeps every child when a paragraph becomes a block", async () => {
+    // Regression: `appendChild(...nodes)` takes one node, so all but the first child
+    // of the paragraph were dropped when it was replaced.
+    await loadBindings();
+    const html = await evaluate(`
+      globalThis.ed = new E.FutureCssEditor({ root: '#ed' });
+      const el = document.querySelector('.fc-editor__content');
+      el.innerHTML = '<p>Some <strong>bold</strong> text</p>';
+      const p = el.firstChild;
+      const r = document.createRange(); r.setStart(p.firstChild, 1); r.collapse(true);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      globalThis.ed.toggleBlock('h2');
+      return el.innerHTML;
+    `);
+    assert.equal(html, "<h2>Some <strong>bold</strong> text</h2>");
+  });
+
+  it("removes a mark when the selection lies wholly inside it", async () => {
+    // Regression: the element walker never returns its root, so the <strong> that
+    // contains the whole selection was not found and Bold could not be removed.
+    await loadBindings();
+    const html = await evaluate(`
+      globalThis.ed = new E.FutureCssEditor({ root: '#ed' });
+      const el = document.querySelector('.fc-editor__content');
+      el.innerHTML = 'a <strong>bold word</strong> b';
+      const text = el.querySelector('strong').firstChild;
+      const r = document.createRange(); r.setStart(text, 0); r.setEnd(text, 4);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      globalThis.ed.removeMark('bold');
+      return el.innerHTML;
+    `);
+    assert.equal(html, "a bold word b");
+  });
+
+  it("reports a link active when the selection is linked", async () => {
+    await loadBindings();
+    const active = await evaluate(`
+      globalThis.ed = new E.FutureCssEditor({ root: '#ed' });
+      const el = document.querySelector('.fc-editor__content');
+      el.innerHTML = 'see <a href="https://example.com">the docs</a>';
+      const text = el.querySelector('a').firstChild;
+      const r = document.createRange(); r.setStart(text, 0); r.setEnd(text, 3);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      return globalThis.ed.isMarkActive('link');
+    `);
+    assert.equal(active, true);
+  });
+
+  it("starts a mark at the caret, not at the end of the document", async () => {
+    await loadBindings();
+    const html = await evaluate(`
+      globalThis.ed = new E.FutureCssEditor({ root: '#ed' });
+      const el = document.querySelector('.fc-editor__content');
+      el.innerHTML = 'before after';
+      const r = document.createRange(); r.setStart(el.firstChild, 7); r.collapse(true);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      globalThis.ed.applyMark('bold');
+      return el.innerHTML;
+    `);
+    assert.equal(html, "before <strong></strong>after", "the empty mark goes where the caret was");
+  });
+
+  it("types into a mark started at the caret", async () => {
+    // Regression. The caret saved before the insert was still valid, so restoring
+    // it put the caret back outside the new element and typing stayed plain.
+    // Typed with a real key event: Chrome moves text out of an empty inline
+    // element, and only a real keystroke runs the editor's beforeinput handling.
+    await loadBindings();
+    const type = async (setup: string) => {
+      await evaluate(`
+        globalThis.ed?.destroy();
+        globalThis.ed = new E.FutureCssEditor({ root: '#ed' });
+        const el = document.querySelector('.fc-editor__content');
+        el.focus();
+        ${setup}
+        const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+        globalThis.ed.applyMark('bold');
+      `);
+      await send("Input.dispatchKeyEvent", { type: "keyDown", key: "X", code: "KeyX", text: "X", unmodifiedText: "X", windowsVirtualKeyCode: 88 });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", key: "X", code: "KeyX", windowsVirtualKeyCode: 88 });
+      return evaluate(`return document.querySelector('.fc-editor__content').innerHTML;`);
+    };
+    // A text-node caret, then an element-node caret at the end of a paragraph.
+    const inText = await type(`
+      el.innerHTML = 'before after';
+      const r = document.createRange(); r.setStart(el.firstChild, 7); r.collapse(true);
+    `);
+    const atElement = await type(`
+      el.innerHTML = '<p>one</p><p>two</p>';
+      const r = document.createRange(); r.setStart(el.lastChild, 1); r.collapse(true);
+    `);
+    await evaluate(`globalThis.ed.destroy(); delete globalThis.ed;`);
+    assert.deepEqual([inText, atElement], ["before <strong>X</strong>after", "<p>one</p><p>two<strong>X</strong></p>"]);
+  });
+
+  it("does not report a link active when only part of the selection is linked", async () => {
+    await loadBindings();
+    const active = await evaluate(`
+      globalThis.ed = new E.FutureCssEditor({ root: '#ed' });
+      const el = document.querySelector('.fc-editor__content');
+      el.innerHTML = '<a href="https://example.com">link</a> plain';
+      const r = document.createRange(); r.setStart(el.firstChild.firstChild, 0); r.setEnd(el.lastChild, 6);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      return globalThis.ed.isMarkActive('link');
+    `);
+    assert.equal(active, false);
+  });
+
+  it("leaves its formatting alone when a selection crosses it from outside", async () => {
+    await loadBindings();
+    const html = await evaluate(`
+      globalThis.ed = new E.FutureCssEditor({ root: '#ed' });
+      const el = document.querySelector('.fc-editor__content');
+      el.innerHTML = '<h2><strong>hello</strong></h2>';
+      const above = document.createElement('p'); above.textContent = 'above';
+      const below = document.createElement('p'); below.textContent = 'below';
+      const editor = document.querySelector('#ed');
+      editor.before(above); editor.after(below);
+      const r = document.createRange(); r.setStart(above.firstChild, 0); r.setEnd(below.firstChild, 5);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      globalThis.ed.removeMark('bold');
+      globalThis.ed.toggleBlock('h2');
+      const result = el.innerHTML;
+      above.remove(); below.remove();
+      return result;
+    `);
+    assert.equal(html, "<h2><strong>hello</strong></h2>");
+  });
+
+  it("keeps the caret in place when a block change ends at a block boundary", async () => {
+    await loadBindings();
+    const offset = await evaluate(`
+      globalThis.ed = new E.FutureCssEditor({ root: '#ed' });
+      const el = document.querySelector('.fc-editor__content');
+      el.innerHTML = '<p>first</p><p>second</p>';
+      const second = el.lastChild;
+      // An element endpoint: after the second paragraph's only child.
+      const r = document.createRange(); r.setStart(second, 1); r.collapse(true);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      globalThis.ed.toggleBlock('h2');
+      const after = getSelection().getRangeAt(0);
+      const measure = document.createRange(); measure.setStart(el, 0); measure.setEnd(after.endContainer, after.endOffset);
+      return measure.toString().length;
+    `);
+    assert.equal(offset, "firstsecond".length, "the caret stays at the end of the changed block");
+  });
+
+  it("never formats another editor's selection", async () => {
+    await loadBindings();
+    const html = await evaluate(`
+      globalThis.ed = new E.FutureCssEditor({ root: '#ed' });
+      const el = document.querySelector('.fc-editor__content');
+      el.innerHTML = 'mine';
+      const other = document.createElement('div');
+      other.contentEditable = 'true';
+      other.innerHTML = 'theirs';
+      document.body.append(other);
+      const r = document.createRange(); r.setStart(other.firstChild, 0); r.setEnd(other.firstChild, 6);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      globalThis.ed.removeMark('bold');
+      globalThis.ed.toggleBlock('h2');
+      globalThis.ed.applyMark('italic');
+      const result = el.innerHTML + '|' + other.innerHTML;
+      other.remove();
+      return result;
+    `);
+    assert.equal(html, "mine|theirs");
+  });
+
+  it("stops listening after destroy", async () => {
+    await loadBindings();
+    const changes = await evaluate(`
+      let count = 0;
+      const ed = new E.FutureCssEditor({ root: '#ed', onSelectionChange: () => { count++; } });
+      const el = document.querySelector('.fc-editor__content');
+      ed.destroy();
+      el.dispatchEvent(new Event('input'));
+      document.dispatchEvent(new Event('selectionchange'));
+      document.querySelector('[data-fc-mark="bold"]').click();
+      return count;
+    `);
+    assert.equal(changes, 0);
+  });
+
   // --------------------------------------------------------------- theming
 
   it("re-themes when the consumer sets data-fc-theme", async () => {

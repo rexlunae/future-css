@@ -39,9 +39,12 @@ and raise it.
    error state and reports in debug builds.
 3. **Never emit a class the CSS does not define.** The coverage test parses the CSS and
    fails on an unknown `fc-` class as well as on a missing one.
-4. **Never ship CSS.** No stylesheet, `style` rule, or colour lives in Rust. The only inline
-   styles allowed are the custom properties the CSS reads from markup (`--fc-slider-pct`,
-   `--fc-progress-value`), set through a typed helper.
+4. **Never author CSS here.** No stylesheet, `style` rule, or colour is written in Rust or
+   in this crate. The one exception is the generated copy of the CSS library's own build
+   output in `assets/` (rule 5), which the crate must carry to publish and which is never
+   edited. The only inline styles allowed are the custom properties the CSS reads from
+   markup (`--fc-slider-pct`, `--fc-progress-value`, `--fc-split-size`), set through a
+   typed helper.
 5. **`crates/fc-dioxus/assets/` is generated.** Never edit it by hand; run
    `npm run build:dioxus-assets`. A test fails when it differs from a fresh CSS build.
 6. **One declaration per modifier.** Every modifier enum goes through `fc_modifier!`.

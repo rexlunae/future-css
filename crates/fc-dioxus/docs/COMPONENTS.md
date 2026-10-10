@@ -123,8 +123,9 @@ each), so `Stack` offers `0, 1, 2, 3, 4, 6, 8` and `Cluster` `0, 1, 2, 3, 4, 6`.
 `Ul`, `Ol`, `Nav`, `Header`, `Footer`, `Main`, `Aside`, `Article`), so semantics stay with
 the author without a stringly typed tag.
 
-`.fc-grid` (the legacy auto-fit primitive) is exposed only through `GridAuto`; the data
-grid is `DataGrid`. The root AGENTS.md records the bug that sharing that name caused.
+`GridAuto` renders `.fc-grid-auto`; `.fc-grid` belongs to the data grid, `DataGrid`. The
+layout primitive was renamed to `-auto` after the two sharing `.fc-grid` broke the data
+grid's columns, the bug the root AGENTS.md records.
 
 ### Typography (`type.css`)
 
@@ -908,8 +909,10 @@ cue.
 ANSI SGR parsing (`fc-ansi`, a small pure module) turns raw output into runs with
 `__bold`, `__dim`, `__italic`, `__underline`, `__strike`, `__inverse`, and the sixteen
 `fc-term-ansi-*` colours. Colours are classes, never inline styles, so they stay themed
-and contrast-checked. The output region is a log (`role=log`), not a live region, matching
-the CSS doc's guidance against announcing every byte.
+and contrast-checked. The output region is `role="log"` with `aria-live="polite"`, exactly as
+the CSS doc's terminal markup, and never assertive, so a fast command does not flood the
+screen reader. Output is appended in batches per animation frame, so the polite region
+announces chunks rather than every byte.
 
 ### Git surface (`git.css`)
 

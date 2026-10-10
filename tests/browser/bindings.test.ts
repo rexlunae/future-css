@@ -2771,6 +2771,48 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.ok(await evaluate(`return globalThis.staged;`), 'Enter activates the nested native Stage button');
   });
 
+  it("keeps git rows laid out when grid.css loads after git.css", async () => {
+    // grid.css once made every `role="row"` on the page `display: contents`.
+    // The bundle hid it by ordering grid before git, but a consumer that loads
+    // CSS per component gets whatever order its components mount in, and then
+    // the git rows lost their box -- and with it focus(), so the roving
+    // tabindex broke. Only the reversed order exposes it.
+    const result = await evaluate(`
+      const frame = document.createElement('iframe');
+      frame.srcdoc = '<link rel="stylesheet" href="/src/css/components/git.css">'
+        + '<link rel="stylesheet" href="/src/css/components/grid.css">'
+        + '<div class="fc-git__row" role="row" tabindex="0"></div>'
+        + '<div class="fc-grid" role="grid"><div role="row"></div>'
+        + '<div role="rowgroup" style="display: contents"><div role="row" id="grouped">'
+        + '<span class="fc-grid__cell" role="gridcell"><div class="fc-git__row" role="row" id="nested"></div></span>'
+        + '</div></div></div>';
+      document.body.append(frame);
+      await new Promise((resolve) => frame.addEventListener('load', resolve, { once: true }));
+      const doc = frame.contentDocument;
+      const git = doc.querySelector('.fc-git__row');
+      const gridRow = doc.querySelector('.fc-grid > [role="row"]');
+      const grouped = doc.getElementById('grouped');
+      const nested = doc.getElementById('nested');
+      git.focus();
+      const out = {
+        sheets: doc.styleSheets.length,
+        git: frame.contentWindow.getComputedStyle(git).display,
+        gridRow: frame.contentWindow.getComputedStyle(gridRow).display,
+        grouped: frame.contentWindow.getComputedStyle(grouped).display,
+        nested: frame.contentWindow.getComputedStyle(nested).display,
+        focused: doc.activeElement === git,
+      };
+      frame.remove();
+      return out;
+    `);
+    assert.equal(result.sheets, 2, "both component stylesheets must load for this to mean anything");
+    assert.equal(result.git, "flex", "grid.css must not restyle another component's rows");
+    assert.equal(result.focused, true, "a git row must stay focusable for the roving tabindex");
+    assert.equal(result.gridRow, "contents", "the grid's own rows must stay box-less");
+    assert.equal(result.grouped, "contents", "rows inside a rowgroup are still the grid's rows");
+    assert.equal(result.nested, "flex", "a git surface inside a grid cell keeps its own rows");
+  });
+
   it("offers no stage button for a file that already has an index state", async () => {
     // Staging it again is a no-op the user should not be offered.
     await loadBindings();

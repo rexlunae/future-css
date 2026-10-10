@@ -972,7 +972,9 @@ parity test, and `url` is checked before it reaches `src`. An insecure origin re
 #[component] fn Message(role: MessageRole, #[props(default)] state: Option<Lifecycle>,
     #[props(default)] author: Option<Element>, #[props(default)] time: Option<Timestamp>,
     #[props(default)] meta: Option<Element>, #[props(default)] actions: Option<Element>,
-    #[props(default)] truncated: Option<Clipped>, ..FcIds, children: Element) -> Element;
+    #[props(default)] truncated: Option<Clipped>,
+    #[props(default)] announce: Completion,          // Full, Summary(String), Off
+    ..FcIds, children: Element) -> Element;
 #[component] fn MessagePart(kind: PartKind, children: Element) -> Element;   // text, reasoning, tool, sources
 /// Text that is still arriving. The producer appends to the signal per token; the
 /// component renders through `behavior::batch`, so the DOM changes at most once a frame.
@@ -996,17 +998,23 @@ tokens, so `Message` enforces it from its state rather than leaving it to the pr
 - While `state` is `Pending` or `Streaming`, the message renders `aria-busy="true"`.
   Assistive technology defers announcing changes inside a busy element, so the partial
   text is visible and readable in browse mode but not spoken as it grows.
-- On `Complete`, `Error`, or `Aborted`, `aria-busy` is removed and the finished message is
-  announced once, as a log addition.
-- `Chat` renders `aria-relevant="additions"`, so text changes to existing nodes are not
-  announcement triggers in the first place; the busy flag covers screen readers that
-  ignore `aria-relevant`.
+- Clearing `aria-busy` is not a log addition, and `Chat` renders `aria-relevant="additions"`,
+  so the log cannot be relied on to speak the finished text. Completion is therefore
+  announced explicitly: when a message moves from `Streaming` to a terminal state,
+  `Message` sends its final text through `behavior::live` (the polite, coalesced announcer
+  that `Chat` owns), controlled by `announce: Completion` (`Full` by default, `Summary(String)`
+  for long or structured replies, `Off` when the application announces itself). `Error` and
+  `Aborted` announce the state with whatever text arrived ("Response stopped: …").
+- A message inserted already `Complete` (history, or a non-streamed reply) is an ordinary
+  log addition and is not announced twice: the explicit announcement fires only on the
+  `Streaming` to terminal transition.
 - Progress during a long reply ("Thinking", "Running tool") is spoken by `AgentStatus`
-  through the coalesced `behavior::live` channel, not by the message.
+  through the same coalesced channel, not by the message.
 
 Because screen readers differ here, the Phase 4 browser suite asserts the attributes and
-the per-release manual pass (NVDA, VoiceOver, JAWS) verifies that a streamed reply is
-announced once. If a reader is found that announces busy content anyway, the fallback is
+the per-release manual pass (NVDA, VoiceOver, JAWS) verifies both cases: a streamed reply
+is spoken once on completion, not during streaming and not twice, and a history message is
+spoken once on insertion. If a reader is found that announces busy content anyway, the fallback is
 to render the streaming text `aria-hidden` with a visually hidden "Response in progress"
 placeholder until completion.
 

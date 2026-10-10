@@ -2852,6 +2852,20 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(result.wide, 2, "a wide card puts its media beside the content");
   });
 
+  it("only selects a card for a checked input, not a selected option", async () => {
+    const result = await evaluate(`
+      const region = document.createElement('div');
+      region.innerHTML = '<article class="fc-card" id="card-plain">Plain</article><article class="fc-card" id="card-select"><label>Theme<select><option selected>Future</option></select></label></article><label class="fc-card" id="card-option"><input type="checkbox" checked>Selected</label>';
+      document.body.append(region);
+      const background = id => getComputedStyle(document.getElementById(id)).backgroundColor;
+      const values = { plain: background('card-plain'), select: background('card-select'), option: background('card-option') };
+      region.remove();
+      return values;
+    `);
+    assert.equal(result.select, result.plain, "a native select must not select its card");
+    assert.notEqual(result.option, result.plain, "checked input selection is retained");
+  });
+
   // ---------------------------------------------------------------- switch
 
   it("moves the switch thumb toward the inline end in both directions", async () => {

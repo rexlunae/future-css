@@ -245,6 +245,14 @@ The components needed for a real application, prioritized by frequency of use.
 - [x] A spinner family (ring, arc, typing dots, pulse, stream bars, orbit, sparkle) and an
   agent status row driven by `data-fc-state`
 
+### Layout
+
+- [x] Splitter (`fc-splitter`): drag-to-resize on the WAI-ARIA window splitter pattern,
+  for split panes (`fc-split`, side by side or stacked, percentages) and resizable edges
+  (`fc-resizable`, pixels). A `splitter` binding supplies drag, the arrow/Home/End/Enter
+  keys with RTL-aware arrows, and an `fc-resize` event; no WASM, since the model is a
+  clamp and a ratio
+
 **Exit criteria**
 
 - Every interactive component has a documented keyboard contract and passes a

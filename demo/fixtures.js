@@ -13,6 +13,7 @@ import { renderHighlighted } from "/src/js/highlight.js";
 import { diffLines, diffStats } from "/src/js/diff.js";
 import { FutureCssGitSurface } from "/src/js/git.js";
 import { bindDatePicker } from "/src/js/datepicker.js";
+import { bindSplitters } from "/src/js/splitter.js";
 
 const SAMPLES = {
   typescript: `// A line long enough to wrap at 320px, which is the point of the wrapping mode.
@@ -38,6 +39,9 @@ for (const block of document.querySelectorAll("[data-fx-code]")) {
 
 const BEFORE = "const a = 1;\nconst b = 2;\nexport { a, b };\n";
 const AFTER = "const a = 1;\nconst c = 3;\nexport { a, c }; // a long trailing comment that forces the scrolling mode to scroll\n";
+
+// Live, so the fixture page doubles as a place to try the drag and the keys.
+bindSplitters(document);
 
 for (const root of document.querySelectorAll("[data-fx-datepicker]")) {
   bindDatePicker(root, {

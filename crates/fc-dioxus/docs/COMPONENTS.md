@@ -84,6 +84,7 @@ Shared types (`Availability`, `Lifecycle`, `MessageRole`, `Tone`, `Orientation`,
 | `citation.css` | `citation` | `Cite`, `Sources`, `Source` |
 | `suggestion.css` | `suggestion` | `Suggestions`, `Suggestion` |
 | `tool-call.css` | `tool_call` | `ToolCall` |
+| `resize.css` (in progress in the CSS library) | `resize` | `SplitPane`, `ResizeHandle` (placeholder; see [Resizable elements](#resizable-elements-placeholder)) |
 | `metric.css`, `transfer.css`, `approval.css`, `user-prompt.css`, `device-auth.css` | `lifecycle_panel` | `Metric`, `Transfer`, `Approval`, `UserPrompt`, `DeviceAuth` (one shared implementation, below) |
 
 ---
@@ -1110,3 +1111,33 @@ Each kind adds its one extra element (`Metric`'s value, `DeviceAuth`'s code) thr
 wrapper component; the anatomy, state rendering, and announcement rules exist once.
 Approvals render actions but never act on them: the application's handler authorizes,
 as the contract says a CSS state must never imply.
+
+---
+
+## Resizable elements (placeholder)
+
+Drag-to-resize controls are being added to the CSS library as a split-pane and
+resize-handle component. Class names and options are not settled, so this entry fixes only
+the shape the Rust API will take; it is filled in from the CSS when that lands, and the
+coverage test holds it on the pending list until then.
+
+```rust
+#[component] fn SplitPane(#[props(default)] orientation: Orientation,
+    sizes: Option<ReadSignal<Vec<Percent>>>, default_sizes: Vec<Percent>,
+    onresize: Option<EventHandler<Vec<Percent>>>,
+    #[props(default)] min: Vec<Percent>, #[props(default)] max: Vec<Percent>,
+    children: Element) -> Element;
+#[component] fn ResizeHandle(label: AccessibleName,          // "Resize sidebar"
+    #[props(default)] step: Percent,                         // arrow-key increment
+    #[props(default)] availability: Availability) -> Element;
+```
+
+- The handle is a focusable `role="separator"` with `aria-valuenow`, `-valuemin`,
+  `-valuemax`, and `aria-controls`, per the APG window splitter pattern.
+- Dragging is never the only way (WCAG 2.5.7): arrow keys move by `step`, Home and End go to
+  the limits, and Enter collapses and restores.
+- The size arithmetic (clamping, distributing between neighbours, RTL inversion of the
+  inline axis) is a pure function in `behavior::resize`, unit-tested and shared with any
+  future TypeScript binding through a parity test.
+- Pointer capture goes through `DomBridge`; the virtual DOM only renders the sizes.
+

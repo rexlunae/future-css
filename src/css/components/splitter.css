@@ -1,0 +1,258 @@
+/*!
+ * future-css -- splitter
+ *
+ * Drag-to-resize, on the WAI-ARIA window splitter pattern. The control is one
+ * focusable `role="separator"` whose `aria-valuenow` is the size of the
+ * element it names in `aria-controls`. It appears in two layouts.
+ *
+ * A split: two panes and a splitter between them. The value is a percentage
+ * of the split, so the panes keep their proportion when the split resizes.
+ *
+ *   <div class="fc-split">
+ *     <div class="fc-split__pane fc-split__pane--primary" id="files">...</div>
+ *     <div class="fc-splitter" role="separator" tabindex="0" aria-orientation="vertical"
+ *          aria-controls="files" aria-label="File list" aria-valuenow="30"
+ *          aria-valuemin="15" aria-valuemax="70"></div>
+ *     <div class="fc-split__pane">...</div>
+ *   </div>
+ *
+ * A resizable element: a panel whose inline-end (or, with `--block`,
+ * block-end) edge is the handle. The value is in CSS pixels, because the
+ * element has no container whose proportion it should keep.
+ *
+ *   <aside class="fc-resizable" id="panel">
+ *     ...
+ *     <div class="fc-splitter fc-splitter--edge" role="separator" tabindex="0"
+ *          aria-orientation="vertical" aria-controls="panel" aria-label="Panel"
+ *          aria-valuemin="160" aria-valuemax="480"></div>
+ *   </aside>
+ *
+ * `aria-orientation` is the orientation of the bar, not of the drag: a
+ * vertical bar sits between side-by-side panes and moves along the inline
+ * axis. It is required, because a separator defaults to horizontal. It is also
+ * what the styles key off, so the bar's look cannot disagree with what a
+ * screen reader is told.
+ *
+ * The size is read from `--fc-split-size` on the controlled element. The
+ * `splitter` binding keeps it equal to `aria-valuenow` and supplies the drag
+ * and the keyboard. Without the binding the layout renders at whatever size
+ * the markup sets, and the bar is a visible, inert divider.
+ */
+
+@layer fc.components {
+  .fc-split {
+    display: flex;
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+
+  /*
+   * Panes stacked in the block direction. A percentage flex-basis resolves
+   * only against a definite block size, so the split needs one; the slot lets
+   * a page give it the viewport or a parent's height instead.
+   */
+  .fc-split--stacked {
+    flex-direction: column;
+    block-size: var(--fc-split-block-size, 20rem);
+  }
+
+  /*
+   * Panes scroll their own content. The zero minimums let a pane shrink below
+   * its content's width, which is what a flex item refuses to do by default.
+   */
+  .fc-split__pane {
+    flex: 1 1 0;
+    min-inline-size: 0;
+    min-block-size: 0;
+    overflow: auto;
+  }
+
+  .fc-split__pane--primary {
+    flex: 0 0 var(--fc-split-size, 50%);
+  }
+
+  /*
+   * Content past the size is clipped rather than spilling under the handle;
+   * a panel that can outgrow itself puts a scroller inside.
+   */
+  .fc-resizable {
+    position: relative;
+    flex: none;
+    inline-size: var(--fc-split-size, auto);
+    max-inline-size: 100%;
+    min-inline-size: 0;
+    overflow: clip;
+  }
+
+  .fc-resizable--block {
+    inline-size: auto;
+    max-inline-size: none;
+    block-size: var(--fc-split-size, auto);
+  }
+
+  /* ---- The handle ---------------------------------------------------- */
+
+  /*
+   * The hit area is the minimum target size, but the layout gives it one
+   * hairline: negative margins pull the panes back under it. The bar drawn
+   * in the middle is that hairline; the grip on it is the declared 3:1
+   * interactive boundary, so the control is identifiable as one (WCAG 1.4.11)
+   * while the bar itself stays as quiet as a divider.
+   */
+  .fc-splitter {
+    --fc-splitter-line: var(--fc-color-border-default);
+    --fc-splitter-grip: var(--fc-color-border-interactive);
+
+    position: relative;
+    z-index: var(--fc-z-raised);
+    flex: none;
+    align-self: stretch;
+    display: grid;
+    place-items: center;
+    inline-size: var(--fc-size-target-min);
+    margin-inline: calc((var(--fc-border-width-thin) - var(--fc-size-target-min)) / 2);
+    cursor: col-resize;
+    /* The drag is the binding's; a touch must not scroll the page instead. */
+    touch-action: none;
+    user-select: none;
+  }
+
+  .fc-splitter::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline: calc(50% - var(--fc-border-width-thin) / 2);
+    background-color: var(--fc-splitter-line);
+    transition: background-color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-splitter::after {
+    content: "";
+    position: relative;
+    inline-size: var(--fc-space-1);
+    block-size: var(--fc-space-6);
+    border-radius: var(--fc-radius-full);
+    background-color: var(--fc-splitter-grip);
+    transition: background-color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-splitter[aria-orientation="horizontal"] {
+    inline-size: auto;
+    block-size: var(--fc-size-target-min);
+    margin-inline: 0;
+    margin-block: calc((var(--fc-border-width-thin) - var(--fc-size-target-min)) / 2);
+    cursor: row-resize;
+  }
+
+  .fc-splitter[aria-orientation="horizontal"]::before {
+    inset-inline: 0;
+    inset-block: calc(50% - var(--fc-border-width-thin) / 2);
+  }
+
+  .fc-splitter[aria-orientation="horizontal"]::after {
+    inline-size: var(--fc-space-6);
+    block-size: var(--fc-space-1);
+  }
+
+  /*
+   * On an edge the hit area lies inside the element, so it never pokes past
+   * a panel that is already as wide as the page. The bar is drawn on the
+   * edge itself and the grip sits against it.
+   */
+  .fc-splitter--edge {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    margin: 0;
+    justify-items: end;
+  }
+
+  .fc-splitter--edge::before {
+    inset-inline: auto 0;
+  }
+
+  .fc-splitter--edge[aria-orientation="horizontal"] {
+    inset-inline: 0;
+    inset-block: auto 0;
+    margin: 0;
+    justify-items: center;
+    align-items: end;
+  }
+
+  .fc-splitter--edge[aria-orientation="horizontal"]::before {
+    inset-block: auto 0;
+  }
+
+  /* The element clips its overflow, so the ring is drawn inside the handle. */
+  .fc-splitter--edge:focus-visible {
+    outline-offset: calc(var(--fc-border-width-focus) * -1);
+  }
+
+  /* ---- States -------------------------------------------------------- */
+
+  @media (hover: hover) {
+    .fc-splitter:hover {
+      --fc-splitter-line: var(--fc-color-accent-border);
+      --fc-splitter-grip: var(--fc-color-accent-border);
+    }
+  }
+
+  .fc-splitter:focus-visible {
+    --fc-splitter-line: var(--fc-color-accent-border);
+    --fc-splitter-grip: var(--fc-color-accent-border);
+  }
+
+  /* Held for the whole drag: pointer capture keeps the press on the handle. */
+  .fc-splitter:active {
+    --fc-splitter-line: var(--fc-color-accent-bg-active);
+    --fc-splitter-grip: var(--fc-color-accent-bg-active);
+  }
+
+  /*
+   * Disabled stays focusable, as aria-disabled does, so a keyboard user can
+   * still find the boundary and hear that it is fixed.
+   */
+  .fc-splitter[aria-disabled="true"] {
+    --fc-splitter-line: var(--fc-color-disabled-border);
+    --fc-splitter-grip: var(--fc-color-disabled-fg);
+    cursor: not-allowed;
+  }
+
+  /*
+   * Reduced motion needs no branch: the only motion is a colour fade, which
+   * the reset's zeroed durations turn into an instant change. The drag itself
+   * follows the pointer, which is direct manipulation, not animation.
+   */
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  /*
+   * Backgrounds are replaced in forced colors, which would erase both the bar
+   * and the grip. Each is restated in a system colour, with Highlight for the
+   * engaged states so hover and drag stay distinguishable.
+   */
+  @media (forced-colors: active) {
+    .fc-splitter {
+      --fc-splitter-line: CanvasText;
+      --fc-splitter-grip: CanvasText;
+    }
+
+    /* Only the drawn parts opt out, so the focus ring keeps its system colour. */
+    .fc-splitter::before,
+    .fc-splitter::after {
+      forced-color-adjust: none;
+    }
+
+    .fc-splitter:hover,
+    .fc-splitter:focus-visible,
+    .fc-splitter:active {
+      --fc-splitter-line: Highlight;
+      --fc-splitter-grip: Highlight;
+    }
+
+    .fc-splitter[aria-disabled="true"] {
+      --fc-splitter-line: GrayText;
+      --fc-splitter-grip: GrayText;
+    }
+  }
+}

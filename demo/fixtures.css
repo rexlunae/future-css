@@ -130,6 +130,23 @@ body {
   min-block-size: 5rem;
 }
 
+/* A split needs a block size to be seen; panes are tinted so the boundary reads. */
+.fx-split {
+  min-block-size: 6rem;
+}
+
+.fx-split__pane {
+  padding: var(--fc-space-3);
+  background-color: var(--fc-color-bg-muted);
+}
+
+.fx-resize {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--fc-space-3);
+}
+
 .fx-nav {
   block-size: 30rem;
 }

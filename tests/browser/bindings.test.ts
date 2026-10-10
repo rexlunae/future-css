@@ -188,11 +188,12 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         import('/src/js/toolbar.js'),
         import('/src/js/carousel.js'),
         import('/src/js/datepicker.js'),
-      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt, tl, nv, sl, tr, cr, dp]) => {
+        import('/src/js/splitter.js'),
+      ]).then(([e, m, g, w, h, d, s, c, k, it, tb, ts, tt, tl, nv, sl, tr, cr, dp, sp]) => {
         globalThis.E = e; globalThis.M = m; globalThis.G = g; globalThis.W = w;
         globalThis.H = h; globalThis.D = d; globalThis.S = s;
         globalThis.C = c; globalThis.K = k; globalThis.IT = it;
-        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt; globalThis.TL = tl; globalThis.NV = nv; globalThis.SL = sl; globalThis.TR = tr; globalThis.CR = cr; globalThis.DP = dp;
+        globalThis.TB = tb; globalThis.TS = ts; globalThis.TT = tt; globalThis.TL = tl; globalThis.NV = nv; globalThis.SL = sl; globalThis.TR = tr; globalThis.CR = cr; globalThis.DP = dp; globalThis.SP = sp;
         return 'ok';
       })
     `);
@@ -3582,6 +3583,182 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.deepEqual(r.moved, ["75%", "1.5"]);
     assert.deepEqual(r.extremes, ["0%"]);
     assert.equal(r.afterUnbind, "1.5", "the returned function removes the listener");
+  });
+
+  // ------------------------------------------------------------- splitter
+
+  /** A 400px split, primary pane first unless `primaryLast`, in direction `dir`. */
+  const SPLIT = (dir: string, primaryLast = false) => `
+    const wrap = document.createElement('div');
+    wrap.dir = '${dir}';
+    wrap.style.inlineSize = '400px';
+    const primary = '<div class="fc-split__pane fc-split__pane--primary" id="sp-a">A <button type="button">In A</button></div>';
+    const other = '<div class="fc-split__pane">B</div>';
+    const bar = '<div class="fc-splitter" role="separator" tabindex="0" aria-orientation="vertical" aria-controls="sp-a"'
+      + ' aria-label="A" aria-valuenow="30" aria-valuemin="10" aria-valuemax="80"></div>';
+    wrap.innerHTML = '<div class="fc-split" style="block-size: 100px">' + (${primaryLast} ? other + bar + primary : primary + bar + other) + '</div>';
+    document.body.appendChild(wrap);
+    const split = wrap.firstElementChild;
+    const bar_ = split.querySelector('.fc-splitter');
+    const pane = split.querySelector('#sp-a');
+    const events = [];
+    split.addEventListener('fc-resize', (e) => events.push(e.detail));
+    const unbind = SP.bindSplitters(document);
+    const key = (k, extra = {}) => bar_.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...extra }));
+    const now = () => Number(bar_.getAttribute('aria-valuenow'));
+    const width = () => Math.round(pane.getBoundingClientRect().width);
+  `;
+
+  it("sizes a split pane from aria-valuenow and moves it with the arrows, Home, End and Enter", async () => {
+    // The window splitter contract: the value is the primary pane's size, the
+    // arrows move the bar, Home/End go to the bounds, and Enter collapses and
+    // restores. A collapsed pane must not keep its controls in the tab order.
+    await loadBindings();
+    const r = await evaluate(`
+      ${SPLIT("ltr")}
+      const out = { initial: [now(), pane.style.getPropertyValue('--fc-split-size'), width()], events: events.length };
+      key('ArrowRight'); out.right = now();
+      key('ArrowLeft'); key('ArrowLeft'); out.left = now();
+      key('ArrowRight', { shiftKey: true }); out.shift = now();
+      key('ArrowDown'); out.crossAxis = now();
+      key('Home'); out.home = now();
+      key('End'); out.end = [now(), width()];
+      key('ArrowRight'); out.clamped = now();
+      key('Home'); key('ArrowRight'); key('ArrowRight');
+      key('Enter'); out.collapsed = [now(), pane.hidden];
+      key('Enter'); out.restored = [now(), pane.hidden];
+      out.lastEvent = events.at(-1);
+      bar_.setAttribute('aria-disabled', 'true');
+      key('ArrowRight'); out.disabled = now();
+      unbind();
+      bar_.removeAttribute('aria-disabled');
+      key('ArrowRight'); out.afterUnbind = now();
+      wrap.remove();
+      return out;
+    `);
+    // 30% of 400px, less half the one-pixel bar the panes share.
+    assert.deepEqual(r.initial, [30, "30%", 120]);
+    assert.equal(r.events, 0, "binding is not a change and fires no event");
+    assert.equal(r.right, 35);
+    assert.equal(r.left, 25);
+    assert.equal(r.shift, 75, "Shift moves ten steps");
+    assert.equal(r.crossAxis, 75, "a vertical bar ignores Up and Down");
+    assert.equal(r.home, 10);
+    assert.deepEqual(r.end, [80, 320]);
+    assert.equal(r.clamped, 80, "the value never passes aria-valuemax");
+    assert.deepEqual(r.collapsed, [10, false], "collapses to the minimum, which still has a size");
+    assert.deepEqual(r.restored, [20, false]);
+    assert.deepEqual(r.lastEvent, { value: 20, unit: "%", final: true });
+    assert.equal(r.disabled, 20, "aria-disabled holds the size");
+    assert.equal(r.afterUnbind, 20, "the returned function removes the listeners");
+  });
+
+  it("mirrors the arrows in RTL and for a primary pane after the bar", async () => {
+    // ArrowRight moves the bar right. In RTL that is toward the inline start,
+    // and when the controlled pane is after the bar, moving right shrinks it.
+    await loadBindings();
+    const r = await evaluate(`
+      const out = {};
+      {
+        ${SPLIT("rtl")}
+        key('ArrowLeft'); out.rtlLeft = now();
+        wrap.remove(); unbind();
+      }
+      {
+        ${SPLIT("ltr", true)}
+        key('ArrowRight'); out.lastRight = now();
+        wrap.remove(); unbind();
+      }
+      return out;
+    `);
+    assert.equal(r.rtlLeft, 35, "in RTL, moving the bar left grows the inline-start pane");
+    assert.equal(r.lastRight, 25, "moving the bar toward a trailing pane shrinks it");
+  });
+
+  it("drags a split with the pointer, and Escape puts it back", async () => {
+    // Real input through CDP: pointer capture only works for a pointer the
+    // browser knows is down, which a synthetic event is not.
+    await loadBindings();
+    const box = await evaluate(`
+      ${SPLIT("ltr")}
+      globalThis.spDone = () => { wrap.remove(); unbind(); };
+      globalThis.spState = () => ({ now: now(), width: width(), active: document.activeElement === bar_, events: events.map((e) => e.final) });
+      // Input lands at viewport coordinates, so the bar has to be in view.
+      split.scrollIntoView({ block: 'center' });
+      const r = bar_.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    `);
+    const mouse = (type: string, x: number, buttons = 1) =>
+      send("Input.dispatchMouseEvent", { type, x, y: box.y, button: "left", buttons, clickCount: 1 });
+    await mouse("mousePressed", box.x);
+    await mouse("mouseMoved", box.x + 40);
+    await mouse("mouseMoved", box.x + 80);
+    const mid = await evaluate(`return spState();`);
+    await mouse("mouseReleased", box.x + 80, 0);
+    const dropped = await evaluate(`return spState();`);
+    await mouse("mousePressed", box.x + 80);
+    await mouse("mouseMoved", box.x + 160);
+    await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
+    await mouse("mouseReleased", box.x + 160, 0);
+    const cancelled = await evaluate(`const s = spState(); spDone(); return s;`);
+    // 80px of 400 is 20 percentage points.
+    assert.equal(mid.now, 50);
+    assert.equal(mid.width, 200);
+    assert.equal(mid.active, true, "grabbing the bar focuses it, so the keys work next");
+    assert.deepEqual(dropped.events.slice(-1), [true], "release settles with one final event");
+    assert.equal(dropped.now, 50);
+    assert.equal(cancelled.now, 50, "Escape restores the size the drag started from");
+  });
+
+  it("resizes an element from its edge in pixels, inline and block", async () => {
+    await loadBindings();
+    const r = await evaluate(`
+      const host = document.createElement('div');
+      host.style.inlineSize = '500px';
+      host.innerHTML = '<aside class="fc-resizable" id="sp-panel" style="--fc-split-size: 200px">Panel'
+        + '<div class="fc-splitter fc-splitter--edge" role="separator" tabindex="0" aria-orientation="vertical" aria-controls="sp-panel" aria-label="Panel" aria-valuemin="100"></div></aside>'
+        + '<div class="fc-resizable fc-resizable--block" id="sp-notes" style="--fc-split-size: 80px">Notes'
+        + '<div class="fc-splitter fc-splitter--edge" role="separator" tabindex="0" aria-orientation="horizontal" aria-controls="sp-notes" aria-label="Notes" aria-valuemin="40" aria-valuemax="200" data-step="10"></div></div>';
+      document.body.appendChild(host);
+      const [inl, blk] = host.querySelectorAll('.fc-splitter');
+      const panel = host.querySelector('#sp-panel');
+      const notes = host.querySelector('#sp-notes');
+      const unbind = SP.bindSplitters(document);
+      const key = (el, k) => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+      const out = {
+        measured: [inl.getAttribute('aria-valuenow'), inl.getAttribute('aria-valuemax')],
+        edge: [Math.round(inl.getBoundingClientRect().right), Math.round(panel.getBoundingClientRect().right)],
+      };
+      key(inl, 'ArrowRight'); out.grown = [inl.getAttribute('aria-valuenow'), panel.getBoundingClientRect().width, panel.hidden];
+      key(inl, 'End'); out.end = panel.getBoundingClientRect().width;
+      key(blk, 'ArrowDown'); key(blk, 'ArrowRight');
+      out.block = [blk.getAttribute('aria-valuenow'), notes.getBoundingClientRect().height];
+      key(blk, 'Enter'); out.blockCollapsed = [notes.getBoundingClientRect().height, notes.hidden];
+      unbind(); host.remove();
+      return out;
+    `);
+    assert.deepEqual(r.measured, ["200", "500"], "no aria-valuenow: measured; no max: the container");
+    assert.deepEqual(r.edge, [r.edge[1], r.edge[1]], "the handle sits on the element's inline-end edge");
+    assert.deepEqual(r.grown, ["216", 216, false]);
+    assert.equal(r.end, 500);
+    assert.deepEqual(r.block, ["90", 90], "a horizontal bar answers Down, not Right");
+    assert.deepEqual(r.blockCollapsed, [40, false], "an edge's own element is never hidden");
+  });
+
+  it("hides a split pane collapsed to zero, and shows it when reopened", async () => {
+    await loadBindings();
+    const r = await evaluate(`
+      ${SPLIT("ltr")}
+      bar_.setAttribute('aria-valuemin', '0');
+      key('Home');
+      const out = { closed: [width(), pane.hidden, getComputedStyle(pane).display] };
+      key('ArrowRight');
+      out.open = [now(), pane.hidden];
+      unbind(); wrap.remove();
+      return out;
+    `);
+    assert.deepEqual(r.closed, [0, true, "none"], "padding cannot keep a sliver of it drawn");
+    assert.deepEqual(r.open, [5, false]);
   });
 
   it("collapses the sidebar to a rail from aria-expanded, keeping link names", async () => {

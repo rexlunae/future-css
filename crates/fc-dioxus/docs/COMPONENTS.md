@@ -986,8 +986,29 @@ parity test, and `url` is checked before it reaches `src`. An insecure origin re
 `Message` renders `data-fc-kind="message"`, `data-fc-role`, `data-fc-state`, `data-fc-id`,
 `data-fc-seq`, and `data-fc-ts` through `FcData`. Streaming input is a
 `ReadSignal<String>` passed to `StreamingText` inside a part, so the batching boundary is
-that component: everything above it is static `Element` children. Streaming text is not
-announced per token; `AgentStatus` announces phase changes.
+that component: everything above it is static `Element` children.
+
+Batching limits how often the DOM changes; it does not by itself stop a screen reader from
+reading partial answers, because the thread is a polite log and a text change inside it
+can be announced. The CSS doc's rule is that the thread announces *messages*, never
+tokens, so `Message` enforces it from its state rather than leaving it to the producer:
+
+- While `state` is `Pending` or `Streaming`, the message renders `aria-busy="true"`.
+  Assistive technology defers announcing changes inside a busy element, so the partial
+  text is visible and readable in browse mode but not spoken as it grows.
+- On `Complete`, `Error`, or `Aborted`, `aria-busy` is removed and the finished message is
+  announced once, as a log addition.
+- `Chat` renders `aria-relevant="additions"`, so text changes to existing nodes are not
+  announcement triggers in the first place; the busy flag covers screen readers that
+  ignore `aria-relevant`.
+- Progress during a long reply ("Thinking", "Running tool") is spoken by `AgentStatus`
+  through the coalesced `behavior::live` channel, not by the message.
+
+Because screen readers differ here, the Phase 4 browser suite asserts the attributes and
+the per-release manual pass (NVDA, VoiceOver, JAWS) verifies that a streamed reply is
+announced once. If a reader is found that announces busy content anyway, the fallback is
+to render the streaming text `aria-hidden` with a visually hidden "Response in progress"
+placeholder until completion.
 
 ### Chat composer (`composer.css`)
 

@@ -375,6 +375,7 @@ fn backtrack(trace: &[Vec<i32>], d: i32, offset: i32, end_x: i32, end_y: i32) ->
 // three numeric arrays are what a diff summary or a test needs, and those are
 // the paths that must not pay for strings.
 
+#[cfg(feature = "bindgen")]
 use wasm_bindgen::prelude::*;
 
 /// Wire encoding for `DiffKind`, kept next to the boundary that depends on it.
@@ -386,13 +387,13 @@ const KIND_REMOVE: i32 = 2;
 ///
 /// Splitting is cheap and the count is what a caller needs to size the other
 /// three arrays, so this is the one call that does the work up front.
-#[wasm_bindgen(js_name = lineCount)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = lineCount))]
 pub fn js_line_count(text: &str) -> usize {
     split_lines(text).len()
 }
 
 /// The per-line kinds, as a flat `Int32Array` of length `lineCount`.
-#[wasm_bindgen(js_name = diffKinds)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = diffKinds))]
 pub fn js_diff_kinds(before: &str, after: &str) -> Vec<i32> {
     diff_lines(before, after)
         .iter()
@@ -405,7 +406,7 @@ pub fn js_diff_kinds(before: &str, after: &str) -> Vec<i32> {
 }
 
 /// 1-based line numbers in the original; -1 where the line is new.
-#[wasm_bindgen(js_name = diffOldLines)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = diffOldLines))]
 pub fn js_diff_old_lines(before: &str, after: &str) -> Vec<i32> {
     diff_lines(before, after)
         .iter()
@@ -414,7 +415,7 @@ pub fn js_diff_old_lines(before: &str, after: &str) -> Vec<i32> {
 }
 
 /// 1-based line numbers in the revision; -1 where the line was removed.
-#[wasm_bindgen(js_name = diffNewLines)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = diffNewLines))]
 pub fn js_diff_new_lines(before: &str, after: &str) -> Vec<i32> {
     diff_lines(before, after)
         .iter()
@@ -426,7 +427,7 @@ pub fn js_diff_new_lines(before: &str, after: &str) -> Vec<i32> {
 ///
 /// Out-of-range returns empty rather than panicking: a JS caller indexing past
 /// the end should see no text, not take the whole module down with a trap.
-#[wasm_bindgen(js_name = diffTextAt)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = diffTextAt))]
 pub fn js_diff_text_at(before: &str, after: &str, index: usize) -> String {
     diff_lines(before, after)
         .get(index)
@@ -435,14 +436,14 @@ pub fn js_diff_text_at(before: &str, after: &str, index: usize) -> String {
 }
 
 /// `[added, removed]` as a flat two-element array.
-#[wasm_bindgen(js_name = diffStats)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = diffStats))]
 pub fn js_diff_stats(before: &str, after: &str) -> Vec<i32> {
     let stats = diff_stats(&diff_lines(before, after));
     vec![stats.added as i32, stats.removed as i32]
 }
 
 /// Whether the two inputs are identical after line splitting.
-#[wasm_bindgen(js_name = diffIdentical)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = diffIdentical))]
 pub fn js_diff_identical(before: &str, after: &str) -> bool {
     diff_stats(&diff_lines(before, after)).identical
 }

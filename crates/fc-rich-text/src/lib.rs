@@ -27,6 +27,7 @@
 
 use fc_core::FcError;
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "bindgen")]
 use wasm_bindgen::prelude::*;
 
 /// A formatting mark. Mirrors the inline elements a user can apply.
@@ -66,10 +67,10 @@ impl Span {
 }
 
 /// A single block: text plus the spans marking it.
-#[wasm_bindgen]
+#[cfg_attr(feature = "bindgen", wasm_bindgen)]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Block {
-    #[wasm_bindgen(skip)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(skip))]
     pub text: String,
     /// Private by design: spans may only change through `apply_mark` and
     /// `remove_mark`, which preserve the sorted, non-empty invariant. A public
@@ -293,7 +294,7 @@ fn slice_utf16(text: &str, start: usize, end: usize) -> String {
 
 /// Parses a mark name, returning an error for anything unrecognized rather than
 /// defaulting to a mark the user did not ask for.
-fn parse_mark(name: &str) -> Result<Mark, JsValue> {
+fn parse_mark(name: &str) -> Result<Mark, FcError> {
     match name {
         "bold" => Ok(Mark::Bold),
         "italic" => Ok(Mark::Italic),
@@ -301,9 +302,9 @@ fn parse_mark(name: &str) -> Result<Mark, JsValue> {
         "strike" => Ok(Mark::Strike),
         "code" => Ok(Mark::Code),
         "link" => Ok(Mark::Link),
-        other => Err(JsValue::from_str(&format!(
-            "fc:invalidInput:unknown mark \"{other}\""
-        ))),
+        other => Err(FcError::InvalidInput {
+            message: format!("unknown mark \"{other}\""),
+        }),
     }
 }
 
@@ -341,19 +342,19 @@ fn push_json_string(out: &mut String, text: &str) {
     out.push('"');
 }
 
-#[wasm_bindgen]
+#[cfg_attr(feature = "bindgen", wasm_bindgen)]
 impl Block {
-    #[wasm_bindgen(constructor)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(constructor))]
     pub fn js_from_text(text: String) -> Block {
         Block { text, spans: Vec::new() }
     }
 
-    #[wasm_bindgen(getter)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(getter))]
     pub fn text(&self) -> String {
         self.text.clone()
     }
 
-    #[wasm_bindgen(setter)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(setter))]
     pub fn set_text(&mut self, text: String) {
         // Changing the text invalidates every span, so they are dropped rather
         // than left pointing at offsets that may no longer exist.
@@ -361,30 +362,33 @@ impl Block {
         self.text = text;
     }
 
+    #[cfg(feature = "bindgen")]
     #[wasm_bindgen(js_name = applyMark)]
     pub fn js_apply_mark(&mut self, mark: &str, start: usize, end: usize) -> Result<(), JsValue> {
         self.apply_mark(parse_mark(mark)?, start, end).map_err(Into::into)
     }
 
-    #[wasm_bindgen(js_name = removeMark)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = removeMark))]
     pub fn js_remove_mark(&mut self, mark: &str, start: usize, end: usize) {
         if let Ok(m) = parse_mark(mark) {
             self.remove_mark(m, start, end);
         }
     }
 
+    #[cfg(feature = "bindgen")]
     #[wasm_bindgen(js_name = hasMark)]
     pub fn js_has_mark(&self, mark: &str, start: usize, end: usize) -> Result<bool, JsValue> {
         Ok(self.has_mark_throughout(parse_mark(mark)?, start, end))
     }
 
     /// Mark names active at a zero-width caret position.
-    #[wasm_bindgen(js_name = marksAt)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = marksAt))]
     pub fn js_marks_at(&self, offset: usize) -> Vec<String> {
         self.marks_at(offset).into_iter().map(|m| mark_name(m).to_string()).collect()
     }
 
     /// JSON text crosses as one primitive; JS decides when to decode the halves.
+    #[cfg(feature = "bindgen")]
     #[wasm_bindgen(js_name = splitAt)]
     pub fn js_split_at(&self, offset: usize) -> Result<String, JsValue> {
         let (left, right) = self.split_at(offset).map_err(JsValue::from)?;
@@ -397,7 +401,7 @@ impl Block {
     }
 
     /// Explicit serialization avoids the automatic JSON.stringify/toJSON hook.
-    #[wasm_bindgen(js_name = serialize)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = serialize))]
     pub fn serialize(&self) -> String {
         let mut out = String::from("{\"text\":");
         push_json_string(&mut out, &self.text);

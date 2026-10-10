@@ -374,6 +374,37 @@ natively and never sees the feature.
 The remaining raw bytes are mostly wasm-bindgen's descriptor section (about 8 KB for
 fc-diff), which bindgen strips and which never ships, plus the allocator (about 5 KB).
 
+### Pure Rust consumers: the `bindgen` feature
+
+The models are useful without a JavaScript boundary: the Dioxus component library
+links them as ordinary Rust. Every crate therefore puts wasm-bindgen behind a
+default-on `bindgen` feature (in `fc-core` it also carries the console panic hook).
+With defaults on nothing changes, so build:wasm, the bindings and the size budgets
+are untouched. With defaults off a crate links no wasm-bindgen on any target:
+
+```toml
+fc-model = { path = "...", default-features = false }
+```
+
+That matters more than the bytes. The pin is exact (`=0.2.118`) because the CLI
+must match, and Cargo allows one wasm-bindgen per semver range in a build. With
+bindgen on, a Dioxus 0.7.9 app is dragged back to wasm-bindgen 0.2.118 (it would
+otherwise resolve 0.2.129), and an existing lockfile holding the newer version
+fails to resolve at all.
+
+Exports are written `#[cfg_attr(feature = "bindgen", wasm_bindgen(...))]`, so the
+same functions and methods stay public to Rust callers. Only what names `JsValue`
+is compiled out: `From<FcError> for JsValue`, `init_panic_hook`, and the
+`Result<_, JsValue>` wrappers (`slice16`, `replace16`, `lineAt`, `countChars`,
+`applyMark`, `hasMark`, `splitAt`, `fillDown`), each of which wraps a public Rust
+method returning `FcError`. Siblings are pulled with defaults off and `bindgen`
+forwarded explicitly, so turning it off at the top turns it off all the way down.
+
+`bindgen` and `bare` are independent: a pure Rust consumer has std and never enables
+`bare`. `npm run test:rust` runs the Rust tests both ways and checks wasm32 with
+defaults off, and `tests/pure-rust.test.ts` fails if `cargo tree` finds wasm-bindgen
+in a defaults-off crate.
+
 `wasm-opt` is an optional system tool, like the `wasm-bindgen` CLI: install
 binaryen and the build uses it, skip it and the build is complete but the
 shipped sizes are ~10% larger. The report says which happened. The parity suite

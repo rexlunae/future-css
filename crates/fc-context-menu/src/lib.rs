@@ -57,6 +57,7 @@ fn panic(_: &core::panic::PanicInfo) -> ! {
 static ALLOC: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
 
 
+#[cfg(feature = "bindgen")]
 use wasm_bindgen::prelude::*;
 
 /// What kind of item this is. Separators carry no interaction.
@@ -290,7 +291,7 @@ fn index_in(active: i32) -> Option<usize> {
 }
 
 /// The focused index after an arrow press, or -1 when nothing is focusable.
-#[wasm_bindgen(js_name = menuMove)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = menuMove))]
 pub fn js_menu_move(focusable: Vec<i32>, active: i32, delta: i32) -> i32 {
     let Some(mut menu) = model_with(&[], &focusable) else { return -1 };
     menu.adopt_state(index_in(active), String::new());
@@ -299,7 +300,7 @@ pub fn js_menu_move(focusable: Vec<i32>, active: i32, delta: i32) -> i32 {
 }
 
 /// The first focusable index, for open and Home. -1 when there is none.
-#[wasm_bindgen(js_name = menuFocusFirst)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = menuFocusFirst))]
 pub fn js_menu_focus_first(focusable: Vec<i32>) -> i32 {
     let Some(mut menu) = model_with(&[], &focusable) else { return -1 };
     menu.focus_first();
@@ -307,7 +308,7 @@ pub fn js_menu_focus_first(focusable: Vec<i32>) -> i32 {
 }
 
 /// The last focusable index, for End. -1 when there is none.
-#[wasm_bindgen(js_name = menuFocusLast)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = menuFocusLast))]
 pub fn js_menu_focus_last(focusable: Vec<i32>) -> i32 {
     let Some(mut menu) = model_with(&[], &focusable) else { return -1 };
     menu.focus_last();
@@ -322,7 +323,7 @@ pub fn js_menu_focus_last(focusable: Vec<i32>) -> i32 {
 /// repeating-character rule runs in the model, so JS never reimplements the
 /// match. The timeout that expires the buffer stays in JS: it is a clock, not
 /// computation.
-#[wasm_bindgen(js_name = menuTypeahead)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = menuTypeahead))]
 pub fn js_menu_typeahead(labels: Vec<String>, focusable: Vec<i32>, active: i32, buffer: String, query: String) -> Vec<i32> {
     let Some(mut menu) = model_with(&labels, &focusable) else { return vec![-1, 0] };
     menu.adopt_state(index_in(active), buffer);

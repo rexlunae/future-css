@@ -26,6 +26,7 @@
 //! handshake covers the seam between them.
 
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "bindgen")]
 use wasm_bindgen::prelude::*;
 
 /// The ABI version of this core module.
@@ -36,7 +37,7 @@ pub const ABI_VERSION: u32 = 2;
 
 /// Reported to JavaScript on load. Cheap, and the first thing to check when
 /// diagnosing a misbehaving integration.
-#[wasm_bindgen(js_name = abiVersion)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = abiVersion))]
 pub fn abi_version() -> u32 {
     ABI_VERSION
 }
@@ -48,6 +49,7 @@ pub fn abi_version() -> u32 {
 /// "unreachable", which tells a user nothing. With `panic = "abort"` and release
 /// optimization this is the only diagnostic that exists, so it is called
 /// unconditionally at init rather than left to the consumer.
+#[cfg(feature = "bindgen")]
 #[wasm_bindgen(js_name = initPanicHook)]
 pub fn init_panic_hook() {
     console_error_panic_hook::set_once();
@@ -146,6 +148,7 @@ impl FcError {
     }
 }
 
+#[cfg(feature = "bindgen")]
 impl From<FcError> for JsValue {
     /// A tagged primitive retains classification without linking JS object APIs.
     fn from(err: FcError) -> Self {

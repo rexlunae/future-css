@@ -275,13 +275,8 @@ impl Grid {
 // arrays rather than as objects. Flat arrays allocate less per crossing, and this
 // runs once per keystroke in a large sheet.
 
-fn range_to_js(r: CellRange) -> JsValue {
-    let arr = js_sys::Array::new();
-    arr.push(&JsValue::from_f64(r.start_row as f64));
-    arr.push(&JsValue::from_f64(r.start_col as f64));
-    arr.push(&JsValue::from_f64(r.end_row as f64));
-    arr.push(&JsValue::from_f64(r.end_col as f64));
-    arr.into()
+fn range_to_js(r: CellRange) -> Vec<u32> {
+    vec![r.start_row as u32, r.start_col as u32, r.end_row as u32, r.end_col as u32]
 }
 
 #[wasm_bindgen]
@@ -297,7 +292,7 @@ impl CellRange {
     }
 
     #[wasm_bindgen(js_name = toArray)]
-    pub fn js_to_array(&self) -> JsValue {
+    pub fn js_to_array(&self) -> Vec<u32> {
         range_to_js(*self)
     }
 
@@ -311,19 +306,12 @@ impl CellRange {
         self.contains(CellRef::new(row, col))
     }
 
-    /// `[[row, col], ...]` in row-major order.
+    /// Flat `[row, col, ...]` coordinates in row-major order.
     #[wasm_bindgen(js_name = cells)]
-    pub fn js_cells(&self) -> Vec<JsValue> {
-        self.iter_cells()
-            .into_iter()
-            .map(|c| {
-                let pair = js_sys::Array::new();
-                pair.push(&JsValue::from_f64(c.row as f64));
-                pair.push(&JsValue::from_f64(c.col as f64));
-                pair.into()
-            })
-            .collect()
+    pub fn js_cells(&self) -> Vec<u32> {
+        self.iter_cells().into_iter().flat_map(|c| [c.row as u32, c.col as u32]).collect()
     }
+
 }
 
 #[wasm_bindgen]
@@ -341,12 +329,12 @@ impl Viewport {
     }
 
     #[wasm_bindgen(js_name = visibleRange)]
-    pub fn js_visible_range(&self) -> JsValue {
+    pub fn js_visible_range(&self) -> Vec<u32> {
         range_to_js(self.visible_range())
     }
 
     #[wasm_bindgen(js_name = renderRange)]
-    pub fn js_render_range(&self) -> JsValue {
+    pub fn js_render_range(&self) -> Vec<u32> {
         range_to_js(self.render_range())
     }
 }

@@ -43,6 +43,7 @@
     "./toast": "./src/js/toast.ts",
     "./tooltip": "./src/js/tooltip.ts",
     "./slider": "./src/js/slider.ts",
+    "./splitter": "./src/js/splitter.ts",
     "./toolbar": "./src/js/toolbar.ts",
     "./carousel": "./src/js/carousel.ts",
     "./datepicker": "./src/js/datepicker.ts",
@@ -96,6 +97,7 @@
     "./select": "Select / listbox behavior: roving highlight, typeahead, filtering, and focus retention. Requires no WASM or Rust toolchain.",
     "./composer": "Chat composer behavior: IME-safe entry, send/stop lifecycle, and attachments. Requires no WASM or Rust toolchain.",
     "./context-strip": "Context strip: provider, model, effort, and model parameters resolved as one state. Requires no WASM or Rust toolchain.",
-    "./git": "Git surface: branch, status counts, file list, and per-file line stats. Renders caller-supplied status entries; does not run git. Has a Rust crate with a JS fallback."
+    "./git": "Git surface: branch, status counts, file list, and per-file line stats. Renders caller-supplied status entries; does not run git. Has a Rust crate with a JS fallback.",
+    "./splitter": "Drag-to-resize on the WAI-ARIA window splitter pattern: split panes and resizable edges, keyboard and pointer. Requires no WASM or Rust toolchain."
   }
 }

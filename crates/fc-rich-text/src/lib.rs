@@ -81,7 +81,7 @@ pub struct Block {
 
 impl Block {
     /// Read-only access to the spans. The tests use this; JS callers get the
-    /// serialized form from `toJSON`.
+    /// serialized form from `serialize`.
     pub fn spans(&self) -> &[Span] {
         &self.spans
     }
@@ -106,6 +106,10 @@ impl Block {
             });
         }
 
+        let start = clamp_offset(&self.text, start);
+        let end = clamp_offset(&self.text, end);
+        if start == end { return Ok(()); }
+
         let mut kept: Vec<Span> = Vec::with_capacity(self.spans.len() + 1);
         for span in self.spans.iter().copied() {
             if span.mark != mark {
@@ -127,6 +131,8 @@ impl Block {
 
     /// Removes a mark over a range, trimming any spans it partially covers.
     pub fn remove_mark(&mut self, mark: Mark, start: usize, end: usize) {
+        let start = clamp_offset(&self.text, start);
+        let end = clamp_offset(&self.text, end);
         if start >= end {
             return;
         }
@@ -155,6 +161,10 @@ impl Block {
         if start >= end {
             return self.marks_at(start).contains(&mark);
         }
+        if end > self.len16() { return false; }
+        let start = clamp_offset(&self.text, start);
+        let end = clamp_offset(&self.text, end);
+        if start == end { return self.marks_at(start).contains(&mark); }
         // Walk the mark's spans as a chain: each must begin where the last ended.
         let mut cursor = start;
         for span in self.spans.iter().filter(|s| s.mark == mark) {
@@ -173,6 +183,7 @@ impl Block {
 
     /// The distinct marks intersecting a zero-width position, in a stable order.
     pub fn marks_at(&self, offset: usize) -> Vec<Mark> {
+        let offset = clamp_offset(&self.text, offset);
         let mut marks: Vec<Mark> = self
             .spans
             .iter()
@@ -210,6 +221,7 @@ impl Block {
                 message: format!("offset {offset} exceeds block length {}", self.len16()),
             });
         }
+        let offset = clamp_offset(&self.text, offset);
         let mut left = Block { text: slice_utf16(&self.text, 0, offset), ..Default::default() };
         let mut right = Block { text: slice_utf16(&self.text, offset, self.len16()), ..Default::default() };
         for span in &self.spans {
@@ -249,6 +261,16 @@ fn coalesce(mut spans: Vec<Span>) -> Vec<Span> {
         }
     }
     out
+}
+
+// A split surrogate advances to the same boundary as the JS accelerator.
+fn clamp_offset(text: &str, offset: usize) -> usize {
+    let mut units = 0;
+    for ch in text.chars() {
+        if units >= offset { break; }
+        units += ch.len_utf16();
+    }
+    units
 }
 
 /// UTF-8-safe substring by UTF-16 offsets, clamping at character boundaries.
@@ -296,6 +318,29 @@ fn mark_name(mark: Mark) -> &'static str {
     }
 }
 
+// JSON requires escaping only quotes, backslashes and control characters.
+// Iterating chars preserves multibyte text rather than escaping UTF-8 bytes.
+fn push_json_string(out: &mut String, text: &str) {
+    const HEX: &[u8] = b"0123456789abcdef";
+    out.push('"');
+    for ch in text.chars() {
+        match ch {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c if c < '\u{20}' => {
+                out.push_str("\\u00");
+                out.push(HEX[(c as usize) >> 4] as char);
+                out.push(HEX[(c as usize) & 15] as char);
+            }
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+}
+
 #[wasm_bindgen]
 impl Block {
     #[wasm_bindgen(constructor)]
@@ -339,27 +384,38 @@ impl Block {
         self.marks_at(offset).into_iter().map(|m| mark_name(m).to_string()).collect()
     }
 
-    /// Splits at an offset, returning `[left, right]` as plain objects.
-    ///
-    /// Serialized rather than returned as instances: a JS array cannot hold Rust
-    /// handles, and the caller needs the halves as data to feed straight back
-    /// into new blocks.
+    /// JSON text crosses as one primitive; JS decides when to decode the halves.
     #[wasm_bindgen(js_name = splitAt)]
-    pub fn js_split_at(&self, offset: usize) -> Result<JsValue, JsValue> {
+    pub fn js_split_at(&self, offset: usize) -> Result<String, JsValue> {
         let (left, right) = self.split_at(offset).map_err(JsValue::from)?;
-        let to_js = |b: &Block| {
-            serde_wasm_bindgen::to_value(b).unwrap_or(JsValue::NULL)
-        };
-        let arr = js_sys::Array::new();
-        arr.push(&to_js(&left));
-        arr.push(&to_js(&right));
-        Ok(arr.into())
+        let mut out = String::from("[");
+        out.push_str(&left.serialize());
+        out.push(',');
+        out.push_str(&right.serialize());
+        out.push(']');
+        Ok(out)
     }
 
-    #[wasm_bindgen(js_name = toJSON)]
-    pub fn js_to_json(&self) -> Result<JsValue, JsValue> {
-        serde_wasm_bindgen::to_value(self).map_err(|e| JsValue::from_str(&e.to_string()))
+    /// Explicit serialization avoids the automatic JSON.stringify/toJSON hook.
+    #[wasm_bindgen(js_name = serialize)]
+    pub fn serialize(&self) -> String {
+        let mut out = String::from("{\"text\":");
+        push_json_string(&mut out, &self.text);
+        out.push_str(",\"spans\":[");
+        for (index, span) in self.spans.iter().enumerate() {
+            if index > 0 { out.push(','); }
+            out.push_str("{\"mark\":");
+            push_json_string(&mut out, mark_name(span.mark));
+            out.push_str(",\"start\":");
+            out.push_str(&span.start.to_string());
+            out.push_str(",\"end\":");
+            out.push_str(&span.end.to_string());
+            out.push('}');
+        }
+        out.push_str("]}");
+        out
     }
+
 }
 
 #[cfg(test)]

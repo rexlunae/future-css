@@ -50,10 +50,10 @@ Layer 1 (always)      CSS + progressive enhancement      zero cost, zero deps
 Layer 2 (opt-in)      WASM model in Rust                ~28 KB per crate
 ```
 
-A rich text editor with no WASM is a `<textarea>` with a toolbar. A spreadsheet
-with no WASM is a plain `<table>`. A context menu with no WASM is a `<ul>` of
-buttons. Each is genuinely usable, accessible, and correct — just less capable
-on very large documents.
+The editor, grid and menu bindings provide their browser behavior entirely in JS.
+The editor uses contenteditable, the grid uses an accessible grid focus model, and
+the menu binding implements its keyboard contract. Native textareas, tables and
+visible command buttons are no-JS alternatives; these are different from no-WASM.
 
 WASM is never required for content to be visible, for a component to be
 operable, or for it to be keyboard-accessible. That is the same rule as the
@@ -64,38 +64,29 @@ usable from a plain TypeScript project.
 
 ## Using it without touching WASM
 
-**This is the primary interface.** WASM is an optimization layer, not an
-architectural requirement.
+Browser bindings import from the package directly:
 
 ```ts
-// Works in any TypeScript project. No Rust, no WASM, no build step.
-import { FutureCssEditor } from "@future-css/rich-text";
-
-const editor = new FutureCssEditor("#editor");
-editor.applyMark("bold");   // models the mark in the DOM, no Rust involved
+import { FutureCssEditor } from "future-css/editor";
+const editor = new FutureCssEditor({ root: ".fc-editor" });
 ```
 
-WASM is loaded only when you ask for it:
+Editor and grid Rust models are not wired into these bindings. Select and menu
+bindings have explicit `useWasm` options with JS fallback; git computation also has
+an optional model. Do not assume a `.create()` or editor accelerator option exists.
 
-```ts
-const editor = await FutureCssEditor.create({
-  element: "#editor",
-  // Optional. Omit it and everything still works, without the Rust model.
-  accelerator: "wasm",   // or "auto" (default) | "none"
-});
-```
-
-Three modes, and they are a real API rather than a build flag:
+`createAccelerator` from `future-css/js` is the generic loader abstraction. Its
+`loadWasm` callback supplies an adapter implementing the Accelerator interface;
+raw bindgen initialization is not itself such an adapter.
 
 | Mode | Behavior |
 | --- | --- |
-| `"auto"` (default) | Loads WASM if the browser supports it and the document is large enough to justify it; otherwise uses the JS path |
-| `"wasm"` | Always loads it; useful when you know you need the model |
-| `"none"` | Never loads it; no network request at all |
+| `"auto"` | JS below the size threshold, under reduced-data/Save-Data, or without WASM support; otherwise try the supplied loader |
+| `"wasm"` | Explicitly try the supplied loader; failures and ABI mismatches retain JS |
+| `"none"` | JS without a download |
 
-The JS layer detects support via `WebAssembly` presence and feature detection, so
-a browser without WASM silently takes the JS path. **No feature-detection code
-leaks into your application** — that is the point of the abstraction.
+The bindings remain usable without WASM. The generic loader's core ABI is 2;
+select and menu retain their independent version handshakes.
 
 ---
 
@@ -131,8 +122,7 @@ current figures are in [What actually ships](#what-actually-ships)):
 | `fc-grid` | 372,115 | cell ranges |
 
 **These numbers are the problem, not the goal.** Each is ~300 KB of `js-sys`
-glue plus ~30 KB of actual logic. The fix, and the next piece of work, is to
-remove `js-sys` from the WASM boundary entirely and return primitives:
+glue plus ~30 KB of actual logic. The implemented fix removes `js-sys` from the WASM boundary entirely and return primitives:
 
 | Crate | Then | Target |
 | --- | ---: | ---: |
@@ -143,8 +133,8 @@ remove `js-sys` from the WASM boundary entirely and return primitives:
 | `fc-grid` | 372 KB | ~32 KB |
 | **Consumer using only the grid** | 372 KB | **~32 KB** |
 
-The current sizes are recorded deliberately, rather than quietly optimizing
-later, because the "before" number is the justification for the design. See
+These historical sizes explain the boundary design. The current report measures
+actual shipped binaries and fails the build above the unchanged targets. See
 Phase A in PLAN.md.
 
 ---
@@ -216,10 +206,10 @@ the nearest character boundary and returns a valid string. This is documented at
 the call site in `fc-model`, because a consumer porting JS logic must know the two
 do not match.
 
-**Errors are structured, not strings.** `FcError` carries an `invalidInput` /
-`unsupported` / `outOfBounds` kind, because "the user typed something invalid"
-and "we have a bug" need different handling at the JS boundary, and a string
-destroys that distinction.
+**Errors retain a kind.** Native Rust uses `FcError`. Core ABI 2 throws tagged primitive
+strings `fc:<kind>:<message>` rather than constructing JS Error objects in Rust.
+The prefix preserves `invalidInput`, `unsupported` and `outOfBounds` classification;
+a JS adapter may wrap it in its own Error type. This removes the last `js-sys` import.
 
 **Panics abort.** `panic = "abort"` removes unwinding tables, and a panic hook is
 installed at init so a failure surfaces as a readable message rather than
@@ -285,45 +275,40 @@ module that reached for the DOM would have to be reimplemented when the DOM
 changed, and would duplicate something the browser already does better.
 ## What actually ships
 
-The size report carries two numbers per module, and they answer different
-questions. The **budget basis** is the pre-bindgen rustc output — the number the
-budgets were set against, and the one where the ~302 KB `js-sys` cost is
-visible. The **ships** column is what a consumer downloads: the post-bindgen web
-module after the optional `wasm-opt -Oz --enable-bulk-memory` pass.
+As of 2026-10-08, the build gates the **shipped web-target .wasm** against the
+unchanged numeric targets. `bytes` retains the raw rustc measurement;
+`shippedBytes` measures the actual file after bindgen and optional optimization.
+`budgetBasis` is `"shipped"`, `withinBudget` refers to that basis, and
+`rawWithinBudget` retains the diagnostic comparison.
 
-Measured (issue #16, binaryen 132):
+Raw artifacts include bindgen descriptor sections that consumers never download.
+Gating them would reject a smaller shipped module for metadata alone. No target
+was raised: 40 KB core, 45 KB model/menu/grid, 50 KB rich-text/git, 35 KB diff/select
+(all decimal bytes). Every module also fits without wasm-opt. JS glue is separate
+from this binary budget. The report remains reproducible in `dist/wasm/size-report.json`;
+`tests/wasm-budget.test.ts` verifies its sizes against the actual files and pins targets.
 
-| module | report basis | ships |
-| --- | ---: | ---: |
-| fc-core | 336.4 KB | 18.3 KB |
-| fc-model | 360.9 KB | 36.3 KB |
-| fc-rich-text | 374.3 KB | 45.9 KB |
-| fc-context-menu | 40.2 KB | 21.7 KB |
-| fc-grid | 363.4 KB | 35.1 KB |
-| fc-diff | 56.2 KB | 34.8 KB |
-| fc-select | 74.6 KB | 50.0 KB → **38.4 KB** |
-| fc-git | 45.0 KB | 25.9 KB |
+The primitives-only boundary removes `js-sys` and `serde-wasm-bindgen` entirely.
+Menu, select, diff and git use the isolated `bare` builds. Native serde derives remain
+available for internal Rust data; they do not marshal JS objects at the boundary.
 
-Two facts follow, and both matter:
+### Core ABI 2 migration
 
-1. **The raw basis overstates the wire.** bindgen strips its custom sections and
-   wasm-opt removes most of the remainder, so "`js-sys` costs ~302 KB" is a
-   statement about the unoptimized linked artifact, not about what ships. The
-   architecture rule (primitives only) still holds — it keeps the artifact small
-   before any optimizer runs — but the wire cost of the current `js-sys` modules
-   is tens of KB, not hundreds.
-2. **The shipped basis re-prioritizes Phase A.** On what actually downloads,
-   `fc-context-menu` (81.3 KB) was the real outlier, then `fc-select` (50.0) and
-   `fc-rich-text` (45.9); `fc-core` ships 18.3 KB and `fc-grid` 35.1.
-   `fc-context-menu` has since been rewritten to a primitives-only boundary: its
-   row above is re-measured (411.6 KB raw / 79.8 KB shipped before, on the same
-   toolchain), and it is the second module under its raw budget. A third of what
-   was left was Unicode case-folding tables, so the binding lowercases labels in
-   JavaScript, where `toLowerCase` is free, and the crate takes folded text.
-   `fc-select` got the same treatment (see below). The
-   budgets remain on the raw basis until Phase A decides whether to re-derive
-   them against shipped bytes — deliberately, because moving the goalposts and
-   measuring the result are two different changes.
+- TextBuffer `lines16()` returns `Uint32Array([start,end,...])`, rather than nested
+  arrays. `lineAt()` and `replace16()` return a two-coordinate Uint32Array.
+- CellRange `toArray()`, Viewport `visibleRange()` / `renderRange()` return four
+  coordinates. CellRange `cells()` returns flat row/column pairs in row-major order.
+- Block replaces the automatic `toJSON()` method with `serialize()` returning JSON
+  text. Decode with `JSON.parse(block.serialize())`. `splitAt()` returns JSON text
+  containing the two blocks; decode with `JSON.parse(block.splitAt(offset))`.
+- Errors are tagged strings as described above. Treat a cached ABI 1 module as
+  incompatible; the generic loader already falls back to JS.
+
+Range and split offsets clamp forward at a surrogate boundary. Returned replacement
+coordinates and rebased formatting spans now use that same actual boundary.
+`tests/wasm-boundary.test.ts` covers every offset pair in multilingual samples,
+all JSON control characters, quotes/backslashes, row-major cells and overscan.
+The existing exhaustive slice/count parity tests remain unchanged in strength.
 
 ### Case folding belongs to JavaScript
 

@@ -60,7 +60,7 @@ export interface Accelerator {
 }
 
 /** The ABI this JS layer was built against. Asserted on every WASM load. */
-export const CORE_ABI_VERSION = 1;
+export const CORE_ABI_VERSION = 2;
 
 /**
  * Document size below which WASM is not worth loading.

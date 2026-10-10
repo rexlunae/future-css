@@ -120,14 +120,14 @@ So:
   numbers.
 - **Never add `js-sys` to a crate** without measuring the result first.
 - `npm run build:wasm` prints a size report and the budgets in
-  `src/build/build-wasm.ts`. Six modules are over budget on the report's raw
-  basis; on the **shipped** basis (what actually downloads, post-bindgen and
-  post-opt — see docs/WASM.md) only `fc-rich-text` exceeds its own.
-- **A primitives-only crate can drop std.** `fc-diff` and `fc-select` build
+  `src/build/build-wasm.ts`. All eight binaries fit the unchanged budgets on the
+  **shipped** basis (post-bindgen and optional post-opt, see docs/WASM.md), which
+  is enforced by the build. Raw descriptor-bearing sizes remain diagnostic.
+- **A primitives-only crate can drop std.** `fc-diff`, `fc-select`, `fc-git` and `fc-context-menu` build
   `no_std` through a `bare` feature, which build:wasm enables in its own cargo
   invocation; std's panic formatting was most of their bytes. Never enable
-  `bare` in a build that includes a std crate: the two panic handlers collide. Phase A in `docs/PLAN.md` is
-  the work to fix that. Do not raise a budget to make the report green.
+  `bare` in a build that includes a std crate: the two panic handlers collide.
+  `build:wasm` keeps those Cargo invocations separate. Do not raise a budget to make the report green.
 - **Never run `git push -u origin HEAD:<branch>` while checked out on `main`.**
   The `-u` rewrites main's upstream to the feature branch, and when that branch
   is later deleted every pull fails with "no such ref was fetched". Push feature
@@ -292,17 +292,17 @@ docs/               Design documents; PLAN.md is the roadmap, WASM.md the WASM s
 
 ## Current state
 
-Pre-alpha. Foundations are built and enforced. Fifty-one CSS components are
+Pre-alpha. Foundations are built and enforced. Fifty-two CSS components are
 complete. The general set: button, connected button group, segmented button, split button, floating action
 button and FAB menu, control group, masthead, list, divider, slider, toolbar, navigation bar, search, carousel, date and time pickers, form field and input group, checkbox / radio /
 switch, card, badge and tag, alert, dialog, side sheet and bottom sheet, popover and tooltip, toast,
 tabs, breadcrumb, pagination, spinners (ring, arc, typing dots, pulse, stream bars, orbit, sparkle), skeleton, progress, avatar, empty state,
-disclosure, navigation sidebar, data table with sorting, and description list. The AI-chat set: chat surface (with message actions), agent status row, reasoning trace,
+disclosure, navigation sidebar, data table with sorting, description list, and splitter (split panes and resizable edges). The AI-chat set: chat surface (with message actions), agent status row, reasoning trace,
 citations and sources, suggested prompts, tool call / step trace, rich text editor,
 context menu, data grid, embedded browser chrome, terminal, code block, diff viewer,
-select/listbox, chat composer, context strip, and git surface. Seventeen ship browser
+select/listbox, chat composer, context strip, and git surface. Eighteen ship browser
 bindings -- editor, menu, grid, webview, select, composer, context strip, git surface,
-tabs, toast, tooltip, table, nav, slider, toolbar, carousel, and date picker -- exercised by tests in a real headless Chrome. Overlays lean
+tabs, toast, tooltip, table, nav, slider, toolbar, carousel, date picker, and splitter -- exercised by tests in a real headless Chrome. Overlays lean
 on the platform (`<dialog>`, the popover API, `<details>`, `@starting-style`) and need
 no script. Syntax highlighting, Markdown, and line diffing ship as JS modules
 (`highlight`, `diff`, `markdown`); the diff has a Rust crate, the other two do not yet.
@@ -325,11 +325,10 @@ one provider selected under another. That is a request nobody can fulfil.
 
 The fixture-driven git surface
 (branch, status counts, file list, per-file line stats) is complete and reuses
-`fc-diff`; its Rust crate is the **first module in the workspace under its size
-budget** at 44.7 KB, which is the Phase A pattern working. The Rust/WASM layer has eight crates with 132 passing tests and a working JS-only fallback,
-but **every module except `fc-git` and `fc-context-menu` is still over its size
-budget** on the raw basis, and `fc-rich-text` is over on the shipped basis — see the WASM
-section above and Phase A in `docs/PLAN.md`. The select and context menu bindings
+`fc-diff`. The Rust/WASM layer has eight crates with 133 passing tests and a
+working JS-only fallback. All eight binaries meet their unchanged shipped budgets;
+raw sizes remain diagnostic. Core ABI 2 uses flat typed arrays and JSON strings
+rather than JavaScript object serialization; see docs/MIGRATION.md. The select and context menu bindings
 opt into their Rust models with `useWasm`, and both fold case in JavaScript so the
 modules link no Unicode tables. The rich text and grid models exist in Rust but
 are not wired; `fc-model`, `fc-diff`, `fc-select`, `fc-context-menu` and `fc-git`

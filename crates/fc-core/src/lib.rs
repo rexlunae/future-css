@@ -32,7 +32,7 @@ use wasm_bindgen::prelude::*;
 ///
 /// Increment whenever a change alters the meaning or shape of anything crossing
 /// the JS boundary. The JS layer asserts equality against this value.
-pub const ABI_VERSION: u32 = 1;
+pub const ABI_VERSION: u32 = 2;
 
 /// Reported to JavaScript on load. Cheap, and the first thing to check when
 /// diagnosing a misbehaving integration.
@@ -147,9 +147,12 @@ impl FcError {
 }
 
 impl From<FcError> for JsValue {
-    /// Converts to a JS `Error` whose message carries the kind, so a caught
-    /// exception is still classified on the JS side.
+    /// A tagged primitive retains classification without linking JS object APIs.
     fn from(err: FcError) -> Self {
-        js_sys::Error::new(&format!("fc:{}:{}", err.kind(), err.message())).into()
+        let mut message = String::from("fc:");
+        message.push_str(err.kind());
+        message.push(':');
+        message.push_str(err.message());
+        JsValue::from_str(&message)
     }
 }

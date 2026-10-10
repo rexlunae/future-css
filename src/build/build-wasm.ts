@@ -24,13 +24,10 @@ const projectRoot = resolve(here, "..", "..");
 const outDir = resolve(projectRoot, "dist", "wasm");
 
 /**
- * Per-crate byte budgets, in bytes, for the raw (pre-bindgen) module.
- *
- * Set from the measured baseline of 27,707 bytes for an empty wasm-bindgen
- * module plus headroom. They are deliberately tight: the current sizes are
- * roughly 10x these because of `js-sys`, and Phase A in PLAN.md brings them
- * down. Until then these are aspirational, which is why the script reports the
- * number rather than failing on it.
+ * Unchanged byte targets now gate the shipped web-target .wasm, not rustc's
+ * descriptor-bearing intermediate. Both measurements stay in the report.
+ * Every target passes even without the optional wasm-opt tool; optimization
+ * is headroom, never a prerequisite for correctness or a green build.
  */
 const BUDGET: Record<string, number> = {
   fc_core: 40_000,
@@ -43,6 +40,7 @@ const BUDGET: Record<string, number> = {
   // workspace gets a number to aim at.
   fc_diff: 35_000,
   fc_select: 35_000,
+  fc_git: 50_000,
 };
 
 /**
@@ -51,7 +49,7 @@ const BUDGET: Record<string, number> = {
  * unification is per build: alongside the std crates, wasm-bindgen's `std`
  * comes back on and std's panic handler collides with the crate's own.
  */
-const BARE = ["fc-diff", "fc-select"] as const;
+const BARE = ["fc-diff", "fc-select", "fc-git", "fc-context-menu"] as const;
 
 /** Cargo crate name -> the module name JS imports. */
 const CRATES: ReadonlyArray<readonly [crate: string, module: string]> = [
@@ -73,17 +71,15 @@ const CRATES: ReadonlyArray<readonly [crate: string, module: string]> = [
 interface SizeReport {
   crate: string;
   module: string;
-  /** Pre-bindgen rustc output — the basis the budgets are set on. */
+  /** Pre-bindgen rustc output, retained for diagnostic comparison. */
   bytes: number;
   budget: number;
+  budgetBasis: "shipped";
+  rawWithinBudget: boolean;
   withinBudget: boolean;
   /**
-   * What a consumer actually downloads: the post-bindgen web-target module,
-   * after the optional wasm-opt pass. Measured separately because it is the
-   * number that reaches the network, while `bytes` is the number the budgets
-   * were set against. The two differ by ~25% (bindgen strips its custom
-   * sections; wasm-opt shrinks further), so conflating them made the report
-   * overstate shipping cost.
+   * The shipped web-target .wasm after bindgen and optional optimization.
+   * JS glue is separate; this budget covers the binary computation module.
    */
   shippedBytes: number;
 }
@@ -195,8 +191,9 @@ async function main(): Promise<void> {
       shippedBytes = 0;
     }
 
-    const budget = BUDGET[stem] ?? 50_000;
-    reports.push({ crate, module, bytes, budget, withinBudget: bytes <= budget, shippedBytes });
+    const budget = BUDGET[stem];
+    if (budget === undefined) throw new Error(`Missing budget for ${crate}`);
+    reports.push({ crate, module, bytes, budget, budgetBasis: "shipped", rawWithinBudget: bytes <= budget, withinBudget: shippedBytes > 0 && shippedBytes <= budget, shippedBytes });
   }
 
   await writeFile(
@@ -216,7 +213,7 @@ async function main(): Promise<void> {
     const shipped = (r.shippedBytes / 1024).toFixed(1);
     const status = r.withinBudget ? "ok  " : "OVER";
     console.log(
-      `  [${status}] ${r.crate.padEnd(18)} ${kb.padStart(7)} KB   (budget ${(r.budget / 1024).toFixed(0)} KB, ships ${shipped} KB)`,
+      `  [${status}] ${r.crate.padEnd(18)} ${kb.padStart(7)} KB raw (budget ${(r.budget / 1024).toFixed(0)} KB shipped, ships ${shipped} KB)`,
     );
   }
   console.log(`\n  sum: ${(total / 1024).toFixed(1)} KB across ${reports.length} modules`);
@@ -233,11 +230,8 @@ async function main(): Promise<void> {
   }
   const over = reports.filter((r) => !r.withinBudget);
   if (over.length > 0) {
-    console.log(
-      `\n  ${over.length} module(s) over budget. The dominant cause is js-sys,` +
-        `\n  which costs ~302 KB the moment it is linked. See docs/WASM.md and` +
-        `\n  Phase A in docs/PLAN.md.`,
-    );
+    console.error(`\n  ${over.length} module(s) exceed their shipped-byte budgets. See docs/WASM.md.`);
+    process.exitCode = 1;
   }
 }
 

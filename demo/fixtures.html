@@ -1637,6 +1637,57 @@
     </div>
   </section>
 
+  <section class="fx" id="fx-splitter" data-fixture="splitter" aria-labelledby="fx-splitter-h">
+    <h2 class="fx__title" id="fx-splitter-h">Splitter <code class="fx__file">splitter.css</code></h2>
+    <div class="fx__states">
+      <figure class="fx__state" data-fx-state="split, side by side"><figcaption class="fx__caption">split, side by side</figcaption><div class="fx__body">
+        <div class="fc-split fx-split">
+          <div class="fc-split__pane fc-split__pane--primary fx-split__pane" id="fx-split-files" style="--fc-split-size: 35%">Files</div>
+          <div class="fc-splitter" role="separator" tabindex="0" aria-orientation="vertical" aria-controls="fx-split-files" aria-label="File list" aria-valuenow="35" aria-valuemin="15" aria-valuemax="70"></div>
+          <div class="fc-split__pane fx-split__pane">Editor</div>
+        </div>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="split, stacked"><figcaption class="fx__caption">split, stacked</figcaption><div class="fx__body">
+        <div class="fc-split fc-split--stacked fx-split" style="--fc-split-block-size: 10rem">
+          <div class="fc-split__pane fc-split__pane--primary fx-split__pane" id="fx-split-code" style="--fc-split-size: 60%">Code</div>
+          <div class="fc-splitter" role="separator" tabindex="0" aria-orientation="horizontal" aria-controls="fx-split-code" aria-label="Code" aria-valuenow="60" aria-valuemin="20" aria-valuemax="80"></div>
+          <div class="fc-split__pane fx-split__pane">Terminal</div>
+        </div>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="primary pane at the end, collapsed"><figcaption class="fx__caption">primary pane at the end, collapsed</figcaption><div class="fx__body">
+        <div class="fc-split fx-split">
+          <div class="fc-split__pane fx-split__pane">Chat</div>
+          <div class="fc-splitter" role="separator" tabindex="0" aria-orientation="vertical" aria-controls="fx-split-ctx" aria-label="Context" aria-valuenow="0" aria-valuemin="0" aria-valuemax="60"></div>
+          <div class="fc-split__pane fc-split__pane--primary fx-split__pane" id="fx-split-ctx" style="--fc-split-size: 0%" hidden>Context</div>
+        </div>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="resizable edges, inline and block"><figcaption class="fx__caption">resizable edges, inline and block</figcaption><div class="fx__body">
+        <div class="fx-resize">
+        <div class="fc-resizable fx-split__pane" id="fx-resize-panel" style="--fc-split-size: 12rem">Panel
+          <div class="fc-splitter fc-splitter--edge" role="separator" tabindex="0" aria-orientation="vertical" aria-controls="fx-resize-panel" aria-label="Panel" aria-valuenow="192" aria-valuemin="120" aria-valuemax="288"></div>
+        </div>
+        <div class="fc-resizable fc-resizable--block fx-split__pane" id="fx-resize-notes" style="--fc-split-size: 5rem">Notes
+          <div class="fc-splitter fc-splitter--edge" role="separator" tabindex="0" aria-orientation="horizontal" aria-controls="fx-resize-notes" aria-label="Notes" aria-valuenow="80" aria-valuemin="48" aria-valuemax="240"></div>
+        </div>
+        </div>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="long content in narrow panes"><figcaption class="fx__caption">long content in narrow panes</figcaption><div class="fx__body">
+        <div class="fc-split fx-split">
+          <div class="fc-split__pane fc-split__pane--primary fx-split__pane" id="fx-split-long" style="--fc-split-size: 25%">Conversation history with a very long title that wraps, and an unbroken path /workspace/projects/future-css/src/components/splitter.css</div>
+          <div class="fc-splitter" role="separator" tabindex="0" aria-orientation="vertical" aria-controls="fx-split-long" aria-label="History" aria-valuenow="25" aria-valuemin="10" aria-valuemax="90"></div>
+          <div class="fc-split__pane fx-split__pane">The reply pane keeps its own scroller, so a long answer here scrolls inside the pane instead of pushing the bar or the page sideways, in either direction and at any width.</div>
+        </div>
+      </div></figure>
+      <figure class="fx__state" data-fx-state="disabled"><figcaption class="fx__caption">disabled</figcaption><div class="fx__body">
+        <div class="fc-split fx-split">
+          <div class="fc-split__pane fc-split__pane--primary fx-split__pane" id="fx-split-fixed">Fixed</div>
+          <div class="fc-splitter" role="separator" tabindex="0" aria-orientation="vertical" aria-controls="fx-split-fixed" aria-label="Fixed" aria-valuenow="50" aria-disabled="true"></div>
+          <div class="fc-split__pane fx-split__pane">Pane</div>
+        </div>
+      </div></figure>
+    </div>
+  </section>
+
   <section class="fx" id="fx-toolbar" data-fixture="toolbar" aria-labelledby="fx-toolbar-h">
     <h2 class="fx__title" id="fx-toolbar-h">Toolbar <code class="fx__file">toolbar.css</code></h2>
     <div class="fx__states">

@@ -228,7 +228,9 @@ export class FutureCssThemePicker {
     this.importGeneration++;this.loadAbort?.abort();const abort=new AbortController();this.loadAbort=abort;
     this.root.setAttribute('aria-busy','true');this.recordState('pending');const status=this.root.querySelector('[data-fc-theme-status]');if(status)status.textContent='Loading theme…';
     try {
-    const response=await fetch(resolved,{signal:abort.signal,credentials:'same-origin'});if(response.url&&!this.allowedOrigin(new URL(response.url)))throw new Error('Theme request redirected to a disallowed origin');if(!response.ok)throw new Error(`Theme request failed (${response.status})`);
+    // Redirects are refused outright: by the time a response could be checked, the
+    // browser would already have sent the redirected request to the new origin.
+    const response=await fetch(resolved,{signal:abort.signal,credentials:'same-origin',redirect:'error'});if(!response.ok)throw new Error(`Theme request failed (${response.status})`);
     const reader=response.body?.getReader();if(!reader)throw new Error('Theme response is empty');
     const chunks:Uint8Array[]=[];let size=0;
     while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>65536){await reader.cancel();throw new Error('Theme TOML exceeds 64 KiB');}chunks.push(value);}

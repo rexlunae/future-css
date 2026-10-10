@@ -62,11 +62,15 @@ function schemeFromTheme(theme?:string):Partial<ThemeState> {
 export interface ThemePickerOptions {
   root: HTMLElement|string; target?: HTMLElement; initial?: Partial<ThemeState>;
   storageKey?: string; contract?: ThemeContract; customThemes?: readonly unknown[]; onChange?: (state:Readonly<ThemeState>)=>void;
+  /** Origins besides the page's own that `loadTheme` may fetch from, e.g. `https://cdn.example`. */
+  themeOrigins?: readonly string[];
 }
 export class FutureCssThemePicker {
   private root:HTMLElement; private target:HTMLElement; private state:ThemeState;
   private custom=new Map<string,CustomTheme>(); private abort=new AbortController(); private loadAbort?:AbortController;
   private sequence=0;
+  /** The newest file import or URL load wins; an older one finishing later must not reapply its theme. */
+  private importGeneration=0;
   private disposed=false; private media=matchMedia('(prefers-color-scheme: dark)');
   private preferences=[this.media,matchMedia('(prefers-contrast: more)'),matchMedia('(forced-colors: active)')];
   private ownedProperties:string[]=[];
@@ -218,10 +222,13 @@ export class FutureCssThemePicker {
   async loadTheme(url:string){
     if(this.disposed)throw new Error('Theme picker is destroyed');
     const resolved=new URL(url,document.baseURI);if(!['http:','https:'].includes(resolved.protocol))throw new Error('Theme URL must be HTTP(S)');
-    this.loadAbort?.abort();const abort=new AbortController();this.loadAbort=abort;
+    // A URL can come from a query string or settings; without an allowlist the
+    // browser could be pointed at internal services before validation runs.
+    if(!this.allowedOrigin(resolved))throw new Error(`Theme origin ${resolved.origin} is not allowed; list it in themeOrigins`);
+    this.importGeneration++;this.loadAbort?.abort();const abort=new AbortController();this.loadAbort=abort;
     this.root.setAttribute('aria-busy','true');this.recordState('pending');const status=this.root.querySelector('[data-fc-theme-status]');if(status)status.textContent='Loading theme…';
     try {
-    const response=await fetch(resolved,{signal:abort.signal,credentials:'same-origin'});if(!response.ok)throw new Error(`Theme request failed (${response.status})`);
+    const response=await fetch(resolved,{signal:abort.signal,credentials:'same-origin'});if(response.url&&!this.allowedOrigin(new URL(response.url)))throw new Error('Theme request redirected to a disallowed origin');if(!response.ok)throw new Error(`Theme request failed (${response.status})`);
     const reader=response.body?.getReader();if(!reader)throw new Error('Theme response is empty');
     const chunks:Uint8Array[]=[];let size=0;
     while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>65536){await reader.cancel();throw new Error('Theme TOML exceeds 64 KiB');}chunks.push(value);}
@@ -231,10 +238,14 @@ export class FutureCssThemePicker {
     }catch(error){if(!abort.signal.aborted&&!this.disposed)this.reportError(error);throw error;}
     finally{if(this.loadAbort===abort)this.root.removeAttribute('aria-busy');}
   }
+  private allowedOrigin(url:URL):boolean{
+    return url.origin===new URL(document.baseURI).origin||(this.options.themeOrigins??[]).some(origin=>new URL(origin).origin===url.origin);
+  }
   private reportError(error:unknown){this.recordState('error');const status=this.root.querySelector<HTMLElement>('[data-fc-theme-status]');if(status)status.textContent=`Theme was not applied: ${error instanceof Error?error.message:'Invalid theme'}`;}
   private async importFile(file?:File){
     if(!file)return;
-    try{if(file.size>65536)throw new Error('Theme TOML exceeds 64 KiB');const input=parseThemeToml(await file.text());if(this.disposed)return;const id=this.registerTheme(input);this.setState({design:id,palette:this.custom.get(id)?.colors?id:this.custom.get(id)?.palette??themePresets.find(p=>p.id===this.custom.get(id)?.base)!.palette});this.recordState('complete');}catch(error){this.reportError(error);}
+    const generation=++this.importGeneration;this.loadAbort?.abort();
+    try{if(file.size>65536)throw new Error('Theme TOML exceeds 64 KiB');const text=await file.text();if(this.disposed||generation!==this.importGeneration)return;const input=parseThemeToml(text);const id=this.registerTheme(input);this.setState({design:id,palette:this.custom.get(id)?.colors?id:this.custom.get(id)?.palette??themePresets.find(p=>p.id===this.custom.get(id)?.base)!.palette});this.recordState('complete');}catch(error){this.reportError(error);}
   }
   private render(){
     const active=document.activeElement as HTMLInputElement;const preserve=this.root.contains(active)?{field:active.dataset.fcThemeControl,value:active.value,import:active.dataset.fcThemeImport!==undefined}:null;

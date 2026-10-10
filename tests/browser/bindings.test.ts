@@ -3125,9 +3125,18 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       const unchanged=JSON.stringify(before)===JSON.stringify(importPicker.value);
       importPicker.registerTheme({schemaVersion:1,version:'1.0.0',id:'custom-palette',name:'Custom',description:'Verified palette',base:'future',colors:{'text-default':contract.colors['text-default']}});
       importPicker.setState({design:'custom-palette',palette:'custom-palette'});
-      return {id,rejected,unchanged,inline:region.style.getPropertyValue('--fc-color-text-default')};
+      const inline=region.style.getPropertyValue('--fc-color-text-default');
+      let foreign='';try{await importPicker.loadTheme('https://theme-host.invalid/evil.toml');}catch(error){foreign=error.message;}
+      // Two overlapping imports: the slower, older file must not replace the newer choice.
+      const toml=(id,delay)=>({size:200,text:()=>new Promise(r=>setTimeout(()=>r('schema-version = 1\\nversion = "1.0.0"\\nid = "'+id+'"\\nname = "'+id+'"\\ndescription = "Race"\\nbase = "future"\\n'),delay))});
+      const older=importPicker.importFile(toml('older-file',120)),newer=importPicker.importFile(toml('newer-file',10));await Promise.all([older,newer]);
+      const raced={design:importPicker.value.design,olderInstalled:!!picker.querySelector('[data-fc-theme-option="older-file"]')};
+      importPicker.setState({design:'custom-palette',palette:'custom-palette'});
+      return {id,rejected,unchanged,inline,foreign,raced};
     `);
     assert.equal(result.id,'reading-room');assert.ok(result.rejected&&result.unchanged);assert.match(result.inline,/light-dark/);
+    assert.match(result.foreign,/not allowed/,'a theme URL on another origin needs an explicit themeOrigins entry');
+    assert.deepEqual(result.raced,{design:'newer-file',olderInstalled:false});
     try{
       await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-contrast',value:'more'}]});
       await evaluate(`await new Promise(r=>setTimeout(r,60));`);

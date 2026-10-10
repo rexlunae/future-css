@@ -111,6 +111,9 @@ presets provide distinct elevation. No appearance rule requires a demo class.
 Import a `.toml` file using the picker, or load an HTTP(S) URL through `loadTheme`.
 A failed schema/contrast check leaves the current appearance intact and reports why.
 Imports are bounded to 64 KiB and contain data, never CSS, scripts, assets or webfonts.
+`loadTheme` fetches only from the page's own origin unless you list another origin in
+the `themeOrigins` option, and rejects a redirect off the allowed origins. When two imports
+overlap, the one started last wins.
 
 ```toml
 schema-version = 1

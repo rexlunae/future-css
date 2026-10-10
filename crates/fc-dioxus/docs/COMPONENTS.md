@@ -84,7 +84,7 @@ Shared types (`Availability`, `Lifecycle`, `MessageRole`, `Tone`, `Orientation`,
 | `citation.css` | `citation` | `Cite`, `Sources`, `Source` |
 | `suggestion.css` | `suggestion` | `Suggestions`, `Suggestion` |
 | `tool-call.css` | `tool_call` | `ToolCall` |
-| splitter | `splitter` | `Split`, `SplitPane`, `Splitter`, `Resizable` (see [Splitter](#splitter)) |
+| `splitter.css` | `splitter` | `Split`, `SplitPane`, `Splitter`, `Resizable` (see [Splitter](#splitter)) |
 | `metric.css`, `transfer.css`, `approval.css`, `user-prompt.css`, `device-auth.css` | `lifecycle_panel` | `Metric`, `Transfer`, `Approval`, `UserPrompt`, `DeviceAuth` (one shared implementation, below) |
 
 ---

@@ -2665,17 +2665,20 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       frame.srcdoc = '<link rel="stylesheet" href="/src/css/components/git.css">'
         + '<link rel="stylesheet" href="/src/css/components/grid.css">'
         + '<div class="fc-git__row" role="row" tabindex="0"></div>'
-        + '<div class="fc-grid" role="grid"><div role="row"></div></div>';
+        + '<div class="fc-grid" role="grid"><div role="row"></div>'
+        + '<div role="rowgroup" style="display: contents"><div role="row" id="grouped"></div></div></div>';
       document.body.append(frame);
       await new Promise((resolve) => frame.addEventListener('load', resolve, { once: true }));
       const doc = frame.contentDocument;
       const git = doc.querySelector('.fc-git__row');
       const gridRow = doc.querySelector('.fc-grid > [role="row"]');
+      const grouped = doc.getElementById('grouped');
       git.focus();
       const out = {
         sheets: doc.styleSheets.length,
         git: frame.contentWindow.getComputedStyle(git).display,
         gridRow: frame.contentWindow.getComputedStyle(gridRow).display,
+        grouped: frame.contentWindow.getComputedStyle(grouped).display,
         focused: doc.activeElement === git,
       };
       frame.remove();
@@ -2685,6 +2688,7 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(result.git, "flex", "grid.css must not restyle another component's rows");
     assert.equal(result.focused, true, "a git row must stay focusable for the roving tabindex");
     assert.equal(result.gridRow, "contents", "the grid's own rows must stay box-less");
+    assert.equal(result.grouped, "contents", "rows inside a rowgroup are still the grid's rows");
   });
 
   it("offers no stage button for a file that already has an index state", async () => {

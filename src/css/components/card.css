@@ -218,9 +218,10 @@
   /*
    * Selected, for cards used as large radio or checkbox options. Driven by the
    * state of a real input inside the card, so the visual and the form value
-   * cannot disagree.
+   * cannot disagree. A selected option also matches :checked, so the selector
+   * must name the input: an ordinary card containing a select is not selected.
    */
-  .fc-card:has(:checked) {
+  .fc-card:has(input:checked) {
     border-color: var(--fc-color-accent-border);
     background-color: var(--fc-color-accent-bg-subtle);
   }
@@ -237,7 +238,7 @@
       border-color: CanvasText;
     }
 
-    .fc-card:has(:checked) {
+    .fc-card:has(input:checked) {
       border-color: Highlight;
       border-width: var(--fc-border-width-thick);
     }

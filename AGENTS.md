@@ -83,7 +83,7 @@ npm run build:css   # CSS only; no Rust toolchain needed
 npm run build:wasm  # Rust crates -> one .wasm per module, plus a size report
 npm run lint        # architecture linter
 npm test            # JS tests, including WASM/JS parity
-cargo test          # Rust unit tests
+npm run test:rust   # Rust unit tests, with and without the bindgen feature
 npm run test:browser # bindings in headless Chrome (skipped if none found)
 npm run demo       # serve the component demo at http://127.0.0.1:5178
 npm run check       # all of the above; this is the gate
@@ -128,6 +128,13 @@ So:
   invocation; std's panic formatting was most of their bytes. Never enable
   `bare` in a build that includes a std crate: the two panic handlers collide.
   `build:wasm` keeps those Cargo invocations separate. Do not raise a budget to make the report green.
+- **Every crate's JavaScript boundary sits behind a default-on `bindgen`
+  feature.** Pure Rust consumers (the Dioxus library) turn defaults off and must
+  get no wasm-bindgen at all: its exact `=0.2.118` pin would otherwise hold back
+  their own. Write exports as `#[cfg_attr(feature = "bindgen", wasm_bindgen(...))]`,
+  gate anything that names `JsValue` with `#[cfg(feature = "bindgen")]`, and pull
+  sibling crates with `default-features = false`, forwarding `<sibling>/bindgen`.
+  `tests/pure-rust.test.ts` and `npm run test:rust` fail when this leaks.
 - **Never run `git push -u origin HEAD:<branch>` while checked out on `main`.**
   The `-u` rewrites main's upstream to the feature branch, and when that branch
   is later deleted every pull fails with "no such ref was fetched". Push feature

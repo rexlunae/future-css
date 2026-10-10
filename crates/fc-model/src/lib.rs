@@ -16,12 +16,13 @@
 //! here, is what keeps the rest of the workspace simple.
 
 use fc_core::{FcError, normalize_range};
+#[cfg(feature = "bindgen")]
 use wasm_bindgen::prelude::*;
 
 /// A UTF-8 text buffer with UTF-16-indexed access.
 ///
 /// All public offsets are UTF-16 code units, matching the JavaScript side.
-#[wasm_bindgen]
+#[cfg_attr(feature = "bindgen", wasm_bindgen)]
 #[derive(Debug, Clone, Default)]
 pub struct TextBuffer {
     text: String,
@@ -179,7 +180,7 @@ fn range_to_js(r: Range16) -> Vec<u32> {
     vec![r.start as u32, r.end as u32]
 }
 
-#[wasm_bindgen]
+#[cfg_attr(feature = "bindgen", wasm_bindgen)]
 impl TextBuffer {
     /// Constructs a buffer from JS.
     ///
@@ -187,32 +188,33 @@ impl TextBuffer {
     /// instantiable from JavaScript, which wasm_bindgen otherwise refuses
     /// because it only generates ABI glue for values it can move across the
     /// boundary.
-    #[wasm_bindgen(constructor)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(constructor))]
     pub fn js_from(text: String) -> TextBuffer {
         TextBuffer::new(text)
     }
 
-    #[wasm_bindgen(getter)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(getter))]
     pub fn text(&self) -> String {
         self.text.clone()
     }
 
-    #[wasm_bindgen(js_name = length16)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = length16))]
     pub fn js_len16(&self) -> usize {
         self.len16()
     }
 
-    #[wasm_bindgen(js_name = charCount)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = charCount))]
     pub fn js_char_count(&self) -> usize {
         self.char_count()
     }
 
     /// Returns flat `[start, end, ...]` coordinates, one pair per line.
-    #[wasm_bindgen(js_name = lines16)]
+    #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = lines16))]
     pub fn js_lines16(&self) -> Vec<u32> {
         self.lines16().into_iter().flat_map(range_to_js).collect()
     }
 
+    #[cfg(feature = "bindgen")]
     #[wasm_bindgen(js_name = slice16)]
     pub fn js_slice16(&self, start: usize, end: usize) -> Result<String, JsValue> {
         self.slice16(start, end).map_err(Into::into)
@@ -220,6 +222,7 @@ impl TextBuffer {
 
     /// Replaces a range and returns the `[start, end]` the inserted text now
     /// occupies, so the caller can place the caret without recomputing it.
+    #[cfg(feature = "bindgen")]
     #[wasm_bindgen(js_name = replace16)]
     pub fn js_replace16(
         &mut self,
@@ -232,12 +235,14 @@ impl TextBuffer {
             .map_err(Into::into)
     }
 
+    #[cfg(feature = "bindgen")]
     #[wasm_bindgen(js_name = lineAt)]
     pub fn js_line_at(&self, offset: usize) -> Result<Vec<u32>, JsValue> {
         self.line_at(offset).map(range_to_js).map_err(Into::into)
     }
 
     /// Counts characters, not bytes or UTF-16 units, in a range.
+    #[cfg(feature = "bindgen")]
     #[wasm_bindgen(js_name = countChars)]
     pub fn js_count_chars(&self, start: usize, end: usize) -> Result<usize, JsValue> {
         self.count16(start, end).map_err(Into::into)

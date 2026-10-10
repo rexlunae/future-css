@@ -24,6 +24,16 @@ authors.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-fc-core = { path = "../fc-core" }
-wasm-bindgen = { workspace = true, features = ["std"] }
+fc-core = { path = "../fc-core", default-features = false }
+wasm-bindgen = { workspace = true, features = ["std"], optional = true }
 serde = { workspace = true }
+
+[features]
+# `bindgen` exports the JavaScript boundary and is on by default, so the WASM
+# build is unchanged. A pure Rust consumer (the Dioxus library) turns defaults
+# off and gets the same model with no wasm-bindgen in its dependency tree.
+# Siblings are pulled with defaults off and `bindgen` forwarded by name, so
+# turning it off here turns it off all the way down rather than re-enabling it
+# through a sibling's default.
+default = ["bindgen"]
+bindgen = ["dep:wasm-bindgen", "fc-core/bindgen"]

@@ -37,6 +37,7 @@ extern crate alloc;
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
+#[cfg(feature = "bindgen")]
 use wasm_bindgen::prelude::*;
 
 #[cfg(all(target_arch = "wasm32", feature = "bare", not(test)))]
@@ -456,12 +457,12 @@ impl Select {
 /// the first typeahead keystroke, both after `useWasm` had reported success.
 pub const SELECT_ABI: u32 = 2;
 
-#[wasm_bindgen(js_name = selectAbi)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = selectAbi))]
 pub fn js_select_abi() -> u32 {
     SELECT_ABI
 }
 
-#[wasm_bindgen(js_name = selectOpen)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = selectOpen))]
 pub fn js_select_open(values: Vec<String>, labels: Vec<String>, groups: Vec<String>, disabled: Vec<i32>, current: String) -> i32 {
     let n = values.len().min(labels.len());
     let options: Vec<Option_> = (0..n)
@@ -487,7 +488,7 @@ pub fn js_select_open(values: Vec<String>, labels: Vec<String>, groups: Vec<Stri
 }
 
 /// Index of the option whose value is `value`, or -1.
-#[wasm_bindgen(js_name = selectIndexOf)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = selectIndexOf))]
 pub fn js_select_index_of(values: Vec<String>, value: String) -> i32 {
     values
         .iter()
@@ -497,7 +498,7 @@ pub fn js_select_index_of(values: Vec<String>, value: String) -> i32 {
 }
 
 /// Label at `index`, or "" when out of range.
-#[wasm_bindgen(js_name = selectLabelAt)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = selectLabelAt))]
 pub fn js_select_label_at(labels: Vec<String>, index: i32) -> String {
     if index < 0 {
         return String::new();
@@ -524,7 +525,7 @@ fn contains(haystack: &str, needle: &str) -> bool {
 /// needle is trimmed; the match itself is `Select::filter`, including the
 /// empty-needle case restoring everything, so the JS layer never implements a
 /// second search.
-#[wasm_bindgen(js_name = selectFilter)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = selectFilter))]
 pub fn js_select_filter(label_keys: Vec<String>, value_keys: Vec<String>, needle: String) -> Vec<i32> {
     let (labels, values, query) = (label_keys, value_keys, needle);
     let options: Vec<Option_> = labels
@@ -541,7 +542,7 @@ pub fn js_select_filter(label_keys: Vec<String>, value_keys: Vec<String>, needle
 ///
 /// One call rather than two so a JS caller cannot observe an intermediate state
 /// where the highlight has moved but the committed value has not.
-#[wasm_bindgen(js_name = selectMove)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = selectMove))]
 pub fn js_select_move(values: Vec<String>, labels: Vec<String>, disabled: Vec<i32>, committed: String, delta: i32) -> Vec<i32> {
     let mut select = model_with(&values, &labels, &disabled);
     if select.options().is_empty() {
@@ -561,7 +562,7 @@ pub fn js_select_move(values: Vec<String>, labels: Vec<String>, disabled: Vec<i3
 /// matched, so the caller knows whether to clear the buffer.
 ///
 /// `labels` and `query` are folded by the caller.
-#[wasm_bindgen(js_name = selectTypeahead)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = selectTypeahead))]
 pub fn js_select_typeahead(values: Vec<String>, labels: Vec<String>, disabled: Vec<i32>, committed: String, query: String) -> Vec<i32> {
     let mut select = model_with(&values, &labels, &disabled);
     if select.options().is_empty() {
@@ -581,7 +582,7 @@ pub fn js_select_typeahead(values: Vec<String>, labels: Vec<String>, disabled: V
 /// a filtered list steers the walk the same way it does in the JS twin -- which
 /// is also what makes filtered moves parity-testable at all; before this entry
 /// existed, the boundary could not express one, and that was a blind spot.
-#[wasm_bindgen(js_name = selectMoveFrom)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = selectMoveFrom))]
 pub fn js_select_move_from(values: Vec<String>, labels: Vec<String>, disabled: Vec<i32>, visible: Vec<i32>, active: i32, delta: i32) -> i32 {
     let mut select = model_with(&values, &labels, &disabled);
     if select.options().is_empty() {
@@ -610,7 +611,7 @@ pub fn js_select_move_from(values: Vec<String>, labels: Vec<String>, disabled: V
 /// where the folding happens. What crosses here is the match, which is the part
 /// worth sharing. The 600ms window stays in JS too: it is a clock, and clocks
 /// are not computation this module should own.
-#[wasm_bindgen(js_name = selectTypeaheadFrom)]
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = selectTypeaheadFrom))]
 pub fn js_select_typeahead_from(label_keys: Vec<String>, disabled: Vec<i32>, visible: Vec<i32>, active: i32, needle: String) -> Vec<i32> {
     // Values play no part in a prefix match on labels; the keys stand in.
     let mut select = model_with(&label_keys, &label_keys, &disabled);

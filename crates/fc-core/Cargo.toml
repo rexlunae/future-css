@@ -23,6 +23,14 @@ authors.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-wasm-bindgen = { workspace = true, features = ["std"] }
+wasm-bindgen = { workspace = true, features = ["std"], optional = true }
 serde = { workspace = true }
-console_error_panic_hook = { workspace = true }
+# Only the JavaScript boundary has a console to print a panic to.
+console_error_panic_hook = { workspace = true, optional = true }
+
+[features]
+# `bindgen` exports the JavaScript boundary and is on by default, so the WASM
+# build is unchanged. A pure Rust consumer (the Dioxus library) turns defaults
+# off and gets the same model with no wasm-bindgen in its dependency tree.
+default = ["bindgen"]
+bindgen = ["dep:wasm-bindgen", "dep:console_error_panic_hook"]

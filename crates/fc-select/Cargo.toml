@@ -28,7 +28,7 @@ authors.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-wasm-bindgen = { workspace = true }
+wasm-bindgen = { workspace = true, optional = true }
 
 # `no_std` on wasm, for the reason given in fc-diff: the allocator is named here
 # rather than arriving with std. It is the same dlmalloc std would have linked.
@@ -36,6 +36,11 @@ wasm-bindgen = { workspace = true }
 dlmalloc = { workspace = true, optional = true }
 
 [features]
+# `bindgen` exports the JavaScript boundary and is on by default, so the WASM
+# build is unchanged. A pure Rust consumer (the Dioxus library) turns defaults
+# off and gets the same model with no wasm-bindgen in its dependency tree.
+default = ["bindgen"]
+bindgen = ["dep:wasm-bindgen"]
 # Build without std on wasm (see src/lib.rs). Off by default because std and a
 # crate-defined panic handler cannot share a build: any std crate compiled
 # alongside -- every other crate here enables wasm-bindgen's `std` -- brings

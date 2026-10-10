@@ -26,6 +26,7 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | 4. Verification | Started | Overflow assertions, size budgets, generated token reference; visual regression and browser matrix remain |
 | 5. Platform expansion | Mostly delivered | Print foundation, email foundation, Swift and Kotlin tokens, Figma variables; vertical writing, APCA and cognitive guidance remain |
 | 6. Release | Not started | Publishing, versioning, governance |
+| F. Dioxus components | Designed | `fc-dioxus` design, API, accessibility tooling, and plan in [crates/fc-dioxus](../crates/fc-dioxus/docs/PLAN.md) |
 
 ### Working now
 

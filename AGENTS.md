@@ -280,6 +280,8 @@ src/js/             Component bindings (editor, menu, grid, webview) plus the
                     WASM accelerator. WASM is optional; JS always works.
 src/build/          Token compiler, CSS bundler, WASM orchestrator
 crates/            Rust crates; eight produce eight .wasm files in seven modules
+crates/fc-dioxus/  Dioxus component library (design stage). Its own AGENTS.md
+                    adds the Rust component rules; read it before working there
 tools/lint-css.mjs  Architecture linter
 tests/              Contract, linter, accelerator, and WASM/JS parity tests
 tests/browser/      Binding tests in headless Chrome. Skipped if no browser.

@@ -1,0 +1,12 @@
+schema-version = 1
+version = "1.0.0"
+# A custom design built from the shipped, verified settings.
+id = "reading-room"
+name = "Reading room"
+description = "Serif reading, soft shadows, gentle corners and forest color."
+base = "editorial"
+shape = "round"
+depth = "soft"
+surface = "tinted"
+type = "serif"
+palette = "forest"

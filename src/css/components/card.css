@@ -22,10 +22,11 @@
     flex-direction: column;
     min-inline-size: 0;
 
-    background-color: var(--fc-color-bg-surface);
+    background-color: var(--fc-card-bg, var(--fc-color-bg-surface));
     color: var(--fc-color-text-default);
-    border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);
+    border: var(--fc-border-width-surface, var(--fc-border-width-thin)) var(--fc-card-border-style, solid) var(--fc-card-border, var(--fc-color-border-subtle));
     border-radius: var(--fc-radius-xl);
+    box-shadow: var(--fc-card-shadow, none);
     /* `clip` rather than `hidden`: it rounds the media corners without creating
        a scroll container, so sticky children and focus rings behave. */
     overflow: clip;
@@ -34,6 +35,17 @@
       box-shadow var(--fc-duration-normal) var(--fc-easing-standard),
       border-color var(--fc-duration-normal) var(--fc-easing-standard),
       translate var(--fc-duration-normal) var(--fc-easing-standard);
+  }
+
+  .fc-card--feature {
+    background-color: var(--fc-theme-feature-bg, var(--fc-color-bg-surface));
+    background-image: var(--fc-theme-feature-image, none);
+    text-shadow: var(--fc-theme-feature-text-shadow, none);
+    color: var(--fc-theme-feature-fg, var(--fc-color-text-default));
+    padding: var(--fc-space-6);
+  }
+  @media (forced-colors: active) {
+    .fc-card--feature { text-shadow: none; background-image: none; background-color: Canvas; color: CanvasText; }
   }
 
   .fc-card--elevated {

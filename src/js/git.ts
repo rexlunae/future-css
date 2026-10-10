@@ -258,6 +258,7 @@ export class FutureCssGitSurface {
     const list = this.root.querySelector<HTMLElement>(".fc-git__files");
     if (!list) return;
     list.replaceChildren();
+    list.setAttribute("role", this.entries.length ? "grid" : "group");
 
     const ordered = orderEntries(this.entries);
     if (ordered.length === 0) {
@@ -279,7 +280,7 @@ export class FutureCssGitSurface {
     row.className = "fc-git__row";
     row.dataset.fcPath = entry.path;
     row.dataset.fcSelected = "false";
-    row.setAttribute("role", "option");
+    row.setAttribute("role", "row");
     row.setAttribute("aria-selected", "false");
     row.tabIndex = 0;
 
@@ -289,6 +290,7 @@ export class FutureCssGitSurface {
     const base = entry.path.slice(entry.path.lastIndexOf("/") + 1);
     const name = document.createElement("span");
     name.className = "fc-git__file-name";
+    name.setAttribute("role", "gridcell");
     if (dir) {
       const prefix = document.createElement("span");
       prefix.className = "fc-git__file-dir";
@@ -303,7 +305,18 @@ export class FutureCssGitSurface {
     // keeps the list a single tab stop.
     row.addEventListener("click", () => this.select(entry.path));
     row.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
+      // Nested buttons retain their native keyboard activation.
+      if (event.target !== row) return;
+      const rows = [...row.parentElement!.querySelectorAll<HTMLElement>(".fc-git__row")];
+      const index = rows.indexOf(row);
+      const next = event.key === "ArrowDown" ? Math.min(index + 1, rows.length - 1)
+        : event.key === "ArrowUp" ? Math.max(index - 1, 0)
+        : event.key === "Home" ? 0 : event.key === "End" ? rows.length - 1 : -1;
+      if (next >= 0) {
+        event.preventDefault();
+        this.select(rows[next].dataset.fcPath!);
+        rows[next].focus();
+      } else if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
         this.select(entry.path);
       }
@@ -315,6 +328,7 @@ export class FutureCssGitSurface {
   private renderStages(entry: StatusEntry): HTMLElement {
     const host = document.createElement("span");
     host.className = "fc-git__stages";
+    host.setAttribute("role", "gridcell");
 
     const conflicted = entry.index === "conflicted" || entry.worktree === "conflicted";
     // Declared once on the row *and* once here, because "conflicted" describes the
@@ -330,6 +344,7 @@ export class FutureCssGitSurface {
       button.type = "button";
       button.className = "fc-git__stage-button";
       button.textContent = "Stage";
+      button.setAttribute("aria-label", `Stage ${entry.path}`);
       button.dataset.fcStagePath = entry.path;
       button.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -343,6 +358,7 @@ export class FutureCssGitSurface {
   private renderStat(entry: StatusEntry): HTMLElement {
     const stat = document.createElement("span");
     stat.className = "fc-git__stat";
+    stat.setAttribute("role", "gridcell");
     const summary = fileSummary(entry);
     // No contents means no claim -- see `fileSummary`.
     if (!summary) {

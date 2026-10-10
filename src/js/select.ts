@@ -44,6 +44,12 @@ export interface SelectOption {
   label: string;
   /** Group heading, or omitted for ungrouped. */
   group?: string;
+  /** Supporting text, preserved when options are rebuilt. */
+  description?: string;
+  /** Short supplementary value such as price or capacity. */
+  meta?: string;
+  /** Decorative text glyph; not part of the option name. */
+  icon?: string;
   /** Unavailable: skipped by arrows, never selected. */
   disabled?: boolean;
 }
@@ -518,6 +524,9 @@ export class FutureCssSelect {
         value: el.dataset.fcValue ?? el.textContent?.trim() ?? "",
         label: el.querySelector(".fc-select__option-label")?.textContent?.trim()
           ?? el.textContent?.trim() ?? "",
+        description: el.querySelector(".fc-select__option-description")?.textContent?.trim(),
+        meta: el.querySelector(".fc-select__option-meta")?.textContent?.trim(),
+        icon: el.querySelector(".fc-select__option-icon")?.textContent?.trim(),
         group: groupLabelFor(el),
         disabled: el.getAttribute("aria-disabled") === "true",
       });
@@ -762,13 +771,38 @@ export class FutureCssSelect {
       label.className = "fc-select__option-label";
       label.textContent = option.label;
 
-      el.append(check, label);
+      const content = document.createElement("span");
+      content.className = "fc-select__option-content";
+      content.append(label);
+      if (option.description) {
+        const description = document.createElement("span");
+        description.className = "fc-select__option-description";
+        description.textContent = option.description;
+        content.append(description);
+      }
+      el.append(check);
+      if (option.icon) {
+        const icon = document.createElement("span");
+        icon.className = "fc-select__option-icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = option.icon;
+        el.append(icon);
+      }
+      el.append(content);
+      if (option.meta) {
+        const meta = document.createElement("span");
+        meta.className = "fc-select__option-meta";
+        meta.textContent = option.meta;
+        el.append(meta);
+      }
       this.list.append(el);
     }
 
     if (this.visible.length === 0) {
       const empty = document.createElement("div");
       empty.className = "fc-select__empty";
+      empty.setAttribute("role", "option");
+      empty.setAttribute("aria-disabled", "true");
       empty.textContent = "No matches";
       this.list.append(empty);
     }

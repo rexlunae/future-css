@@ -44,7 +44,7 @@
     explicit that the consumer supplies one.
   -->
   <div class="fc-terminal" id="term" data-fc-state="connected" style="block-size: 8rem;">
-    <div class="fc-terminal__output" role="log" aria-live="polite" aria-label="Output">
+    <div class="fc-terminal__output" tabindex="0" role="log" aria-live="polite" aria-label="Output">
       <div class="fc-terminal__line"><span class="fc-term-ansi-green">ok</span> build finished</div>
       <div class="fc-terminal__line"><span class="fc-term-ansi-red">error</span> one thing failed</div>
     </div>
@@ -71,7 +71,7 @@
     <div class="fc-code__gutter" id="code-gutter" aria-hidden="true">
       <span>1</span><span>2</span>
     </div>
-    <code class="fc-code__source" id="code-src">const x = 1;</code>
+    <code class="fc-code__source" tabindex="0" id="code-src">const x = 1;</code>
   </div>
 
   <!-- Diff: state lives in data-fc-diff so CSS and machines read one value. -->
@@ -210,7 +210,7 @@
       <span class="fc-git__branch"></span>
       <span class="fc-git__summary"></span>
     </div>
-    <div class="fc-git__files" role="listbox" aria-label="Changed files"></div>
+    <div class="fc-git__files" role="group" aria-label="Changed files"></div>
   </div>
 
   <!--

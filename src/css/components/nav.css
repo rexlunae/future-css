@@ -260,13 +260,24 @@
     background-color: var(--fc-color-bg-muted);
   }
 
+  .fc-nav__link:focus-visible {
+    outline-color: var(--fc-nav-link-focus, var(--fc-nav-current-focus, var(--fc-color-focus-ring)));
+  }
+
   .fc-nav__link:active {
     background-color: var(--fc-color-bg-surface);
   }
 
   .fc-nav__link[aria-current="page"] {
-    color: var(--fc-color-accent-text);
-    background-color: var(--fc-color-accent-bg-subtle);
+    color: var(--fc-nav-selected-fg, var(--fc-color-accent-text));
+    background-color: var(--fc-nav-selected-bg, var(--fc-color-accent-bg-subtle));
+    /*
+     * The selected surface can be a solid fill, so its count and ring follow the
+     * selected text by default. These are private names: assigning the public
+     * slots here would discard a value the consumer set on an ancestor.
+     */
+    --fc-nav-current-meta: var(--fc-nav-selected-fg, var(--fc-color-text-subtle));
+    --fc-nav-current-focus: var(--fc-nav-selected-fg, var(--fc-color-focus-ring));
     border-inline-start-color: var(--fc-color-accent-border);
     font-weight: var(--fc-font-weight-medium);
   }
@@ -318,7 +329,7 @@
     min-inline-size: 1.25rem;
     padding-inline: var(--fc-space-1-5);
     background-color: var(--fc-color-bg-muted);
-    color: var(--fc-color-text-muted);
+    color: var(--fc-nav-meta-fg, var(--fc-nav-current-meta, var(--fc-color-text-muted)));
     border-radius: var(--fc-radius-full);
     font-size: var(--fc-font-size-xs);
     font-variant-numeric: tabular-nums;

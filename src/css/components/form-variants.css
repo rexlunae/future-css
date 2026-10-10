@@ -1,0 +1,20 @@
+/* Alternate presentations share the native control's validation and focus states.
+   No motion is introduced; field and checkbox own their reduced-motion resets. */
+@layer fc.components {
+  .fc-input--soft { background-color: var(--fc-color-bg-subtle); }
+  .fc-input--underlined { border-block-start-color: transparent; border-inline-color: transparent; border-radius: 0; }
+  .fc-field--inline { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); align-items: center; gap: var(--fc-space-3); }
+  .fc-choice { display: flex; align-items: start; gap: var(--fc-space-3); padding: var(--fc-space-4); min-block-size: var(--fc-size-target-comfortable); border: var(--fc-border-width-thin) solid var(--fc-color-border-interactive); border-radius: var(--fc-radius-lg); background-color: var(--fc-color-bg-surface); color: var(--fc-color-text-default); cursor: pointer; }
+  .fc-choice:hover { background-color: var(--fc-color-bg-subtle); }
+  .fc-choice:active { background-color: var(--fc-color-bg-muted); }
+  .fc-choice:has(:checked) { border-color: var(--fc-color-accent-border); background-color: var(--fc-color-selected-bg); }
+  .fc-choice:has(:focus-visible) { outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring); outline-offset: var(--fc-space-0-5); }
+  .fc-choice:has(:disabled), .fc-choice:has([aria-disabled="true"]) { background-color: var(--fc-color-disabled-bg); color: var(--fc-color-disabled-fg); cursor: not-allowed; }
+  .fc-choice__content { display: grid; gap: var(--fc-space-1); min-inline-size: 0; overflow-wrap: anywhere; }
+  .fc-choice__description { font-size: var(--fc-font-size-sm); color: inherit; }
+  @media (forced-colors: active) {
+    .fc-choice { border-color: ButtonBorder; }
+    .fc-choice:has(:checked) { outline: var(--fc-border-width-thin) solid Highlight; }
+    .fc-choice:has(:disabled) { color: GrayText; }
+  }
+}

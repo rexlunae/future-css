@@ -94,7 +94,7 @@
 
     background-color: var(--fc-color-bg-surface);
     color: var(--fc-color-text-default);
-    border: var(--fc-border-width-thin) solid var(--fc-color-border-interactive);
+    border: var(--fc-border-width-control, var(--fc-border-width-thin)) solid var(--fc-color-border-interactive);
     border-radius: var(--fc-radius-lg);
 
     font-family: inherit;

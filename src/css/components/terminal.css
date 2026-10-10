@@ -144,7 +144,7 @@
    *
    * Dim is a real ANSI attribute and the one that most often breaks the contrast
    * contract -- which is why `--fc-term-fg-dim` is a defined, verified token at
-   * 3:1 rather than a plain opacity on the default foreground. An opacity would
+   * 4.5:1 rather than a plain opacity on the default foreground. An opacity would
    * compound with whatever color the line already carries.
    */
   .fc-terminal__bold { font-weight: var(--fc-font-weight-bold); }

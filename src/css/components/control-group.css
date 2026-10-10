@@ -23,6 +23,44 @@
     --fc-select-block-size: 2rem;
   }
 
+  /* Joined parts keep their own borders and focus rings; clipping the wrapper
+     would cut off the focus indicator at the outer edges. */
+  .fc-control-group--joined {
+    flex-wrap: nowrap;
+    align-items: stretch;
+    inline-size: 100%;
+    padding: 0;
+    gap: 0;
+    --fc-btn-press-scale: 1;
+    background-color: transparent;
+    border: 0;
+  }
+  .fc-control-group__joined-item {
+    flex: 0 1 auto;
+    min-inline-size: var(--fc-size-target-min);
+    border-radius: var(--fc-joined-inner-radius, 0);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .fc-control-group__joined-item:first-child {
+    border-start-start-radius: min(var(--fc-btn-radius, var(--fc-radius-lg)), var(--fc-btn-corner-limit, calc(var(--fc-size-target-comfortable) / 2)));
+    border-end-start-radius: min(var(--fc-btn-radius, var(--fc-radius-lg)), var(--fc-btn-corner-limit, calc(var(--fc-size-target-comfortable) / 2)));
+  }
+  .fc-control-group__joined-item:last-child {
+    border-start-end-radius: min(var(--fc-btn-radius, var(--fc-radius-lg)), var(--fc-btn-corner-limit, calc(var(--fc-size-target-comfortable) / 2)));
+    border-end-end-radius: min(var(--fc-btn-radius, var(--fc-radius-lg)), var(--fc-btn-corner-limit, calc(var(--fc-size-target-comfortable) / 2)));
+  }
+  .fc-control-group__control { flex: 1 1 8rem; inline-size: 0; }
+
+  /* Overlapping one border removes doubled seams without clipping focus rings. */
+  .fc-control-group__joined-item:not(:first-child) {
+    margin-inline-start: calc(-1 * var(--fc-border-width-control, var(--fc-border-width-thin)));
+  }
+  .fc-control-group__joined-item:focus-visible {
+    position: relative;
+    z-index: var(--fc-z-raised);
+  }
+
   .fc-control-group--plain {
     padding: 0;
     background-color: transparent;

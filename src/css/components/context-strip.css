@@ -117,14 +117,14 @@
   /*
    * A control that does not apply to the current model.
    *
-   * Kept in the layout and dimmed rather than removed: a row that reflows when the
+   * Kept in the layout with a dashed border rather than removed: a row that reflows when the
    * user changes model makes the whole strip jump, and the absence would not be
    * announced at all. `aria-disabled` is already on the select; this is the visual
    * half, and it does not depend on the attribute so a consumer overriding the
    * attribute does not silently lose the styling.
    */
   .fc-context-strip__field[data-fc-applicable="false"] {
-    opacity: 0.55;
+    border-block-end: var(--fc-border-width-thin) dashed var(--fc-color-border-default);
   }
 
   /*
@@ -144,8 +144,7 @@
   /* ---- Forced colors ------------------------------------------------------- */
 
   /*
-   * The dimmed-not-applicable state is opacity, which the OS does not discard,
-   * so it survives here. The notice is colour-only in the default scheme and must
+   * The not-applicable state retains a border cue in forced colors. The notice is colour-only in the default scheme and must
    * be restated.
    */
   @media (forced-colors: active) {

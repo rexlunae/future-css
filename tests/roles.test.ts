@@ -31,6 +31,8 @@ const read = (path: string) => stripComments(readFileSync(join(cssDir, path), "u
  * what TOKENS.md tells the consumer.
  */
 const SLOTS: Record<string, Record<string, string>> = {
+  "components/card.css": {"card-bg":"color-bg-surface"},
+  "components/masthead.css": {"masthead-bg":"color-bg-surface","masthead-fg":"color-text-default","masthead-muted":"color-text-muted","masthead-disabled-fg":"color-disabled-fg","masthead-focus":"color-focus-ring"},
   "components/button.css": {
     "btn-primary-bg": "color-accent-bg",
     "btn-primary-bg-hover": "color-accent-bg-hover",

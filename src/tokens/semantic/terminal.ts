@@ -49,7 +49,7 @@ export const ansiColors = {
   /** Default text. Not tied to an SGR slot -- this is unset/reset color. */
   fg: { light: neutral["50"]!, dark: neutral["100"]! },
   /** Dimmed: comments, timestamps, disabled prompts. */
-  "fg-dim": { light: neutral["400"]!, dark: neutral["500"]! },
+  "fg-dim": { light: neutral["400"]!, dark: neutral["400"]! },
   /**
    * The cursor block.
    *
@@ -116,10 +116,7 @@ const TEXT_SLOTS: readonly AnsiColorName[] = [
  *
  * Every text slot against the terminal background, at 4.5:1.
  *
- * `fg-dim` is a documented exception at 3:1. It exists for genuinely secondary
- * content -- shell comments, timestamps -- where 4.5:1 would force it to read as
- * primary text. Holding it to 4.5 would mean not shipping a dim state at all,
- * which is worse than a documented, still-compliant exception.
+ * Secondary terminal text remains normal-size text and needs the same minimum.
  */
 export const ansiContrastPairs: readonly ContrastPair[] = [
   ...TEXT_SLOTS.filter((slot) => slot !== "fg-dim").map((slot) => ({
@@ -132,7 +129,13 @@ export const ansiContrastPairs: readonly ContrastPair[] = [
     usage: "Dimmed terminal text (comments, timestamps)",
     fg: "fg-dim",
     bg: "bg",
-    min: 3,
+    min: 4.5,
+  },
+  {
+    usage: "Dimmed terminal text on raised chrome",
+    fg: "fg-dim",
+    bg: "bg-raised",
+    min: 4.5,
   },
   {
     usage: "The cursor block against the terminal background",

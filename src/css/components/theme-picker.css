@@ -1,0 +1,38 @@
+/* Native radios/selects retain their keyboard and no-JS contracts. Theme changes
+   add no animation, so reduced motion needs no component-specific reset. */
+@layer fc.components {
+  .fc-theme-picker { display: grid; gap: var(--fc-space-4); min-inline-size: 0; color: var(--fc-color-text-default); }
+  .fc-theme-picker__themes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: var(--fc-space-2); min-inline-size: 0; margin: 0; padding: 0; border: 0; }
+  .fc-theme-picker__legend { padding: 0; margin-block-end: var(--fc-space-3); font-weight: var(--fc-font-weight-semibold); }
+  .fc-theme-picker__option { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: var(--fc-space-3); min-block-size: var(--fc-size-target-comfortable); padding: var(--fc-space-3); border: var(--fc-border-width-control, var(--fc-border-width-thin)) solid var(--fc-color-border-interactive); border-radius: var(--fc-radius-lg); background-color: var(--fc-color-bg-surface); background-image: none; color: var(--fc-color-text-default); box-shadow: var(--fc-shadow-raised); font-family: var(--fc-font-family-sans); cursor: pointer; overflow-wrap: anywhere; }
+  .fc-theme-picker__option:hover { background-color: var(--fc-color-bg-subtle); }
+  .fc-theme-picker__option:active { background-color: var(--fc-color-bg-muted); }
+  .fc-theme-picker__option:has(:checked) { background-color: var(--fc-color-selected-bg); color: var(--fc-color-selected-fg); border-color: var(--fc-color-accent-border); }
+  .fc-theme-picker__option:has(:focus-visible) { outline: var(--fc-border-width-focus) solid var(--fc-color-focus-ring); outline-offset: var(--fc-space-0-5); }
+  .fc-theme-picker__option:has(:disabled), .fc-theme-picker__option[aria-disabled="true"] { background-color: var(--fc-color-disabled-bg); color: var(--fc-color-disabled-fg); cursor: not-allowed; }
+  .fc-theme-picker__preview { display: block; margin-block-end: var(--fc-space-3); }
+  .fc-theme-picker__window { display: block; border: var(--fc-border-width-surface, var(--fc-border-width-thin)) solid var(--fc-color-border-interactive); border-radius: var(--fc-radius-md); background-color: var(--fc-color-bg-canvas); background-image: var(--fc-theme-canvas-image, none); overflow: clip; font-size: var(--fc-font-size-xs); box-shadow: var(--fc-shadow-raised); }
+  .fc-theme-picker__window-bar { display: block; padding: var(--fc-space-2); background-color: var(--fc-masthead-bg); color: var(--fc-masthead-fg); border-block-end: var(--fc-border-width-thin) solid var(--fc-color-border-interactive); }
+  .fc-theme-picker__window-body { display: flex; min-inline-size: 0; }
+  .fc-theme-picker__window-nav { display: grid; align-content: start; gap: var(--fc-space-2); padding: var(--fc-space-2); background-color: var(--fc-color-bg-subtle); color: var(--fc-color-text-default); }
+  .fc-theme-picker__window-content { display: grid; flex: 1; gap: var(--fc-space-2); min-inline-size: 0; padding: var(--fc-space-2); }
+  .fc-theme-picker__window-feature { display: block; padding: var(--fc-space-2); border-radius: var(--fc-radius-sm); background-color: var(--fc-theme-feature-bg); background-image: var(--fc-theme-feature-image); text-shadow: var(--fc-theme-feature-text-shadow, none); color: var(--fc-theme-feature-fg); }
+  .fc-theme-picker__preview-card { display: block; padding: var(--fc-space-2); background-color: var(--fc-card-bg, var(--fc-color-bg-surface)); color: var(--fc-color-text-default); border: var(--fc-border-width-surface, var(--fc-border-width-thin)) var(--fc-card-border-style, solid) var(--fc-card-border, var(--fc-color-border-interactive)); border-radius: var(--fc-radius-md); box-shadow: var(--fc-shadow-raised); }
+  .fc-theme-picker__preview-action { display: block; padding: var(--fc-space-1) var(--fc-space-2); background-color: var(--fc-btn-primary-bg); color: var(--fc-btn-primary-fg); border: var(--fc-border-width-control, var(--fc-border-width-thin)) solid var(--fc-btn-primary-border); border-radius: var(--fc-radius-md); }
+  .fc-theme-picker__editor { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--fc-space-3); padding: var(--fc-space-4); border: var(--fc-border-width-control, var(--fc-border-width-thin)) solid var(--fc-color-border-interactive); border-radius: var(--fc-radius-lg); }
+  .fc-theme-picker__name { display: block; font-size: var(--fc-font-size-sm); }
+  .fc-theme-picker__description { display: block; margin-block-start: var(--fc-space-1); font-size: var(--fc-font-size-sm); line-height: var(--fc-line-height-normal); }
+  .fc-theme-picker__controls { display: flex; flex-wrap: wrap; gap: var(--fc-space-3); }
+  .fc-theme-picker__field { display: grid; gap: var(--fc-space-1); flex: 1 1 12rem; min-inline-size: 0; font-size: var(--fc-font-size-sm); }
+  .fc-theme-picker[data-fc-state="pending"] { border-block-start: var(--fc-border-width-thick) dashed var(--fc-color-border-interactive); }
+  .fc-theme-picker[data-fc-state="error"] { border-block-start: var(--fc-border-width-thick) solid var(--fc-color-danger-border); }
+  .fc-theme-picker__status { margin: 0; color: var(--fc-color-text-muted); font-size: var(--fc-font-size-sm); }
+  @media (forced-colors: active) {
+    .fc-theme-picker__window { background-image: none; }
+    .fc-theme-picker__window-feature { background-image: none; text-shadow: none; }
+    .fc-theme-picker__option { background-color: Canvas; color: CanvasText; border-color: ButtonText; }
+    .fc-theme-picker__option:has(:checked) { border-color: Highlight; outline: var(--fc-border-width-thick) solid Highlight; }
+    .fc-theme-picker__option:has(:focus-visible) { outline-color: Highlight; }
+    .fc-theme-picker__option:has(:disabled), .fc-theme-picker__option[aria-disabled="true"] { color: GrayText; }
+  }
+}

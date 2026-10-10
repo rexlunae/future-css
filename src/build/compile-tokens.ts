@@ -23,7 +23,9 @@ import { fileURLToPath } from "node:url";
 
 import { oklchToHex } from "../tokens/color-utils.ts";
 import { checkContrast, contrastPairs, semanticColors, semanticColorNames } from "../tokens/semantic/color.ts";
-import { themeSets } from "../tokens/semantic/themes.ts";
+import { themeSets, paletteSets } from "../tokens/semantic/themes.ts";
+import { createThemeSchema } from "../js/theme-schema.ts";
+import { themePresets, designOverrides } from "../js/theme-presets.ts";
 import { ansiColorNames, ansiColors, checkAnsiContrast } from "../tokens/semantic/terminal.ts";
 import {
   checkDistinct,
@@ -67,6 +69,8 @@ export interface EmittedToken {
   /** Set when the token resolves differently under light and dark schemes. */
   light?: string;
   dark?: string;
+  /** Theme decoration is published only by the opt-in themes stylesheet. */
+  stylesheet?: 'themes';
 }
 
 const tokens: EmittedToken[] = [];
@@ -90,9 +94,9 @@ for (const [key, layers] of Object.entries(shadow)) {
 }
 
 // ---- Themes -------------------------------------------------------------
-// A theme is a partial re-mapping of the semantic color layer. Authoring a
-// brand theme means overriding these, and nothing else -- spacing, type, and
-// motion stay identical, so a theme can never accidentally break layout.
+// Brand palettes remap semantic colors. Stock designs separately adjust bounded
+// geometry, elevation, typography and component slots; target sizes and motion
+// remain fixed so selecting a design preserves the interaction contract.
 
 // ---- Colors -------------------------------------------------------------
 for (const name of semanticColorNames) {
@@ -106,6 +110,7 @@ for (const name of semanticColorNames) {
       : `light-dark(${lightHex}, ${darkHex})`,
     light: lightHex,
     dark: darkHex,
+    ...(name.startsWith('pride-')?{stylesheet:'themes' as const}:{}),
   });
 }
 
@@ -191,6 +196,7 @@ const GENERATED_HEADER = `/*!
 function renderTokenBlock(): string {
   const byGroup = new Map<string, EmittedToken[]>();
   for (const token of tokens) {
+    if(token.stylesheet==='themes')continue;
     // --fc-color-bg-canvas -> color
     const group = token.name.slice(PREFIX.length + 1).split("-")[0]!;
     const bucket = byGroup.get(group);
@@ -227,6 +233,8 @@ ${renderTokenBlock()}
     color-scheme: light dark;
   }
 
+  [data-fc-theme="system"] { color-scheme: light dark; }
+
   [data-fc-theme="light"] {
     color-scheme: light;
   }
@@ -261,6 +269,7 @@ async function main(): Promise<void> {
   // see, not merely an ugly one.
   const failures = [
     ...checkContrast(),
+    ...Object.values(paletteSets).flatMap(colors => checkContrast(contrastPairs, colors)),
     ...Object.values(themeSets).flatMap(colors => checkContrast(contrastPairs, colors)),
     ...checkAnsiContrast(),
     ...checkSyntaxContrast(),
@@ -301,12 +310,22 @@ async function main(): Promise<void> {
       : `Shared ${t.name.slice(5).replaceAll("-", " ")} token; source: src/tokens.`,
   ]));
   // Reserved metadata is additive: named token values retain their original shape.
-  json.$metadata = { descriptions };
+  json.$metadata = { descriptions, stylesheets:Object.fromEntries(tokens.map(t=>[t.name,t.stylesheet==='themes'?'themes.css':'tokens.css'])) };
   await writeFile(resolve(outDir, "tokens.json"), `${JSON.stringify(json, null, 2)}\n`, "utf8");
 
   const themeDeclarations = (colors: typeof themeSets.forest) => Object.entries(colors)
     .filter(([name]) => !name.startsWith("surface-depth-"))
     .map(([name, p]) => `    --fc-color-${name}: light-dark(${oklchToHex(p.light)}, ${oklchToHex(p.dark)});`).join("\n");
+  await writeFile(resolve(outDir,"theme-contract.json"),JSON.stringify({pairs:contrastPairs,palettes:Object.fromEntries(Object.entries(paletteSets).map(([id,colors])=>[id,Object.fromEntries(Object.entries(colors).map(([role,pair])=>[role,{light:oklchToHex(pair.light),dark:oklchToHex(pair.dark)}]))])),colors:Object.fromEntries(Object.entries(semanticColors).map(([name,pair])=>[name,{light:oklchToHex(pair.light),dark:oklchToHex(pair.dark)}]))},null,2)+"\n");
+  await writeFile(resolve(outDir,"theme-schema.json"),JSON.stringify(createThemeSchema(Object.keys(semanticColors)),null,2)+"\n");
+  const designs = themePresets.map(p=>`  [data-fc-design="${p.id}"] {
+${Object.entries(designOverrides(p)).map(([name,value])=>`    ${name}: ${value};`).join("\n")}
+  }`).join("\n");
+  const palettes = Object.entries(paletteSets).map(([id,colors])=>`  [data-fc-palette="${id}"] {
+${themeDeclarations(colors)}
+  }`).join("\n");
+  const elevation = Object.entries(shadow).map(([name,layers])=>`    --fc-elevation-${name}: ${shadowValue(layers)};`).join("\n");
+  await writeFile(resolve(outDir, "theme-presets.json"), JSON.stringify({presets:themePresets,palettes:Object.keys(paletteSets)},null,2)+"\n");
   const hc = themeDeclarations(themeSets["high-contrast"]);
   const forest = themeDeclarations(Object.fromEntries(Object.entries(themeSets.forest).filter(([name,p]) => {
     const initial = semanticColors[name as keyof typeof semanticColors];
@@ -314,20 +333,35 @@ async function main(): Promise<void> {
   })));
   await writeFile(resolve(outDir, "themes.css"), `${GENERATED_HEADER}
 @layer fc.tokens {
+  :root {
+${elevation}
+${themeDeclarations(Object.fromEntries(Object.entries(semanticColors).filter(([name])=>name.startsWith('pride-'))))}
+    --fc-elevation-edge: 0 0 0 var(--fc-border-width-thin) var(--fc-color-border-interactive);
+  }
+  [data-fc-design] {
+    background-color: var(--fc-color-bg-canvas);
+    background-image: var(--fc-theme-canvas-image, none);
+    color: var(--fc-color-text-default);
+    font-family: var(--fc-font-family-sans);
+  }
+${designs}
+${palettes}
   [data-fc-brand="forest"] {
 ${forest}
   }
   @media (prefers-contrast: more) {
-    :root, [data-fc-brand] {
+    :root, [data-fc-brand], [data-fc-palette] {
 ${hc}
     }
   }
-  [data-fc-theme="high-contrast-light"], [data-fc-theme="high-contrast-dark"] {
+  [data-fc-theme="high-contrast-light"], [data-fc-theme="high-contrast-dark"],
+  :where([data-fc-theme^="high-contrast"]) [data-fc-palette] {
 ${hc}
   }
   [data-fc-theme="high-contrast-light"] { color-scheme: light; }
   [data-fc-theme="high-contrast-dark"] { color-scheme: dark; }
   @media (forced-colors: active) {
+    [data-fc-design] { background-image: none; }
     :root, [data-fc-brand], [data-fc-theme] {
       --fc-color-focus-ring: Highlight;
       --fc-color-focus-ring-offset: Canvas;
@@ -348,7 +382,7 @@ ${hc}
 @layer fc.tokens {
   @supports (color: oklch(0.5 0.1 250)) {
     @media (color-gamut: p3) and (prefers-contrast: no-preference) and (forced-colors: none) {
-      :root:not([data-fc-brand], [data-fc-theme^="high-contrast"]) {
+      :root:not([data-fc-brand], [data-fc-palette], [data-fc-theme^="high-contrast"]) {
 ${gamutColors.map(([name,p]) => `        ${name}: light-dark(${authored(p.light)}, ${authored(p.dark)});`).join("\n")}
       }
     }
@@ -388,9 +422,10 @@ ${gamutColors.map(([name,p]) => `        ${name}: light-dark(${authored(p.light)
   const lightColor = (name: keyof typeof semanticColors) => oklchToHex(semanticColors[name].light);
   await writeFile(resolve(outDir, "email.css"), `/* Generated light-only email foundation; inline for client compatibility. */\n.fc-email { background-color: ${lightColor("bg-canvas")}; color: ${lightColor("text-default")}; font-family: ${fontFamily.sans}; font-size: ${parseFloat(fontSize.md) * 16}px; line-height: ${lineHeight.normal}; }\n.fc-email-surface { background-color: ${lightColor("bg-surface")}; color: ${lightColor("text-default")}; padding: ${parseFloat(space["4"]) * 16}px; }\n.fc-email-link { color: ${lightColor("accent-text")}; text-decoration: underline; }\n.fc-email-muted { color: ${lightColor("text-muted")}; }\n`);
 
-  const themed = tokens.filter((t) => t.light).length;
+  const foundationTokens=tokens.filter(t=>t.stylesheet!=='themes');
+  const themed = foundationTokens.filter((t) => t.light).length;
   console.log(
-    `tokens: emitted ${tokens.length} custom properties (${themed} theme-aware) -> dist/tokens.css`,
+    `tokens: emitted ${foundationTokens.length} custom properties (${themed} theme-aware) -> dist/tokens.css`,
   );
 }
 

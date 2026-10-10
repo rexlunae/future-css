@@ -33,3 +33,33 @@ export const forest: SchemeColors = Object.fromEntries(Object.entries(semanticCo
 ]));
 
 export const themeSets = { 'high-contrast': highContrast, forest } as const;
+
+import { themePalettes } from '../../js/theme-presets.ts';
+/** Hue remapping preserves luminance endpoints; every result is still checked. */
+export const paletteSets: Record<string,SchemeColors> = Object.fromEntries(themePalettes.map(palette=>[palette.id,
+  Object.fromEntries(Object.entries(semanticColors).map(([name,pair])=>[name,
+    palette.hue !== null && /^(accent-|selected-|focus-ring$)/.test(name) ? {
+      light:{...pair.light,h:palette.hue,c:palette.id==='ink'?0:pair.light.c*0.35},
+      dark:{...pair.dark,h:palette.hue,c:palette.id==='ink'?0:pair.dark.c*0.35},
+    }:pair,
+  ])),
+]));
+
+// Tinted neutral surfaces carry the palette through the whole workspace while
+// retaining each role's luminance endpoint and its declared contrast edges.
+for (const palette of themePalettes) {
+  if (palette.hue === null || palette.id === 'ink') continue;
+  const colors = paletteSets[palette.id]!;
+  for (const role of ['bg-canvas','bg-surface','bg-raised','bg-overlay','bg-sunken','bg-subtle','bg-muted']) {
+    const pair = colors[role]!;
+    colors[role] = {
+      light: {...pair.light, h: palette.hue, c: Math.min(0.025, (1-pair.light.l)*0.35)},
+      dark: {...pair.dark, h: palette.hue, c: 0.018},
+    };
+  }
+}
+
+// The reference's mint CTA and blue/violet navigation are independent treatments.
+// Keep text endpoints unchanged so the whole palette still clears its contract.
+paletteSets.helix!['selected-bg']={light:{l:0.94,c:0.035,h:175},dark:{l:0.25,c:0.025,h:175}};
+paletteSets.helix!['bg-subtle']={light:{l:0.985,c:0.008,h:175},dark:semanticColors['bg-subtle'].dark};

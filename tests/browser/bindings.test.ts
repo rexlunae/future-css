@@ -19,12 +19,14 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { findChrome, startServer } from "./server.mjs";
 
 const chromePath = await findChrome();
+const axeSourcePath = process.env.FC_AXE_SOURCE;
+const axeSource = axeSourcePath ? readFileSync(axeSourcePath, "utf8") : null;
 
 // The WASM-backed select tests need the compiled module; skip cleanly without it.
 // Two levels up: this file lives in tests/browser/. One level lands on tests/,
@@ -2636,6 +2638,22 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.notEqual(result[2], result[0], "and the row was not already selected");
   });
 
+  it("navigates git rows and preserves native Stage keyboard activation", async () => {
+    await loadBindings();
+    await buildGit({}, "onStage: (path) => { globalThis.staged = path; }");
+    const result = await evaluate(`
+      const rows=[...document.querySelectorAll('#git-root .fc-git__row')];
+      rows[0].focus();
+      rows[0].dispatchEvent(new KeyboardEvent('keydown',{key:'End',bubbles:true}));
+      return [document.activeElement===rows.at(-1),rows.at(-1).getAttribute('aria-selected'),document.querySelector('#git-root .fc-git__files').getAttribute('role')];
+    `);
+    assert.deepEqual(result,[true,'true','grid']);
+    await evaluate(`globalThis.staged=null;document.querySelector('#git-root .fc-git__stage-button').focus();`);
+    await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',text:'\r',unmodifiedText:'\r',windowsVirtualKeyCode:13});
+    await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    assert.ok(await evaluate(`return globalThis.staged;`), 'Enter activates the nested native Stage button');
+  });
+
   it("offers no stage button for a file that already has an index state", async () => {
     // Staging it again is a no-op the user should not be offered.
     await loadBindings();
@@ -2946,7 +2964,7 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       await send('Emulation.setEmulatedMedia',{media:'print'});
       const result=await evaluate(`
         const content=document.getElementById('print-test-content');
-        return {scheme:getComputedStyle(document.documentElement).colorScheme,hidden:getComputedStyle(document.getElementById('print-test-chrome')).display,display:getComputedStyle(content).display,url:getComputedStyle(content,'::after').content,shadow:getComputedStyle(content).boxShadow};
+        return {scheme:getComputedStyle(document.documentElement).colorScheme,select:document.querySelector("#model-select")?.outerHTML,fill:getComputedStyle(document.querySelector(".fc-btn")).webkitTextFillColor,labelstyle:document.querySelector("#model-select .fc-select__value")&&{display:getComputedStyle(document.querySelector("#model-select .fc-select__value")).display,visibility:getComputedStyle(document.querySelector("#model-select .fc-select__value")).visibility},rect:document.querySelector("#model-select .fc-select__value")?.getBoundingClientRect().toJSON(),hidden:getComputedStyle(document.getElementById('print-test-chrome')).display,display:getComputedStyle(content).display,url:getComputedStyle(content,'::after').content,shadow:getComputedStyle(content).boxShadow};
       `);
       assert.equal(result.scheme,'light'); assert.equal(result.hidden,'none');
       assert.notEqual(result.display,'none'); assert.match(result.url,/reference/); assert.equal(result.shadow,'none');
@@ -2965,6 +2983,261 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       `);
       assert.equal(result.filter,'none'); assert.doesNotMatch(result.color,/rgba/);
     } finally {await send('Emulation.setEmulatedMedia',{features:[]});}
+  });
+
+  it("has no serious or critical axe findings in fixtures and the working demo", {skip: axeSource ? false : 'set FC_AXE_SOURCE to an isolated axe-core/axe.min.js'}, async () => {
+    for (const page of ['/demo/fixtures.html','/demo/index.html','/demo/rustyclaw.html']) {
+      for (const dir of ['ltr','rtl']) for (const theme of ['light','dark']) {
+        await send('Page.navigate',{url:`${server.origin}${page}?dir=${dir}&theme=${theme}`});
+        await new Promise(r=>setTimeout(r,1000));
+        await evaluate(`document.documentElement.dir=${JSON.stringify(dir)};document.documentElement.dataset.fcTheme=${JSON.stringify(theme)};`);
+        await new Promise(r=>setTimeout(r,300));
+        await send('Runtime.evaluate',{expression:axeSource});
+        const findings=await evaluate(`
+          const result=await axe.run(document);
+          return result.violations.filter(v=>v.impact==='serious'||v.impact==='critical').map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))}));
+        `);
+        assert.deepEqual(findings,[],`${page} ${dir} ${theme}: ${JSON.stringify(findings,null,2)}`);
+      }
+    }
+  });
+
+  it("keeps joined seams square across stock themes, states and directions", async () => {
+    const results = await evaluate(`
+      const link=document.createElement('link');link.rel='stylesheet';link.href='/dist/themes.css';document.head.append(link);await new Promise((resolve,reject)=>{link.onload=resolve;link.onerror=reject;});
+      const {themePresets}=await import('/src/js/theme-picker.js');
+      const region=document.createElement('section');region.style.inlineSize='320px';
+      region.innerHTML='<div class="fc-split-btn"><button class="fc-btn fc-btn--primary fc-split-btn__action">Export</button><button class="fc-btn fc-btn--primary fc-split-btn__toggle" aria-label="Export options">+</button></div><div class="fc-button-group"><button class="fc-btn fc-btn--secondary fc-button-group__item">Start</button><button class="fc-btn fc-btn--secondary fc-button-group__item">Center</button><button class="fc-btn fc-btn--secondary fc-button-group__item">End</button></div><div class="fc-control-group fc-control-group--joined"><button class="fc-btn fc-btn--secondary fc-control-group__joined-item">Clear</button><input aria-label="Query" class="fc-input fc-control-group__joined-item fc-control-group__control"><button class="fc-btn fc-btn--primary fc-control-group__joined-item">Search</button></div>';
+      document.body.append(region);const results=[];
+      for(const theme of themePresets)for(const scheme of ['light','dark'])for(const dir of ['ltr','rtl']) {
+        region.dataset.fcDesign=theme.id;region.dataset.fcPalette=theme.palette;region.dataset.fcTheme=scheme;region.dir=dir;
+        for(const state of ['false','true']) {
+          region.querySelector('.fc-split-btn__toggle').setAttribute('aria-expanded',state);
+          for(const button of region.querySelectorAll('.fc-button-group__item'))button.setAttribute('aria-pressed',state);
+          await new Promise(r=>setTimeout(r,180));
+          for(const selector of ['.fc-split-btn','.fc-button-group','.fc-control-group']) {
+            const group=region.querySelector(selector),parts=[...group.children];
+            const corners=parts.flatMap((part,i)=>{const css=getComputedStyle(part);return [...(i>0?[css.borderStartStartRadius,css.borderEndStartRadius]:[]),...(i<parts.length-1?[css.borderStartEndRadius,css.borderEndEndRadius]:[])];});
+            results.push({theme:theme.id,scheme,dir,state,selector,corners,gap:getComputedStyle(group).columnGap,overflow:group.scrollWidth>320});
+          }
+        }
+      }
+      region.style.setProperty('--fc-joined-inner-radius','4px');await new Promise(r=>setTimeout(r,180));
+      const custom=getComputedStyle(region.querySelector('.fc-split-btn__action')).borderStartEndRadius;
+      region.remove();return {results,custom};
+    `);
+    assert.equal(results.results.length,504);
+    for(const row of results.results){assert.ok(row.corners.every(c=>c==='0px'),JSON.stringify(row));assert.equal(row.gap,'0px');assert.equal(row.overflow,false,JSON.stringify(row));}
+    assert.equal(results.custom,'4px');
+  });
+
+  it("applies stock design geometry, palette and schemes through a scoped picker", async () => {
+    await evaluate(`
+      const link=document.createElement('link');link.rel='stylesheet';link.href='/dist/themes.css';document.head.append(link);await new Promise((resolve,reject)=>{link.onload=resolve;link.onerror=reject;});
+      globalThis.Themes=await import('/src/js/theme-picker.js');
+      const old=document.getElementById('theme-test');old?.remove();
+      const region=document.createElement('section');region.id='theme-test';region.setAttribute('aria-label','Appearance preview');
+      region.style.inlineSize='320px';region.innerHTML='<div id="test-picker" class="fc-theme-picker"></div><article class="fc-card fc-card--feature">Patterned feature text</article><header class="fc-masthead"><a class="fc-masthead__brand" href="#theme-test">Workspace</a><a class="fc-masthead__link" href="#theme-test" aria-current="page">Home</a></header><article class="fc-card"><div class="fc-card__body"><h2>Readable work</h2><p>A surface that follows your preferences.</p><label>Search<input class="fc-input"></label><button class="fc-btn fc-btn--primary" id="theme-test-button">Continue</button></div></article><div class="fc-composer"><label>Message<textarea class="fc-composer__input"></textarea></label></div>';
+      document.body.append(region);globalThis.themeChanges=[];
+      globalThis.tp=new Themes.FutureCssThemePicker({root:'#test-picker',target:region,onChange:s=>themeChanges.push(s)});
+      return true;
+    `);
+    const results=await evaluate(`
+      const region=document.getElementById('theme-test');const results=[];
+      for(const design of Themes.themePresets)for(const scheme of ['light','dark'])for(const dir of ['ltr','rtl']){
+        region.dir=dir;tp.setState({design:design.id,palette:design.palette,scheme});await new Promise(r=>setTimeout(r,300));
+        const card=getComputedStyle(region.querySelector('.fc-card:not(.fc-card--feature)')),featureCard=getComputedStyle(region.querySelector('.fc-card--feature')),button=getComputedStyle(region.querySelector('.fc-btn'));
+        results.push({id:design.id,scheme,dir,featureShadow:featureCard.textShadow,featureImage:featureCard.backgroundImage,radius:card.borderRadius,shadow:card.boxShadow,font:card.fontFamily,canvas:getComputedStyle(region).backgroundImage,feature:getComputedStyle(region).getPropertyValue('--fc-theme-feature-image'),overflow:region.scrollWidth>region.clientWidth+1,target:parseFloat(button.minHeight),selected:region.querySelector('input[value="'+design.id+'"]').checked});
+      }
+      return results;
+    `);
+    assert.equal(results.length,84);
+    for(const result of results){assert.equal(result.overflow,false,JSON.stringify(result));assert.equal(result.selected,true);assert.ok(result.target>=24);}
+    const square=results.find(r=>r.id==='blueprint');const round=results.find(r=>r.id==='ocean');assert.equal(square.radius,'0px');assert.notEqual(round.radius,square.radius);
+    assert.equal(results.find(r=>r.id==='clarity').shadow,'none');assert.notEqual(round.shadow,'none');
+    assert.match(results.find(r=>r.id==='editorial').font,/serif/);
+    for(const id of ['candy','parchment','bubble'])for(const row of results.filter(r=>r.id===id))assert.notEqual(row.canvas,'none',JSON.stringify(row));
+    assert.match(results.find(r=>r.id==='arcade').font,/monospace/);
+    for(const row of results.filter(r=>['candy','arcade','pride'].includes(r.id))){assert.notEqual(row.featureShadow,'none',JSON.stringify(row));assert.notEqual(row.featureImage,'none',JSON.stringify(row));}
+    assert.equal(results.find(r=>r.id==='future').featureShadow,'none');
+    // Native radio ArrowRight changes the design, rather than a synthetic custom key handler.
+    await evaluate(`document.getElementById('theme-test').dir='ltr';tp.setState({design:'future',palette:'default',scheme:'light'});document.querySelector('#test-picker input[value="future"]').focus();`);
+    await send('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39});
+    await send('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39});
+    assert.equal(await evaluate(`return tp.value.design;`),'clarity');
+    await evaluate(`tp.destroy();document.getElementById('theme-test').remove();`);
+  });
+
+  it("renders theme options as independent windows and edits an exportable Custom design", async () => {
+    const result=await evaluate(`
+      const link=document.createElement('link');link.rel='stylesheet';link.href='/dist/themes.css';document.head.append(link);await new Promise((resolve,reject)=>{link.onload=resolve;link.onerror=reject;});
+      const {FutureCssThemePicker}=await import('/src/js/theme-picker.js');
+      const region=document.createElement('section'),root=document.createElement('div');root.className='fc-theme-picker';region.append(root);document.body.append(region);
+      const contract=await fetch('/dist/theme-contract.json').then(r=>r.json());
+      const picker=new FutureCssThemePicker({root,target:region,contract});
+      const snapshot=()=>[...root.querySelectorAll('[data-fc-theme-option]')].map(option=>({id:option.dataset.fcThemeOption,design:option.dataset.fcDesign,palette:option.dataset.fcPalette,radius:getComputedStyle(option).borderRadius,border:getComputedStyle(option).borderTopWidth,shadow:getComputedStyle(option.querySelector('.fc-theme-picker__window-feature')).textShadow,image:getComputedStyle(option).backgroundImage,window:!!option.querySelector('.fc-theme-picker__window')}));
+      const before=snapshot();picker.setState({design:'forest',palette:'forest',scheme:'dark'});const after=snapshot();
+      picker.setState({design:'custom'});const shown=!root.querySelector('[data-fc-theme-editor]').hidden;
+      for(const [key,value] of [['shape','square'],['depth','lifted'],['surface','tinted'],['palette','rose']]){const control=root.querySelector('[data-fc-theme-parameter="'+key+'"]');control.value=value;control.dispatchEvent(new Event('change',{bubbles:true}));}
+      const role=root.querySelector('[data-fc-theme-color=role]');role.value='text-default';role.dispatchEvent(new Event('change',{bubbles:true}));
+      const beforeColor=picker.exportCustomTheme();root.querySelector('[data-fc-theme-color=light]').value='#ffffff';root.querySelector('[data-fc-theme-color-apply]').click();const rejected=root.dataset.fcState==='error'&&picker.exportCustomTheme()===beforeColor;
+      root.querySelector('[data-fc-theme-color=light]').value=contract.palettes.rose['text-default'].light;root.querySelector('[data-fc-theme-color=dark]').value=contract.palettes.rose['text-default'].dark;root.querySelector('[data-fc-theme-color-apply]').click();const accepted=root.dataset.fcState==='complete'&&picker.value.palette==='custom';
+      const paletteSelect=root.querySelector('select[data-fc-theme-control=palette]');const paletteListed=paletteSelect.value==='custom';
+      for(const value of ['forest','custom']){paletteSelect.value=value;paletteSelect.dispatchEvent(new Event('change',{bubbles:true}));}const paletteReturned=picker.value.palette==='custom';
+      picker.setState({contrast:'high'});const highClearsCustomColors=!root.querySelector('[data-fc-theme-option=custom]').style.getPropertyValue('--fc-color-text-default');
+      const draft=picker.exportCustomTheme(),state=picker.value,customRadius=getComputedStyle(root.querySelector('[data-fc-theme-option="custom"]')).borderRadius;
+      picker.setState({design:'future'});const hidden=root.querySelector('[data-fc-theme-editor]').hidden;picker.destroy();region.remove();return {before,after,shown,draft,state,customRadius,hidden,rejected,accepted,highClearsCustomColors,paletteListed,paletteReturned};
+    `);
+    assert.equal(result.before.length,22);assert.ok(result.before.every(option=>option.window));
+    for(const option of result.before.filter(o=>['candy','arcade','pride'].includes(o.id))){assert.notEqual(option.shadow,'none');assert.equal(option.image,'none');}
+    for(const option of result.before)assert.equal(option.border,['clarity','graphite','blueprint','solar','arcade'].includes(option.id)?'2px':'1px',option.id);
+    assert.equal(result.before.find(o=>o.id==='blueprint').radius,'0px');assert.notEqual(result.before.find(o=>o.id==='forest').radius,'0px');
+    assert.deepEqual(result.before.map(o=>[o.id,o.design,o.palette,o.radius]),result.after.map(o=>[o.id,o.design,o.palette,o.radius]));
+    assert.equal(result.shown,true);assert.equal(result.hidden,true);assert.equal(result.customRadius,'0px');assert.equal(result.state.design,'custom');assert.equal(result.state.palette,'custom');assert.equal(result.rejected,true);assert.equal(result.accepted,true);assert.equal(result.highClearsCustomColors,true);
+    assert.equal(result.paletteListed,true,'the first custom color adds a selectable Custom palette');assert.equal(result.paletteReturned,true,'Custom palette is reachable again after choosing a stock palette');
+    assert.match(result.draft,/shape = "square"/);assert.match(result.draft,/depth = "lifted"/);assert.match(result.draft,/palette = "rose"/);
+  });
+
+  it("starts from a scheme the page set before script loaded", async () => {
+    const result=await evaluate(`
+      const {FutureCssThemePicker}=await import('/src/js/theme-picker.js');
+      const read=theme=>{const region=document.createElement('section');region.dataset.fcTheme=theme;const root=document.createElement('div');region.append(root);document.body.append(region);
+        const picker=new FutureCssThemePicker({root,target:region});const value=picker.value,applied=region.dataset.fcTheme;picker.destroy();region.remove();return {scheme:value.scheme,contrast:value.contrast,applied};};
+      return {dark:read('dark'),light:read('light'),high:read('high-contrast-dark'),unknown:read('sepia')};
+    `);
+    assert.deepEqual(result.dark,{scheme:'dark',contrast:'system',applied:'dark'});
+    assert.deepEqual(result.light,{scheme:'light',contrast:'system',applied:'light'});
+    assert.deepEqual(result.high,{scheme:'dark',contrast:'high',applied:'high-contrast-dark'});
+    assert.equal(result.unknown.scheme,'system');
+  });
+
+  it("loads TOML, rejects inaccessible imports, and restores custom colors after contrast preferences", async () => {
+    const result=await evaluate(`
+      const {FutureCssThemePicker}=await import('/src/js/theme-picker.js');
+      const contract=await fetch('/dist/theme-contract.json').then(r=>r.json());
+      const region=document.createElement('section');region.id='theme-import-test';region.style.setProperty('--fc-radius-lg','3rem');document.body.append(region);
+      const picker=document.createElement('div');picker.className='fc-theme-picker';region.append(picker);
+      globalThis.importPicker=new FutureCssThemePicker({root:picker,target:region,contract});
+      const id=await importPicker.loadTheme('/demo/themes/reading-room.toml');
+      importPicker.setState({design:id,palette:'forest',scheme:'light'});
+      const before=importPicker.value;let rejected=false;
+      try{importPicker.registerTheme({schemaVersion:1,version:'1.0.0',id:'bad-colors',name:'Bad',description:'Unreadable',base:'future',colors:{'text-default':{light:'#ffffff',dark:'#000000'}}});}catch{rejected=true;}
+      const unchanged=JSON.stringify(before)===JSON.stringify(importPicker.value);
+      importPicker.registerTheme({schemaVersion:1,version:'1.0.0',id:'custom-palette',name:'Custom',description:'Verified palette',base:'future',colors:{'text-default':contract.colors['text-default']}});
+      importPicker.setState({design:'custom-palette',palette:'custom-palette'});
+      const inline=region.style.getPropertyValue('--fc-color-text-default');
+      let foreign='';try{await importPicker.loadTheme('https://theme-host.invalid/evil.toml');}catch(error){foreign=error.message;}
+      // Two overlapping imports: the slower, older file must not replace the newer choice.
+      const toml=(id,delay)=>({size:200,text:()=>new Promise(r=>setTimeout(()=>r('schema-version = 1\\nversion = "1.0.0"\\nid = "'+id+'"\\nname = "'+id+'"\\ndescription = "Race"\\nbase = "future"\\n'),delay))});
+      const older=importPicker.importFile(toml('older-file',120)),newer=importPicker.importFile(toml('newer-file',10));await Promise.all([older,newer]);
+      const raced={design:importPicker.value.design,olderInstalled:!!picker.querySelector('[data-fc-theme-option="older-file"]')};
+      importPicker.setState({design:'custom-palette',palette:'custom-palette'});
+      return {id,rejected,unchanged,inline,foreign,raced};
+    `);
+    assert.equal(result.id,'reading-room');assert.ok(result.rejected&&result.unchanged);assert.match(result.inline,/light-dark/);
+    assert.match(result.foreign,/not allowed/,'a theme URL on another origin needs an explicit themeOrigins entry');
+    assert.deepEqual(result.raced,{design:'newer-file',olderInstalled:false});
+    try{
+      await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-contrast',value:'more'}]});
+      await evaluate(`await new Promise(r=>setTimeout(r,60));`);
+      assert.equal(await evaluate(`return document.getElementById('theme-import-test').style.getPropertyValue('--fc-color-text-default');`),'');
+      await send('Emulation.setEmulatedMedia',{features:[]});
+      await evaluate(`await new Promise(r=>setTimeout(r,60));`);
+      assert.match(await evaluate(`return document.getElementById('theme-import-test').style.getPropertyValue('--fc-color-text-default');`),/light-dark/);
+      const original=await evaluate(`importPicker.destroy();const region=document.getElementById('theme-import-test');const result=[region.dataset.fcDesign??null,region.style.getPropertyValue('--fc-radius-lg'),region.style.getPropertyValue('--fc-color-text-default')];region.remove();return result;`);
+      assert.deepEqual(original,[null,'3rem','']);
+    }finally{await send('Emulation.setEmulatedMedia',{features:[]});}
+  });
+
+  it("runs dialog confirmation, validation, cancellation and preferences with native focus restoration", async () => {
+    await send('Page.navigate',{url:server.origin+'/demo/index.html#dialogs'});await new Promise(r=>setTimeout(r,1000));
+    const result=await evaluate(`
+      const open=id=>{const button=document.querySelector('[data-demo-open="'+id+'"]');button.focus();button.click();return document.getElementById(id);};
+      const settle=()=>new Promise(r=>setTimeout(r,250));
+      let dialog=open('recipe-confirm');const safe=document.activeElement.textContent;dialog.querySelector('[value="confirm"]').click();await settle();const confirmed=document.getElementById('dialog-recipe-status').textContent;
+      dialog=open('recipe-confirm');const fresh=dialog.returnValue;dialog.dispatchEvent(new Event('cancel',{cancelable:true}));dialog.close();await settle();const dismissed=document.getElementById('dialog-recipe-status').textContent;const restored=document.activeElement.dataset.demoOpen;
+      dialog=open('recipe-create');document.querySelector('[form="recipe-create-form"][value="create"]').click();const invalidStayed=dialog.open;
+      const form=document.getElementById('recipe-create-form');form.elements.name.value='Example project';document.querySelector('[form="recipe-create-form"][value="create"]').click();await settle();const created=document.getElementById('dialog-recipe-status').textContent;
+      dialog=open('recipe-create');form.elements.name.value='Retained draft';document.querySelector('[form="recipe-create-form"][value="cancel"]').click();await settle();const draft=form.elements.name.value;
+      dialog=open('recipe-settings');const settings=document.getElementById('recipe-settings-form');settings.querySelector('[value="detailed"]').checked=true;settings.elements.sources.checked=false;document.querySelector('[form="recipe-settings-form"][value="cancel"]').click();await settle();const cancelled={style:settings.elements.style.value,sources:settings.elements.sources.checked};
+      dialog=open('recipe-settings');settings.querySelector('[value="detailed"]').checked=true;document.querySelector('[form="recipe-settings-form"][value="save"]').click();await settle();
+      dialog=open('recipe-settings');settings.querySelector('[value="concise"]').checked=true;dialog.close();await settle();const saved=settings.elements.style.value;
+      return {safe,confirmed,fresh,dismissed,restored,invalidStayed,created,draft,cancelled,saved};
+    `);
+    assert.equal(result.safe,'Cancel');assert.match(result.confirmed,/archived/);assert.equal(result.fresh,'');assert.match(result.dismissed,/no action applied/);assert.equal(result.restored,'recipe-confirm');assert.equal(result.invalidStayed,true);assert.match(result.created,/Example project/);assert.equal(result.draft,'Retained draft');assert.deepEqual(result.cancelled,{style:'concise',sources:true});assert.equal(result.saved,'detailed');
+    await evaluate(`const opener=document.querySelector('[data-demo-open="recipe-confirm"]');opener.focus();opener.click();`);
+    await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+    await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+    await new Promise(r=>setTimeout(r,250));
+    assert.deepEqual(await evaluate(`return {open:document.getElementById('recipe-confirm').open,focus:document.activeElement.dataset.demoOpen};`),{open:false,focus:'recipe-confirm'});
+  });
+
+  it("keeps every dialog recipe accessible and inside a narrow viewport in both schemes and directions", {skip:axeSource?false:'set FC_AXE_SOURCE'}, async () => {
+    await send('Page.navigate',{url:server.origin+'/demo/index.html#dialogs'});await new Promise(r=>setTimeout(r,1000));
+    await send('Emulation.setDeviceMetricsOverride',{width:320,height:720,deviceScaleFactor:1,mobile:false});
+    await send('Runtime.evaluate',{expression:axeSource});
+    for (const scheme of ['light','dark']) for (const dir of ['ltr','rtl']) for (const id of ['recipe-notice','recipe-confirm','recipe-create','recipe-settings']) {
+      const result=await evaluate(`
+        document.documentElement.dataset.fcTheme=${JSON.stringify(scheme)};document.documentElement.dir=${JSON.stringify(dir)};
+        const opener=document.querySelector('[data-demo-open="'+${JSON.stringify(id)}+'"]');opener.focus();opener.click();const dialog=document.getElementById(${JSON.stringify(id)});await new Promise(r=>setTimeout(r,350));
+        const rect=dialog.getBoundingClientRect();const focus=dialog.contains(document.activeElement);
+        const scan=await axe.run(dialog);const issues=scan.violations.filter(v=>['serious','critical'].includes(v.impact)).map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}));
+        dialog.close();await new Promise(r=>setTimeout(r,250));return {focus,issues,inside:rect.x>=0&&rect.right<=320&&rect.y>=0&&rect.bottom<=720};
+      `);
+      assert.equal(result.focus,true,id);assert.equal(result.inside,true,id+'/'+scheme+'/'+dir);assert.deepEqual(result.issues,[],id+'/'+scheme+'/'+dir);
+    }
+  });
+
+  it("keeps multiselect native form values, filtering, disabled selections and reset in sync", async () => {
+    const result = await evaluate(`
+      const {FutureCssMultiselect}=await import('/src/js/multiselect.js');
+      const form=document.createElement('form');form.id='multi-test';form.innerHTML='<details class="fc-multiselect" open id="multi-details"><summary class="fc-multiselect__summary">Members <span data-fc-selection-summary></span></summary><input type="search" data-fc-filter aria-label="Search members"><fieldset><legend>Members</legend><label class="fc-multiselect__option"><input type="checkbox" name="members" value="ada" checked>Ada Maintainer</label><label class="fc-multiselect__option"><input type="checkbox" name="members" value="grace">Grace Reviewer</label><label class="fc-multiselect__option"><input type="checkbox" name="members" value="alan" disabled checked>Alan Unavailable</label></fieldset><button type="button" data-fc-selection-action="all">All visible</button><button type="button" data-fc-selection-action="clear">Clear</button><p data-fc-empty hidden>No matches</p></details>';document.body.append(form);
+      const changes=[];const picker=new FutureCssMultiselect({root:'#multi-details',formatSummary:n=>n+' chosen',onChange:v=>changes.push(v)});
+      const initial=picker.values;picker.filter('Reviewer');form.querySelector('[data-fc-selection-action="all"]').click();const selected=picker.values;const posted=new FormData(form).getAll('members');
+      picker.filter('unknown');const empty=!form.querySelector('[data-fc-empty]').hidden;
+      let invalid=false;try{picker.setValues(['missing']);}catch{invalid=true;}const intact=picker.values;
+      form.querySelector('[data-fc-selection-action="clear"]').click();const cleared=picker.values;
+      let unavailable=false;try{picker.setValues([]);}catch{unavailable=true;}
+      const query=form.querySelector('[data-fc-filter]');query.value='Ada';query.dispatchEvent(new Event('input',{bubbles:true}));
+      form.reset();await new Promise(r=>queueMicrotask(r));const reset=picker.values;
+      const resetFilter={query:query.value,hidden:[...form.querySelectorAll('.fc-multiselect__option')].filter(o=>o.hidden).length};
+      const details=form.querySelector('details');details.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));const escaped=!details.open&&document.activeElement===details.querySelector('summary');
+      const attrs={kind:details.dataset.fcKind,values:JSON.parse(details.dataset.fcValues),count:details.dataset.fcCount,summary:details.querySelector('[data-fc-selection-summary]').textContent};
+      picker.destroy();details.open=true;form.querySelector('input[value="grace"]').click();const native=picker.values;form.remove();return {initial,selected,posted,empty,invalid,intact,cleared,unavailable,reset,resetFilter,escaped,attrs,native,changes};
+    `);
+    assert.deepEqual(result.initial,['ada','alan']);assert.deepEqual(result.selected,['ada','grace','alan']);assert.deepEqual(result.posted,['ada','grace']);
+    assert.equal(result.empty,true);assert.equal(result.invalid,true);assert.deepEqual(result.intact,result.selected);assert.deepEqual(result.cleared,['alan']);assert.equal(result.unavailable,true);
+    assert.deepEqual(result.reset,['ada','alan']);assert.deepEqual(result.resetFilter,{query:'',hidden:0},'reset clears the typed query and shows every option');assert.equal(result.escaped,true);assert.deepEqual(result.attrs,{kind:'multiselect',values:['ada','alan'],count:'2',summary:'2 chosen'});assert.deepEqual(result.native,['ada','grace','alan']);assert.equal(result.changes.length,2);
+  });
+
+  it("preserves descriptive select options and wires default actions separately from menus", async () => {
+    await send("Page.navigate",{url:server.origin+'/demo/index.html#advanced-controls'});await new Promise(r=>setTimeout(r,1000));
+    const result=await evaluate(`
+      document.getElementById('export-default').click();const direct=document.getElementById('advanced-status').textContent;
+      document.getElementById('export-toggle').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));const opened=document.getElementById('export-toggle').getAttribute('aria-expanded');const first=document.activeElement.textContent;
+      document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));const restored=document.activeElement.id;
+      document.getElementById('rich-plan').click();const description=document.querySelector('#rich-plan-options .fc-select__option-description').textContent;const meta=document.querySelector('#rich-plan-options .fc-select__option-meta').textContent;
+      document.getElementById('rich-plan').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));document.querySelector('[data-demo-confirm="cancel"]').click();const cancel=document.getElementById('advanced-status').textContent;return {direct,opened,first,restored,description,meta,cancel};
+    `);
+    assert.match(result.direct,/PDF/);assert.equal(result.opened,'true');assert.match(result.first,/PDF/);assert.equal(result.restored,'export-toggle');assert.equal(result.description,'One person, unlimited drafts');assert.equal(result.meta,'Free');assert.match(result.cancel,/cancelled/);
+  });
+
+  it("has accessible themed controls across all stock designs in both schemes and directions", {skip:axeSource?false:'set FC_AXE_SOURCE'}, async () => {
+    await evaluate(`
+      const link=document.createElement('link');link.rel='stylesheet';link.href='/dist/themes.css';document.head.append(link);await new Promise((resolve,reject)=>{link.onload=resolve;link.onerror=reject;});
+      const Themes=await import('/src/js/theme-picker.js');globalThis.themeAuditPresets=Themes.themePresets;
+      const region=document.createElement('section');region.id='theme-audit';region.setAttribute('aria-label','Theme sample');region.style.inlineSize='320px';
+      region.innerHTML='<header class="fc-masthead"><a class="fc-masthead__brand" href="#theme-audit">Workspace</a><a class="fc-masthead__link" href="#theme-audit" aria-current="page">Home</a></header><article class="fc-card"><div class="fc-card__body"><h2>Readable work</h2><p>Every theme preserves readable surfaces.</p><label>Search<input class="fc-input"></label><button class="fc-btn fc-btn--primary">Continue</button><button class="fc-btn" disabled>Unavailable</button></div></article><div class="fc-composer"><label>Message<textarea class="fc-composer__input"></textarea></label></div><div class="fc-theme-picker" id="audit-picker"></div>';
+      document.body.append(region);globalThis.auditPicker=new Themes.FutureCssThemePicker({root:'#audit-picker',target:region});
+    `);
+    await send('Runtime.evaluate',{expression:axeSource});
+    try{
+      for(const id of await evaluate(`return themeAuditPresets.map(p=>p.id);`))for(const scheme of ['light','dark'])for(const dir of ['ltr','rtl']){
+        await evaluate(`const region=document.getElementById('theme-audit');region.dir=${JSON.stringify(dir)};const preset=themeAuditPresets.find(p=>p.id===${JSON.stringify(id)});auditPicker.setState({design:preset.id,palette:preset.palette,scheme:${JSON.stringify(scheme)}});await new Promise(r=>setTimeout(r,220));`);
+        const violations=await evaluate(`const result=await axe.run(document.getElementById('theme-audit'));return result.violations.filter(v=>['serious','critical'].includes(v.impact)).map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}));`);
+        assert.deepEqual(violations,[],`${id}/${scheme}/${dir}: ${JSON.stringify(violations)}`);
+      }
+    }finally{await evaluate(`auditPicker.destroy();document.getElementById('theme-audit').remove();`);}
   });
 
   // --------------------------------------------------------- reduced motion

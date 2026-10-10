@@ -507,7 +507,7 @@ pairings, checked at build time in both schemes.
 <div class="fc-terminal" data-fc-state="connected">
   <!-- A log, not a live region with assertive updates: a fast-running command
        would make a screen reader unusable. -->
-  <div class="fc-terminal__output" role="log" aria-live="polite" aria-label="Terminal output">
+  <div class="fc-terminal__output" tabindex="0" role="log" aria-live="polite" aria-label="Terminal output">
     <span class="fc-terminal__line"><span class="fc-term-ansi-green fc-terminal__bold">$</span> npm run build</span>
     <span class="fc-terminal__line"><span class="fc-term-ansi-cyan">warn</span> deprecated</span>
     <span class="fc-terminal__line fc-term-ansi-red">error command not found</span>
@@ -558,7 +558,7 @@ surface.
   <!-- Line numbers are decoration: aria-hidden, because announcing "line 47"
        before each of 47 lines makes the content unusable. -->
   <div class="fc-code__gutter" aria-hidden="true">…</div>
-  <code class="fc-code__source"></code>
+  <code class="fc-code__source" tabindex="0"></code>
 </div>
 ```
 
@@ -882,6 +882,11 @@ stacks it below that; tight cards (< 18rem) reduce their padding. Variants
 A whole-card link stretches the title link's `::after` over the card, so the hit area is
 large while the accessible name is just the title. A card containing a radio or checkbox
 reflects `:checked` and `:disabled` through `:has()`, so it works as a large option.
+
+The optional `fc-card--feature` modifier uses the selected theme's feature fill,
+gradient and matching foreground for a prominent content panel. It ships in
+`card.css` and remains readable in forced colors.
+
 
 ## Badge, tag, and kbd (implemented)
 
@@ -1256,7 +1261,7 @@ it last had — otherwise comparing two providers resets the model every time an
 the user silently changes what they are about to send.
 
 **Effort is not universally available.** Reasoning models take an effort level;
-others ignore it. An inapplicable control is dimmed via `data-fc-applicable` and
+others ignore it. An inapplicable control has a dashed border via `data-fc-applicable` and
 explained in `fc-context-strip__notice` rather than removed, because a row that
 reflows when the model changes makes the whole strip jump and the absence would
 not be announced at all.
@@ -1303,8 +1308,8 @@ A working tree: branch, status counts, a file list, and per-file line stats.
 | `.fc-git__header` | Branch and summary; does not scroll. |
 | `.fc-git__branch` | Branch name, or "Initial commit" when unborn. |
 | `.fc-git__summary` | Counts, with `tabular-nums` so the header does not reflow. |
-| `.fc-git__files` | The list. A `role="listbox"`. |
-| `.fc-git__row` | One file. Roving tabindex, keyboard-selectable. |
+| `.fc-git__files` | The file grid (`role="grid"` with rows; `role="group"` when empty). |
+| `.fc-git__row` | One file (`role="row"` with grid cells). Roving tabindex; arrows/Home/End move between files, Enter/Space select. Nested Stage buttons retain native activation. |
 | `.fc-git__file-name` / `__file-dir` | Filename with the directory de-emphasised. |
 | `.fc-git__stages`, `__badge`, `__stage-button` | Per-side badges and the stage action. |
 | `.fc-git__stat`, `__stat-add`, `__stat-remove` | Line counts. |
@@ -1519,12 +1524,33 @@ connected button group. Each is a real `fc-btn` with its own Tab stop and state.
 </div>
 ```
 
-Inner corners are tight and the outer ends round, mirrored in RTL by logical corners. A
-pressed segment (`aria-pressed="true"`) rounds fully and takes the selected fill, so the
-state shows in shape as well as colour. Disabled and `aria-disabled` are styled; long
-labels wrap inside their segment. Use `fc-segmented` instead when exactly one value is
-chosen and submitted with a form, and `fc-control-group` for controls that should not
-look joined. No binding: toggling `aria-pressed` is the app's job.
+Inner corners stay square in every state; outer corners follow the theme's
+`--fc-radius-lg`, with logical corners for RTL. Adjacent borders overlap into a single separator; joined controls do not shrink
+individually when pressed. Outer radii are capped at half the control height so
+a narrow menu toggle has the same curve as its action. Pressed segments use the selected fill and `aria-pressed`.
+Disabled and `aria-disabled` are styled; long labels wrap inside their segment.
+Use `fc-segmented` for a value submitted with a form. No binding: toggling
+`aria-pressed` is the app's job.
+
+For mixed controls, use `fc-control-group--joined`. Give every direct control
+`fc-control-group__joined-item`; give the expanding input the additional
+`fc-control-group__control` class. Keep its label outside the joined row.
+
+```html
+<label for="joined-search">Search</label>
+<div class="fc-control-group fc-control-group--joined" role="group" aria-label="Search actions">
+  <button class="fc-btn fc-btn--secondary fc-control-group__joined-item" type="button">Clear</button>
+  <input class="fc-input fc-control-group__joined-item fc-control-group__control" id="joined-search" type="text">
+  <button class="fc-btn fc-btn--primary fc-control-group__joined-item" type="submit">Search</button>
+</div>
+```
+
+Place submit controls inside a form and supply application handlers for other
+actions. Individual controls retain their focus rings, native validation and
+keyboard behavior. Joined rows stay together at narrow widths; button labels
+wrap and the input shrinks. For a deliberately rounded seam, set
+`--fc-joined-inner-radius` on a split button, button group or joined control group.
+It defaults to zero across stock themes.
 
 ## Split button
 
@@ -1553,7 +1579,7 @@ so load it after `button.css` (the bundle does). `bindMenuButton` sets `aria-has
 `aria-controls` and `aria-expanded`, toggles the menu beneath the trigger on click, Enter
 or Space, opens it at the first item on ArrowDown and the last on ArrowUp, and returns
 focus on Escape. Near the bottom of the viewport the menu opens above the trigger, and it
-is clamped inside the viewport sideways. The open toggle turns round and
+is clamped inside the viewport sideways. The open toggle keeps its joined corners and
 its chevron flips, drawn from `aria-expanded`. Without the binding both buttons still
 work as buttons; only the menu needs script.
 
@@ -1926,6 +1952,130 @@ times read hours first in every script:
 ```
 
 Material's clock dial is not offered; see the Phase D table in `docs/PLAN.md`.
+
+## Theme picker
+
+Load `future-css/themes` and `future-css/components/theme-picker` alongside the foundation.
+All twenty-one stock presets ship with the library; no network request is needed to choose one.
+Use `data-fc-design="studio" data-fc-palette="violet" data-fc-theme="dark"` for a static,
+no-JS theme. Design, palette, scheme and contrast are independent settings.
+
+```html
+<div class="fc-theme-picker" id="appearance"></div>
+```
+
+```js
+import { FutureCssThemePicker } from 'future-css/theme-picker';
+const picker = new FutureCssThemePicker({ root: '#appearance', storageKey: 'appearance' });
+picker.setState({ design: 'ocean', palette: 'teal', scheme: 'system' });
+```
+
+Native radio groups and selects provide arrows, Space and normal Tab navigation. Each
+setting has a visible name; a polite status reports the applied design/scheme. Loading
+and validation failures expose `data-fc-state` and visible status. Optional storage can
+fail without preventing use. Call `destroy()` to remove listeners, cancel a fetch and
+restore the target's original attributes/inline overrides. See [THEMES.md](THEMES.md)
+for the TOML format, scoped targets, custom-color validation and accessibility limits.
+
+## More button, selector and form presentations
+
+Button hierarchy is explicit: `fc-btn--primary`, `--secondary`, `--tertiary`.
+`--ok` has primary emphasis and `--cancel` has secondary emphasis; labels and
+application callbacks carry their meaning. A Cancel button in a form should use
+`type="button"`, and an OK button may submit the form. These variants retain the
+shared disabled, busy, focus, reduced-motion and forced-colors states.
+
+For a default action plus alternatives, use `fc-split-btn` with two real buttons
+and `bindMenuButton(toggle, "#menu")` from `future-css/menu`. A standalone
+menu button uses the same binding. Click/Enter/Space toggle the menu; ArrowDown
+and ArrowUp open it at the first or last available action; Escape returns focus.
+The default action needs its own application callback.
+
+Rich single-select options can contain `.fc-select__option-label`,
+`.fc-select__option-description`, `.fc-select__option-meta` and a decorative
+`.fc-select__option-icon` text glyph. The binding preserves
+these fields across filtering and rebuilding; change callbacks include `description`, `icon`
+and `meta` on `SelectOption`. Matching uses the primary label/value. Options must
+contain text or decorative graphics, never nested interactive controls.
+
+### Multiselect
+
+Load `future-css/components/multiselect`, checkbox, field and button styles.
+Use native checkboxes with stable, unique values and `name` for form submission.
+
+```html
+<details class="fc-multiselect" id="members">
+  <summary class="fc-multiselect__summary">Members · <span data-fc-selection-summary>Choose members</span></summary>
+  <div class="fc-multiselect__panel">
+    <label>Search members <input class="fc-input" type="search" data-fc-filter></label>
+    <fieldset class="fc-multiselect__options">
+      <legend>Available members</legend>
+      <label class="fc-multiselect__option">
+        <input class="fc-check__input" type="checkbox" name="members" value="ada">
+        <span class="fc-multiselect__content"><strong>Ada</strong><span class="fc-multiselect__description">Maintainer</span></span>
+      </label>
+    </fieldset>
+    <p data-fc-empty hidden>No matches</p>
+    <button class="fc-btn fc-btn--secondary" type="button" data-fc-selection-action="all">Select visible</button>
+    <button class="fc-btn fc-btn--tertiary" type="button" data-fc-selection-action="clear">Clear</button>
+  </div>
+</details>
+```
+
+```js
+import { FutureCssMultiselect } from "future-css/multiselect";
+const members = new FutureCssMultiselect({ root: "#members", onChange: values => save(values) });
+members.setValues(["ada"]);
+members.filter("maintainer");
+console.log(members.values);
+members.destroy();
+```
+
+Selections apply immediately. Escape closes the disclosure and restores focus to
+the summary; Tab/Space use native checkbox behavior. Filtering retains selected
+values and form submission; select-visible skips unavailable and hidden options,
+and clear retains unavailable preselected values. Unknown values and changes to
+unavailable choices are rejected atomically. Form reset restores defaults.
+The root exposes `data-fc-kind`, `-id`, `-values` (a JSON array), `-count`, `-seq`,
+`-ts` and `-state="complete"`; avoid sensitive option values in DOM attributes.
+Localize the initial summary/empty text and the count formatter with the `formatSummary(count)` option
+(the default enhanced count is English). Do not use this for thousands of options.
+
+### Form variants
+
+Load `future-css/components/form-variants` alongside field and checkbox styles.
+`fc-input--soft` adds a quieter fill, `fc-input--underlined` removes three edges,
+and the existing `--filled` combines a fill and underline. `--sm` adds a compact
+size; these compose with real input, textarea and native select elements.
+`fc-field--inline` aligns label and control when space permits and stacks when it
+does not. `.fc-choice` wraps a real checkbox/radio; `.fc-choice__content` groups
+a title and `.fc-choice__description`. Use a fieldset/legend for radio cards.
+See the [working demo](../demo/index.html#advanced-controls) for complete markup.
+
+## Dialog recipes
+
+Four working examples are in the [dialog demo](../demo/index.html#dialogs):
+information with OK, a reversible-action confirmation with safe initial focus,
+a required-name project form, and a preferences dialog with descriptive choices.
+All use the existing `fc-dialog`, `--sm`/`--lg`, header/body/footer and close-button
+classes. Complete markup and native wiring are copyable in the demo.
+
+Open with `showModal()` from a real button and reset `returnValue` to an empty
+string on each opening. Name each dialog with `aria-labelledby`; use a concise
+`aria-describedby` summary. Native modal focus, background inertness, Escape and
+focus restoration require no custom trap. Informational and confirmation bodies
+use `tabindex="0"` so keyboard users can scroll them in constrained viewports. Keep confirmations initially focused
+on Cancel. A form dialog uses `method="dialog"`; submit buttons in its footer
+reference the form's ID through `form`. The Cancel button uses `formnovalidate`.
+Native validation prevents an invalid submit from closing the dialog.
+
+Read submitted fields from `FormData` only after the affirmative `returnValue`
+is returned. Escape and Cancel never apply changes. The preferences demo restores
+the last saved form state when dismissed, while the project form retains its draft.
+Do not use these demos' local confirmation messages as evidence of server success.
+For an asynchronous operation, keep the dialog open and expose pending/error state
+until the operation succeeds. Use the existing side/bottom sheets for auxiliary
+work, and a page for long workflows that need their own navigation or URL.
 
 ## metric
 

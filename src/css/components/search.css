@@ -160,7 +160,7 @@
 
   /* Results are being fetched: the stale list stays readable but recedes. */
   .fc-search__view[aria-busy="true"] {
-    opacity: 0.7;
+    border-style: dashed;
   }
 
   .fc-search__view-label {

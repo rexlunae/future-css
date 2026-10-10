@@ -211,7 +211,7 @@
    * prevents layout shift when the first token lands -- a real problem in chat,
    * where every message would otherwise shove the viewport.
    */
-  .fc-msg[data-fc-state="pending"] .fc-msg__body {
+  .fc-msg[data-fc-state="pending"] .fc-msg__body:empty {
     min-block-size: 1lh;
     /* Reserve roughly two lines so a one-line reply does not shift the page. */
     min-inline-size: 12rem;
@@ -241,7 +241,7 @@
       animation: none;
     }
 
-    .fc-msg[data-fc-state="pending"] .fc-msg__body {
+    .fc-msg[data-fc-state="pending"] .fc-msg__body:empty {
       animation: none;
     }
   }
@@ -380,7 +380,7 @@
       border-color: CanvasText;
     }
 
-    .fc-msg[data-fc-state="pending"] .fc-msg__body {
+    .fc-msg[data-fc-state="pending"] .fc-msg__body:empty {
       background-color: GrayText;
       /* The skeleton pulse is an animation; without motion it is a solid block,
        * which still reserves the space and so still prevents layout shift. */

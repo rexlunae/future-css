@@ -3,11 +3,10 @@
 Phased roadmap with exit criteria. Each phase ends with a gate that can be checked, not a
 judgment call.
 
-**Current status: Phase 2 complete, Phase 3 and Phase C mostly delivered, Phase A
-(WASM size) complete.** Phases 0 and 1 are complete. Form controls, overlays, navigation, and
-the status family now exist as CSS, with bindings where the platform does not already
-provide the behavior. The Rust/WASM
-layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
+**Current status: foundations, core CSS, token roles/themes and Material 3 component
+parity are complete. All eight WASM binaries meet the unchanged shipped-size budgets.
+Verification and release preparation are delivered in part; the unchecked items below
+remain open rather than being inferred from a Chrome pass.**
 
 ---
 
@@ -19,36 +18,46 @@ layer is specced in [WASM.md](WASM.md) and has a working, tested foundation.
 | 1. Token system | Complete | Palette, semantic layer, contrast contract, compiler |
 | 2. Core CSS | Complete | Reset, base, layout, utilities, every Phase 2 component, and the fixture page |
 | 3. Component set | Mostly delivered | Forms, overlays, tabs, breadcrumb, pagination, loading, cards, table, description list, sidebar; axe-core pass remains |
-| A. WASM size | Complete | Primitive ABI 2 boundaries, eight shipped binaries under unchanged enforced budgets |
-| B. Complex components | In progress | editor, menu, grid, webview (CSS complete) |
-| C. Token roles and themes | Mostly delivered | State tokens, override points, high-contrast and brand theme sets, type roles; reduced-transparency and reduced-data remain |
+| A. WASM size | Complete | Primitive boundaries, all eight binaries within shipped budgets, hard build gate and parity tests |
+| B. Complex components | JS paths delivered | Editor/menu/grid/webview bindings and pure data modules; editor/grid Rust integration remains optional future work |
+| C. Token roles and themes | Complete | State and type roles, override points, brand/high-contrast themes, reduced-transparency and optional-WASM data preferences |
 | D. Material 3 parity | Complete | Every M3 component Shipped or Divergent with its reason |
 | 4. Verification | Started | Overflow assertions, size budgets, generated token reference; visual regression and browser matrix remain |
-| 5. Platform expansion | Mostly delivered | Print foundation, email foundation, Swift and Kotlin tokens, Figma variables; vertical writing, APCA and cognitive guidance remain |
-| 6. Release | Not started | Publishing, versioning, governance |
+| 5. Platform expansion | Mostly delivered | Print foundation, email foundation, Swift and Kotlin tokens, Figma variables; cognitive guidance; vertical writing and APCA remain |
+| 6. Release | Prepared, unpublished | Versioning/support policy, contribution review and migration tooling; registry/CDN publication remains |
+
+Twenty-one stock designs and the theme picker are delivered, including a Helix-inspired design.
+Custom themes use validated, versioned TOML with installation and explicit schema
+migrations; see [THEMES.md](THEMES.md).
+
+Expanded controls are delivered: tertiary/OK/Cancel button variants, working menu
+and split-button demos, descriptive single selections, native searchable multiselect,
+and alternate form presentations.
+
+Four native dialog recipes are delivered with validated forms, confirmation focus,
+cancellation and saved-preference behavior, and browser/axe coverage at 320px.
 
 ### Working now
 
-Historical baseline, superseded for WASM by Phase A below. Measured on 2026-10-06 against `main` at `bd5ed5d` (after #24 and #25), with the WASM modules built and
-headless Chrome present (without either, the WASM and browser suites skip):
+Audited on 2026-10-10 with Chrome and the WASM toolchain present:
 
-```
-npm run build        167 tokens (91 theme-aware) + 39-file bundle, 276.2 KB
-                     8 Rust crates, 8 .wasm files in 7 modules (over budget — see Phase A)
-npm run lint         15 rules, 0 violations across 39 files
-npm test             416 tests passing (incl. WASM/JS parity, bundle integrity, Chrome)
-cargo test           132 tests passing
-```
+- 218 foundation tokens (116 theme-aware), plus 6 optional Pride theme tokens, 60 component files, 66-file readable CSS bundle
+  of 425.6 KB. Consumers can load only the layers/components they use.
+- Eight Rust crates emit eight binaries across seven module directories; core and
+  model share a directory. All binaries meet their unchanged byte targets after
+  bindgen, both with and without optional wasm-opt.
+- Final `npm run check` with axe enabled: 532 JavaScript/browser tests and 133 Rust tests passed,
+  with zero skips. It includes contrast, architecture, documentation coverage, CSS budgets,
+  real Chrome bindings and Rust/JS boundary parity. CI additionally supplies an isolated
+  axe-core validator and requires Chrome, so neither silently skips there.
+
+See [WASM.md](WASM.md) for the ABI 2 migration and measured sizes. Raw compiler output
+is retained as a diagnostic; shipped bytes are the enforced download budget.
 
 The bundle figure is uncompressed and unminified, which is the shipped form: the CSS is
 deliberately readable so engineers can debug it in devtools, and consumers minify at
 their own boundary. The budget gates what one page pays rather than the full bundle; see
 [Performance budget](#performance-budget).
-
-**Current WASM status (2026-10-09).** Eight crates emit eight binaries across seven
-module directories. All eight meet their unchanged shipped-byte budgets, enforced by
-`build:wasm`. Raw compiler sizes remain diagnostic. Primitive ABI 2 boundaries and
-UTF-16 parity tests are delivered; see [WASM.md](WASM.md) and Phase A below.
 
 Verified: contrast contract enforced in both schemes · all ramps validated · linter
 verified against both violations and legitimate patterns · WASM modules instantiate and
@@ -102,7 +111,7 @@ evidence it earns its place:
 
 ---
 
-## Phase 2 -- Core CSS (in progress)
+## Phase 2 -- Core CSS (complete)
 
 Everything a document needs before components exist. The reset, the semantic element
 defaults, the layout primitives, the utilities, and the first component.
@@ -184,7 +193,7 @@ cannot recur silently.
 
 ---
 
-## Phase 3 -- Component set (not started)
+## Phase 3 -- Component set (delivered; manual release walkthrough remains)
 
 The components needed for a real application, prioritized by frequency of use.
 
@@ -307,12 +316,12 @@ Risks:
 
 ---
 
-## Phase B -- Complex components (in progress)
+## Phase B -- Complex components (JS paths delivered)
 
 **Goal.** Working UI elements for complex surfaces. The priority is the *element* --
 chrome, layout, states, accessibility -- not a feature-complete application.
 
-Delivered (CSS complete, browser bindings not yet):
+Delivered (CSS and browser bindings, with native/pure-JS behavior where appropriate):
 
 - [x] **Rich text editor** -- toolbar with roving tabindex, `aria-pressed` state,
   `.fc-prose` document styles usable standalone, all states, forced-colors block
@@ -324,17 +333,15 @@ Delivered (CSS complete, browser bindings not yet):
 - [x] **Embedded browser chrome** -- tab strip, address bar with secure indicator,
   navigation with the RTL back-arrow flip, overlay states
 - [x] **Terminal** -- output grid, ANSI palette, cursor, input line, status bar. The
-  only hue-named tokens in the system, with their own 19-pairing contrast contract.
+  only hue-named tokens in the system, with their own contrast contract, including normal-size dim text at 4.5:1.
 
-Remaining, in priority order:
-
-1. **JS bindings.** Editor, menu, grid, and webview bindings are written and covered by
-   browser tests (`tests/browser/`). Terminal, chat, tool-call, code, and diff have CSS
-   only -- their behavior is either trivial or delegated to the pure-JS modules beside
-   them (`highlight`, `diff`, `markdown`).
-2. ~~**Form field.**~~ Delivered (`fc-field`, `fc-input`, `fc-check`, `fc-switch`).
-3. ~~**Dialog.**~~ Delivered on native `<dialog>`; no manual focus trap is shipped,
-   because every supported browser has `showModal()`.
+Editor, menu, grid and webview bindings are written and covered in real Chrome.
+Terminal, chat and tool-call behavior is caller supplied; code/diff/Markdown use the
+pure JS data modules. Native form fields and `<dialog>` provide their own behavior.
+No component requires WASM. Select/menu opt into Rust with `useWasm`; rich-text and
+grid Rust models are independently tested computation libraries, not yet connected
+to their browser bindings. That acceleration integration remains future work rather
+than a claim that the existing JS-only UI is incomplete.
 
 Exit criteria: every component has a JS-only path that is fully usable and accessible;
 the WASM path is a performance option; and both are covered by the same behavior tests.
@@ -368,7 +375,7 @@ pattern to a file whose contents can contain anything.
 
 ---
 
-## Phase C -- Token roles and themes (mostly delivered)
+## Phase C -- Token roles and themes (complete)
 
 **Goal.** Close the gaps [Semantic coverage](SEMANTIC-COVERAGE.md) found against the ten
 most widely-used token systems, without giving up what makes ours checkable. That
@@ -470,10 +477,10 @@ Each is cheap and independent; none needs a new decision.
   can fall back to
 - [x] **Per-token descriptions** in `tokens.json` (Polaris), generated from the comments
   already in the TypeScript source
-- [ ] **`prefers-reduced-transparency` and `prefers-reduced-data`.** Partly done: the
-  dialog backdrop honours the first. Honour the first
-  wherever a component uses translucency; the second only once something ships that is
-  worth not loading
+- [x] **`prefers-reduced-transparency` and `prefers-reduced-data`.** The translucent
+  dialog backdrop becomes opaque. Optional WASM loading honours reduced-data and
+  connection Save-Data unless explicitly overridden; preference behavior is tested.
+
 
 Deliberately not adopted, with the reasons in the coverage document: seed-derived
 dynamic colour (Material 3) cannot be contrast-checked at build time, and
@@ -656,11 +663,11 @@ Turning manual discipline into automation as the component count grows.
 
 - [ ] Playwright harness across Chromium, Firefox, WebKit
 - [ ] Visual regression, both schemes, both directions
-- [ ] axe-core in CI, zero critical/serious
+- [x] axe-core in CI, zero critical/serious (fixtures and working demo, both schemes/directions)
 - [x] Horizontal overflow assertion at 320px and 400% zoom (the fixture page in both
   directions and schemes, and the demo at 400%)
 - [ ] RTL layout diffing against LTR fixtures
-- [ ] Reduced-motion and forced-colors test renders
+- [x] Reduced-motion and forced-colors test renders (Chrome)
 - [x] Bundle size budget with a failure threshold (per layer, per component and per
   page, in `tests/budget.test.ts`; adopted early, in Phase 2)
 
@@ -668,8 +675,8 @@ Turning manual discipline into automation as the component count grows.
 
 - [x] Fixture page as the living component gallery
 - [x] Token reference generated from the TypeScript source (`docs/TOKEN-REFERENCE.md`)
-- [ ] Per-component documentation with all six required sections
-- [ ] Migration guide
+- [x] Per-component documentation with all six required sections ([COMPONENT-CONTRACTS.md](COMPONENT-CONTRACTS.md), coverage enforced)
+- [x] Migration guide ([MIGRATION.md](MIGRATION.md))
 
 ### Manual, per release
 
@@ -695,7 +702,7 @@ Turning manual discipline into automation as the component count grows.
 - [x] Figma variable export (`dist/figma-variables.json`)
 - [ ] Vertical writing mode (`writing-mode`) support
 - [ ] APCA contrast checking alongside WCAG 2.x
-- [ ] Cognitive accessibility guidance
+- [x] Cognitive accessibility guidance ([ACCESSIBILITY.md](ACCESSIBILITY.md))
 
 **Note on email.** It must be generated from the token source, never hand-maintained.
 Hand-maintained email CSS drifts from the tokens within months, and a design system that
@@ -705,15 +712,15 @@ the claim is that much email support and no more.
 
 ---
 
-## Phase 6 -- Release (not started)
+## Phase 6 -- Release (prepared, unpublished)
 
-- [ ] Semantic versioning, with a documented deprecation policy
-- [ ] Changesets for release notes
+- [x] Semantic versioning, with a documented deprecation policy ([RELEASE.md](RELEASE.md))
+- [x] Release notes policy: checked-in Markdown, divergent from Changesets to preserve zero dependencies ([RELEASE.md](RELEASE.md))
 - [ ] CI publishing to npm
 - [ ] CDN distribution
-- [ ] Contribution guidelines and a review process
-- [ ] Support policy: which versions get fixes, and for how long
-- [ ] Migration tooling for breaking changes
+- [x] Contribution guidelines and a review process ([CONTRIBUTING.md](../CONTRIBUTING.md))
+- [x] Support policy: which versions get fixes, and for how long ([RELEASE.md](RELEASE.md))
+- [x] Migration tooling for breaking changes (`tools/migrate-tokens.mjs`, dry-run default, backup before writes)
 
 **Versioning policy**
 
@@ -750,13 +757,13 @@ missed.
 
 | Budget (minified) | Target | Measured | Gate |
 | --- | --- | --- | --- |
-| Layers + reset + tokens + base | < 16 KB | 12.0 KB | fails the check |
-| Any single component | < 7 KB | 6.0 KB largest (`nav`) | fails the check |
-| Typical chat page | < 40 KB | 28.7 KB | fails the check |
-| Full bundle, minified | — | 135.8 KB | reported only |
-| Full bundle, minified + gzip | — | 19.7 KB | reported only |
+| Layers + reset + tokens + base | < 16 KB | 15.7 KB | fails the check |
+| Any single component | < 7 KB | 6.4 KB largest (`field`) | fails the check |
+| Typical chat page | < 40 KB | 34.4 KB | fails the check |
+| Full bundle, minified | — | 196.8 KB | reported only |
+| Full bundle, minified + gzip | — | 27.4 KB | reported only |
 
-Measured on 2026-10-07 with 37 components. "Typical chat page" is layers + reset +
+Measured on 2026-10-08 with 54 components. "Typical chat page" is layers + reset +
 tokens + base + layout + utilities plus button, chat and composer.
 
 **Why per page.** Consumers load the per-layer files in `dist/` and only the components

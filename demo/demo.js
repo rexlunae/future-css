@@ -15,6 +15,7 @@ import { FutureCssMenu } from "/src/js/menu.js";
 import { FutureCssGrid } from "/src/js/grid.js";
 import { FutureCssWebview } from "/src/js/webview.js";
 import { highlight, renderHighlighted, languageNames } from "/src/js/highlight.js";
+import { createIcon } from "/src/js/icons.js";
 import { diffLines, diffStats } from "/src/js/diff.js";
 import { FutureCssSelect } from "/src/js/select.js";
 import { FutureCssComposer } from "/src/js/composer.js";
@@ -421,18 +422,19 @@ document.addEventListener("click", async (event) => {
 
   // textContent, not innerHTML: the snippet holds markup as *text*, and copying
   // the tags would paste visible angle brackets into the user's editor.
-  const label = button.textContent;
-  let message = "Copied";
+  let copied = true;
   try {
     await navigator.clipboard.writeText(code.textContent);
   } catch {
-    message = "Copy failed";
+    copied = false;
   }
-  button.textContent = message;
-  // Announced as well as shown: without the live region the confirmation is
-  // visual only, and a screen reader user gets nothing at all.
-  status("#demo-live", `${button.dataset.snippetLabel ?? "Snippet"} ${message.toLowerCase()}`);
-  setTimeout(() => { button.textContent = label; }, 1600);
+  // The icon confirms visually; the name stays "Copy", because a name that
+  // changes under focus is re-announced inconsistently across screen readers.
+  // The live region carries the outcome instead.
+  button.replaceChildren(createIcon(copied ? "check" : "close"));
+  status("#demo-live", `${button.dataset.snippetLabel ?? "Snippet"} ${copied ? "copied" : "copy failed"}`);
+  clearTimeout(Number(button.dataset.copyTimer));
+  button.dataset.copyTimer = String(setTimeout(() => { button.replaceChildren(createIcon("copy")); }, 1600));
 });
 
 // ---------------------------------------------------------------------------

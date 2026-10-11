@@ -184,6 +184,32 @@ Native activation works; the application owns its action. WASM is optional and h
 
 Avoid navigation to another URL; use an anchor.
 
+## icon
+
+### Anatomy
+
+The [complete markup and state examples](../demo/fixtures.html#fx-icon) define required parts, labels and attributes. Load `future-css/components/icon` with the token foundation; take the SVG from `future-css/icons` (`iconMarkup`, `createIcon`), `dist/icons.svg` (`<use href="icons.svg#fc-icon-NAME">`), or `dist/icons.json`.
+
+### States
+
+None of its own. The icon is never the interactive element; it takes the enclosing control's state through `currentColor`, so a disabled or danger button's icon matches its label.
+
+### Accessibility
+
+Decorative by default (`aria-hidden="true"`). An icon-only button carries its name on the button with `aria-label`, never on the icon; a standalone icon that means something is `role="img"` with `aria-label`. Sized in `em`, so it scales with text zoom.
+
+### Internationalization
+
+Icons that point along the line of text (`*-start`, `*-end`, send, undo, redo, external-link, sidebar) carry `.fc-icon--mirror` and flip under `dir="rtl"`. Physical and rotational icons (play, upload, refresh) do not.
+
+### No-JS fallback
+
+Static SVG markup; `iconMarkup` writes presentation attributes so the icon draws before the stylesheet loads. No icon font, CDN, or script is involved.
+
+### When not to use it
+
+Avoid an icon alone where the action is unfamiliar or has no widely understood symbol; give the button a visible label and keep the icon beside it.
+
 ## card
 
 ### Anatomy

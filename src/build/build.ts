@@ -12,6 +12,8 @@
  *   dist/components/*.css      per-component files
  *   dist/utilities.css         the escape hatch
  *   dist/tokens.json           payload for native platforms and Figma
+ *   dist/icons.json            the icon set as data, for non-JS consumers
+ *   dist/icons.svg             the icon set as a <symbol> sprite
  *
  * The output is deliberately NOT minified. A design system is a piece of
  * infrastructure that other engineers read, debug with browser devtools, and
@@ -25,6 +27,8 @@
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { ICON_NAMES, ICON_STROKE_WIDTH, ICON_VIEWBOX, ICONS, iconSprite } from "../js/icons.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(here, "..", "..");
@@ -44,6 +48,7 @@ const BUNDLE_ORDER: ReadonlyArray<readonly [source: string, publishedAs: string]
   ["base.css", "base.css"],
   ["layout.css", "layout.css"],
   ["components/button.css", "components/button.css"],
+  ["components/icon.css", "components/icon.css"],
   ["components/theme-picker.css", "components/theme-picker.css"],
   ["components/chat.css", "components/chat.css"],
   ["components/tool-call.css", "components/tool-call.css"],
@@ -206,6 +211,22 @@ function assertLayerDeclared(relative: string, source: string): boolean {
   return /@layer\s+fc\.[a-z]+\s*\{/.test(source);
 }
 
+/*
+ * The icon set as data. src/js/icons.ts stays the one source; this is the copy
+ * a consumer in another language (the Dioxus library generates a Rust enum
+ * from it) reads without running TypeScript. Keys are in declaration order, so
+ * a generated enum keeps the set's grouping.
+ */
+async function buildIcons(): Promise<void> {
+  const icons = Object.fromEntries(ICON_NAMES.map((name) => {
+    const { d, mirror = false } = ICONS[name] as { d: string; mirror?: boolean };
+    return [name, { d, mirror }];
+  }));
+  const payload = { viewBox: ICON_VIEWBOX, strokeWidth: ICON_STROKE_WIDTH, icons };
+  await writeFile(resolve(outDir, "icons.json"), `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+  await writeFile(resolve(outDir, "icons.svg"), iconSprite(), "utf8");
+}
+
 async function main(): Promise<void> {
   // Generate tokens first: the CSS layers reference the variables it emits.
   await import("./compile-tokens.ts");
@@ -229,12 +250,13 @@ async function main(): Promise<void> {
   await buildIndividualFiles();
   await buildBundle();
   await writeFile(resolve(outDir, "print.css"), await readSource("print.css"), "utf8");
+  await buildIcons();
 
   const componentFiles = await readdir(resolve(srcCss, "components"));
   const bytes = (await readFile(resolve(outDir, "future-css.css"))).byteLength;
   console.log(
     `build: dist/future-css.css (${(bytes / 1024).toFixed(1)} KB, ${BUNDLE_ORDER.length} files, ` +
-      `${componentFiles.length} component(s)) + tokens.css + tokens.json`,
+      `${componentFiles.length} component(s)) + tokens.css + tokens.json + icons.json + icons.svg`,
   );
 }
 

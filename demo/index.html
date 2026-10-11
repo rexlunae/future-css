@@ -105,7 +105,7 @@
       <div class="fc-card fc-card--feature"><h3>Your workspace, your style</h3><p>Choose a design below to preview its surfaces, shapes and elevation across the component demo.</p></div>
       <div class="demo-panel"><div class="fc-theme-picker" id="theme-picker"><p>Enable JavaScript to choose a theme. All twenty-one designs also work through CSS attributes.</p></div></div>
       </div>
-      <div class="demo-snippet fc-code" data-demo-snippet="themes"><div class="fc-code__bar"><span class="fc-code__lang">js</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Theme picker wiring">Copy</button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { FutureCssThemePicker } from "future-css/theme-picker";
+      <div class="demo-snippet fc-code" data-demo-snippet="themes"><div class="fc-code__bar"><span class="fc-code__lang">js</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="Theme picker wiring"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { FutureCssThemePicker } from "future-css/theme-picker";
 // Load future-css/themes and future-css/components/theme-picker with your CSS.
 const picker = new FutureCssThemePicker({ root: "#appearance" });
 picker.setState({ design: "helix", palette: "helix", scheme: "system" });
@@ -139,7 +139,7 @@ picker.setState({ design: "helix", palette: "helix", scheme: "system" });
 <label class="fc-choice"><input class="fc-check__input" type="radio" name="visibility" value="private" checked><span class="fc-choice__content"><strong>Private</strong><span class="fc-choice__description">Only invited members can view this workspace.</span></span></label>
 <label class="fc-choice"><input class="fc-check__input" type="radio" name="visibility" value="team"><span class="fc-choice__content"><strong>Team</strong><span class="fc-choice__description">Everyone in your organization can join.</span></span></label>
 <label class="fc-choice"><input class="fc-check__input" type="radio" name="visibility" value="public" disabled><span class="fc-choice__content"><strong>Public · unavailable</strong><span class="fc-choice__description">Your plan does not include public workspaces.</span></span></label>
-</fieldset></div></div><div class="demo-snippet fc-code" data-demo-snippet="advanced-controls"><div class="fc-code__bar"><span class="fc-code__lang">js</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Advanced controls wiring">Copy</button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { bindMenuButton } from "future-css/menu";
+</fieldset></div></div><div class="demo-snippet fc-code" data-demo-snippet="advanced-controls"><div class="fc-code__bar"><span class="fc-code__lang">js</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="Advanced controls wiring"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { bindMenuButton } from "future-css/menu";
 import { FutureCssSelect } from "future-css/select";
 import { FutureCssMultiselect } from "future-css/multiselect";
 bindMenuButton(document.querySelector("#export-toggle"), "#export-menu");
@@ -160,7 +160,7 @@ new FutureCssMultiselect({ root: "#demo-multiselect", onChange: values =&gt; con
 <footer class="fc-dialog__footer"><button class="fc-btn fc-btn--cancel" type="submit" form="recipe-create-form" value="cancel" formnovalidate>Cancel</button><button class="fc-btn fc-btn--ok" type="submit" form="recipe-create-form" value="create">Create project</button></footer></dialog><dialog class="fc-dialog fc-dialog--lg" id="recipe-settings" aria-labelledby="recipe-settings-title" aria-describedby="recipe-settings-description" data-fc-kind="dialog" data-fc-id="recipe-settings">
 <header class="fc-dialog__header"><h3 class="fc-dialog__title" id="recipe-settings-title">Conversation preferences</h3><button class="fc-dialog__close" type="button" data-demo-close value="cancel" aria-label="Close preferences">×</button></header>
 <div class="fc-dialog__body"><p class="fc-dialog__description" id="recipe-settings-description">Choose how this conversation behaves. Changes apply when you select Save preferences.</p><form method="dialog" id="recipe-settings-form" class="fc-stack"><fieldset class="fc-stack"><legend>Response style</legend><label class="fc-choice"><input class="fc-check__input" type="radio" name="style" value="concise" checked autofocus><span class="fc-choice__content"><strong>Concise</strong><span class="fc-choice__description">Short answers with the essential details.</span></span></label><label class="fc-choice"><input class="fc-check__input" type="radio" name="style" value="detailed"><span class="fc-choice__content"><strong>Detailed</strong><span class="fc-choice__description">More context, reasoning and examples.</span></span></label></fieldset><label class="fc-check"><input class="fc-check__input" type="checkbox" name="sources" checked><span class="fc-check__label">Show source links</span></label><label class="fc-field fc-field--inline"><span class="fc-field__label">Language</span><select class="fc-input" name="language"><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option></select></label></form></div>
-<footer class="fc-dialog__footer"><button class="fc-btn fc-btn--cancel" type="submit" form="recipe-settings-form" value="cancel" formnovalidate>Cancel</button><button class="fc-btn fc-btn--ok" type="submit" form="recipe-settings-form" value="save">Save preferences</button></footer></dialog><div class="demo-snippet fc-code" data-demo-snippet="dialogs"><div class="fc-code__bar"><span class="fc-code__lang">html</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Dialog recipes markup">Copy</button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;dialog class=&quot;fc-dialog fc-dialog--sm&quot; id=&quot;recipe-notice&quot; aria-labelledby=&quot;recipe-notice-title&quot; aria-describedby=&quot;recipe-notice-description&quot; data-fc-kind=&quot;dialog&quot; data-fc-id=&quot;recipe-notice&quot;&gt;
+<footer class="fc-dialog__footer"><button class="fc-btn fc-btn--cancel" type="submit" form="recipe-settings-form" value="cancel" formnovalidate>Cancel</button><button class="fc-btn fc-btn--ok" type="submit" form="recipe-settings-form" value="save">Save preferences</button></footer></dialog><div class="demo-snippet fc-code" data-demo-snippet="dialogs"><div class="fc-code__bar"><span class="fc-code__lang">html</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="Dialog recipes markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;dialog class=&quot;fc-dialog fc-dialog--sm&quot; id=&quot;recipe-notice&quot; aria-labelledby=&quot;recipe-notice-title&quot; aria-describedby=&quot;recipe-notice-description&quot; data-fc-kind=&quot;dialog&quot; data-fc-id=&quot;recipe-notice&quot;&gt;
 &lt;header class=&quot;fc-dialog__header&quot;&gt;&lt;h3 class=&quot;fc-dialog__title&quot; id=&quot;recipe-notice-title&quot;&gt;Workspace ready&lt;/h3&gt;&lt;button class=&quot;fc-dialog__close&quot; type=&quot;button&quot; data-demo-close value=&quot;cancel&quot; aria-label=&quot;Close information&quot;&gt;×&lt;/button&gt;&lt;/header&gt;
 &lt;div class=&quot;fc-dialog__body&quot; tabindex=&quot;0&quot;&gt;&lt;p class=&quot;fc-dialog__description&quot; id=&quot;recipe-notice-description&quot;&gt;Your workspace is ready. Invite teammates or start a new conversation.&lt;/p&gt;&lt;div class=&quot;fc-alert fc-alert--success&quot;&gt;&lt;span aria-hidden=&quot;true&quot;&gt;✓&lt;/span&gt;&lt;div&gt;Your preferences are saved locally for this demo.&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
 &lt;footer class=&quot;fc-dialog__footer&quot;&gt;&lt;button class=&quot;fc-btn fc-btn--ok&quot; type=&quot;button&quot; data-demo-close value=&quot;ok&quot; autofocus&gt;OK&lt;/button&gt;&lt;/footer&gt;&lt;/dialog&gt;
@@ -175,7 +175,7 @@ new FutureCssMultiselect({ root: "#demo-multiselect", onChange: values =&gt; con
 &lt;dialog class=&quot;fc-dialog fc-dialog--lg&quot; id=&quot;recipe-settings&quot; aria-labelledby=&quot;recipe-settings-title&quot; aria-describedby=&quot;recipe-settings-description&quot; data-fc-kind=&quot;dialog&quot; data-fc-id=&quot;recipe-settings&quot;&gt;
 &lt;header class=&quot;fc-dialog__header&quot;&gt;&lt;h3 class=&quot;fc-dialog__title&quot; id=&quot;recipe-settings-title&quot;&gt;Conversation preferences&lt;/h3&gt;&lt;button class=&quot;fc-dialog__close&quot; type=&quot;button&quot; data-demo-close value=&quot;cancel&quot; aria-label=&quot;Close preferences&quot;&gt;×&lt;/button&gt;&lt;/header&gt;
 &lt;div class=&quot;fc-dialog__body&quot;&gt;&lt;p class=&quot;fc-dialog__description&quot; id=&quot;recipe-settings-description&quot;&gt;Choose how this conversation behaves. Changes apply when you select Save preferences.&lt;/p&gt;&lt;form method=&quot;dialog&quot; id=&quot;recipe-settings-form&quot; class=&quot;fc-stack&quot;&gt;&lt;fieldset class=&quot;fc-stack&quot;&gt;&lt;legend&gt;Response style&lt;/legend&gt;&lt;label class=&quot;fc-choice&quot;&gt;&lt;input class=&quot;fc-check__input&quot; type=&quot;radio&quot; name=&quot;style&quot; value=&quot;concise&quot; checked autofocus&gt;&lt;span class=&quot;fc-choice__content&quot;&gt;&lt;strong&gt;Concise&lt;/strong&gt;&lt;span class=&quot;fc-choice__description&quot;&gt;Short answers with the essential details.&lt;/span&gt;&lt;/span&gt;&lt;/label&gt;&lt;label class=&quot;fc-choice&quot;&gt;&lt;input class=&quot;fc-check__input&quot; type=&quot;radio&quot; name=&quot;style&quot; value=&quot;detailed&quot;&gt;&lt;span class=&quot;fc-choice__content&quot;&gt;&lt;strong&gt;Detailed&lt;/strong&gt;&lt;span class=&quot;fc-choice__description&quot;&gt;More context, reasoning and examples.&lt;/span&gt;&lt;/span&gt;&lt;/label&gt;&lt;/fieldset&gt;&lt;label class=&quot;fc-check&quot;&gt;&lt;input class=&quot;fc-check__input&quot; type=&quot;checkbox&quot; name=&quot;sources&quot; checked&gt;&lt;span class=&quot;fc-check__label&quot;&gt;Show source links&lt;/span&gt;&lt;/label&gt;&lt;label class=&quot;fc-field fc-field--inline&quot;&gt;&lt;span class=&quot;fc-field__label&quot;&gt;Language&lt;/span&gt;&lt;select class=&quot;fc-input&quot; name=&quot;language&quot;&gt;&lt;option value=&quot;en&quot;&gt;English&lt;/option&gt;&lt;option value=&quot;es&quot;&gt;Español&lt;/option&gt;&lt;option value=&quot;fr&quot;&gt;Français&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;/form&gt;&lt;/div&gt;
-&lt;footer class=&quot;fc-dialog__footer&quot;&gt;&lt;button class=&quot;fc-btn fc-btn--cancel&quot; type=&quot;submit&quot; form=&quot;recipe-settings-form&quot; value=&quot;cancel&quot; formnovalidate&gt;Cancel&lt;/button&gt;&lt;button class=&quot;fc-btn fc-btn--ok&quot; type=&quot;submit&quot; form=&quot;recipe-settings-form&quot; value=&quot;save&quot;&gt;Save preferences&lt;/button&gt;&lt;/footer&gt;&lt;/dialog&gt;</code></pre></div><div class="demo-snippet fc-code" data-demo-snippet="dialog-wiring"><div class="fc-code__bar"><span class="fc-code__lang">js</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Native dialog wiring">Copy</button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">const dialog = document.querySelector("#recipe-create");
+&lt;footer class=&quot;fc-dialog__footer&quot;&gt;&lt;button class=&quot;fc-btn fc-btn--cancel&quot; type=&quot;submit&quot; form=&quot;recipe-settings-form&quot; value=&quot;cancel&quot; formnovalidate&gt;Cancel&lt;/button&gt;&lt;button class=&quot;fc-btn fc-btn--ok&quot; type=&quot;submit&quot; form=&quot;recipe-settings-form&quot; value=&quot;save&quot;&gt;Save preferences&lt;/button&gt;&lt;/footer&gt;&lt;/dialog&gt;</code></pre></div><div class="demo-snippet fc-code" data-demo-snippet="dialog-wiring"><div class="fc-code__bar"><span class="fc-code__lang">js</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="Native dialog wiring"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">const dialog = document.querySelector("#recipe-create");
 // Open from a real button; the browser restores focus to that opener.
 dialog.returnValue = "";
 dialog.showModal();
@@ -235,15 +235,107 @@ dialog.addEventListener("close", () =&gt; {
         </button>
 
         <button type="button" class="fc-btn fc-btn--secondary fc-btn--icon"
-                aria-label="Refresh">&#8635;</button>
+                aria-label="Refresh"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/></svg></button>
       </div>
+
+      <hr class="demo-rule">
+
+      <!--
+        Icon-only buttons carry their name on the button; the icon is
+        aria-hidden, so it is never announced as an unnamed image.
+      -->
+      <div class="fc-cluster" role="group" aria-label="Icon buttons">
+        <button type="button" class="fc-btn fc-btn--primary fc-btn--icon" aria-label="Send"><svg class="fc-icon fc-icon--mirror" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg></button>
+        <button type="button" class="fc-btn fc-btn--secondary fc-btn--icon" aria-label="Copy"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--icon" aria-label="Edit"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4L19 9a2.83 2.83 0 0 0-4-4L4 16zM13.5 6.5l4 4"/></svg></button>
+        <button type="button" class="fc-btn fc-btn--subtle fc-btn--icon" aria-label="Share"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 2.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5zM6 9.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5zM18 16.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5zM8.2 10.8l7.6-4.5M8.2 13.2l7.6 4.5"/></svg></button>
+        <button type="button" class="fc-btn fc-btn--danger fc-btn--icon" aria-label="Delete"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button>
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--icon fc-btn--sm" aria-label="More actions"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 11a1 1 0 1 0 0 2a1 1 0 1 0 0-2zM12 11a1 1 0 1 0 0 2a1 1 0 1 0 0-2zM19 11a1 1 0 1 0 0 2a1 1 0 1 0 0-2z"/></svg></button>
+        <button type="button" class="fc-btn fc-btn--secondary fc-btn--icon" aria-label="Download" disabled><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></button>
+        <button type="button" class="fc-btn fc-btn--primary"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span>Download</span></button>
+        <button type="button" class="fc-btn fc-btn--secondary"><span>Next</span><svg class="fc-icon fc-icon--mirror" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </div>
+
+      <hr class="demo-rule">
+
+      <details class="fc-disclosure">
+        <summary class="fc-disclosure__summary">The built-in icon set (66 icons)</summary>
+        <ul class="demo-icons">
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg><code>copy</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><code>check</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg><code>close</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><code>plus</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/></svg><code>minus</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 4.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13zM15.6 15.6L20 20"/></svg><code>search</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4L19 9a2.83 2.83 0 0 0-4-4L4 16zM13.5 6.5l4 4"/></svg><code>edit</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg><code>trash</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><code>download</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 16V5M7 10l5-5 5 5M5 20h14"/></svg><code>upload</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 2.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5zM6 9.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5zM18 16.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5zM8.2 10.8l7.6-4.5M8.2 13.2l7.6 4.5"/></svg><code>share</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></svg><code>link</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg fc-icon--mirror" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg><code>external-link</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/></svg><code>refresh</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg fc-icon--mirror" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/></svg><code>undo</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg fc-icon--mirror" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3"/></svg><code>redo</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg><code>filter</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1M15 4v4M9 10v4M17 16v4"/></svg><code>settings</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg><code>maximize</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg><code>minimize</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/></svg><code>menu</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 11a1 1 0 1 0 0 2a1 1 0 1 0 0-2zM12 11a1 1 0 1 0 0 2a1 1 0 1 0 0-2zM19 11a1 1 0 1 0 0 2a1 1 0 1 0 0-2z"/></svg><code>more-horizontal</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4a1 1 0 1 0 0 2a1 1 0 1 0 0-2zM12 11a1 1 0 1 0 0 2a1 1 0 1 0 0-2zM12 18a1 1 0 1 0 0 2a1 1 0 1 0 0-2z"/></svg><code>more-vertical</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 15l6-6 6 6"/></svg><code>chevron-up</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg><code>chevron-down</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg fc-icon--mirror" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6"/></svg><code>chevron-start</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg fc-icon--mirror" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6"/></svg><code>chevron-end</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5M6 11l6-6 6 6"/></svg><code>arrow-up</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M6 13l6 6 6-6"/></svg><code>arrow-down</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg fc-icon--mirror" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M19 12H5M11 6l-6 6 6 6"/></svg><code>arrow-start</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg fc-icon--mirror" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6"/></svg><code>arrow-end</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 11l9-7 9 7M5 9.5V20h5v-6h4v6h5V9.5"/></svg><code>home</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg fc-icon--mirror" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM9 4v16"/></svg><code>sidebar</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 11v5M12 8h.01"/></svg><code>info</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM8 12.5l2.5 2.5L16 9.5"/></svg><code>success</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.3 4.2L2.8 17.5a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></svg><code>warning</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 7.5v5M12 16h.01"/></svg><code>error</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01"/></svg><code>help</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 11h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1zM8 11V7a4 4 0 0 1 8 0v4"/></svg><code>lock</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z"/></svg><code>eye</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.6 5.1A10.6 10.6 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-2.2 3.2M6.6 6.6A16.6 16.6 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18"/></svg><code>eye-off</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></svg><code>bell</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3L14.5 9.1L21 9.6L16 13.8L17.6 20.2L12 16.7L6.4 20.2L8 13.8L3 9.6L9.5 9.1z"/></svg><code>star</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 7v5l3 2"/></svg><code>clock</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg fc-icon--mirror" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg><code>send</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 6h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/></svg><code>stop</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 4.5v15l12-7.5z"/></svg><code>play</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 5v14M16 5v14"/></svg><code>pause</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3"/></svg><code>mic</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11.5l-8 8a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L9.7 17.2a1.7 1.7 0 0 1-2.4-2.4L15 7"/></svg><code>attach</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 11v10M7 11l4-8a2 2 0 0 1 2.5 2v4h5.3a2 2 0 0 1 2 2.4l-1.4 6A2 2 0 0 1 17.4 21H4a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z"/></svg><code>thumbs-up</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 13V3M7 13l4 8a2 2 0 0 0 2.5-2v-4h5.3a2 2 0 0 0 2-2.4l-1.4-6A2 2 0 0 0 17.4 3H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1z"/></svg><code>thumbs-down</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8zM19 15v5M16.5 17.5h5"/></svg><code>sparkles</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8zM4 20a8 6 0 0 1 16 0"/></svg><code>user</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM3 7l9 6 9-6"/></svg><code>mail</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 3h8l5 5v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM14 3v5h5"/></svg><code>file</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg><code>folder</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM9 8a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3zM20 15l-5-5L5 20"/></svg><code>image</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></svg><code>code</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6l6 6-6 6M12 18h8"/></svg><code>terminal</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 3v12M18 3a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM6 15a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM18 9a9 9 0 0 1-9 9"/></svg><code>git-branch</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM4 10h16M8 3v4M16 3v4"/></svg><code>calendar</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 3h12v18l-6-4-6 4z"/></svg><code>bookmark</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/></svg><code>globe</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><code>sun</code></li>
+          <li class="demo-icons__item"><svg class="fc-icon fc-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 14A8 8 0 1 1 10 4a6.5 6.5 0 0 0 10 10z"/></svg><code>moon</code></li>
+        </ul>
+      </details>
     </div>
 
     <div class="demo-snippet fc-code" data-demo-snippet="buttons">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Button markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Button markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;!-- Variant and size are separate classes, so they compose. --&gt;
 &lt;button class="fc-btn fc-btn--primary"&gt;Save&lt;/button&gt;
@@ -261,8 +353,16 @@ dialog.addEventListener("close", () =&gt; {
   &lt;span&gt;Saving&hellip;&lt;/span&gt;
 &lt;/button&gt;
 
-&lt;!-- Icon-only needs an explicit name: the glyph is decorative. --&gt;
-&lt;button class="fc-btn fc-btn--ghost fc-btn--icon" aria-label="Refresh"&gt;&amp;#8635;&lt;/button&gt;</code></pre>
+&lt;!-- Icon-only needs an explicit name: the icon is decorative. Icons come from
+     future-css/icons -- iconMarkup("refresh") in JS -- or the icons.svg sprite. --&gt;
+&lt;button class="fc-btn fc-btn--ghost fc-btn--icon" aria-label="Refresh"&gt;
+  &lt;svg class="fc-icon" aria-hidden="true" focusable="false"&gt;&lt;use href="icons.svg#fc-icon-refresh"/&gt;&lt;/svg&gt;
+&lt;/button&gt;
+
+&lt;!-- Beside a label, the icon needs no name of its own. --&gt;
+&lt;button class="fc-btn fc-btn--primary"&gt;
+  &lt;svg class="fc-icon" aria-hidden="true" focusable="false"&gt;&lt;use href="icons.svg#fc-icon-download"/&gt;&lt;/svg&gt;&lt;span&gt;Download&lt;/span&gt;
+&lt;/button&gt;</code></pre>
     </div>
   </section>
 
@@ -364,7 +464,7 @@ dialog.addEventListener("close", () =&gt; {
     <div class="demo-snippet fc-code" data-demo-snippet="forms">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Forms markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="Forms markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class="demo-panel"&gt;
       &lt;form class="demo-form" id="demo-form" novalidate&gt;
@@ -545,7 +645,7 @@ dialog.addEventListener("close", () =&gt; {
     <div class="demo-snippet fc-code" data-demo-snippet="feedback">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Feedback markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="Feedback markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class="demo-panel fc-stack"&gt;
       &lt;div class="fc-alert fc-alert--info"&gt;
@@ -680,7 +780,7 @@ dialog.addEventListener("close", () =&gt; {
     <div class="demo-snippet fc-code" data-demo-snippet="spinners">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Spinners markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="Spinners markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class="demo-panel fc-stack"&gt;
       &lt;ul class="demo-spinners"&gt;
@@ -740,7 +840,7 @@ dialog.addEventListener("close", () =&gt; {
       <button type="button" class="fc-btn fc-btn--secondary" popovertarget="demo-popover">Sampling</button>
 
       <span class="fc-tooltip">
-        <button type="button" class="fc-btn fc-btn--ghost fc-btn--icon" aria-label="Copy">&#10697;</button>
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--icon" aria-label="Copy"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
         <span class="fc-tooltip__bubble">Copy to clipboard</span>
       </span>
 
@@ -784,7 +884,7 @@ dialog.addEventListener("close", () =&gt; {
     <div class="demo-snippet fc-code" data-demo-snippet="overlays">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Overlays markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="Overlays markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class="demo-panel fc-cluster"&gt;
       &lt;button type="button" class="fc-btn fc-btn--danger" data-demo-open="demo-dialog"&gt;Delete chat&amp;hellip;&lt;/button&gt;
@@ -792,7 +892,7 @@ dialog.addEventListener("close", () =&gt; {
       &lt;button type="button" class="fc-btn fc-btn--secondary" popovertarget="demo-popover"&gt;Sampling&lt;/button&gt;
 
       &lt;span class="fc-tooltip"&gt;
-        &lt;button type="button" class="fc-btn fc-btn--ghost fc-btn--icon" aria-label="Copy"&gt;&amp;#10697;&lt;/button&gt;
+        &lt;button type="button" class="fc-btn fc-btn--ghost fc-btn--icon" aria-label="Copy"&gt;&lt;svg class="fc-icon" aria-hidden="true" focusable="false"&gt;&lt;use href="icons.svg#fc-icon-copy"/&gt;&lt;/svg&gt;&lt;/button&gt;
         &lt;span class="fc-tooltip__bubble"&gt;Copy to clipboard&lt;/span&gt;
       &lt;/span&gt;
 
@@ -934,7 +1034,7 @@ dialog.addEventListener("close", () =&gt; {
     <div class="demo-snippet fc-code" data-demo-snippet="navigation">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Navigation markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="Navigation markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class="demo-panel fc-stack"&gt;
       &lt;nav class="fc-breadcrumb" aria-label="Breadcrumb"&gt;
@@ -1069,7 +1169,7 @@ dialog.addEventListener("close", () =&gt; {
 </div>
 </div>
 </div>
-    <div class="demo-snippet fc-code" data-demo-snippet="shell"><div class="fc-code__bar"><span class="fc-code__lang">html</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="App shell markup">Copy</button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;header class="fc-masthead"&gt;
+    <div class="demo-snippet fc-code" data-demo-snippet="shell"><div class="fc-code__bar"><span class="fc-code__lang">html</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="App shell markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;header class="fc-masthead"&gt;
   &lt;a class="fc-masthead__brand" href="#shell"&gt;
     &lt;span class="fc-masthead__mark" aria-hidden="true"&gt;fc&lt;/span&gt;
     Acme workspace
@@ -1098,7 +1198,7 @@ dialog.addEventListener("close", () =&gt; {
   &lt;/ul&gt;
   &lt;div class="fc-nav__footer"&gt;&lt;a class="fc-nav__link" href="#forms"&gt;&lt;span class="fc-nav__icon" aria-hidden="true"&gt;⚙&lt;/span&gt;&lt;span class="fc-nav__label"&gt;Settings&lt;/span&gt;&lt;/a&gt;&lt;/div&gt;
 &lt;/nav&gt;</code></pre></div>
-    <div class="demo-snippet fc-code" data-demo-snippet="shell-js"><div class="fc-code__bar"><span class="fc-code__lang">js</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Sidebar wiring">Copy</button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { bindNavs } from "future-css/nav";
+    <div class="demo-snippet fc-code" data-demo-snippet="shell-js"><div class="fc-code__bar"><span class="fc-code__lang">js</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="Sidebar wiring"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { bindNavs } from "future-css/nav";
 bindNavs(document);</code></pre></div>
   </section>
 
@@ -1198,7 +1298,7 @@ bindNavs(document);</code></pre></div>
     <div class="demo-snippet fc-code" data-demo-snippet="surfaces">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Cards and surfaces markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="Cards and surfaces markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class="demo-panel fc-stack"&gt;
       &lt;div class="fc-grid-auto"&gt;
@@ -1348,8 +1448,8 @@ bindNavs(document);</code></pre></div>
     <div class="demo-snippet fc-code" data-demo-snippet="editor">
       <div class="fc-code__bar">
         <span class="fc-code__lang">js</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Editor wiring">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Editor wiring"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { FutureCssEditor } from "future-css/editor";
 
@@ -1377,8 +1477,8 @@ editor.applyMark("bold");</code></pre>
     <div class="demo-snippet fc-code" data-demo-snippet="editor-markup">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Editor markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Editor markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class="fc-editor"&gt;
   &lt;div class="fc-toolbar" role="toolbar" aria-label="Formatting"&gt;
@@ -1442,7 +1542,7 @@ editor.applyMark("bold");</code></pre>
     <div class="demo-snippet fc-code" data-demo-snippet="table">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Table and description list markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="Table and description list markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class="fc-table-wrap" role="region" aria-labelledby="demo-table-cap" tabindex="0"&gt;
       &lt;table class="fc-table fc-table--sticky fc-table--striped" id="demo-table"&gt;
@@ -1536,8 +1636,8 @@ editor.applyMark("bold");</code></pre>
     <div class="demo-snippet fc-code" data-demo-snippet="grid">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Grid markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Grid markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;!-- Row and column counts live in attributes so the binding knows the
      shape without counting children. --&gt;
@@ -1633,8 +1733,8 @@ editor.applyMark("bold");</code></pre>
     <div class="demo-snippet fc-code" data-demo-snippet="menu">
       <div class="fc-code__bar">
         <span class="fc-code__lang">js</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Menu wiring">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Menu wiring"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { FutureCssMenu } from "future-css/menu";
 
@@ -1654,8 +1754,8 @@ const menu = new FutureCssMenu({
     <div class="demo-snippet fc-code" data-demo-snippet="menu-markup">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Menu markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Menu markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;!-- The trigger owns the expanded state. aria-controls points at the menu,
      and aria-haspopup tells AT what will appear. --&gt;
@@ -1770,8 +1870,8 @@ const menu = new FutureCssMenu({
     <div class="demo-snippet fc-code" data-demo-snippet="chat">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Message markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Message markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;!-- role="log" so AT announces new turns without interrupting. --&gt;
 &lt;div class="fc-chat" role="log" aria-label="Conversation" tabindex="0"&gt;
@@ -1841,10 +1941,10 @@ const menu = new FutureCssMenu({
           <li class="fc-source" id="demo-src-2"><a class="fc-source__link" href="#demo-src-2"><span class="fc-source__index">2</span><span class="fc-source__title">Build orchestrator</span><span class="fc-source__domain">src/build/build.ts</span></a></li>
         </ol>
         <div class="fc-msg__actions" role="toolbar" aria-label="Message actions">
-          <button type="button" class="fc-msg__action" aria-label="Copy">&#10697;</button>
-          <button type="button" class="fc-msg__action" aria-label="Good response" aria-pressed="false">&#128077;</button>
-          <button type="button" class="fc-msg__action" aria-label="Bad response" aria-pressed="false">&#128078;</button>
-          <button type="button" class="fc-msg__action">&#8635; Retry</button>
+          <button type="button" class="fc-msg__action" aria-label="Copy"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
+          <button type="button" class="fc-msg__action" aria-label="Good response" aria-pressed="false"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 11v10M7 11l4-8a2 2 0 0 1 2.5 2v4h5.3a2 2 0 0 1 2 2.4l-1.4 6A2 2 0 0 1 17.4 21H4a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z"/></svg></button>
+          <button type="button" class="fc-msg__action" aria-label="Bad response" aria-pressed="false"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 13V3M7 13l4 8a2 2 0 0 0 2.5-2v-4h5.3a2 2 0 0 0 2-2.4l-1.4-6A2 2 0 0 0 17.4 3H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1z"/></svg></button>
+          <button type="button" class="fc-msg__action"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/></svg> Retry</button>
         </div>
       </article>
 
@@ -1857,7 +1957,7 @@ const menu = new FutureCssMenu({
     <div class="demo-snippet fc-code" data-demo-snippet="answer">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="An answer, end to end markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="An answer, end to end markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class="demo-panel fc-stack"&gt;
       &lt;ul class="fc-suggestions fc-suggestions--grid" aria-label="Suggested prompts"&gt;
@@ -1879,10 +1979,10 @@ const menu = new FutureCssMenu({
           &lt;li class="fc-source" id="demo-src-2"&gt;&lt;a class="fc-source__link" href="#demo-src-2"&gt;&lt;span class="fc-source__index"&gt;2&lt;/span&gt;&lt;span class="fc-source__title"&gt;Build orchestrator&lt;/span&gt;&lt;span class="fc-source__domain"&gt;src/build/build.ts&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
         &lt;/ol&gt;
         &lt;div class="fc-msg__actions" role="toolbar" aria-label="Message actions"&gt;
-          &lt;button type="button" class="fc-msg__action" aria-label="Copy"&gt;&amp;#10697;&lt;/button&gt;
-          &lt;button type="button" class="fc-msg__action" aria-label="Good response" aria-pressed="false"&gt;&amp;#128077;&lt;/button&gt;
-          &lt;button type="button" class="fc-msg__action" aria-label="Bad response" aria-pressed="false"&gt;&amp;#128078;&lt;/button&gt;
-          &lt;button type="button" class="fc-msg__action"&gt;&amp;#8635; Retry&lt;/button&gt;
+          &lt;button type="button" class="fc-msg__action" aria-label="Copy"&gt;&lt;svg class="fc-icon" aria-hidden="true" focusable="false"&gt;&lt;use href="icons.svg#fc-icon-copy"/&gt;&lt;/svg&gt;&lt;/button&gt;
+          &lt;button type="button" class="fc-msg__action" aria-label="Good response" aria-pressed="false"&gt;&lt;svg class="fc-icon" aria-hidden="true" focusable="false"&gt;&lt;use href="icons.svg#fc-icon-thumbs-up"/&gt;&lt;/svg&gt;&lt;/button&gt;
+          &lt;button type="button" class="fc-msg__action" aria-label="Bad response" aria-pressed="false"&gt;&lt;svg class="fc-icon" aria-hidden="true" focusable="false"&gt;&lt;use href="icons.svg#fc-icon-thumbs-down"/&gt;&lt;/svg&gt;&lt;/button&gt;
+          &lt;button type="button" class="fc-msg__action"&gt;&lt;svg class="fc-icon" aria-hidden="true" focusable="false"&gt;&lt;use href="icons.svg#fc-icon-refresh"/&gt;&lt;/svg&gt; Retry&lt;/button&gt;
         &lt;/div&gt;
       &lt;/article&gt;
 
@@ -1961,8 +2061,8 @@ const menu = new FutureCssMenu({
     <div class="demo-snippet fc-code" data-demo-snippet="tool-call">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Tool call markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Tool call markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;!-- Valid data-fc-state values: pending, queued, streaming, running,
      complete, aborted, denied, error. All are styled, not just "rest". --&gt;
@@ -2057,8 +2157,8 @@ const menu = new FutureCssMenu({
     <div class="demo-snippet fc-code" data-demo-snippet="terminal">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Terminal markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Terminal markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;!-- A terminal keeps its own palette and stays dark in BOTH schemes: it
      emulates another program. ANSI slots are hue-fixed by protocol, and all 19
@@ -2145,8 +2245,8 @@ const menu = new FutureCssMenu({
     <div class="demo-snippet fc-code" data-demo-snippet="webview">
       <div class="fc-code__bar">
         <span class="fc-code__lang">js</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Webview wiring">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Webview wiring"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { FutureCssWebview } from "future-css/webview";
 import { isSafeUrl } from "future-css/urls";
@@ -2168,8 +2268,8 @@ webview.back();</code></pre>
     <div class="demo-snippet fc-code" data-demo-snippet="webview-markup">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Webview markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Webview markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class="fc-webview" data-fc-home="/demo/page.html" data-fc-state="idle"&gt;
   &lt;div class="fc-webview__toolbar"&gt;
@@ -2247,8 +2347,8 @@ webview.back();</code></pre>
     <div class="demo-snippet fc-code" data-demo-snippet="code">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Code block markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Code block markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class="fc-code fc-code--numbered" data-fc-lang="typescript"&gt;
   &lt;!-- line numbers are decoration --&gt;
@@ -2302,8 +2402,8 @@ webview.back();</code></pre>
     <div class="demo-snippet fc-code" data-demo-snippet="git">
       <div class="fc-code__bar">
         <span class="fc-code__lang">js</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Git surface">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Git surface"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { FutureCssGitSurface } from "future-css/git";
 
@@ -2391,8 +2491,8 @@ const git = new FutureCssGitSurface({
     <div class="demo-snippet fc-code" data-demo-snippet="strip">
       <div class="fc-code__bar">
         <span class="fc-code__lang">js</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Context strip wiring">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Context strip wiring"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { FutureCssContextStrip } from "future-css/context-strip";
 
@@ -2493,8 +2593,8 @@ const strip = new FutureCssContextStrip({
     <div class="demo-snippet fc-code" data-demo-snippet="composer">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Composer markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Composer markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class="fc-composer fc-composer--contained" data-fc-state="idle"&gt;
   &lt;label class="fc-u-visually-hidden" for="composer-input"&gt;Message&lt;/label&gt;
@@ -2524,7 +2624,7 @@ const strip = new FutureCssContextStrip({
 &lt;/div&gt;</code></pre>
     </div>
 
-    <div class="demo-snippet fc-code" data-demo-snippet="composer-options"><div class="fc-code__bar"><span class="fc-code__lang">js</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Composer controls wiring">Copy</button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { FutureCssSelect } from "future-css/select";
+    <div class="demo-snippet fc-code" data-demo-snippet="composer-options"><div class="fc-code__bar"><span class="fc-code__lang">js</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="Composer controls wiring"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { FutureCssSelect } from "future-css/select";
 import { FutureCssComposer } from "future-css/composer";
 
 const model = new FutureCssSelect({
@@ -2548,8 +2648,8 @@ new FutureCssComposer({
     <div class="demo-snippet fc-code" data-demo-snippet="composer-js">
       <div class="fc-code__bar">
         <span class="fc-code__lang">js</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Composer wiring">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Composer wiring"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { FutureCssComposer } from "future-css/composer";
 
@@ -2612,12 +2712,12 @@ composer.removeAttachment(0);
         <button type="button" class="fc-btn fc-btn--ghost fc-control-group__item" aria-busy="true"><span class="fc-btn__spinner" aria-hidden="true"></span>Preparing archive…</button>
       </div>
     </div>
-    <div class="demo-snippet fc-code" data-demo-snippet="control-groups"><div class="fc-code__bar"><span class="fc-code__lang">html</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Control group markup">Copy</button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class="fc-control-group" role="group" aria-label="Text formatting"&gt;
+    <div class="demo-snippet fc-code" data-demo-snippet="control-groups"><div class="fc-code__bar"><span class="fc-code__lang">html</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="Control group markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class="fc-control-group" role="group" aria-label="Text formatting"&gt;
   &lt;button type="button" class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" data-demo-format="bold" aria-pressed="false"&gt;Bold&lt;/button&gt;
   &lt;button type="button" class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" data-demo-format="italic" aria-pressed="false"&gt;Italic&lt;/button&gt;
   &lt;button type="button" class="fc-btn fc-btn--ghost fc-btn--sm fc-control-group__item" disabled&gt;Underline unavailable&lt;/button&gt;
 &lt;/div&gt;</code></pre></div>
-    <div class="demo-snippet fc-code" data-demo-snippet="joined-controls"><div class="fc-code__bar"><span class="fc-code__lang">html</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm" data-snippet-label="Joined controls markup">Copy</button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class=&quot;fc-button-group&quot; role=&quot;group&quot; aria-label=&quot;Related actions&quot;&gt;
+    <div class="demo-snippet fc-code" data-demo-snippet="joined-controls"><div class="fc-code__bar"><span class="fc-code__lang">html</span><button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon" aria-label="Copy" data-snippet-label="Joined controls markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button></div><pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;div class=&quot;fc-button-group&quot; role=&quot;group&quot; aria-label=&quot;Related actions&quot;&gt;
   &lt;button class=&quot;fc-btn fc-btn--secondary fc-button-group__item&quot; type=&quot;button&quot;&gt;Previous&lt;/button&gt;
   &lt;button class=&quot;fc-btn fc-btn--secondary fc-button-group__item&quot; type=&quot;button&quot;&gt;Next&lt;/button&gt;
 &lt;/div&gt;
@@ -2739,8 +2839,8 @@ composer.removeAttachment(0);
     <div class="demo-snippet fc-code" data-demo-snippet="select">
       <div class="fc-code__bar">
         <span class="fc-code__lang">html</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Select markup">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Select markup"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">&lt;!-- A &lt;button&gt;, not a div: that buys form participation,
      Space/Enter activation, the platform focus ring, and correct
@@ -2771,8 +2871,8 @@ composer.removeAttachment(0);
     <div class="demo-snippet fc-code" data-demo-snippet="select-js">
       <div class="fc-code__bar">
         <span class="fc-code__lang">js</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Select wiring">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Select wiring"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { FutureCssSelect } from "future-css/select";
 
@@ -2836,8 +2936,8 @@ await select.useWasm("/dist/wasm/fc-select/web/fc_select.js");
     <div class="demo-snippet fc-code" data-demo-snippet="diff">
       <div class="fc-code__bar">
         <span class="fc-code__lang">js</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Diff wiring">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Diff wiring"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">import { diffLines, diffStats } from "future-css/diff";
 
@@ -2887,8 +2987,8 @@ for (const line of lines) {
     <div class="demo-snippet fc-code" data-demo-snippet="tokens">
       <div class="fc-code__bar">
         <span class="fc-code__lang">css</span>
-        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm"
-                data-snippet-label="Token usage">Copy</button>
+        <button type="button" class="demo-snippet__copy fc-btn fc-btn--ghost fc-btn--sm fc-btn--icon"
+                aria-label="Copy" data-snippet-label="Token usage"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
       </div>
       <pre class="demo-snippet__pre"><code class="fc-code__source" tabindex="0">/* Components reference SEMANTIC tokens only. A primitive is an
    implementation detail a theme may remap -- referencing one directly

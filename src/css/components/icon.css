@@ -1,0 +1,72 @@
+/*!
+ * future-css -- icon
+ *
+ * An inline SVG from the built-in set (`future-css/icons`), drawn in the
+ * current text colour at the current font size:
+ *
+ *   <svg class="fc-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+ *     <path d="..."/>
+ *   </svg>
+ *
+ *   <button class="fc-btn fc-btn--ghost fc-btn--icon" type="button" aria-label="Copy">
+ *     <svg class="fc-icon" ...>...</svg>
+ *   </button>
+ *
+ * The icon has no states of its own. It is never the interactive element --
+ * the button or link around it is -- so hover, focus, disabled and busy are the
+ * control's, and the icon follows them through `currentColor`. That is why
+ * nothing here names a colour token: a disabled button's icon is disabled-grey
+ * because its label is.
+ *
+ * Sized in `em` so an icon matches the text beside it at every type size and
+ * zoom level, and an icon-only `.fc-btn--sm` gets a smaller glyph without a
+ * second modifier.
+ */
+
+@layer fc.components {
+  .fc-icon {
+    display: inline-block;
+    flex-shrink: 0;
+    inline-size: var(--fc-icon-size, 1.25em);
+    block-size: var(--fc-icon-size, 1.25em);
+    /* Sits on the text's optical centre rather than its baseline when the icon
+       is inline in running text; flex parents ignore it. */
+    vertical-align: -0.25em;
+
+    fill: none;
+    stroke: currentColor;
+    stroke-width: var(--fc-icon-stroke, 2);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+
+    /*
+     * Clicks land on the control, not the SVG. Without this, `event.target` is
+     * the <path> for most of an icon button's area, and delegated handlers
+     * that compare targets rather than calling `closest()` miss the click.
+     */
+    pointer-events: none;
+  }
+
+  .fc-icon--sm {
+    --fc-icon-size: 1em;
+  }
+
+  .fc-icon--lg {
+    --fc-icon-size: 1.5em;
+  }
+
+  /*
+   * Icons that point along the line of text (back, forward, send, undo) flip
+   * in RTL so they keep pointing the way the reader travels. `scale` rather
+   * than `transform`, so a caller's own transform still composes.
+   */
+  .fc-icon--mirror:dir(rtl) {
+    scale: -1 1;
+  }
+
+  /*
+   * Motion: none. Forced colours: nothing to restate -- the stroke is
+   * `currentColor`, which resolves to the forced text or button-text colour of
+   * the container, so the icon stays visible against the system background.
+   */
+}

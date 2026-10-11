@@ -4635,6 +4635,31 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       }
     }
 
+    it("draws icons in the text colour, square in icon buttons, and mirrored only in RTL", async () => {
+      // Three ways an icon goes wrong that no unit test sees: a stroke that
+      // ignores currentColor (invisible on a primary button), an icon button
+      // that is not square, and a back arrow pointing forward in RTL.
+      await openFixtures("dir=ltr&theme=light");
+      const result = await evaluate(`
+        const section = document.querySelector('[data-fixture="icon"]');
+        const buttons = [...section.querySelectorAll('.fc-btn--icon')];
+        const primary = section.querySelector('.fc-btn--primary.fc-btn--icon');
+        const mirrored = [...section.querySelectorAll('.fc-icon--mirror')];
+        return {
+          strokeMatches: getComputedStyle(primary.querySelector('.fc-icon')).stroke === getComputedStyle(primary).color,
+          notSquare: buttons.map((b) => b.getBoundingClientRect())
+            .filter((r) => Math.abs(r.width - r.height) > 0.5 || r.width < 24).length,
+          flipped: mirrored.map((icon) => [icon.closest('[dir="rtl"]') !== null, getComputedStyle(icon).scale]),
+          clickTarget: getComputedStyle(primary.querySelector('.fc-icon')).pointerEvents,
+        };
+      `);
+      assert.equal(result.strokeMatches, true, "the icon stroke follows the button's text colour");
+      assert.equal(result.notSquare, 0, "icon-only buttons are square and at least 24px");
+      assert.ok(result.flipped.some(([rtl]) => rtl) && result.flipped.some(([rtl]) => !rtl), "the fixture shows both directions");
+      for (const [rtl, scale] of result.flipped) assert.equal(scale, rtl ? "-1 1" : "none", `mirror in ${rtl ? "RTL" : "LTR"}`);
+      assert.equal(result.clickTarget, "none", "clicks land on the button, not the path");
+    });
+
     it("draws a focus indicator on every focusable control", async () => {
       await openFixtures("dir=ltr&theme=light");
       await send("DOM.enable");

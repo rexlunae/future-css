@@ -1161,6 +1161,40 @@ in RTL) and `.fc-progress` on the native `<progress>`, with an indeterminate swe
 reduced motion the shimmer and sweep stop, and the indeterminate bar becomes a static
 hatch that cannot be read as a percentage.
 
+## Icon and icon button (implemented)
+
+`icon.css` styles an inline SVG from the built-in set; `.fc-btn--icon` makes a square
+icon-only button around one.
+
+```html
+<button class="fc-btn fc-btn--ghost fc-btn--icon" type="button" aria-label="Copy">
+  <svg class="fc-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="..."/></svg>
+</button>
+```
+
+```js
+import { iconMarkup, createIcon, ICON_NAMES } from "future-css/icons";
+button.append(createIcon("copy"));              // decorative
+iconMarkup("error", { label: "Build failed" }); // a meaningful standalone image
+```
+
+- **The set** is 66 stroke icons on a 24-unit grid: actions (copy, edit, trash,
+  download, share, refresh, undo...), navigation (menu, chevrons, arrows), status (info,
+  success, warning, error), conversation (send, stop, attach, thumbs up and down), and
+  common objects. Every icon is one path, so the set ships as data three ways:
+  `src/js/icons.ts`, `dist/icons.json` (which the Dioxus library generates its enum
+  from), and the `dist/icons.svg` sprite. All paths are original; there is no icon font
+  or CDN.
+- **Naming**: the button gets the name, the icon stays `aria-hidden`. A named image
+  inside an unnamed button is announced as "image, Copy, button" at best and as an
+  unnamed button by some readers.
+- **Size** follows the font size (`1.25em`); `--sm` and `--lg` step it, and
+  `--fc-icon-size` overrides it.
+- **Direction**: `.fc-icon--mirror` flips an icon in RTL. `iconMarkup` adds it for the
+  icons that point along the text (`arrow-start`, `chevron-end`, `send`, `undo`...).
+- **Clicks** pass through the icon (`pointer-events: none`), so a delegated handler sees
+  the button as the target.
+
 ## Avatar, empty state, and disclosure (implemented)
 
 - `avatar.css`: image or initials, sizes `--xs` to `--xl`, `--square` for non-people

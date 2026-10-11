@@ -236,6 +236,26 @@
   font: inherit;
 }
 
+/* The icon set, as a reference grid. Auto-fill tracks so it reflows to one
+   column at 320px instead of scrolling sideways. */
+.demo-icons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  gap: var(--fc-space-2);
+  margin: 0;
+  margin-block-start: var(--fc-space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.demo-icons__item {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-2);
+  color: var(--fc-color-text-default);
+  font-size: var(--fc-font-size-sm);
+}
+
 /* The live region under each interactive component. `role="status"` is polite by
    definition, so these announce without interrupting whatever the user is doing. */
 .demo-status {

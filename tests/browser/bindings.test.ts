@@ -3192,6 +3192,23 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     } finally { await send("Emulation.setEmulatedMedia", {features:[]}); }
   });
 
+  it("insets search view rows from the view's edges, as menus and listboxes do", async () => {
+    // Flush rows drew a hover highlight whose small corners met the view's
+    // large ones at its edge, which read as a mismatched radius under the
+    // crisp Helix preset. Every row must clear the view's inline edges.
+    await send("Page.navigate", { url: `${server.origin}/demo/fixtures.html` });
+    await new Promise(r => setTimeout(r, 500));
+    const gaps = await evaluate(`
+      return [...document.querySelectorAll('[data-fixture="search"] .fc-search__view[data-fc-open="true"] .fc-list__item')].map(row => {
+        const view = row.closest('.fc-search__view').getBoundingClientRect();
+        const box = row.getBoundingClientRect();
+        return Math.min(box.left - view.left, view.right - box.right);
+      });
+    `);
+    assert.ok(gaps.length > 0, "the search fixture shows an open view");
+    for (const gap of gaps) assert.ok(gap > 1, `row is flush with the view's edge (gap ${gap}px)`);
+  });
+
   it("prints a light document and preserves explicit content while hiding marked chrome", async () => {
     try {
       await evaluate(`

@@ -95,7 +95,7 @@ select and menu retain their independent version handshakes.
 One workspace, one published module per *opt-in unit*. Boundaries follow *what a
 consumer opts into*, and the dependency arrow points strictly downward.
 
-Eight crates produce seven importable modules: `fc-core` is emitted into the `fc-model`
+Nine crates produce eight importable modules: `fc-core` is emitted into the `fc-model`
 module directory rather than published on its own.
 
 ```
@@ -108,6 +108,7 @@ crates/
   fc-diff/           Myers line diff + stats      -> core
   fc-select/         option list + typeahead      (no deps; primitives only)
   fc-git/            working-tree summary         (no deps; primitives only)
+  fc-highlight/      highlight.ts's tokenizer     (no deps; primitives only)
 ```
 
 Measured release sizes when the workspace was first built (historical; the
@@ -283,13 +284,13 @@ unchanged numeric targets. `bytes` retains the raw rustc measurement;
 
 Raw artifacts include bindgen descriptor sections that consumers never download.
 Gating them would reject a smaller shipped module for metadata alone. No target
-was raised: 40 KB core, 45 KB model/menu/grid, 50 KB rich-text/git, 35 KB diff/select
-(all decimal bytes). Every module also fits without wasm-opt. JS glue is separate
+was raised: 40 KB core, 45 KB model/menu/grid, 50 KB rich-text/git, 35 KB
+diff/select/highlight (all decimal bytes). Every module also fits without wasm-opt. JS glue is separate
 from this binary budget. The report remains reproducible in `dist/wasm/size-report.json`;
 `tests/wasm-budget.test.ts` verifies its sizes against the actual files and pins targets.
 
 The primitives-only boundary removes `js-sys` and `serde-wasm-bindgen` entirely.
-Menu, select, diff and git use the isolated `bare` builds. Native serde derives remain
+Menu, select, diff, git and highlight use the isolated `bare` builds. Native serde derives remain
 available for internal Rust data; they do not marshal JS objects at the boundary.
 
 ### Core ABI 2 migration
@@ -373,6 +374,20 @@ natively and never sees the feature.
 
 The remaining raw bytes are mostly wasm-bindgen's descriptor section (about 8 KB for
 fc-diff), which bindgen strips and which never ships, plus the allocator (about 5 KB).
+
+### A tokenizer without a regex engine
+
+`fc-highlight` ports `highlight.ts`, whose grammars are regexes with lookahead and
+lookbehind. The `regex` crate has neither, and an engine that does would cost more
+than the module's whole budget, so each token is a matcher returning the end the JS
+regex would choose, backtracking included. The parity test runs every sample and
+1,500 generated strings per language through both tokenizers.
+
+Its first build shipped 44.5 KB. Two things were most of the excess: `to_lowercase`
+for resolving a language name linked Unicode's case tables, though every name is
+ASCII (only the Kelvin sign folds into ASCII from outside it, and it is mapped by
+hand); and `str::contains` with a `char` builds a substring searcher, for sets that
+are all ASCII bytes. Without both it ships **26.8 KB**.
 
 ### Pure Rust consumers: the `bindgen` feature
 

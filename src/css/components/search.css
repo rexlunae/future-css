@@ -136,7 +136,11 @@
     max-block-size: min(60vh, 28rem);
     overflow-y: auto;
     overscroll-behavior-block: contain;
-    padding-block: var(--fc-space-1);
+    /* Inset on every side, as fc-menu and fc-select inset their items. Flush
+       to the sides, a row's highlight met the view's edge with the row's
+       smaller radius, so its corners read as a second shape that no theme's
+       radius scale could reconcile. */
+    padding: var(--fc-space-1);
     background-color: var(--fc-color-bg-raised);
     color: var(--fc-color-text-default);
     border: var(--fc-border-width-thin) solid var(--fc-color-border-subtle);

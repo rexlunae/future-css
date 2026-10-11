@@ -381,9 +381,11 @@ and that single dependency is what inflates each module to roughly ten times its
 budget, which is the problem Phase A in `PLAN.md` exists to fix. `fc-diff` is the
 pattern that fix needs: primitives across the boundary, never `Vec<JsValue>`.
 
-The remaining candidates are `highlight`'s tokenizer and the listbox typeahead
-that a select component will need; neither has a Rust path yet. Whenever one is
-added it ships **alongside** the JS implementation with a parity test, never
+`highlight`'s tokenizer has one too: `fc-highlight` (26.8 KB shipped), for Rust
+consumers that cannot run the JS, such as a Dioxus app on desktop or rendered on a
+server. It uses no regex engine, so each token is a hand-written matcher, and its
+parity test runs generated input through both tokenizers as well as the samples.
+Each Rust path ships **alongside** the JS implementation with a parity test, never
 instead of it.
 
 ### Editor

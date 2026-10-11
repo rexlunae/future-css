@@ -382,8 +382,10 @@ const ALIASES: Readonly<Record<string, LanguageName>> = {
  */
 export function resolveLanguage(name: string): LanguageName | undefined {
   const key = name.trim().toLowerCase();
-  if (key in languages) return key as LanguageName;
-  return ALIASES[key];
+  // Own properties only: `in` and a plain index both reach Object.prototype, so
+  // "constructor" or "toString" resolved to a function and highlight() threw.
+  if (Object.hasOwn(languages, key)) return key as LanguageName;
+  return Object.hasOwn(ALIASES, key) ? ALIASES[key] : undefined;
 }
 
 /**

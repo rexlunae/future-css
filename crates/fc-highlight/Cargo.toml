@@ -1,0 +1,42 @@
+# fc-highlight -- syntax highlighting, matching src/js/highlight.ts exactly.
+#
+# The JS tokenizer is a combined regex per language. This crate does not use a
+# regex engine: the `regex` crate has no lookaround, and one that does would cost
+# more than the whole module's budget. Each token is a small hand-written matcher
+# instead, and tests/wasm.test.ts holds the two to the same output on every
+# sample and on generated input.
+#
+# Free of `js-sys` and `serde-wasm-bindgen` for the reason fc-diff is: js-sys
+# adds roughly 302 KB the moment it is used (Phase A in docs/PLAN.md). Spans
+# cross as two flat arrays, roles and end offsets.
+
+[package]
+name = "fc-highlight"
+description = "Syntax highlighting for future-css code blocks"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = { workspace = true, optional = true }
+
+# `no_std` on wasm (see src/lib.rs), so the allocator is named here rather than
+# arriving with std.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+dlmalloc = { workspace = true, optional = true }
+
+[features]
+# `bindgen` exports the JavaScript boundary and is on by default. A pure Rust
+# consumer (the Dioxus library) turns defaults off and gets the same tokenizer
+# with no wasm-bindgen in its dependency tree.
+default = ["bindgen"]
+bindgen = ["dep:wasm-bindgen"]
+# Build without std on wasm; see fc-diff's manifest for why this is never on in
+# a build that includes a std crate.
+bare = ["dep:dlmalloc"]

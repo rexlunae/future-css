@@ -23,6 +23,7 @@ import { before, describe, it } from "node:test";
 
 import { JsAccelerator, CORE_ABI_VERSION } from "../src/js/accelerator.ts";
 import { diffLines, diffStats } from "../src/js/diff.ts";
+import { highlight, languageNames, resolveLanguage } from "../src/js/highlight.ts";
 import { summarizeStatus, orderEntries, diffCounts } from "../src/js/git.ts";
 import { SELECT_WASM_ABI, SelectModel, WasmSelectModel, isCompatibleSelectModule } from "../src/js/select.ts";
 import type { SelectOption, SelectWasmModule } from "../src/js/select.ts";
@@ -763,4 +764,105 @@ describe("the shipped WasmSelectModel adapter and the JS twin agree", () => {
       assert.deepEqual(js.filter("  ÄR "), [0]);
     },
   );
+});
+
+/**
+ * fc-highlight parity.
+ *
+ * The Rust twin has no regex engine: every token is a hand-written matcher that
+ * claims to end where the JS regex ends, backtracking included. Those claims are
+ * only as good as this test, so it compares every span of every language on the
+ * awkward samples and then on generated input built from the characters the
+ * grammars care about, where a wrong claim about backtracking would show.
+ */
+describe("fc-highlight and the JS highlighter agree", () => {
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const wasmDir = join(repoRoot, "dist", "wasm", "fc-highlight", "web");
+  const highlightBuilt = existsSync(join(wasmDir, "fc_highlight.js"));
+
+  type HighlightModule = {
+    default: (input?: { module_or_path?: Uint8Array }) => Promise<void>;
+    highlightRoles: (source: string, language: string) => Uint8Array;
+    highlightEnds: (source: string, language: string) => Uint32Array;
+    resolveLanguage: (name: string) => string;
+  };
+
+  // Wire order; the crate's `Role::ALL`.
+  const ROLES = [
+    "fg", "comment", "keyword", "string", "number", "function", "type", "operator", "punctuation",
+    "property", "constant", "tag", "attribute", "regexp", "heading", "link", "invalid",
+  ];
+
+  let mod: HighlightModule;
+
+  before(async () => {
+    if (!highlightBuilt) return;
+    mod = (await import(join(wasmDir, "fc_highlight.js"))) as HighlightModule;
+    await mod.default({ module_or_path: await readFile(join(wasmDir, "fc_highlight_bg.wasm")) });
+  });
+
+  /** Rebuilds spans the way a consumer would: slicing its own copy of the source. */
+  const fromWasm = (source: string, language: string) => {
+    const roles = mod.highlightRoles(source, language);
+    const ends = mod.highlightEnds(source, language);
+    let start = 0;
+    return Array.from(roles, (role, i) => {
+      const text = source.slice(start, ends[i]);
+      start = ends[i];
+      return { role: ROLES[role], text };
+    });
+  };
+
+  const SAMPLES: [string, string][] = [
+    ["javascript", 'const re = /ab+c/g; const d = a / b / c; // "x"\nreturn /[/]\\//i.test(`t${x}`) ? 0xFFn : 1.5e-3;'],
+    ["typescript", "interface A<T> { readonly x?: T; }\ntype B = A<string> | null;\nfoo.bar$ = Baz$;"],
+    ["json", '{"a": 1, "b": [true, -2.5e+3, null], "c": {"d": "e\\"f"}}'],
+    ["css", "@media (min-width: 40rem) {\n  .foo-bar:hover > a[href] { color: rgba(0,0,0,.5); margin: 50% 1.5em -2px; }\n}"],
+    ["rust", "/// doc\npub struct Foo<'a> { x: &'a str }\nfn main() { println!(\"{}\", 0xFFi32 + 0x1fsize + 1u8 + 'b' as u32); }\n#[derive(Debug)] r#\"raw\"#"],
+    ["html", '<!DOCTYPE html><a href="x" data-y=\'z\'><!-- c --><![CDATA[ d ]]><br/></a>'],
+    ["markdown", "# Title\n\n**bold** and *em* and `code` and [l](http://x) <me@x.y>\n\n- item\n1. one\n    indented\n```js\nlet a = 1;\n```"],
+    ["cobol", "MOVE A TO B."],
+    ["rust", ""],
+    ["cobol", ""],
+  ];
+
+  // The characters the grammars branch on, plus non-ASCII whitespace, a line
+  // separator, an astral character, and the Kelvin sign.
+  const ALPHABET = [
+    ..."\"'`/\\*#!@[]{}();:,.<>=-+_ \n\r\t0123456789xXbBoOeEnrafisuzpm%$~^|?&AZz",
+    "\u00a0", "\u2028", "\u3000", "é", "😀", "\u212a",
+    "return ", "typeof ", "case ", "size", "rem", "rgba(", "<!--", "-->", "**", "```", "    ", "0x", "'a",
+  ];
+
+  /** Seeded, so a failure reproduces. */
+  const random = (seed: number) => () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  };
+
+  describe("parity", { skip: highlightBuilt ? false : "run `npm run build:wasm` first" }, () => {
+    for (const [language, source] of SAMPLES) {
+      it(`agree on the ${language} sample${source ? "" : " when empty"}`, () => {
+        assert.deepEqual(fromWasm(source, language), highlight(source, language));
+      });
+    }
+
+    it("agree on generated input in every language", () => {
+      const next = random(20261011);
+      for (let n = 0; n < 1500; n++) {
+        const length = Math.floor(next() * 40);
+        let source = "";
+        for (let i = 0; i < length; i++) source += ALPHABET[Math.floor(next() * ALPHABET.length)];
+        for (const language of languageNames) {
+          assert.deepEqual(fromWasm(source, language), highlight(source, language), `${language}: ${JSON.stringify(source)}`);
+        }
+      }
+    });
+
+    it("agree on language names and aliases", () => {
+      for (const name of [...languageNames, "JS", " rs ", "tsx", "svg", "mar\u212adown", "cobol", "", "toString", "constructor", "__proto__"]) {
+        assert.equal(mod.resolveLanguage(name), resolveLanguage(name) ?? "", JSON.stringify(name));
+      }
+    });
+  });
 });

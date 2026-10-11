@@ -1,0 +1,183 @@
+/*!
+ * future-css -- input group
+ *
+ * One box around a text control and what sits beside it inside the border: a
+ * fixed addon (a currency symbol, a unit, a URL scheme) or an icon button
+ * (search, clear, show password, copy). Split from field.css, which holds the
+ * bare controls, when the icon actions took field.css past its size budget.
+ *
+ *   <div class="fc-input-group">
+ *     <button type="button" class="fc-input-group__action" aria-label="Search">...</button>
+ *     <input class="fc-input-group__control" type="search" aria-label="Search chats">
+ *     <button type="button" class="fc-input-group__action" aria-label="Clear search">...</button>
+ *   </div>
+ */
+
+@layer fc.components {
+  /*
+   * A control with leading or trailing adornments (a currency symbol, a unit, a
+   * button). The group draws the border and the focus ring so the adornments
+   * read as part of one control rather than three boxes touching.
+   */
+  .fc-input-group {
+    display: flex;
+    align-items: stretch;
+    min-block-size: var(--fc-size-target-comfortable);
+    background-color: var(--fc-color-bg-surface);
+    border: var(--fc-border-width-thin) solid var(--fc-color-border-interactive);
+    border-radius: var(--fc-radius-lg);
+    overflow: clip;
+    transition:
+      border-color var(--fc-duration-fast) var(--fc-easing-standard),
+      box-shadow var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  .fc-input-group:hover {
+    border-color: color-mix(in oklab, var(--fc-color-border-interactive), var(--fc-color-text-default) 40%);
+  }
+
+  /* The same halo as a focused `.fc-input`, so a group and a bare field focus
+     alike. The inner control still draws the 2px ring. */
+  .fc-input-group:focus-within {
+    border-color: var(--fc-color-accent-border);
+    box-shadow: 0 0 0 var(--fc-space-1) var(--fc-color-accent-bg-subtle);
+  }
+
+  .fc-input-group:has([aria-invalid="true"], :user-invalid) {
+    border-color: var(--fc-color-danger-border);
+  }
+
+  .fc-input-group:has(:disabled) {
+    background-color: var(--fc-color-disabled-bg);
+    border-color: var(--fc-color-border-default);
+  }
+
+  .fc-input-group__control {
+    flex: 1;
+    min-inline-size: 0;
+    padding-block: var(--fc-space-1-5);
+    padding-inline: var(--fc-space-3);
+    background-color: transparent;
+    color: var(--fc-color-text-default);
+    border: 0;
+    border-radius: 0;
+    font: inherit;
+    font-size: var(--fc-font-size-md);
+  }
+
+  /*
+   * The group clips its corners, which would clip an outside ring too, so the
+   * inner control draws its ring inset. Removing it instead would leave the
+   * keyboard user with only a border-colour change to find focus by.
+   */
+  .fc-input-group__control:focus-visible {
+    outline-offset: calc(var(--fc-border-width-focus) * -1);
+    box-shadow: none;
+  }
+
+  .fc-input-group__addon {
+    display: flex;
+    align-items: center;
+    padding-inline: var(--fc-space-3);
+    color: var(--fc-color-text-muted);
+    background-color: var(--fc-color-bg-subtle);
+    font-size: var(--fc-font-size-sm);
+    white-space: nowrap;
+  }
+
+  /*
+   * An icon button inside the box: clear, reveal a password, copy, search.
+   * Placed before the control it sits at the inline start, after it at the
+   * end, so it follows the reading direction with no modifier.
+   *
+   * Inset from the group's edge by its margin rather than filling the box, so
+   * its hover tint reads as a button inside the field, not a segment of it.
+   * The margin is also what keeps the focus ring visible: the group clips its
+   * corners, and an outline drawn past its edge would be cut off.
+   */
+  .fc-input-group__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    align-self: center;
+    /* The small button's 2rem, which leaves a margin inside the comfortable
+       2.5rem field and stays above the 24px minimum target. */
+    inline-size: var(--fc-space-8);
+    block-size: var(--fc-space-8);
+    margin-inline: var(--fc-space-1);
+    padding: 0;
+    background-color: transparent;
+    color: var(--fc-color-text-muted);
+    border: 0;
+    border-radius: var(--fc-radius-md);
+    font: inherit;
+    font-size: var(--fc-font-size-md);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition:
+      background-color var(--fc-duration-fast) var(--fc-easing-standard),
+      color var(--fc-duration-fast) var(--fc-easing-standard);
+  }
+
+  /* An action beside the control replaces that side's padding, so the text
+     does not sit a full gutter away from the button. */
+  .fc-input-group__action + .fc-input-group__control {
+    padding-inline-start: var(--fc-space-1);
+  }
+
+  .fc-input-group__control:has(+ .fc-input-group__action) {
+    padding-inline-end: var(--fc-space-1);
+  }
+
+  @media (hover: hover) {
+    .fc-input-group__action:hover {
+      background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-hover-overlay) * 100%), transparent);
+      color: var(--fc-color-text-default);
+    }
+  }
+
+  .fc-input-group__action:active {
+    background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 100%), transparent);
+  }
+
+  /* Inside the margin, so the clipped group cannot cut the ring off. */
+  .fc-input-group__action:focus-visible {
+    outline-offset: 0;
+    color: var(--fc-color-text-default);
+  }
+
+  /* A toggle (show password) says it is on in colour as well as by its icon. */
+  .fc-input-group__action[aria-pressed="true"] {
+    color: var(--fc-color-accent-text);
+  }
+
+  .fc-input-group__action:disabled,
+  .fc-input-group__action[aria-disabled="true"] {
+    background-color: transparent;
+    color: var(--fc-color-disabled-fg);
+    cursor: not-allowed;
+  }
+
+  .fc-input-group__action[aria-disabled="true"] {
+    pointer-events: none;
+  }
+
+  /* ---- Forced colors --------------------------------------------------- */
+
+  @media (forced-colors: active) {
+    .fc-input-group {
+      border-color: FieldText;
+    }
+
+    /* A thicker edge restates "invalid" once the danger hue is discarded. */
+    .fc-input-group:has([aria-invalid="true"], :user-invalid) {
+      border-width: var(--fc-border-width-thick);
+    }
+
+    .fc-input-group__action:disabled,
+    .fc-input-group__action[aria-disabled="true"] {
+      color: GrayText;
+    }
+  }
+}

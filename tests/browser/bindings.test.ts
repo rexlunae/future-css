@@ -4660,6 +4660,31 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       assert.equal(result.clickTarget, "none", "clicks land on the button, not the path");
     });
 
+    for (const dir of ["ltr", "rtl"]) {
+      it(`places input-group icon buttons at the start and end, inside the box (${dir})`, async () => {
+        // Position comes from DOM order alone, so RTL must swap the sides with no
+        // modifier; and the group clips, so the action must keep its ring inside.
+        await openFixtures(`dir=${dir}&theme=light`);
+        const result = await evaluate(`
+          const group = [...document.querySelectorAll('[data-fixture="input-group"] .fc-input-group')]
+            .find((g) => g.querySelectorAll('.fc-input-group__action').length === 2);
+          const [first, last] = group.querySelectorAll('.fc-input-group__action');
+          const box = group.getBoundingClientRect(), a = first.getBoundingClientRect(), b = last.getBoundingClientRect();
+          const ring = parseFloat(getComputedStyle(first).outlineOffset) + 2;
+          return {
+            firstLeft: a.left < b.left,
+            inside: [a, b].every((r) => r.left - ring >= box.left && r.right + ring <= box.right && r.top - ring >= box.top && r.bottom + ring <= box.bottom),
+            size: [a.width, a.height],
+            colour: getComputedStyle(first.querySelector('.fc-icon')).stroke === getComputedStyle(first).color,
+          };
+        `);
+        assert.equal(result.firstLeft, dir === "ltr", "the action before the control is at the inline start");
+        assert.equal(result.inside, true, "the action and its focus ring fit inside the clipped group");
+        assert.ok(result.size[0] >= 24 && result.size[0] === result.size[1], `square, at least 24px: ${result.size}`);
+        assert.equal(result.colour, true);
+      });
+    }
+
     it("draws a focus indicator on every focusable control", async () => {
       await openFixtures("dir=ltr&theme=light");
       await send("DOM.enable");

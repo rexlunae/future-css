@@ -220,6 +220,23 @@
           <textarea class="fc-input fc-input--autosize" aria-label="System prompt">Grows as you type.</textarea>
         </div>
       </figure>
+      <figure class="fx__state fx__state--wide" data-fx-state="error summary">
+        <figcaption class="fx__caption">error summary</figcaption>
+        <div class="fx__body">
+          <div class="fc-error-summary" tabindex="-1">
+            <h3 class="fc-error-summary__title">There is a problem</h3>
+            <ul class="fc-error-summary__list">
+              <li><a class="fc-error-summary__link" href="#fx-in-3">Enter an email address</a></li>
+            </ul>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fx" id="fx-input-group" data-fixture="input-group" aria-labelledby="fx-input-group-h">
+    <h2 class="fx__title" id="fx-input-group-h">Input group <code class="fx__file">input-group.css</code></h2>
+    <div class="fx__states">
       <figure class="fx__state" data-fx-state="input group">
         <figcaption class="fx__caption">input group</figcaption>
         <div class="fx__body">
@@ -234,14 +251,31 @@
           </div>
         </div>
       </figure>
-      <figure class="fx__state fx__state--wide" data-fx-state="error summary">
-        <figcaption class="fx__caption">error summary</figcaption>
+      <figure class="fx__state" data-fx-state="icon actions, start and end">
+        <figcaption class="fx__caption">icon actions, start and end</figcaption>
         <div class="fx__body">
-          <div class="fc-error-summary" tabindex="-1">
-            <h3 class="fc-error-summary__title">There is a problem</h3>
-            <ul class="fc-error-summary__list">
-              <li><a class="fc-error-summary__link" href="#fx-in-3">Enter an email address</a></li>
-            </ul>
+          <div class="fc-input-group">
+            <button type="button" class="fc-input-group__action" aria-label="Search"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 4.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13zM15.6 15.6L20 20"/></svg></button>
+            <input class="fc-input-group__control" type="search" aria-label="Search chats" value="release notes">
+            <button type="button" class="fc-input-group__action" aria-label="Clear search"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+          </div>
+          <div class="fc-input-group">
+            <input class="fc-input-group__control" type="password" aria-label="API key" value="hunter2">
+            <button type="button" class="fc-input-group__action" aria-label="Show API key" aria-pressed="false"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z"/></svg></button>
+          </div>
+          <div class="fc-input-group">
+            <input class="fc-input-group__control" aria-label="API key" value="hunter2">
+            <button type="button" class="fc-input-group__action" aria-label="Show API key" aria-pressed="true"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.6 5.1A10.6 10.6 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-2.2 3.2M6.6 6.6A16.6 16.6 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18"/></svg></button>
+          </div>
+          <div class="fc-input-group">
+            <button type="button" class="fc-input-group__action" aria-label="Attach a file"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11.5l-8 8a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L9.7 17.2a1.7 1.7 0 0 1-2.4-2.4L15 7"/></svg></button>
+            <input class="fc-input-group__control" aria-label="Message" aria-invalid="true" value="">
+            <button type="button" class="fc-input-group__action" aria-label="Send" aria-disabled="true"><svg class="fc-icon fc-icon--mirror" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg></button>
+          </div>
+          <div class="fc-input-group">
+            <span class="fc-input-group__addon">https://</span>
+            <input class="fc-input-group__control" aria-label="Share link" value="example.com/s/42" disabled>
+            <button type="button" class="fc-input-group__action" aria-label="Copy link" disabled><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM15 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/></svg></button>
           </div>
         </div>
       </figure>

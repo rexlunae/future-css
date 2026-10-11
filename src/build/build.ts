@@ -64,6 +64,7 @@ const BUNDLE_ORDER: ReadonlyArray<readonly [source: string, publishedAs: string]
   ["components/context-strip.css", "components/context-strip.css"],
   ["components/git.css", "components/git.css"],
   ["components/field.css", "components/field.css"],
+  ["components/input-group.css", "components/input-group.css"],
   ["components/form-variants.css", "components/form-variants.css"],
   ["components/multiselect.css", "components/multiselect.css"],
   ["components/check.css", "components/check.css"],

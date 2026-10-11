@@ -438,6 +438,33 @@ document.addEventListener("click", async (event) => {
 });
 
 // ---------------------------------------------------------------------------
+// Icon buttons inside a field
+//
+// Reveal is a toggle: the name stays "Show API key" and aria-pressed says
+// whether it is on, so the button is not renamed under the user's focus.
+// Clear returns focus to the field, since the button it was on is about to be
+// pointless.
+// ---------------------------------------------------------------------------
+
+document.addEventListener("click", (event) => {
+  const reveal = event.target.closest("[data-demo-reveal]");
+  if (reveal) {
+    const input = document.getElementById(reveal.getAttribute("aria-controls"));
+    const shown = reveal.getAttribute("aria-pressed") !== "true";
+    input.type = shown ? "text" : "password";
+    reveal.setAttribute("aria-pressed", String(shown));
+    reveal.replaceChildren(createIcon(shown ? "eye-off" : "eye"));
+    return;
+  }
+  const clear = event.target.closest("[data-demo-clear]");
+  if (clear) {
+    const input = clear.closest(".fc-input-group").querySelector(".fc-input-group__control");
+    input.value = "";
+    input.focus();
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Code block
 //
 // The highlighter runs on a real string and writes real elements, so what is on

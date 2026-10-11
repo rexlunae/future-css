@@ -263,79 +263,6 @@
       1.125rem 50%;
   }
 
-  /* ---- Input group ----------------------------------------------------- */
-
-  /*
-   * A control with leading or trailing adornments (a currency symbol, a unit, a
-   * button). The group draws the border and the focus ring so the adornments
-   * read as part of one control rather than three boxes touching.
-   */
-  .fc-input-group {
-    display: flex;
-    align-items: stretch;
-    min-block-size: var(--fc-size-target-comfortable);
-    background-color: var(--fc-color-bg-surface);
-    border: var(--fc-border-width-thin) solid var(--fc-color-border-interactive);
-    border-radius: var(--fc-radius-lg);
-    overflow: clip;
-    transition:
-      border-color var(--fc-duration-fast) var(--fc-easing-standard),
-      box-shadow var(--fc-duration-fast) var(--fc-easing-standard);
-  }
-
-  .fc-input-group:hover {
-    border-color: color-mix(in oklab, var(--fc-color-border-interactive), var(--fc-color-text-default) 40%);
-  }
-
-  /* The same halo as a focused `.fc-input`, so a group and a bare field focus
-     alike. The inner control still draws the 2px ring. */
-  .fc-input-group:focus-within {
-    border-color: var(--fc-color-accent-border);
-    box-shadow: 0 0 0 var(--fc-space-1) var(--fc-color-accent-bg-subtle);
-  }
-
-  .fc-input-group:has([aria-invalid="true"], :user-invalid) {
-    border-color: var(--fc-color-danger-border);
-  }
-
-  .fc-input-group:has(:disabled) {
-    background-color: var(--fc-color-disabled-bg);
-    border-color: var(--fc-color-border-default);
-  }
-
-  .fc-input-group__control {
-    flex: 1;
-    min-inline-size: 0;
-    padding-block: var(--fc-space-1-5);
-    padding-inline: var(--fc-space-3);
-    background-color: transparent;
-    color: var(--fc-color-text-default);
-    border: 0;
-    border-radius: 0;
-    font: inherit;
-    font-size: var(--fc-font-size-md);
-  }
-
-  /*
-   * The group clips its corners, which would clip an outside ring too, so the
-   * inner control draws its ring inset. Removing it instead would leave the
-   * keyboard user with only a border-colour change to find focus by.
-   */
-  .fc-input-group__control:focus-visible {
-    outline-offset: calc(var(--fc-border-width-focus) * -1);
-    box-shadow: none;
-  }
-
-  .fc-input-group__addon {
-    display: flex;
-    align-items: center;
-    padding-inline: var(--fc-space-3);
-    color: var(--fc-color-text-muted);
-    background-color: var(--fc-color-bg-subtle);
-    font-size: var(--fc-font-size-sm);
-    white-space: nowrap;
-  }
-
   /* ---- Form-level error summary ---------------------------------------- */
 
   /*
@@ -380,14 +307,12 @@
   /* ---- Forced colors --------------------------------------------------- */
 
   @media (forced-colors: active) {
-    .fc-input,
-    .fc-input-group {
+    .fc-input {
       border-color: FieldText;
     }
 
     .fc-input[aria-invalid="true"],
-    .fc-input:user-invalid,
-    .fc-input-group:has([aria-invalid="true"], :user-invalid) {
+    .fc-input:user-invalid {
       /* A thicker edge restates "invalid" once the danger hue is discarded. */
       border-width: var(--fc-border-width-thick);
     }

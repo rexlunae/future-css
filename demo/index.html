@@ -409,6 +409,23 @@ dialog.addEventListener("close", () =&gt; {
         </div>
 
         <div class="fc-field">
+          <label class="fc-field__label" for="f-search">Search chats</label>
+          <div class="fc-input-group">
+            <button type="button" class="fc-input-group__action" aria-label="Search"><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 4.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13zM15.6 15.6L20 20"/></svg></button>
+            <input class="fc-input-group__control" id="f-search" type="search" value="release notes">
+            <button type="button" class="fc-input-group__action" aria-label="Clear search" data-demo-clear><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+          </div>
+        </div>
+
+        <div class="fc-field">
+          <label class="fc-field__label" for="f-key">API key</label>
+          <div class="fc-input-group">
+            <input class="fc-input-group__control" id="f-key" type="password" value="sk-demo-key" autocomplete="off">
+            <button type="button" class="fc-input-group__action" aria-label="Show API key" aria-pressed="false" aria-controls="f-key" data-demo-reveal><svg class="fc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z"/></svg></button>
+          </div>
+        </div>
+
+        <div class="fc-field">
           <label class="fc-field__label" for="f-model">Default model</label>
           <select class="fc-input" id="f-model">
             <option>Balanced</option>
@@ -494,6 +511,25 @@ dialog.addEventListener("close", () =&gt; {
             &lt;span class="fc-input-group__addon" aria-hidden="true"&gt;$&lt;/span&gt;
             &lt;input class="fc-input-group__control" id="f-budget" inputmode="decimal" value="40"&gt;
             &lt;span class="fc-input-group__addon"&gt;USD&lt;/span&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;!-- An icon button inside the box: before the input it sits at the start,
+             after it at the end, in either reading direction. --&gt;
+        &lt;div class="fc-field"&gt;
+          &lt;label class="fc-field__label" for="f-search"&gt;Search chats&lt;/label&gt;
+          &lt;div class="fc-input-group"&gt;
+            &lt;button type="button" class="fc-input-group__action" aria-label="Search"&gt;&lt;svg class="fc-icon" aria-hidden="true" focusable="false"&gt;&lt;use href="icons.svg#fc-icon-search"/&gt;&lt;/svg&gt;&lt;/button&gt;
+            &lt;input class="fc-input-group__control" id="f-search" type="search"&gt;
+            &lt;button type="button" class="fc-input-group__action" aria-label="Clear search"&gt;&lt;svg class="fc-icon" aria-hidden="true" focusable="false"&gt;&lt;use href="icons.svg#fc-icon-close"/&gt;&lt;/svg&gt;&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class="fc-field"&gt;
+          &lt;label class="fc-field__label" for="f-key"&gt;API key&lt;/label&gt;
+          &lt;div class="fc-input-group"&gt;
+            &lt;input class="fc-input-group__control" id="f-key" type="password"&gt;
+            &lt;button type="button" class="fc-input-group__action" aria-label="Show API key" aria-pressed="false" aria-controls="f-key"&gt;&lt;svg class="fc-icon" aria-hidden="true" focusable="false"&gt;&lt;use href="icons.svg#fc-icon-eye"/&gt;&lt;/svg&gt;&lt;/button&gt;
           &lt;/div&gt;
         &lt;/div&gt;
 

@@ -210,6 +210,32 @@ Static SVG markup; `iconMarkup` writes presentation attributes so the icon draws
 
 Avoid an icon alone where the action is unfamiliar or has no widely understood symbol; give the button a visible label and keep the icon beside it.
 
+## input-group
+
+### Anatomy
+
+The [complete markup and state examples](../demo/fixtures.html#fx-input-group) define required parts, labels and attributes. Load `future-css/components/input-group` with the token foundation. `__control` is the input; `__addon` is fixed text; `__action` is an icon button. Order in the DOM sets the side: before the control is the inline start, after it the end.
+
+### States
+
+The group shows hover, focus-within, invalid and disabled for its control. Each `__action` has rest, hover, active, focus-visible, pressed (`aria-pressed="true"`), disabled and `aria-disabled`.
+
+### Accessibility
+
+The control keeps its own label. An `__action` is a native button named with aria-label; its icon is aria-hidden. A toggle such as show password uses aria-pressed and keeps its name while the icon swaps. The action is at least 24px and draws its focus ring inside the group, which clips.
+
+### Internationalization
+
+Start and end follow `dir` with no modifier. Direction icons inside an action (send, arrows) mirror through `.fc-icon--mirror`. Addons hold short text; isolate user-supplied values with `<bdi>`.
+
+### No-JS fallback
+
+The control works natively. Actions are buttons the application wires; with no script they do nothing, so do not hide essential input behind one.
+
+### When not to use it
+
+Avoid putting a primary form action inside the box; a submit button beside the field is easier to find. Do not use an addon for text the user must read to fill the field; put it in the label or hint.
+
 ## card
 
 ### Anatomy

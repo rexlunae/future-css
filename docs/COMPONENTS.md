@@ -868,9 +868,22 @@ error element that exists from the start and is filled on failure.
 - Invalid is `aria-invalid="true"` (set by the application) or `:user-invalid`
   (native validation after interaction), never bare `:invalid`, which would mark a
   required field red before anyone typed.
-- `.fc-input-group` holds a control with adornments (`__addon`, `__control`). The
+- `.fc-input-group` (`input-group.css`) holds a control with adornments (`__addon`, `__control`). The
   group draws the border; the inner control's focus ring is drawn inset, because the
   group clips its corners.
+- `.fc-input-group__action` is an icon button inside the box (search, clear, show
+  password, copy, send). Put it before the control for the inline start and after it
+  for the end; it follows `dir` with no modifier. Name it with `aria-label`, use
+  `aria-pressed` for a toggle such as show password, and keep the name fixed when the
+  icon swaps. It is inset by a margin so its focus ring is not clipped by the group.
+
+  ```html
+  <div class="fc-input-group">
+    <button type="button" class="fc-input-group__action" aria-label="Search"><svg class="fc-icon">...</svg></button>
+    <input class="fc-input-group__control" type="search" aria-label="Search chats">
+    <button type="button" class="fc-input-group__action" aria-label="Clear search"><svg class="fc-icon">...</svg></button>
+  </div>
+  ```
 - `.fc-error-summary` goes above the form after a failed submit, with `tabindex="-1"`
   so focus can move to it, and links to each failing field.
 

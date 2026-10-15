@@ -526,22 +526,69 @@ export class FutureCssEditor {
 
     const onBeforeInput = (event: InputEvent) => {
       const mark = this.pendingMark;
+      if (!mark) return;
+      // A composition reports each step as `insertCompositionText` and cannot be
+      // cancelled; the mark waits for `compositionend` and takes the whole result.
+      if (event.isComposing || event.inputType === "insertCompositionText") return;
       this.pendingMark = null;
-      if (!mark || event.inputType !== "insertText" || !event.data) return;
+      if (event.inputType !== "insertText" || !event.data) return;
       const selection = window.getSelection();
       // Only while the caret is still where the mark was started, and the mark empty.
       if (!mark.isConnected || mark.firstChild || !selection?.isCollapsed) return;
       if (selection.anchorNode !== mark) return;
       event.preventDefault();
-      const text = document.createTextNode(event.data);
-      mark.append(text);
-      placeCaret(text, text.length);
-      // A cancelled `beforeinput` fires no `input`, so report the change here.
-      this.options.onChange?.(this.value);
-      this.syncToolbar();
+      this.insertMarked(mark, event.data, null);
     };
     this.content.addEventListener("beforeinput", onBeforeInput);
     this.cleanups.push(() => this.content.removeEventListener("beforeinput", onBeforeInput));
+
+    const onCompositionEnd = (event: CompositionEvent) => {
+      const mark = this.pendingMark;
+      this.pendingMark = null;
+      if (!mark?.isConnected || mark.firstChild || !event.data) return;
+      // Chrome commits the composition beside the empty element rather than in it.
+      const composed = composedBeside(mark, event.data);
+      if (composed) this.insertMarked(mark, event.data, composed);
+    };
+    this.content.addEventListener("compositionend", onCompositionEnd);
+    this.cleanups.push(() => this.content.removeEventListener("compositionend", onCompositionEnd));
+  }
+
+  /**
+   * Replaces the empty `mark` (and `replacing`, text already typed beside it) with
+   * a marked copy of `text`, through the browser's own editing command.
+   *
+   * Appending a text node by hand put the first character outside the undo
+   * history: Undo then reverted an earlier edit and left the marked character in
+   * place. `insertHTML` records one step that Undo reverses, and later keystrokes
+   * land inside the element it creates.
+   */
+  private insertMarked(mark: Element, text: string, replacing: Range | null): void {
+    const tag = mark.tagName.toLowerCase();
+    const range = replacing ?? document.createRange();
+    if (!replacing) {
+      range.setStartBefore(mark);
+      range.collapse(true);
+    }
+    // The placeholder is never in the undo history, so removing it directly
+    // leaves nothing for Undo to trip over.
+    this.mutating = true;
+    try {
+      mark.remove();
+    } finally {
+      this.mutating = false;
+    }
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+    const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    // `insertHTML` fires its own `input`, which reports the change.
+    document.execCommand("insertHTML", false, `<${tag}>${escaped}</${tag}>`);
+    // Chrome pins the context's computed style on inserted markup (seen as
+    // `font-family: inherit` inside a paragraph). The editor writes no inline
+    // style, and one here would outlive the mark's own formatting.
+    const inserted = elementAt(selection.anchorNode)?.closest(tag);
+    if (inserted && this.content.contains(inserted)) inserted.removeAttribute("style");
   }
 
   /**
@@ -566,6 +613,27 @@ export class FutureCssEditor {
 }
 
 export { closestTag };
+
+/**
+ * The range of `data` in the text node right beside `mark`, where Chrome leaves a
+ * composition committed at an empty inline element; null when it is not there.
+ */
+function composedBeside(mark: Element, data: string): Range | null {
+  const range = document.createRange();
+  const before = mark.previousSibling;
+  if (before instanceof Text && before.data.endsWith(data)) {
+    range.setStart(before, before.length - data.length);
+    range.setEnd(before, before.length);
+    return range;
+  }
+  const after = mark.nextSibling;
+  if (after instanceof Text && after.data.startsWith(data)) {
+    range.setStart(after, 0);
+    range.setEnd(after, data.length);
+    return range;
+  }
+  return null;
+}
 
 /**
  * Characters between the start of `content` and a text position.

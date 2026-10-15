@@ -410,7 +410,76 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       const r = document.createRange(); r.setStart(el.lastChild, 1); r.collapse(true);
     `);
     await evaluate(`globalThis.ed.destroy(); delete globalThis.ed;`);
-    assert.deepEqual([inText, atElement], ["before <strong>X</strong>after", "<p>one</p><p>two<strong>X</strong></p>"]);
+    // Chrome's editing commands keep the space before an inline element visible
+    // as `&nbsp;`, the same as when that space is typed.
+    assert.deepEqual([inText, atElement], ["before&nbsp;<strong>X</strong>after", "<p>one</p><p>two<strong>X</strong></p>"]);
+  });
+
+  it("undoes the first character typed into a mark started at the caret", async () => {
+    // Regression. The first character was appended by hand, outside the browser's
+    // undo history, so Undo reverted an earlier edit and left the marked character.
+    await loadBindings();
+    const html = () => evaluate(`return document.querySelector('.fc-editor__content').innerHTML;`);
+    const key = async (k: string) => {
+      await send("Input.dispatchKeyEvent", { type: "keyDown", key: k, text: k, unmodifiedText: k });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", key: k });
+    };
+    const results: Record<string, string[]> = {};
+    for (const mark of ["bold", "italic", "underline", "strike", "code"]) {
+      await evaluate(`
+        globalThis.undoEd?.destroy();
+        globalThis.undoEd = new E.FutureCssEditor({ root: '#ed' });
+        const el = document.querySelector('.fc-editor__content');
+        el.innerHTML = '';
+        el.focus();
+      `);
+      for (const k of "abc") await key(k);
+      await evaluate(`globalThis.undoEd.applyMark('${mark}');`);
+      // "<" as the first character: the command takes markup, so it must be escaped.
+      await key("<");
+      await key("y");
+      const steps = [await html()];
+      for (let i = 0; i < 2; i++) {
+        await evaluate(`document.execCommand('undo');`);
+        steps.push(await html());
+      }
+      results[mark] = steps;
+    }
+    await evaluate(`globalThis.undoEd.destroy(); delete globalThis.undoEd;`);
+    const tags = { bold: "strong", italic: "em", underline: "u", strike: "s", code: "code" };
+    for (const [mark, tag] of Object.entries(tags)) {
+      assert.deepEqual(
+        results[mark],
+        [`abc<${tag}>&lt;y</${tag}>`, `abc<${tag}>&lt;</${tag}>`, "abc"],
+        `${mark}: each Undo takes back one marked character, the first included`,
+      );
+    }
+  });
+
+  it("marks text composed with an input method at a mark started at the caret", async () => {
+    // Regression. The composition consumed the pending mark without using it, and
+    // Chrome committed the text beside the empty element rather than inside it.
+    await loadBindings();
+    const html = () => evaluate(`return document.querySelector('.fc-editor__content').innerHTML;`);
+    await evaluate(`
+      globalThis.imeEd = new E.FutureCssEditor({ root: '#ed' });
+      const el = document.querySelector('.fc-editor__content');
+      el.innerHTML = 'abc';
+      el.focus();
+      const r = document.createRange(); r.setStart(el.firstChild, 3); r.collapse(true);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      globalThis.imeEd.applyMark('bold');
+    `);
+    await send("Input.imeSetComposition", { text: "ni", selectionStart: 2, selectionEnd: 2 });
+    await send("Input.imeSetComposition", { text: "\u4f60", selectionStart: 1, selectionEnd: 1 });
+    await send("Input.insertText", { text: "\u4f60" });
+    const composed = await html();
+    await send("Input.dispatchKeyEvent", { type: "keyDown", key: "z", text: "z", unmodifiedText: "z" });
+    await send("Input.dispatchKeyEvent", { type: "keyUp", key: "z" });
+    const typed = await html();
+    await evaluate(`globalThis.imeEd.destroy(); delete globalThis.imeEd;`);
+    assert.equal(composed, "abc<strong>\u4f60</strong>", "the composed text lands in the mark");
+    assert.equal(typed, "abc<strong>\u4f60z</strong>", "typing after the composition stays marked");
   });
 
   it("does not report a link active when only part of the selection is linked", async () => {

@@ -223,6 +223,23 @@ with a real IME (macOS Pinyin or Japanese Romaji are the easiest to drive):
 Record the result in the PR that touched the guard. A PR that changes
 composition handling without this checklist run is not done.
 
+## Editor marks started at the caret (issue #55)
+
+Toggling a mark with nothing selected leaves an empty element at the caret for the
+next input. Two inputs reach it, and both go through the browser's editing
+commands so Undo stays truthful:
+
+- **Typing.** The first `insertText` becomes one `insertHTML` of the marked
+  character; Undo removes it like any other keystroke instead of reverting an
+  earlier edit.
+- **Composition.** `insertCompositionText` cannot be cancelled, so the mark waits
+  for `compositionend` and replaces the committed text with its marked copy. Undo
+  first takes back the formatting, then the composed text.
+
+The browser suite drives both with CDP's own input methods
+(`Input.dispatchKeyEvent`, `Input.imeSetComposition`), not synthetic events. A
+real IME on a real platform is still worth a check when this logic changes.
+
 ## Cognitive accessibility
 
 Use familiar action labels consistently. Group related composer settings with a visible

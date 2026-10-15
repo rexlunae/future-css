@@ -287,7 +287,7 @@ unchanged numeric targets. `bytes` retains the raw rustc measurement;
 Raw artifacts include bindgen descriptor sections that consumers never download.
 Gating them would reject a smaller shipped module for metadata alone. No target
 was raised: 40 KB core, 45 KB model/menu/grid, 50 KB rich-text/git, 35 KB
-diff/select/highlight (all decimal bytes). Every module also fits without wasm-opt. JS glue is separate
+diff/select/highlight (all decimal bytes). Every module but fc-theme also fits without wasm-opt. JS glue is separate
 from this binary budget. The report remains reproducible in `dist/wasm/size-report.json`;
 `tests/wasm-budget.test.ts` verifies its sizes against the actual files and pins targets.
 
@@ -455,6 +455,10 @@ in a defaults-off crate.
 
 `wasm-opt` is an optional system tool, like the `wasm-bindgen` CLI: install
 binaryen and the build uses it, skip it and the build is complete but the
-shipped sizes are ~10% larger. The report says which happened. The parity suite
+shipped sizes are ~10% larger. The report says which happened. One exception:
+fc-theme fits its budget only after wasm-opt (about 131 KB without it, 123 KB
+with it, against 127 KiB), so `npm run check` needs binaryen, and a current
+one: binaryen 108 rejects every module at validation. CI installs
+`binaryen@123.0.0` from npm. The parity suite
 runs against the optimized modules, so a wasm-opt regression is caught by the
 same tests that catch a Rust regression.

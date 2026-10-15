@@ -21,6 +21,12 @@ jobs:
         run: |
           rustup target add wasm32-unknown-unknown
           cargo install wasm-bindgen-cli --version 0.2.118 --locked
+      # fc-theme fits its shipped budget only after wasm-opt, and Ubuntu's
+      # binaryen is too old to validate what current rustc emits.
+      - name: Install wasm-opt
+        run: |
+          npm install --prefix "$RUNNER_TEMP/binaryen" --ignore-scripts --no-save binaryen@123.0.0
+          echo "$RUNNER_TEMP/binaryen/node_modules/binaryen/bin" >> "$GITHUB_PATH"
       - name: Install isolated accessibility validator
         run: |
           npm install --prefix "$RUNNER_TEMP/fc-validation" --ignore-scripts --no-save axe-core@4.11.1

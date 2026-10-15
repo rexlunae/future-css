@@ -26,8 +26,9 @@ const outDir = resolve(projectRoot, "dist", "wasm");
 /**
  * Unchanged byte targets now gate the shipped web-target .wasm, not rustc's
  * descriptor-bearing intermediate. Both measurements stay in the report.
- * Every target passes even without the optional wasm-opt tool; optimization
- * is headroom, never a prerequisite for correctness or a green build.
+ * Every target but fc-theme passes without the optional wasm-opt tool.
+ * fc-theme (~131 KB unoptimized, ~123 KB optimized) needs it for a green
+ * build, which is why CI installs binaryen; correctness never depends on it.
  */
 const BUDGET: Record<string, number> = {
   fc_core: 40_000,

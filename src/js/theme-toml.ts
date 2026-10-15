@@ -1,6 +1,9 @@
 /** The theme schema needs only single-line strings and named color tables.
  * Rejecting unsupported TOML avoids silently misinterpreting author intent. */
 export function parseThemeToml(source:string):unknown {
+  // A decoded file is already well formed; a string handed in may not be, and
+  // fc-theme receives a lone surrogate as U+FFFD, so this one does too.
+  source=source.toWellFormed();
   if(new TextEncoder().encode(source).byteLength>65536)throw new Error('Theme TOML exceeds 64 KiB');
   const result:Record<string,unknown>={};const colors:Record<string,unknown>=Object.create(null);
   const tables=new Set<string>();let target=result;
@@ -24,23 +27,41 @@ export function parseThemeToml(source:string):unknown {
     if(Object.hasOwn(target,key))fail(index+1,`duplicate key ${key}`);
     let value:string;
     if(literal.startsWith("'"))value=literal.slice(1,-1);
-    else{
-      if(/\\(?!["\\btnfruU])/.test(literal))fail(index+1,'unsupported string escape');
-      const normalized=literal.replace(/\\U([0-9a-fA-F]{8})/g,(_,hex)=>{
-        const point=parseInt(hex,16);if(point>0x10ffff||(point>=0xd800&&point<=0xdfff))fail(index+1,'invalid Unicode escape');return JSON.stringify(String.fromCodePoint(point)).slice(1,-1);
-      });
-      try{value=JSON.parse(normalized);}catch{fail(index+1,'invalid quoted string');}
-    }
+    else{const decoded=basicString(literal.slice(1,-1));if(decoded.error)fail(index+1,decoded.error);value=decoded.value!;}
     Object.defineProperty(target,key,{value:value!,enumerable:true,writable:true,configurable:true});
   }
   return result;
+}
+
+const ESCAPES:Record<string,string>={'"':'"','\\':'\\',b:'\b',t:'\t',n:'\n',f:'\f',r:'\r'};
+/**
+ * A basic string's value, read left to right so `\\x` is a backslash and an x
+ * rather than an unsupported `\x`. TOML's escapes only, and `\u`/`\U` must name
+ * a Unicode scalar value: a lone surrogate is not text. fc-theme's `basic_string`
+ * is the same loop.
+ */
+function basicString(body:string):{value?:string;error?:string}{
+  let value='';
+  for(let i=0;i<body.length;){
+    const c=body.codePointAt(i)!,ch=String.fromCodePoint(c);i+=ch.length;
+    if(ch!=='\\'){if(c<0x20&&ch!=='\t')return {error:'invalid quoted string'};value+=ch;continue;}
+    const e=body[i++];if(e===undefined)return {error:'invalid quoted string'};
+    if(Object.hasOwn(ESCAPES,e)){value+=ESCAPES[e];continue;}
+    if(e!=='u'&&e!=='U')return {error:'unsupported string escape'};
+    const hex=body.slice(i,i+(e==='u'?4:8));
+    if(hex.length!==(e==='u'?4:8)||!/^[0-9a-fA-F]+$/.test(hex))return {error:'invalid quoted string'};
+    i+=hex.length;const point=parseInt(hex,16);
+    if(point>0x10ffff||(point>=0xd800&&point<=0xdfff))return {error:'invalid Unicode escape'};
+    value+=String.fromCodePoint(point);
+  }
+  return {value};
 }
 
 /** Serialize only validated schema fields, never arbitrary TOML keys. */
 export function serializeThemeToml(theme:Record<string,any>):string {
   const lines=[`schema-version = ${theme.schemaVersion}`];
   for(const key of ['version','id','name','description','base','shape','depth','surface','type','palette'])if(theme[key]!==undefined)lines.push(`${key} = ${JSON.stringify(theme[key])}`);
-  for(const [role,pair] of Object.entries(theme.colors??{}).sort(([a],[b])=>a.localeCompare(b))){
+  for(const [role,pair] of Object.entries(theme.colors??{}).sort(([a],[b])=>a<b?-1:a>b?1:0)){
     const colors=pair as {light:string;dark:string};lines.push('',`[colors.${JSON.stringify(role)}]`,`light = ${JSON.stringify(colors.light)}`,`dark = ${JSON.stringify(colors.dark)}`);
   }return lines.join('\n')+'\n';
 }

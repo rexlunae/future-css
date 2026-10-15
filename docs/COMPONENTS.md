@@ -385,6 +385,7 @@ pattern that fix needs: primitives across the boundary, never `Vec<JsValue>`.
 consumers that cannot run the JS, such as a Dioxus app on desktop or rendered on a
 server. It uses no regex engine, so each token is a hand-written matcher, and its
 parity test runs generated input through both tokenizers as well as the samples.
+The terminal's SGR parser, `ansi`, is paired the same way with `fc-ansi`.
 Each Rust path ships **alongside** the JS implementation with a parity test, never
 instead of it.
 
@@ -495,9 +496,28 @@ build step. It skips cleanly when no browser is present.
 
 A terminal emulator surface: output grid, input line, and status bar.
 
-**Scope: the presentation layer.** Escape-sequence parsing, PTY management, and
+**Scope: the presentation layer.** Cursor addressing, PTY management, and
 scrollback belong to a terminal engine. This owns what is visible — grid geometry,
 the ANSI palette, cursor states, and the accessibility contract.
+
+### From program output to lines
+
+`ansi` (and the `fc-ansi` crate, for Rust) turns SGR sequences into the runs this
+markup expects. It streams: a sequence or a UTF-8 character split between writes
+still parses. Every other control sequence is consumed, a bare `\r` starts its line
+over, and 256-colour and truecolor fall back to the default foreground, because an
+inline colour cannot be themed or contrast-checked.
+
+```js
+import { AnsiParser, renderAnsiLine } from "future-css/ansi";
+
+const parser = new AnsiParser();
+socket.onmessage = (event) => {
+  parser.pushBytes(new Uint8Array(event.data));
+  // textContent only: nothing a program prints becomes markup.
+  for (const line of parser.takeLines()) output.append(renderAnsiLine(line));
+};
+```
 
 ### The ANSI palette
 

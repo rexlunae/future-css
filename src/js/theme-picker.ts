@@ -17,8 +17,9 @@ function nextDraftVersion(version:string):string {
   return `${major}.${minor}.${BigInt(patch!)+1n}`;
 }
 
-function luminance(hex:string):number {
-  if(!/^#[\da-f]{6}$/i.test(hex)) throw new Error('Custom colors must be six-digit sRGB hex values');
+function luminance(hex:unknown):number {
+  // `test` would stringify a non-string, so `["#000000"]` passed as a colour.
+  if(typeof hex!=='string'||!/^#[\da-f]{6}$/i.test(hex)) throw new Error('Custom colors must be six-digit sRGB hex values');
   const rgb=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(c=>c<=0.04045?c/12.92:((c+0.055)/1.055)**2.4);
   return rgb[0]!*0.2126+rgb[1]!*0.7152+rgb[2]!*0.0722;
 }
@@ -28,8 +29,15 @@ export function validateCustomTheme(input:unknown,contract?:ThemeContract): Cust
   const t=structuredClone(input) as CustomTheme;
   if(t.schemaVersion!==THEME_SCHEMA_VERSION)throw new Error(`Unsupported theme schema ${t.schemaVersion??"unversioned"}; expected ${THEME_SCHEMA_VERSION}. Migrate before installation.`);
   if(typeof t.version!=='string'||t.version.length>64||!themeVersionPattern.test(t.version))throw new Error('Theme version must be SemVer (for example 1.0.0)');
-  if(!/^[a-z][a-z0-9-]{0,47}$/.test(t.id) || themePresets.some(p=>p.id===t.id)) throw new Error('Custom theme needs a unique id');
-  for(const key of ['name','description'] as const) if(typeof t[key]!=='string' || !t[key].trim() || Array.from(t[key]).length>240) throw new Error(`Invalid ${key}`);
+  // `test` stringifies its argument, so without the type check a theme with no id
+  // passed as the id "undefined".
+  if(typeof t.id!=='string' || !/^[a-z][a-z0-9-]{0,47}$/.test(t.id) || themePresets.some(p=>p.id===t.id)) throw new Error('Custom theme needs a unique id');
+  for(const key of ['name','description'] as const){
+    if(typeof t[key]!=='string' || !t[key].trim() || Array.from(t[key]).length>240) throw new Error(`Invalid ${key}`);
+    // A lone surrogate is stored text that renders as a replacement glyph; it is
+    // one in the saved theme too, which is also what fc-theme receives.
+    t[key]=t[key].toWellFormed();
+  }
   if(!themePresets.some(p=>p.id===t.base)) throw new Error('Unknown base theme');
   for(const key of Object.keys(choices) as (keyof typeof choices)[]) if(t[key]!==undefined && !(choices[key] as readonly string[]).includes(t[key]!)) throw new Error(`Invalid ${key}`);
   if(t.palette!==undefined && !themePalettes.some(p=>p.id===t.palette)) throw new Error('Unknown palette');

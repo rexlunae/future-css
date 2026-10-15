@@ -526,22 +526,113 @@ export class FutureCssEditor {
 
     const onBeforeInput = (event: InputEvent) => {
       const mark = this.pendingMark;
+      if (!mark) return;
+      // An IME's interim text is not the insertion the mark waits for: the
+      // composition reaches the mark whole, at `compositionend`.
+      if (event.isComposing || COMPOSITION_INPUT.has(event.inputType)) return;
       this.pendingMark = null;
-      if (!mark || event.inputType !== "insertText" || !event.data) return;
+      if (event.inputType !== "insertText" || !event.data) return;
       const selection = window.getSelection();
       // Only while the caret is still where the mark was started, and the mark empty.
       if (!mark.isConnected || mark.firstChild || !selection?.isCollapsed) return;
       if (selection.anchorNode !== mark) return;
       event.preventDefault();
-      const text = document.createTextNode(event.data);
-      mark.append(text);
-      placeCaret(text, text.length);
-      // A cancelled `beforeinput` fires no `input`, so report the change here.
-      this.options.onChange?.(this.value);
-      this.syncToolbar();
+      this.fillPendingMark(mark, event.data);
     };
     this.content.addEventListener("beforeinput", onBeforeInput);
     this.cleanups.push(() => this.content.removeEventListener("beforeinput", onBeforeInput));
+
+    const onCompositionEnd = (event: CompositionEvent) => {
+      const mark = this.pendingMark;
+      this.pendingMark = null;
+      const data = event.data;
+      if (!mark || !data || !mark.isConnected || mark.firstChild) return;
+      // Chrome commits the composition beside the empty mark rather than in it.
+      // Select exactly that text, and only when it touches the mark, so nothing
+      // else the user wrote is ever pulled into the mark.
+      const selection = window.getSelection();
+      const node = selection?.anchorNode;
+      if (!selection?.isCollapsed || !(node instanceof Text)) return;
+      const end = selection.anchorOffset;
+      const start = end - data.length;
+      if (start < 0 || node.data.slice(start, end) !== data) return;
+      const before = node.nextSibling === mark && end === node.length;
+      const after = node.previousSibling === mark && start === 0;
+      if (!before && !after) return;
+      const range = document.createRange();
+      range.setStart(node, start);
+      range.setEnd(node, end);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      this.fillPendingMark(mark, data);
+    };
+    this.content.addEventListener("compositionend", onCompositionEnd);
+    this.cleanups.push(() => this.content.removeEventListener("compositionend", onCompositionEnd));
+  }
+
+  /**
+   * Replaces the selection -- the caret inside `mark`, or committed IME text
+   * beside it -- with `mark` holding `text`, as one undoable edit.
+   *
+   * The empty mark was a plain DOM insert the browser's undo stack never saw.
+   * Appending text to it directly kept the first character off that stack too,
+   * so Undo skipped it and reverted an earlier edit instead. `insertHTML` records
+   * the mark and its text together, and one Undo removes both.
+   */
+  private fillPendingMark(mark: Element, text: string): void {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    const range = selection.getRangeAt(0);
+    if (range.collapsed && range.startContainer === mark) {
+      range.setStartBefore(mark);
+      range.collapse(true);
+    }
+    const shell = mark.cloneNode(false) as Element;
+    shell.textContent = text;
+    // Taken out before the insert, so the recorded edit is the whole change.
+    const parent = mark.parentNode;
+    const next = mark.nextSibling;
+    mark.remove();
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    this.mutating = true;
+    let inserted = false;
+    try {
+      inserted = document.execCommand("insertHTML", false, shell.outerHTML);
+    } catch {
+      inserted = false;
+    } finally {
+      this.mutating = false;
+    }
+    if (!inserted) {
+      // No editing commands: keep the mark, outside the undo stack as before.
+      parent?.insertBefore(mark, next);
+      mark.textContent = text;
+    }
+    const filled = inserted ? this.markBeforeCaret(shell.tagName) : mark;
+    // Chrome's insert matches the computed style of the insertion point and writes
+    // the difference inline (`font-family: inherit` beside a heading, say). The
+    // stylesheet already styles the mark; an inline copy would outlive a theme
+    // change. The node is the one the undo entry holds, so Undo still removes it.
+    if (inserted && filled && !mark.hasAttribute("style")) filled.removeAttribute("style");
+    if (filled?.lastChild) placeCaret(filled.lastChild, filled.lastChild.textContent?.length ?? 0);
+    // The insert ran with `mutating` set, so its own `input` reported nothing.
+    this.options.onChange?.(this.value);
+    this.syncToolbar();
+  }
+
+  /** The `tagName` element the caret sits at the end of, after an insert. */
+  private markBeforeCaret(tagName: string): Element | null {
+    const selection = window.getSelection();
+    const node = selection?.anchorNode;
+    if (!node || !this.content.contains(node)) return null;
+    const inside = closestTag(node instanceof Element ? node : node.parentElement, tagName, this.content);
+    if (inside) return inside;
+    const offset = selection!.anchorOffset;
+    const previous =
+      node instanceof Text ? (offset === 0 ? node.previousSibling : null) : node.childNodes[offset - 1];
+    return previous instanceof Element && previous.tagName === tagName ? previous : null;
   }
 
   /**
@@ -566,6 +657,9 @@ export class FutureCssEditor {
 }
 
 export { closestTag };
+
+/** Input types an IME sends while composing; see `onCompositionEnd`. */
+const COMPOSITION_INPUT = new Set(["insertCompositionText", "deleteCompositionText", "insertFromComposition"]);
 
 /**
  * Characters between the start of `content` and a text position.

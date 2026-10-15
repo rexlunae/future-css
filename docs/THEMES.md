@@ -171,8 +171,23 @@ so subsequent selection cannot accidentally mix partially checked colors.
 
 The dependency-free parser supports this schema's single-line basic/literal TOML
 strings, comments, optional `[theme]`, and `[colors.role-name]` (quoted role names are
-also accepted). It supports escaped Unicode. Arrays, dates, multiline strings, dotted
-assignments and unrelated tables are explicitly rejected; they are not theme settings.
+also accepted). It supports TOML's escapes, read left to right, and `\u`/`\U` must name a
+Unicode scalar value, so a surrogate escape is refused. Arrays, dates, multiline strings,
+dotted assignments and unrelated tables are explicitly rejected; they are not theme settings.
+
+### In Rust
+
+The `fc-theme` crate is the same model for Rust consumers such as the Dioxus picker:
+`validate_custom_theme`, `migrate_theme`, `parse_theme` (TOML in, validated theme out),
+`CustomTheme::to_toml`, `design_overrides` and the stock catalog. Pass it the contract
+from `dist/theme-contract.json` with `ThemeContract::from_json`. A parity test holds it to
+the TypeScript's results and error messages, word for word.
+
+```rust
+let contract = fc_theme::ThemeContract::from_json(include_str!("theme-contract.json"))?;
+let theme = fc_theme::parse_theme(&toml_text, None, Some(&contract))?;
+let properties = fc_theme::design_overrides(theme.design());
+```
 
 ## Validation tools and limits
 

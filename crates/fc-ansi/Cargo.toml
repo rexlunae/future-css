@@ -1,0 +1,40 @@
+# fc-ansi -- ANSI SGR parsing for the terminal, matching src/js/ansi.ts exactly.
+#
+# Program output arrives as bytes with escape sequences in it; the terminal
+# component renders styled runs. This crate is the step between, for Rust
+# consumers that cannot run the JS (the Dioxus library on desktop and SSR).
+#
+# Free of `js-sys` and `serde-wasm-bindgen` for the reason fc-diff is: js-sys
+# adds roughly 302 KB the moment it is used (Phase A in docs/PLAN.md). A line
+# crosses as its text plus one flat array of (end, colour, attributes) triples.
+
+[package]
+name = "fc-ansi"
+description = "ANSI SGR parsing into styled runs for the future-css terminal"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = { workspace = true, optional = true }
+
+# `no_std` on wasm (see src/lib.rs), so the allocator is named here rather than
+# arriving with std.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+dlmalloc = { workspace = true, optional = true }
+
+[features]
+# `bindgen` exports the JavaScript boundary and is on by default. A pure Rust
+# consumer (the Dioxus library) turns defaults off and gets the same parser
+# with no wasm-bindgen in its dependency tree.
+default = ["bindgen"]
+bindgen = ["dep:wasm-bindgen"]
+# Build without std on wasm; see fc-diff's manifest for why this is never on in
+# a build that includes a std crate.
+bare = ["dep:dlmalloc"]

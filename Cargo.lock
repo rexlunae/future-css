@@ -36,6 +36,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "fc-ansi"
+version = "0.1.0"
+dependencies = [
+ "dlmalloc",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "fc-context-menu"
 version = "0.1.0"
 dependencies = [
@@ -106,6 +114,14 @@ dependencies = [
 
 [[package]]
 name = "fc-select"
+version = "0.1.0"
+dependencies = [
+ "dlmalloc",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "fc-theme"
 version = "0.1.0"
 dependencies = [
  "dlmalloc",

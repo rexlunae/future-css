@@ -398,7 +398,8 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       `);
       await send("Input.dispatchKeyEvent", { type: "keyDown", key: "X", code: "KeyX", text: "X", unmodifiedText: "X", windowsVirtualKeyCode: 88 });
       await send("Input.dispatchKeyEvent", { type: "keyUp", key: "X", code: "KeyX", windowsVirtualKeyCode: 88 });
-      return evaluate(`return document.querySelector('.fc-editor__content').innerHTML;`);
+      // Chrome's editing commands keep a space before an inline boundary as &nbsp;.
+      return evaluate(`return document.querySelector('.fc-editor__content').innerHTML.replaceAll('&nbsp;', ' ');`);
     };
     // A text-node caret, then an element-node caret at the end of a paragraph.
     const inText = await type(`
@@ -411,6 +412,84 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     `);
     await evaluate(`globalThis.ed.destroy(); delete globalThis.ed;`);
     assert.deepEqual([inText, atElement], ["before <strong>X</strong>after", "<p>one</p><p>two<strong>X</strong></p>"]);
+  });
+
+  it("undoes the first character typed into a mark started at the caret", async () => {
+    // Regression (#55). The first character was appended to the empty mark by
+    // hand, which the undo stack never saw, so Undo skipped it and reverted the
+    // edit before it instead.
+    await loadBindings();
+    const key = async (k: string) => {
+      const code = `Key${k.toUpperCase()}`;
+      const vk = k.toUpperCase().charCodeAt(0);
+      await send("Input.dispatchKeyEvent", { type: "keyDown", key: k, code, text: k, unmodifiedText: k, windowsVirtualKeyCode: vk });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", key: k, code, windowsVirtualKeyCode: vk });
+    };
+    const html = () => evaluate(`return document.querySelector('.fc-editor__content').innerHTML;`);
+    await evaluate(`
+      globalThis.ed = new E.FutureCssEditor({ root: '#ed' });
+      const el = document.querySelector('.fc-editor__content');
+      el.innerHTML = 'ab'; el.focus();
+      const r = document.createRange(); r.setStart(el.firstChild, 2); r.collapse(true);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    `);
+    await key("c");
+    await evaluate(`globalThis.ed.applyMark('bold');`);
+    await key("x");
+    await key("y");
+    const typed = await html();
+    const steps: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      await evaluate(`document.execCommand('undo');`);
+      steps.push(await html());
+    }
+    await evaluate(`globalThis.ed.destroy(); delete globalThis.ed;`);
+    assert.equal(typed, "abc<strong>xy</strong>");
+    // Later characters coalesce with the first or undo on their own; either way
+    // the bold text goes before the plain "c" does, and nothing is left behind.
+    const plainAt = steps.indexOf("abc");
+    assert.ok(plainAt >= 0, `Undo reaches the text before the mark: ${JSON.stringify(steps)}`);
+    for (const step of steps.slice(0, plainAt)) assert.match(step, /^abc<strong>x/);
+    assert.equal(steps[plainAt + 1] ?? "ab", "ab");
+  });
+
+  it("puts IME input into a mark started at the caret", async () => {
+    // Regression (#55). The first `beforeinput` of a composition cleared the
+    // pending mark without using it, and the composed text stayed outside.
+    await loadBindings();
+    await evaluate(`
+      globalThis.ed = new E.FutureCssEditor({ root: '#ed' });
+      const el = document.querySelector('.fc-editor__content');
+      el.innerHTML = 'before after'; el.focus();
+      const r = document.createRange(); r.setStart(el.firstChild, 7); r.collapse(true);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      globalThis.changes = 0;
+      globalThis.ed.options.onChange = () => globalThis.changes++;
+      globalThis.ed.applyMark('bold');
+    `);
+    await send("Input.imeSetComposition", { text: "に", selectionStart: 1, selectionEnd: 1 });
+    await send("Input.imeSetComposition", { text: "日本", selectionStart: 2, selectionEnd: 2 });
+    await send("Input.insertText", { text: "日本" });
+    const composed = await evaluate(`return document.querySelector('.fc-editor__content').innerHTML.replaceAll('&nbsp;', ' ');`);
+    await evaluate(`document.execCommand('undo');`);
+    const undone = await evaluate(`return document.querySelector('.fc-editor__content').innerHTML;`);
+    await evaluate(`globalThis.ed.destroy(); delete globalThis.ed;`);
+    assert.equal(composed, "before <strong>日本</strong>after");
+    assert.doesNotMatch(undone, /<strong>日本/, "one Undo takes the marked composition back out");
+  });
+
+  it("renders parsed terminal output as text, never as markup", async () => {
+    // Program output is untrusted: a `<img onerror>` a build prints must arrive
+    // as characters in a span.
+    const html = await evaluate(`
+      const A = await import('/src/js/ansi.js');
+      const [line] = A.parseAnsi('\\x1b[1;31m<img src=x onerror=alert(1)>\\x1b[0m ok');
+      return A.renderAnsiLine(line).outerHTML;
+    `);
+    assert.equal(
+      html,
+      '<div class="fc-terminal__line"><span class="fc-term-ansi-red fc-terminal__bold">&lt;img src=x onerror=alert(1)&gt;</span> ok</div>',
+    );
   });
 
   it("does not report a link active when only part of the selection is linked", async () => {

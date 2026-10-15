@@ -4,7 +4,7 @@ Phased roadmap with exit criteria. Each phase ends with a gate that can be check
 judgment call.
 
 **Current status: foundations, core CSS, token roles/themes and Material 3 component
-parity are complete. All nine WASM binaries meet the unchanged shipped-size budgets.
+parity are complete. All eleven WASM binaries meet the unchanged shipped-size budgets.
 Verification and release preparation are delivered in part; the unchecked items below
 remain open rather than being inferred from a Chrome pass.**
 
@@ -18,7 +18,7 @@ remain open rather than being inferred from a Chrome pass.**
 | 1. Token system | Complete | Palette, semantic layer, contrast contract, compiler |
 | 2. Core CSS | Complete | Reset, base, layout, utilities, every Phase 2 component, and the fixture page |
 | 3. Component set | Mostly delivered | Forms, overlays, tabs, breadcrumb, pagination, loading, cards, table, description list, sidebar; axe-core pass remains |
-| A. WASM size | Complete | Primitive boundaries, all nine binaries within shipped budgets, hard build gate and parity tests |
+| A. WASM size | Complete | Primitive boundaries, all eleven binaries within shipped budgets, hard build gate and parity tests |
 | B. Complex components | JS paths delivered | Editor/menu/grid/webview bindings and pure data modules; editor/grid Rust integration remains optional future work |
 | C. Token roles and themes | Complete | State and type roles, override points, brand/high-contrast themes, reduced-transparency and optional-WASM data preferences |
 | D. Material 3 parity | Complete | Every M3 component Shipped or Divergent with its reason |
@@ -43,7 +43,7 @@ Audited on 2026-10-10 with Chrome and the WASM toolchain present:
 
 - 218 foundation tokens (116 theme-aware), plus 6 optional Pride theme tokens, 60 component files, 66-file readable CSS bundle
   of 425.6 KB. Consumers can load only the layers/components they use.
-- Nine Rust crates emit nine binaries across eight module directories; core and
+- Eleven Rust crates emit eleven binaries across ten module directories; core and
   model share a directory. All binaries meet their unchanged byte targets after
   bindgen, both with and without optional wasm-opt.
 - Final `npm run check` with axe enabled: 532 JavaScript/browser tests and 133 Rust tests passed,
@@ -259,9 +259,9 @@ a trade anyone accepts.
 
 Delivered:
 
-- Rust workspace with nine crates, each a `cdylib`. `fc-core` is emitted into the
-  `fc-model` module directory rather than getting one of its own, so nine crates
-  produce **nine** `.wasm` files across **eight** importable modules.
+- Rust workspace with eleven crates, each a `cdylib`. `fc-core` is emitted into the
+  `fc-model` module directory rather than getting one of its own, so eleven crates
+  produce **eleven** `.wasm` files across **ten** importable modules.
 - 142 unit tests covering the algorithms.
 - A JS accelerator abstraction with a pure-JS fallback, so the modules are optional.
 - **`fc-context-menu` off `js-sys`**: 411.6 KB to 40.2 KB raw (79.8 to 21.7 KB

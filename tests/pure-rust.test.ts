@@ -7,7 +7,7 @@ import { describe, it } from 'node:test';
 // The wasm-bindgen pin is exact, so if it leaks back into that tree the
 // consumer's own wasm-bindgen fails to resolve: an outage for them that no
 // test here would otherwise notice, because every build here keeps defaults on.
-const CRATES = ['fc-core', 'fc-model', 'fc-rich-text', 'fc-select', 'fc-context-menu', 'fc-grid', 'fc-diff', 'fc-git', 'fc-highlight'];
+const CRATES = ['fc-core', 'fc-model', 'fc-rich-text', 'fc-select', 'fc-context-menu', 'fc-grid', 'fc-diff', 'fc-git', 'fc-highlight', 'fc-ansi', 'fc-theme'];
 const SIBLINGS = /^(fc-[a-z-]+)\s*=\s*\{([^}]*)\}/gm;
 const cargo = process.env.CARGO ?? 'cargo';
 

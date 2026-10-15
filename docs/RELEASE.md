@@ -33,7 +33,7 @@ for review and [MIGRATION.md](MIGRATION.md) for rename tooling.
 
 ## Rust crates on crates.io
 
-The nine model crates publish to crates.io so that pure Rust consumers, `fc-dioxus`
+The eleven model crates publish to crates.io so that pure Rust consumers, `fc-dioxus`
 first, can depend on them without a git dependency, which crates.io rejects. Sibling
 path dependencies therefore also carry a `version`: cargo uses the path in this
 workspace and the version in the published manifest. Each crate links the root

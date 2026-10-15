@@ -122,7 +122,8 @@ So:
 - `npm run build:wasm` prints a size report and the budgets in
   `src/build/build-wasm.ts`. All eleven binaries fit the unchanged budgets on the
   **shipped** basis (post-bindgen and optional post-opt, see docs/WASM.md), which
-  is enforced by the build. Raw descriptor-bearing sizes remain diagnostic.
+  is enforced by the build. fc-theme fits only after wasm-opt, so the gate needs
+  a current binaryen (CI installs `binaryen@123.0.0` from npm). Raw descriptor-bearing sizes remain diagnostic.
 - **A primitives-only crate can drop std.** `fc-diff`, `fc-select`, `fc-git`, `fc-context-menu`, `fc-highlight`, `fc-ansi` and `fc-theme` build
   `no_std` through a `bare` feature, which build:wasm enables in its own cargo
   invocation; std's panic formatting was most of their bytes. Never enable

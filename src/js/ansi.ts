@@ -39,6 +39,12 @@ export interface AnsiRun {
 /** One output line, without its line ending. An empty line has no runs. */
 export interface AnsiLine {
   runs: AnsiRun[];
+  /**
+   * The line's position in the stream since the parser was created or reset,
+   * from 0. `renderAnsiLine` writes it as `data-fc-seq`, so a consumer can order
+   * lines and spot a gap once the host trims scrollback.
+   */
+  seq: number;
 }
 
 const BOLD = 1, DIM = 2, ITALIC = 4, UNDERLINE = 8, INVERSE = 16, STRIKE = 32;
@@ -68,6 +74,8 @@ export class AnsiParser {
   private cr = false;
   private line: RawRun[] = [];
   private done: RawRun[][] = [];
+  /** Lines ended so far: the pending line's `seq`. */
+  private ended = 0;
   // `ignoreBOM` keeps a U+FEFF as text, as Rust's decoder does, rather than
   // silently dropping it from the first chunk.
   private decoder = new TextDecoder("utf-8", { ignoreBOM: true });
@@ -85,14 +93,15 @@ export class AnsiParser {
 
   /** Lines finished since the last call, oldest first. */
   takeLines(): AnsiLine[] {
-    const lines = this.done.map(publicLine);
+    const first = this.ended - this.done.length;
+    const lines = this.done.map((runs, i) => publicLine(runs, first + i));
     this.done = [];
     return lines;
   }
 
   /** The line still being written, which has no line ending yet. */
   get pending(): AnsiLine {
-    return publicLine(this.line);
+    return publicLine(this.line, this.ended);
   }
 
   /** Forgets everything: lines, style, and any partial sequence. */
@@ -198,6 +207,7 @@ export class AnsiParser {
   private endLine(): void {
     this.done.push(this.line);
     this.line = [];
+    this.ended++;
   }
 
   private sgr(): void {
@@ -264,6 +274,7 @@ export function ansiClassName(run: AnsiRun): string {
 export function renderAnsiLine(line: AnsiLine, doc: Document = document): HTMLElement {
   const el = doc.createElement("div");
   el.className = "fc-terminal__line";
+  el.dataset.fcSeq = String(line.seq);
   for (const run of line.runs) {
     const className = ansiClassName(run);
     if (!className) {
@@ -291,8 +302,9 @@ export function wireRuns(line: AnsiLine): number[] {
   return out;
 }
 
-function publicLine(runs: RawRun[]): AnsiLine {
+function publicLine(runs: RawRun[], seq: number): AnsiLine {
   return {
+    seq,
     runs: runs.map((run) => ({
       text: run.text,
       fg: run.fg < 0 ? null : ANSI_COLORS[run.fg],

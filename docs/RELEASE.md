@@ -36,8 +36,11 @@ for review and [MIGRATION.md](MIGRATION.md) for rename tooling.
 The eleven model crates publish to crates.io so that pure Rust consumers, `fc-dioxus`
 first, can depend on them without a git dependency, which crates.io rejects. Sibling
 path dependencies therefore also carry a `version`: cargo uses the path in this
-workspace and the version in the published manifest. Each crate links the root
-`LICENSE` so the MIT notice travels inside every package.
+workspace and the version in the published manifest. Each crate carries a copy of
+the root `LICENSE` so the MIT notice travels inside every package. It is a copy, not
+a symlink: a checkout without symlink support (Windows by default) would turn a link
+into a file holding its target path, and cargo would publish that.
+`tests/pure-rust.test.ts` fails when a copy drifts from the root.
 
 Publish them together, from the commit the Dioxus library pins, after
 `cargo publish --workspace --dry-run` passes. Cargo orders the upload so `fc-core`

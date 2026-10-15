@@ -8,7 +8,7 @@
 #
 # Free of `js-sys` and `serde-wasm-bindgen` for the reason fc-diff is: js-sys
 # adds roughly 302 KB the moment it is used (Phase A in docs/PLAN.md). Spans
-# cross as two flat arrays, roles and end offsets.
+# cross as one flat array of end offset and role pairs.
 
 [package]
 name = "fc-highlight"

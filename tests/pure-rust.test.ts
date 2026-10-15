@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { lstatSync, readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 
 // A Rust consumer (the Dioxus library) links these crates with defaults off.
@@ -27,6 +27,18 @@ describe('pure Rust consumers', () => {
         assert.match(spec, /default-features = false/, `${crate} -> ${sibling}: defaults off`);
         assert.match(manifest, new RegExp(`^bindgen = \\[[^\\]]*"${sibling}/bindgen"`, 'm'), `${crate} forwards bindgen to ${sibling}`);
       }
+    }
+  });
+
+  it('every crate packages the MIT notice itself, not a link to it', () => {
+    // A symlink checked out where git cannot make one (Windows by default)
+    // becomes a file holding the text `../../LICENSE`, and cargo publish would
+    // ship that instead of the notice.
+    const root = readFileSync(new URL('../LICENSE', import.meta.url), 'utf8');
+    for (const crate of CRATES) {
+      const copy = new URL(`../crates/${crate}/LICENSE`, import.meta.url);
+      assert.ok(!lstatSync(copy).isSymbolicLink(), `${crate}: LICENSE is a symlink`);
+      assert.equal(readFileSync(copy, 'utf8'), root, crate);
     }
   });
 

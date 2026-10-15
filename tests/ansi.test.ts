@@ -19,6 +19,7 @@ const css = readFileSync(new URL("../src/css/components/terminal.css", import.me
 describe("ANSI parser", () => {
   it("maps SGR colours and attributes onto runs", () => {
     assert.deepEqual(parseAnsi("\x1b[31mred\x1b[1;92mbold\x1b[0m plain"), [{
+      seq: 0,
       runs: [
         { text: "red", fg: "red", attributes: [] },
         { text: "bold", fg: "bright-green", attributes: ["bold"] },
@@ -50,6 +51,7 @@ describe("ANSI parser", () => {
     parser.push("2mpass\x1b[0m\r");
     parser.push("\n");
     assert.deepEqual(parser.takeLines(), [{
+      seq: 0,
       runs: [{ text: "ok ", fg: null, attributes: [] }, { text: "pass", fg: "green", attributes: [] }],
     }]);
   });
@@ -60,6 +62,21 @@ describe("ANSI parser", () => {
     parser.pushBytes(bytes.subarray(0, 2));
     parser.pushBytes(bytes.subarray(2));
     assert.equal(parser.pending.runs[0].text, "日本");
+  });
+
+  it("numbers lines across takes, keeps the number through a carriage return, and restarts on reset", () => {
+    // `seq` is what renderAnsiLine writes as data-fc-seq: the line's place in
+    // the stream, not its index in one takeLines batch.
+    const parser = new AnsiParser();
+    parser.push("a\nb\n");
+    assert.deepEqual(parser.takeLines().map((l) => l.seq), [0, 1]);
+    parser.push("10%\r50%");
+    assert.equal(parser.pending.seq, 2);
+    parser.push("\nc\n");
+    assert.deepEqual(parser.takeLines().map((l) => l.seq), [2, 3]);
+    parser.reset();
+    parser.push("d\n");
+    assert.deepEqual(parser.takeLines().map((l) => l.seq), [0]);
   });
 
   it("starts a line over at a bare carriage return", () => {

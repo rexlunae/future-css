@@ -478,6 +478,41 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.doesNotMatch(undone, /<strong>日本/, "one Undo takes the marked composition back out");
   });
 
+  it("keeps one copy of the input when the mark's insert command fails", async () => {
+    // Regression (Devin on #59). The fallback refilled the mark but left the
+    // committed IME text selected beside it, so the composition appeared twice.
+    await loadBindings();
+    const setup = `
+      globalThis.ed = new E.FutureCssEditor({ root: '#ed' });
+      const el = document.querySelector('.fc-editor__content');
+      el.innerHTML = 'before after'; el.focus();
+      const r = document.createRange(); r.setStart(el.firstChild, 7); r.collapse(true);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      const exec = document.execCommand;
+      document.execCommand = function (command, ...rest) {
+        return command === 'insertHTML' ? false : exec.call(this, command, ...rest);
+      };
+      globalThis.restoreExec = () => { document.execCommand = exec; };
+      globalThis.ed.applyMark('bold');
+    `;
+    const html = `return document.querySelector('.fc-editor__content').innerHTML.replaceAll('&nbsp;', ' ');`;
+    const teardown = `globalThis.restoreExec(); globalThis.ed.destroy(); delete globalThis.ed;`;
+
+    await evaluate(setup);
+    await send("Input.imeSetComposition", { text: "日本", selectionStart: 2, selectionEnd: 2 });
+    await send("Input.insertText", { text: "日本" });
+    const composed = await evaluate(html);
+    await evaluate(teardown);
+
+    await evaluate(setup);
+    await send("Input.dispatchKeyEvent", { type: "keyDown", key: "X", code: "KeyX", text: "X", unmodifiedText: "X", windowsVirtualKeyCode: 88 });
+    await send("Input.dispatchKeyEvent", { type: "keyUp", key: "X", code: "KeyX", windowsVirtualKeyCode: 88 });
+    const typed = await evaluate(html);
+    await evaluate(teardown);
+
+    assert.deepEqual([composed, typed], ["before <strong>日本</strong>after", "before <strong>X</strong>after"]);
+  });
+
   it("renders parsed terminal output as text, never as markup", async () => {
     // Program output is untrusted: a `<img onerror>` a build prints must arrive
     // as characters in a span.
@@ -488,7 +523,7 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     `);
     assert.equal(
       html,
-      '<div class="fc-terminal__line"><span class="fc-term-ansi-red fc-terminal__bold">&lt;img src=x onerror=alert(1)&gt;</span> ok</div>',
+      '<div class="fc-terminal__line" data-fc-seq="0"><span class="fc-term-ansi-red fc-terminal__bold">&lt;img src=x onerror=alert(1)&gt;</span> ok</div>',
     );
   });
 

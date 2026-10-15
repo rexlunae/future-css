@@ -217,6 +217,10 @@ impl Run {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Line {
     pub runs: Vec<Run>,
+    /// The line's position in the stream since the parser was created or
+    /// reset, from 0. A renderer writes it as `data-fc-seq`, so a consumer can
+    /// order lines and spot a gap once the host trims scrollback.
+    pub seq: u64,
 }
 
 impl Line {
@@ -470,7 +474,9 @@ impl Parser {
     }
 
     fn end_line(&mut self) {
+        let seq = self.line.seq + 1;
         self.done.push(core::mem::take(&mut self.line));
+        self.line.seq = seq;
     }
 
     fn sgr(&mut self) {
@@ -618,6 +624,16 @@ impl AnsiParser {
         self.taken.get(index as usize).map(wire_runs).unwrap_or_default()
     }
 
+    #[wasm_bindgen(js_name = lineSeq)]
+    pub fn line_seq(&self, index: u32) -> f64 {
+        self.taken.get(index as usize).map_or(-1.0, |line| line.seq as f64)
+    }
+
+    #[wasm_bindgen(js_name = pendingSeq)]
+    pub fn pending_seq(&self) -> f64 {
+        self.parser.pending().seq as f64
+    }
+
     #[wasm_bindgen(js_name = pendingText)]
     pub fn pending_text(&self) -> String {
         self.parser.pending().text()
@@ -651,12 +667,26 @@ mod tests {
     }
 
     fn line(runs: Vec<Run>) -> Line {
-        Line { runs }
+        Line { runs, seq: 0 }
+    }
+
+    #[test]
+    fn lines_are_numbered_across_takes_and_restart_on_reset() {
+        let mut p = Parser::new();
+        p.push("a\nb\n");
+        assert_eq!(p.take_lines().iter().map(|l| l.seq).collect::<Vec<_>>(), vec![0, 1]);
+        p.push("10%\r50%");
+        assert_eq!(p.pending().seq, 2);
+        p.push("\nc\n");
+        assert_eq!(p.take_lines().iter().map(|l| l.seq).collect::<Vec<_>>(), vec![2, 3]);
+        p.reset();
+        p.push("d\n");
+        assert_eq!(p.take_lines()[0].seq, 0);
     }
 
     #[test]
     fn plain_text_is_one_run_per_line() {
-        assert_eq!(parse("a\nb"), vec![line(vec![run("a", None, 0)]), line(vec![run("b", None, 0)])]);
+        assert_eq!(parse("a\nb"), vec![line(vec![run("a", None, 0)]), Line { seq: 1, ..line(vec![run("b", None, 0)]) }]);
         assert_eq!(parse(""), vec![]);
         assert_eq!(parse("\n"), vec![line(vec![])]);
     }

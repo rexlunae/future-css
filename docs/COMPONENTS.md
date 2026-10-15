@@ -519,6 +519,11 @@ socket.onmessage = (event) => {
 };
 ```
 
+Each line carries `seq`, its position in the stream since the parser was created
+or reset, and `renderAnsiLine` writes it as `data-fc-seq`. A consumer reading
+the DOM can then order lines and see where trimmed scrollback left a gap. The
+terminal's connection state stays on `.fc-terminal` as `data-fc-state`.
+
 ### The ANSI palette
 
 This is the **only** place in the system where tokens are named by hue rather than

@@ -1,5 +1,6 @@
 import { THEME_SCHEMA_VERSION, themeChoices as choices, themeVersionPattern, compareThemeVersions } from "./theme-schema.ts";
 import { parseThemeToml, serializeThemeToml } from "./theme-toml.ts";
+import { SRGB_LINEAR } from "./srgb-linear.ts";
 import { themePresets, themePalettes, designOverrides, type ThemeId, type PaletteId } from "./theme-presets.ts";
 export { themePresets, themePalettes } from "./theme-presets.ts";
 export interface ThemeState { design: string; palette: string; scheme: 'system'|'light'|'dark'; contrast: 'system'|'high'; }
@@ -20,7 +21,7 @@ function nextDraftVersion(version:string):string {
 function luminance(hex:unknown):number {
   // `test` would stringify a non-string, so `["#000000"]` passed as a colour.
   if(typeof hex!=='string'||!/^#[\da-f]{6}$/i.test(hex)) throw new Error('Custom colors must be six-digit sRGB hex values');
-  const rgb=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(c=>c<=0.04045?c/12.92:((c+0.055)/1.055)**2.4);
+  const rgb=[1,3,5].map(i=>SRGB_LINEAR[parseInt(hex.slice(i,i+2),16)]!);
   return rgb[0]!*0.2126+rgb[1]!*0.7152+rgb[2]!*0.0722;
 }
 /** A partial palette is checked as a complete resulting palette, never in isolation. */

@@ -37,6 +37,22 @@ diff: this is text migration, so comments and string literals are included. The 
 cannot infer changed DOM structure, ARIA behavior, runtime semantics or replacement
 color pairings. Follow each release's specific migration notes for those changes.
 
+## fc-highlight: one call for spans
+
+`highlightSpans(source, language)` returns a `Uint32Array` of pairs, each span's
+end in UTF-16 code units and then its role as an index in the roles list. It
+tokenizes once. `highlightRoles` and `highlightEnds` still work and return what
+they did, but each tokenizes the whole source again, so calling both costs two
+passes. They are deprecated; move to `highlightSpans`:
+
+```js
+const spans = mod.highlightSpans(source, language);
+for (let i = 0, start = 0; i < spans.length; i += 2) {
+  render(ROLES[spans[i + 1]], source.slice(start, spans[i]));
+  start = spans[i];
+}
+```
+
 ## Core WASM ABI 2
 
 The core/text/grid/rich-text boundaries now return primitive data. Update raw WASM

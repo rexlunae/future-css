@@ -24,7 +24,7 @@ authors.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-fc-core = { path = "../fc-core", default-features = false }
+fc-core = { path = "../fc-core", version = "0.1.0", default-features = false }
 wasm-bindgen = { workspace = true, features = ["std"], optional = true }
 serde = { workspace = true }
 

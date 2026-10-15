@@ -1063,6 +1063,21 @@ pub fn js_highlight_spans(source: &str, language: &str) -> Vec<u32> {
     out
 }
 
+/// Each span's role, as its index in `Role::ALL`. Deprecated: it tokenizes the
+/// source again, so pairing it with `highlightEnds` costs two passes. Kept so
+/// callers written against it still work; use `highlightSpans`.
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = highlightRoles))]
+pub fn js_highlight_roles(source: &str, language: &str) -> Vec<u8> {
+    highlight(source, language).iter().map(|s| s.role.code()).collect()
+}
+
+/// Each span's end, in UTF-16 code units from the start of the source.
+/// Deprecated, as `highlightRoles` is.
+#[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = highlightEnds))]
+pub fn js_highlight_ends(source: &str, language: &str) -> Vec<u32> {
+    js_highlight_spans(source, language).into_iter().step_by(2).collect()
+}
+
 /// The canonical name for a language or alias, or `""` when none matches.
 #[cfg_attr(feature = "bindgen", wasm_bindgen(js_name = resolveLanguage))]
 pub fn js_resolve_language(name: &str) -> String {
@@ -1152,5 +1167,15 @@ mod tests {
         assert_eq!(spans.iter().step_by(2).last(), Some(&4));
         assert_eq!(js_resolve_language("JSX"), "javascript");
         assert_eq!(js_resolve_language("nope"), "");
+    }
+
+    #[test]
+    fn the_older_exports_still_match_spans() {
+        let src = "const s = \"😀\"; // x\nlet y = 2;";
+        let spans = js_highlight_spans(src, "javascript");
+        let ends: Vec<u32> = spans.iter().step_by(2).copied().collect();
+        let roles: Vec<u8> = spans.iter().skip(1).step_by(2).map(|&r| r as u8).collect();
+        assert_eq!(js_highlight_ends(src, "javascript"), ends);
+        assert_eq!(js_highlight_roles(src, "javascript"), roles);
     }
 }

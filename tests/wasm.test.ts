@@ -785,6 +785,8 @@ describe("fc-highlight and the JS highlighter agree", () => {
   type HighlightModule = {
     default: (input?: { module_or_path?: Uint8Array }) => Promise<void>;
     highlightSpans: (source: string, language: string) => Uint32Array;
+    highlightRoles: (source: string, language: string) => Uint8Array;
+    highlightEnds: (source: string, language: string) => Uint32Array;
     resolveLanguage: (name: string) => string;
   };
 
@@ -846,6 +848,14 @@ describe("fc-highlight and the JS highlighter agree", () => {
         assert.deepEqual(fromWasm(source, language), highlight(source, language));
       });
     }
+
+    it("keeps the deprecated two-array exports equal to highlightSpans", () => {
+      for (const [language, source] of SAMPLES) {
+        const spans = Array.from(mod.highlightSpans(source, language));
+        assert.deepEqual(Array.from(mod.highlightEnds(source, language)), spans.filter((_, i) => i % 2 === 0), language);
+        assert.deepEqual(Array.from(mod.highlightRoles(source, language)), spans.filter((_, i) => i % 2 === 1), language);
+      }
+    });
 
     it("agree on generated input in every language", () => {
       const next = random(20261011);

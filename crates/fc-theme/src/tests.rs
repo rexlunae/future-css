@@ -125,6 +125,9 @@ fn every_preset_has_distinct_overrides() {
         }
     }
     assert!(design_overrides(Design { id: "future", shape: "blob", depth: "soft", surface: "neutral", type_: "system" }).is_none());
+    assert!(design_overrides(Design { id: "future", shape: "balanced", depth: "blob", surface: "neutral", type_: "system" }).is_none());
+    assert!(design_overrides(Design { id: "future", shape: "balanced", depth: "soft", surface: "tintedd", type_: "system" }).is_none());
+    assert!(design_overrides(Design { id: "future", shape: "balanced", depth: "soft", surface: "neutral", type_: "mono" }).is_none());
 }
 
 #[test]

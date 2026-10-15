@@ -1188,6 +1188,8 @@ describe("fc-theme and the TypeScript theme model agree", () => {
         }
       }
       assert.equal(mod.designOverrides("future", "blob", "soft", "neutral", "system"), "null");
+      assert.equal(mod.designOverrides("future", "balanced", "soft", "tintedd", "system"), "null");
+      assert.equal(mod.designOverrides("future", "balanced", "soft", "neutral", "mono"), "null");
     });
 
     it("order versions the same way", () => {

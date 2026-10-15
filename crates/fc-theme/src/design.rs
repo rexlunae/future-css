@@ -136,6 +136,11 @@ fn recipe(id: &str) -> Vec<(&'static str, String)> {
 pub fn design_overrides(design: Design<'_>) -> Option<Vec<(String, String)>> {
     let corners = corners(design.shape)?;
     let depths = depths(design.depth)?;
+    // Later branches only test for the choices that change something, so an
+    // unknown surface or type would otherwise come back as neutral or system.
+    if !catalog::SURFACES.contains(&design.surface) || !catalog::TYPES.contains(&design.type_) {
+        return None;
+    }
     let mut v = Props(Vec::new());
     v.set("--fc-theme-canvas-image", "none");
     v.set("--fc-theme-feature-text-shadow", "none");

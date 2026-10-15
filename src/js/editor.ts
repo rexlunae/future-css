@@ -607,6 +607,9 @@ export class FutureCssEditor {
     }
     if (!inserted) {
       // No editing commands: keep the mark, outside the undo stack as before.
+      // Committed IME text is still selected beside the mark; left in place, it
+      // would sit there as a second copy of what the mark now holds.
+      if (!range.collapsed) range.deleteContents();
       parent?.insertBefore(mark, next);
       mark.textContent = text;
     }

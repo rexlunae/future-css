@@ -1110,9 +1110,16 @@ describe("fc-theme and the TypeScript theme model agree", () => {
       });
     });
 
-    it("compute bit-identical luminance", () => {
-      const js = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
-        .map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+    it("compute bit-identical luminance", async () => {
+      const { SRGB_LINEAR } = await import("../src/js/srgb-linear.ts");
+      // The shared table is a cache of the formula, never a different curve:
+      // within one unit in the last place of whatever this engine's pow says.
+      for (let i = 0; i < 256; i++) {
+        const c = i / 255;
+        const live = c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        assert.ok(Math.abs(SRGB_LINEAR[i]! - live) <= Number.EPSILON * live, `channel ${i}`);
+      }
+      const js = (hex: string) => [1, 3, 5].map((i) => SRGB_LINEAR[parseInt(hex.slice(i, i + 2), 16)]!)
         .reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i]!, 0);
       const next = random(54);
       for (let i = 0; i < 2000; i++) {

@@ -155,12 +155,13 @@ impl CustomTheme {
     }
 }
 
-/// `((c + 0.055) / 1.055) ** 2.4` for each 8-bit channel, as V8 computes it.
+/// `((c + 0.055) / 1.055) ** 2.4` for each 8-bit channel.
 ///
 /// A table rather than `powf`: two `pow` implementations can disagree in the last
 /// bit, and a contrast ratio that lands on its minimum would then pass on one
-/// path and fail on the other. These are the bits JavaScript produces, which the
-/// parity test re-derives.
+/// path and fail on the other. V8 disagrees with itself between releases, so
+/// JavaScript reads the same table from `src/js/srgb-linear.ts`; the parity test
+/// holds the two bit for bit.
 const LINEAR: [u64; 256] = [
     0x0000000000000000, 0x3f33e45677c176f7, 0x3f43e45677c176f7, 0x3f4dd681b3a23272,
     0x3f53e45677c176f7, 0x3f58dd6c15b1d4b4, 0x3f5dd681b3a23272, 0x3f6167cba8c94818,

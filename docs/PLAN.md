@@ -4,7 +4,7 @@ Phased roadmap with exit criteria. Each phase ends with a gate that can be check
 judgment call.
 
 **Current status: foundations, core CSS, token roles/themes and Material 3 component
-parity are complete. All nine WASM binaries meet the unchanged shipped-size budgets.
+parity are complete. All ten WASM binaries meet the unchanged shipped-size budgets.
 Verification and release preparation are delivered in part; the unchecked items below
 remain open rather than being inferred from a Chrome pass.**
 
@@ -18,7 +18,7 @@ remain open rather than being inferred from a Chrome pass.**
 | 1. Token system | Complete | Palette, semantic layer, contrast contract, compiler |
 | 2. Core CSS | Complete | Reset, base, layout, utilities, every Phase 2 component, and the fixture page |
 | 3. Component set | Mostly delivered | Forms, overlays, tabs, breadcrumb, pagination, loading, cards, table, description list, sidebar; axe-core pass remains |
-| A. WASM size | Complete | Primitive boundaries, all nine binaries within shipped budgets, hard build gate and parity tests |
+| A. WASM size | Complete | Primitive boundaries, all ten binaries within shipped budgets, hard build gate and parity tests |
 | B. Complex components | JS paths delivered | Editor/menu/grid/webview bindings and pure data modules; editor/grid Rust integration remains optional future work |
 | C. Token roles and themes | Complete | State and type roles, override points, brand/high-contrast themes, reduced-transparency and optional-WASM data preferences |
 | D. Material 3 parity | Complete | Every M3 component Shipped or Divergent with its reason |
@@ -43,7 +43,7 @@ Audited on 2026-10-10 with Chrome and the WASM toolchain present:
 
 - 218 foundation tokens (116 theme-aware), plus 6 optional Pride theme tokens, 60 component files, 66-file readable CSS bundle
   of 425.6 KB. Consumers can load only the layers/components they use.
-- Nine Rust crates emit nine binaries across eight module directories; core and
+- Ten Rust crates emit ten binaries across nine module directories; core and
   model share a directory. All binaries meet their unchanged byte targets after
   bindgen, both with and without optional wasm-opt.
 - Final `npm run check` with axe enabled: 532 JavaScript/browser tests and 133 Rust tests passed,
@@ -259,10 +259,10 @@ a trade anyone accepts.
 
 Delivered:
 
-- Rust workspace with nine crates, each a `cdylib`. `fc-core` is emitted into the
-  `fc-model` module directory rather than getting one of its own, so nine crates
-  produce **nine** `.wasm` files across **eight** importable modules.
-- 142 unit tests covering the algorithms.
+- Rust workspace with ten crates, each a `cdylib`. `fc-core` is emitted into the
+  `fc-model` module directory rather than getting one of its own, so ten crates
+  produce **ten** `.wasm` files across **nine** importable modules.
+- 165 unit tests covering the algorithms.
 - A JS accelerator abstraction with a pure-JS fallback, so the modules are optional.
 - **`fc-context-menu` off `js-sys`**: 411.6 KB to 40.2 KB raw (79.8 to 21.7 KB
   shipped), under budget. It no longer depends on `fc-core` or serde, folds case
@@ -334,10 +334,13 @@ Delivered (CSS and browser bindings, with native/pure-JS behavior where appropri
   navigation with the RTL back-arrow flip, overlay states
 - [x] **Terminal** -- output grid, ANSI palette, cursor, input line, status bar. The
   only hue-named tokens in the system, with their own contrast contract, including normal-size dim text at 4.5:1.
+  Raw program output parses into its runs through `ansi.ts` and its Rust twin
+  `fc-ansi` (SGR colours and attributes; other escapes consumed, 256-colour and
+  truecolor deliberately left at the default foreground).
 
 Editor, menu, grid and webview bindings are written and covered in real Chrome.
-Terminal, chat and tool-call behavior is caller supplied; code/diff/Markdown use the
-pure JS data modules. Native form fields and `<dialog>` provide their own behavior.
+Terminal, chat and tool-call behavior is caller supplied; code/diff/Markdown/ANSI use
+the pure JS data modules. Native form fields and `<dialog>` provide their own behavior.
 No component requires WASM. Select/menu opt into Rust with `useWasm`; rich-text and
 grid Rust models are independently tested computation libraries, not yet connected
 to their browser bindings. That acceleration integration remains future work rather

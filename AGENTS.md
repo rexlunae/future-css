@@ -120,10 +120,10 @@ So:
   numbers.
 - **Never add `js-sys` to a crate** without measuring the result first.
 - `npm run build:wasm` prints a size report and the budgets in
-  `src/build/build-wasm.ts`. All nine binaries fit the unchanged budgets on the
+  `src/build/build-wasm.ts`. All ten binaries fit the unchanged budgets on the
   **shipped** basis (post-bindgen and optional post-opt, see docs/WASM.md), which
   is enforced by the build. Raw descriptor-bearing sizes remain diagnostic.
-- **A primitives-only crate can drop std.** `fc-diff`, `fc-select`, `fc-git`, `fc-context-menu` and `fc-highlight` build
+- **A primitives-only crate can drop std.** `fc-diff`, `fc-select`, `fc-git`, `fc-context-menu`, `fc-highlight` and `fc-ansi` build
   `no_std` through a `bare` feature, which build:wasm enables in its own cargo
   invocation; std's panic formatting was most of their bytes. Never enable
   `bare` in a build that includes a std crate: the two panic handlers collide.
@@ -286,7 +286,7 @@ src/css/            Layered CSS. index.css declares layer order
 src/js/             Component bindings (editor, menu, grid, webview) plus the
                     WASM accelerator. WASM is optional; JS always works.
 src/build/          Token compiler, CSS bundler, WASM orchestrator
-crates/            Rust crates; nine produce nine .wasm files in eight modules
+crates/            Rust crates; ten produce ten .wasm files in nine modules
 tools/lint-css.mjs  Architecture linter
 tests/              Contract, linter, accelerator, and WASM/JS parity tests
 tests/browser/      Binding tests in headless Chrome. Skipped if no browser.
@@ -309,9 +309,10 @@ select/listbox, chat composer, context strip, git surface, and theme picker. Twe
 bindings -- editor, menu, grid, webview, select, composer, context strip, git surface,
 tabs, toast, tooltip, table, nav, slider, toolbar, carousel, date picker, splitter, theme picker, and multiselect -- exercised by tests in a real headless Chrome. Overlays lean
 on the platform (`<dialog>`, the popover API, `<details>`, `@starting-style`) and need
-no script. Syntax highlighting, Markdown, and line diffing ship as JS modules
-(`highlight`, `diff`, `markdown`); the diff and the highlighter have Rust crates
-(`fc-diff`, `fc-highlight`), Markdown does not yet.
+no script. Syntax highlighting, Markdown, line diffing and ANSI SGR parsing ship as
+JS modules (`highlight`, `diff`, `markdown`, `ansi`); the diff, the highlighter and
+the ANSI parser have Rust crates (`fc-diff`, `fc-highlight`, `fc-ansi`), Markdown
+does not yet.
 
 When a modifier must restyle a component's parts, it sets custom properties the parts
 read (see `.fc-tabs__list--segmented`, `.fc-empty--error`) or keys off a real state
@@ -331,15 +332,16 @@ one provider selected under another. That is a request nobody can fulfil.
 
 The fixture-driven git surface
 (branch, status counts, file list, per-file line stats) is complete and reuses
-`fc-diff`. The Rust/WASM layer has nine crates with 142 passing tests and a
-working JS-only fallback. All nine binaries meet their unchanged shipped budgets;
+`fc-diff`. The Rust/WASM layer has ten crates with 165 passing tests and a
+working JS-only fallback. All ten binaries meet their unchanged shipped budgets;
 raw sizes remain diagnostic. Core ABI 2 uses flat typed arrays and JSON strings
 rather than JavaScript object serialization; see docs/MIGRATION.md. The select and context menu bindings
 opt into their Rust models with `useWasm`, and both fold case in JavaScript so the
 modules link no Unicode tables. The rich text and grid models exist in Rust but
-are not wired; `fc-model`, `fc-diff`, `fc-select`, `fc-context-menu`, `fc-git` and
-`fc-highlight` have JS parity tests. `fc-highlight` has no regex engine, so its parity
-test also runs generated input through both tokenizers.
+are not wired; `fc-model`, `fc-diff`, `fc-select`, `fc-context-menu`, `fc-git`,
+`fc-highlight` and `fc-ansi` have JS parity tests. `fc-highlight` has no regex engine, so its parity
+test also runs generated input through both tokenizers. `fc-ansi` streams, so its
+parity test splits generated input and bytes at random points between writes.
 
 See `docs/PLAN.md` for the current phase and what is deliberately out of
 scope.

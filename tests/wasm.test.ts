@@ -24,6 +24,8 @@ import { before, describe, it } from "node:test";
 import { JsAccelerator, CORE_ABI_VERSION } from "../src/js/accelerator.ts";
 import { diffLines, diffStats } from "../src/js/diff.ts";
 import { highlight, languageNames, resolveLanguage } from "../src/js/highlight.ts";
+import { ANSI_COLORS, AnsiParser } from "../src/js/ansi.ts";
+import type { AnsiLine } from "../src/js/ansi.ts";
 import { summarizeStatus, orderEntries, diffCounts } from "../src/js/git.ts";
 import { SELECT_WASM_ABI, SelectModel, WasmSelectModel, isCompatibleSelectModule } from "../src/js/select.ts";
 import type { SelectOption, SelectWasmModule } from "../src/js/select.ts";
@@ -862,6 +864,202 @@ describe("fc-highlight and the JS highlighter agree", () => {
     it("agree on language names and aliases", () => {
       for (const name of [...languageNames, "JS", " rs ", "tsx", "svg", "mar\u212adown", "cobol", "", "toString", "constructor", "__proto__"]) {
         assert.equal(mod.resolveLanguage(name), resolveLanguage(name) ?? "", JSON.stringify(name));
+      }
+    });
+  });
+});
+
+/**
+ * fc-ansi parity.
+ *
+ * The parser is a state machine fed in arbitrary pieces, so the cases that
+ * matter are the ones where a write ends mid-sequence: an ESC as the last
+ * character, half a parameter list, half of CRLF, half of a UTF-8 character.
+ * Both parsers get the same pieces and the same take/peek calls, and every
+ * batch is compared run for run.
+ */
+describe("fc-ansi and the JS ANSI parser agree", () => {
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const wasmDir = join(repoRoot, "dist", "wasm", "fc-ansi", "web");
+  const ansiBuilt = existsSync(join(wasmDir, "fc_ansi.js"));
+
+  type WasmAnsiParser = {
+    push(chunk: string): void;
+    pushBytes(chunk: Uint8Array): void;
+    finish(): void;
+    take(): number;
+    peek(): number;
+    text(): string;
+    runs(): Int32Array;
+    free(): void;
+  };
+  type AnsiModule = {
+    default: (input?: { module_or_path?: Uint8Array }) => Promise<void>;
+    AnsiParser: new () => WasmAnsiParser;
+  };
+
+  let mod: AnsiModule;
+
+  before(async () => {
+    if (!ansiBuilt) return;
+    mod = (await import(join(wasmDir, "fc_ansi.js"))) as AnsiModule;
+    await mod.default({ module_or_path: await readFile(join(wasmDir, "fc_ansi_bg.wasm")) });
+  });
+
+  /** Rebuilds a staged batch from the wire encoding: five numbers per run. */
+  const batch = (wasm: WasmAnsiParser, count: number): AnsiLine[] => {
+    const lines: AnsiLine[] = Array.from({ length: count }, () => []);
+    const text = wasm.text();
+    const runs = wasm.runs();
+    assert.ok(runs instanceof Int32Array);
+    assert.equal(runs.length % 5, 0);
+    for (let i = 0; i < runs.length; i += 5) {
+      const [line, start, end, fg, attributes] = Array.from(runs.subarray(i, i + 5));
+      lines[line!]!.push({ text: text.slice(start, end), fg: fg! < 0 ? null : ANSI_COLORS[fg!]!, attributes: attributes! });
+    }
+    return lines;
+  };
+
+  type Op = ["push", string] | ["bytes", Uint8Array] | ["finish"] | ["take"] | ["peek"];
+
+  /** Runs the same operations on both parsers, comparing every batch. */
+  const drive = (ops: readonly Op[], label: string) => {
+    const js = new AnsiParser();
+    const wasm = new mod.AnsiParser();
+    try {
+      for (const op of [...ops, ["finish"], ["take"]] as Op[]) {
+        if (op[0] === "push") {
+          js.push(op[1]);
+          wasm.push(op[1]);
+        } else if (op[0] === "bytes") {
+          js.pushBytes(op[1]);
+          wasm.pushBytes(op[1]);
+        } else if (op[0] === "finish") {
+          js.finish();
+          wasm.finish();
+        } else if (op[0] === "take") {
+          assert.deepEqual(batch(wasm, wasm.take()), js.takeLines(), label);
+        } else {
+          assert.deepEqual(batch(wasm, wasm.peek()), [js.current.map((r) => ({ ...r }))], label);
+        }
+      }
+    } finally {
+      wasm.free();
+    }
+  };
+
+  const SAMPLES = [
+    "",
+    "plain",
+    "\x1b[1;32m✓\x1b[0m pass é😀\r\n\x1b]0;title\x07\x1b[38;5;9;3mi\x1b[23m\x1b[2K\x1b(B\x1b[91mred\x1b[39m\rnext\n",
+    "\x1b]8;;https://example.com\x1b\\link\x1b]8;;\x1b\\ \x1b[7;9mend\x1b[27;29m",
+    "\x1b[38;2;1;2;3;4mu\x1b[48;5;1;1mb\x1b[38:5:1;3mi\x1b[4:0mx\x1b[4:3my\x1b[58;2;0;0;0mz",
+    "\x1b[?25l\x1b[>4;2m\x1b[0 q\x1b[3 m\x1b7\x1b8\x1bM\x1b#8\x1bPq#0\x1b\\\x1b_a\x07ok",
+    "a\x1b]0;t\x1b[1mb\x1béc\x1b[1éd\x1b[31\ne",
+    "a\tb\x07c\x08d\x00e\x7ff\r\r\ng\n\n",
+    "\x1b[" + "0;".repeat(40) + "1mcap\x1b[99999999999;4mbig",
+    "lone \ud800 surrogate \udc00 x",
+  ];
+  for (let color = 0; color < 8; color++) {
+    SAMPLES.push(`\x1b[${30 + color}m${color}\x1b[${90 + color};1m${color}\x1b[22;2m!`);
+  }
+
+  /** Seeded, so a failure reproduces. */
+  const random = (seed: number) => () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  };
+
+  /** Cuts a string or byte array at sorted random offsets. */
+  function cut<T extends string | Uint8Array>(whole: T, next: () => number, pieces: number): T[] {
+    const at = Array.from({ length: pieces - 1 }, () => Math.floor(next() * (whole.length + 1))).sort((a, b) => a - b);
+    const out: T[] = [];
+    let start = 0;
+    for (const end of [...at, whole.length]) {
+      out.push(whole.slice(start, end) as T);
+      start = end;
+    }
+    return out;
+  }
+
+  // The characters every state branches on.
+  const ALPHABET = [
+    "\x1b", "\x1b[", "\x1b]", "\x1bP", "\x1b(", "[", "]", ";", ":", "?", ">", " ", "m", "H", "J", "K", "\\", "\x07",
+    "0", "1", "2", "3", "4", "5", "7", "9", "22", "23", "24", "27", "29", "31", "38", "39", "48", "58", "92",
+    "\r", "\n", "\r\n", "\t", "\x00", "\x7f", "a", "Z", "é", "😀", " ",
+  ];
+
+  describe("parity", { skip: ansiBuilt ? false : "run `npm run build:wasm` first" }, () => {
+    it("agree on every colour slot", () => {
+      // Pinned as well as compared, so both sides cannot share a wrong order.
+      for (let color = 0; color < 16; color++) {
+        const code = color < 8 ? 30 + color : 90 + color - 8;
+        const wasm = new mod.AnsiParser();
+        try {
+          wasm.push(`\x1b[${code}mx`);
+          wasm.peek();
+          assert.equal(wasm.runs()[3], color);
+        } finally {
+          wasm.free();
+        }
+      }
+    });
+
+    it("agree on every sample, whole and split at many pairs of offsets", () => {
+      for (const sample of SAMPLES) {
+        drive([["push", sample]], JSON.stringify(sample));
+        // UTF-16 offsets, so a split can fall inside a surrogate pair: both
+        // sides then see two lone surrogates and must replace both.
+        for (let a = 0; a <= sample.length; a++) {
+          for (let b = a; b <= sample.length; b += 3) {
+            const ops: Op[] = [["push", sample.slice(0, a)], ["peek"], ["push", sample.slice(a, b)], ["take"], ["push", sample.slice(b)]];
+            drive(ops, `${JSON.stringify(sample)} split at ${a}, ${b}`);
+          }
+        }
+      }
+    });
+
+    it("agree on every sample as bytes split at every offset", () => {
+      const encoder = new TextEncoder();
+      for (const sample of SAMPLES) {
+        const bytes = encoder.encode(sample);
+        for (let a = 0; a <= bytes.length; a++) {
+          drive([["bytes", bytes.subarray(0, a)], ["peek"], ["bytes", bytes.subarray(a)]], `${JSON.stringify(sample)} bytes at ${a}`);
+        }
+      }
+    });
+
+    it("agree on invalid UTF-8 split between writes", () => {
+      const BAD = [[0xff], [0xc3], [0xe2, 0x82], [0xf0, 0x9f], [0xf0, 0x9f, 0x98], [0xed, 0xa0, 0x80], [0xf4, 0x90], [0xef, 0xbb, 0xbf], [0x80], [0x1b]];
+      const encoder = new TextEncoder();
+      const next = random(53);
+      for (let n = 0; n < 1500; n++) {
+        const parts: number[] = [];
+        const length = Math.floor(next() * 12);
+        for (let i = 0; i < length; i++) {
+          if (next() < 0.5) parts.push(...BAD[Math.floor(next() * BAD.length)]!);
+          else parts.push(...encoder.encode(ALPHABET[Math.floor(next() * ALPHABET.length)]!));
+        }
+        const bytes = new Uint8Array(parts);
+        drive(cut(bytes, next, 1 + Math.floor(next() * 4)).map((b): Op => ["bytes", b]), `bytes ${[...bytes]}`);
+      }
+    });
+
+    it("agree on generated input split at random, with takes and peeks between writes", () => {
+      const next = random(20261015);
+      for (let n = 0; n < 3000; n++) {
+        const length = Math.floor(next() * 30);
+        let source = "";
+        for (let i = 0; i < length; i++) source += ALPHABET[Math.floor(next() * ALPHABET.length)];
+        const ops: Op[] = [];
+        for (const piece of cut(source, next, 1 + Math.floor(next() * 5))) {
+          ops.push(["push", piece]);
+          const r = next();
+          if (r < 0.3) ops.push(["take"]);
+          else if (r < 0.5) ops.push(["peek"]);
+          else if (r < 0.55) ops.push(["finish"]);
+        }
+        drive(ops, JSON.stringify(source));
       }
     });
   });

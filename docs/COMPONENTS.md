@@ -385,6 +385,8 @@ pattern that fix needs: primitives across the boundary, never `Vec<JsValue>`.
 consumers that cannot run the JS, such as a Dioxus app on desktop or rendered on a
 server. It uses no regex engine, so each token is a hand-written matcher, and its
 parity test runs generated input through both tokenizers as well as the samples.
+The terminal's ANSI parser has `fc-ansi` (21.7 KB shipped) for the same consumers;
+its parity test splits input at random between writes, since the parser streams.
 Each Rust path ships **alongside** the JS implementation with a parity test, never
 instead of it.
 
@@ -539,6 +541,46 @@ pairings, checked at build time in both schemes.
   </div>
 </div>
 ```
+
+### Raw program output
+
+`future-css/ansi` parses ANSI SGR sequences into the runs above, so output can be
+written as the program produced it. The parser keeps its state between writes: a
+sequence, a CRLF or a UTF-8 character split across two chunks still parses.
+
+```js
+import { AnsiParser, renderAnsiLine } from "future-css/ansi";
+
+const parser = new AnsiParser();
+const output = document.querySelector(".fc-terminal__output");
+
+socket.addEventListener("message", (event) => {
+  parser.pushBytes(new Uint8Array(event.data)); // or parser.push(text)
+  for (const line of parser.takeLines()) output.append(renderAnsiLine(line));
+});
+// At end of stream, finish() closes a last line written without a newline.
+```
+
+Each run is `{ text, fg, attributes }`: `fg` is one of the sixteen slots
+(`"red"`, `"bright-cyan"`, ...) or `null`, and `attributes` is a bitmask of
+`ATTRIBUTES` (bold, dim, italic, underline, inverse, strike). `runClassNames(run)`
+gives the `.fc-term-ansi-*` and `.fc-terminal__*` classes; `renderAnsiLine` writes
+text nodes, never markup, because program output is untrusted.
+
+- SGR 0 resets; 1, 2, 3, 4, 7 and 9 set the attributes and 22, 23, 24, 27 and 29
+  clear them; 30–37 and 90–97 pick a slot and 39 clears it.
+- **256-colour and truecolor (`38;5`, `38;2`) fall back to the default
+  foreground.** Mapping them would mean inline colours, which no theme can remap
+  and no contrast test can check. Their parameters are still skipped, so
+  `38;5;196;1` is bold. Backgrounds are ignored.
+- Cursor movement and other CSI sequences, OSC (titles, hyperlinks) and other
+  escapes are consumed, never shown.
+- `\n`, `\r\n` and a lone `\r` each end one line, so a progress bar's frames
+  appear one per line rather than run together. Tab is kept; other control
+  characters are dropped.
+
+The Rust twin, `fc-ansi`, gives a Dioxus or server-rendered terminal the same runs
+as `AnsiColor`, `Attributes` and `Run` values; see [WASM.md](WASM.md).
 
 ### Accessibility notes
 

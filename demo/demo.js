@@ -15,6 +15,7 @@ import { FutureCssMenu } from "/src/js/menu.js";
 import { FutureCssGrid } from "/src/js/grid.js";
 import { FutureCssWebview } from "/src/js/webview.js";
 import { highlight, renderHighlighted, languageNames } from "/src/js/highlight.js";
+import { AnsiParser, renderAnsiLine } from "/src/js/ansi.js";
 import { createIcon } from "/src/js/icons.js";
 import { diffLines, diffStats } from "/src/js/diff.js";
 import { FutureCssSelect } from "/src/js/select.js";
@@ -517,6 +518,75 @@ $("#code-copy")?.addEventListener("click", async () => {
 });
 
 paintCode();
+
+// ---------------------------------------------------------------------------
+// Terminal
+//
+// The output is a raw transcript with real escape sequences, fed to the parser
+// in seven-character writes so most sequences arrive split, as they do from a
+// pipe. What renders is what ansi.ts produced; the markup in index.html is only
+// the no-script fallback.
+// ---------------------------------------------------------------------------
+
+const ESC = "\x1b";
+const TRANSCRIPT = [
+  `${ESC}]0;deploy${ESC}\\${ESC}[90m~/deploy${ESC}[39m ${ESC}[1m$${ESC}[22m npm run build\r\n`,
+  `building 0%\rbuilding 60%\rbuilding 100%\r\n`,
+  `${ESC}[32mdone${ESC}[0m in 2.4s\r\n`,
+  `${ESC}[2m18 tests passed, 0 failed${ESC}[22m\r\n`,
+  `\r\n`,
+  `${ESC}[1m$${ESC}[0m deploy --prod\r\n`,
+  // 256-colour falls back to the default foreground: an inline colour could
+  // not be themed or contrast-checked. Its parameters are still skipped, so the
+  // trailing 4 underlines.
+  `${ESC}[38;5;33;4mnote${ESC}[24;39m 256-colour text renders in the default colour\r\n`,
+  `${ESC}[34minfo${ESC}[39m uploading 14 files${ESC}[K\r\n`,
+  `${ESC}[31;1merror${ESC}[22;39m health check failed: p95 ${ESC}[7m187ms${ESC}[27m exceeds 120ms\r\n`,
+  `${ESC}[2;9mrollout halted${ESC}[0m${ESC}[3m, previous version retained${ESC}[23m\r\n`,
+].join("");
+
+const termOutput = $("#terminal-root .fc-terminal__output");
+const termParser = new AnsiParser();
+
+/** The prompt line with the cursor, kept last as output is appended above it. */
+function cursorLine() {
+  const line = document.createElement("div");
+  line.className = "fc-terminal__line";
+  const prompt = document.createElement("span");
+  prompt.className = "fc-terminal__bold";
+  prompt.textContent = "$";
+  const cursor = document.createElement("span");
+  cursor.className = "fc-terminal__cursor fc-terminal__cursor--blink";
+  cursor.setAttribute("aria-hidden", "true");
+  cursor.textContent = " ";
+  line.append(prompt, " ", cursor);
+  return line;
+}
+
+/** Appends whatever lines the parser has completed, above the cursor line. */
+function flushTerminal() {
+  if (!termOutput) return;
+  const cursor = termOutput.lastElementChild;
+  for (const line of termParser.takeLines()) cursor?.before(renderAnsiLine(line));
+  termOutput.scrollTop = termOutput.scrollHeight;
+}
+
+if (termOutput) {
+  termOutput.replaceChildren(cursorLine());
+  for (let i = 0; i < TRANSCRIPT.length; i += 7) termParser.push(TRANSCRIPT.slice(i, i + 7));
+  flushTerminal();
+
+  $("#terminal-input")?.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" || event.isComposing) return;
+    const input = event.currentTarget;
+    const command = input.value.trim();
+    input.value = "";
+    termParser.push(`${ESC}[1m$${ESC}[0m ${command}\r\n`);
+    if (command.startsWith("echo ")) termParser.push(`${command.slice(5)}\r\n`);
+    else if (command) termParser.push(`${ESC}[31m${command.split(" ")[0]}: command not found${ESC}[39m\r\n`);
+    flushTerminal();
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Diff viewer

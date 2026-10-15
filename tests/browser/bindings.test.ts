@@ -1292,6 +1292,36 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.equal(result.named, true, "collapsed destinations retain accessible names");
   });
 
+  it("renders the demo terminal from a raw ANSI transcript written in split chunks", async () => {
+    await send("Page.navigate", { url: `${server.origin}/demo/index.html` });
+    await new Promise((r) => setTimeout(r, 1200));
+    const result = await evaluate(`
+      const output = document.querySelector('#terminal-root .fc-terminal__output');
+      const lines = () => [...output.querySelectorAll('.fc-terminal__line')];
+      const before = lines().map((l) => l.textContent);
+      const span = (text) => [...output.querySelectorAll('span')].find((s) => s.textContent === text);
+      const input = document.querySelector('#terminal-input');
+      input.value = 'echo hi';
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      const after = lines().map((l) => l.textContent);
+      return {
+        before, after,
+        done: span('done')?.className,
+        note: span('note')?.className,
+        inverse: span('187ms')?.className,
+        cursorLast: !!lines().at(-1).querySelector('.fc-terminal__cursor'),
+      };
+    `);
+    // No escape byte or OSC payload may reach the page as text.
+    assert.ok(result.before.every((t: string) => !/\x1b|\]0;/.test(t)), JSON.stringify(result.before));
+    assert.ok(result.before.includes("building 60%"), "a lone CR ends a line");
+    assert.equal(result.done, "fc-term-ansi-green");
+    assert.equal(result.note, "fc-terminal__underline", "256-colour falls back to the default foreground");
+    assert.equal(result.inverse, "fc-terminal__inverse");
+    assert.deepEqual(result.after.slice(-3, -1), ["$ echo hi", "hi"]);
+    assert.equal(result.cursorLast, true, "output is appended above the prompt line");
+  });
+
   it("operates grouped composer controls without sending and keeps settings through Send/Stop", async () => {
     await send("Page.navigate", { url: `${server.origin}/demo/index.html` });
     await new Promise((r) => setTimeout(r, 1200));

@@ -95,7 +95,7 @@ select and menu retain their independent version handshakes.
 One workspace, one published module per *opt-in unit*. Boundaries follow *what a
 consumer opts into*, and the dependency arrow points strictly downward.
 
-Nine crates produce eight importable modules: `fc-core` is emitted into the `fc-model`
+Ten crates produce nine importable modules: `fc-core` is emitted into the `fc-model`
 module directory rather than published on its own.
 
 ```
@@ -109,6 +109,7 @@ crates/
   fc-select/         option list + typeahead      (no deps; primitives only)
   fc-git/            working-tree summary         (no deps; primitives only)
   fc-highlight/      highlight.ts's tokenizer     (no deps; primitives only)
+  fc-ansi/           ansi.ts's SGR parser         (no deps; primitives only)
 ```
 
 Measured release sizes when the workspace was first built (historical; the
@@ -285,12 +286,13 @@ unchanged numeric targets. `bytes` retains the raw rustc measurement;
 Raw artifacts include bindgen descriptor sections that consumers never download.
 Gating them would reject a smaller shipped module for metadata alone. No target
 was raised: 40 KB core, 45 KB model/menu/grid, 50 KB rich-text/git, 35 KB
-diff/select/highlight (all decimal bytes). Every module also fits without wasm-opt. JS glue is separate
+diff/select/highlight (all decimal bytes). `fc-ansi`, added later, started at 30 KB
+against a first measurement of 21.7 KB shipped. Every module also fits without wasm-opt. JS glue is separate
 from this binary budget. The report remains reproducible in `dist/wasm/size-report.json`;
 `tests/wasm-budget.test.ts` verifies its sizes against the actual files and pins targets.
 
 The primitives-only boundary removes `js-sys` and `serde-wasm-bindgen` entirely.
-Menu, select, diff, git and highlight use the isolated `bare` builds. Native serde derives remain
+Menu, select, diff, git, highlight and ansi use the isolated `bare` builds. Native serde derives remain
 available for internal Rust data; they do not marshal JS objects at the boundary.
 
 ### Core ABI 2 migration
@@ -388,6 +390,31 @@ for resolving a language name linked Unicode's case tables, though every name is
 ASCII (only the Kelvin sign folds into ASCII from outside it, and it is mapped by
 hand); and `str::contains` with a `char` builds a substring searcher, for sets that
 are all ASCII bytes. Without both it ships **26.8 KB**.
+
+### A streaming parser across the boundary
+
+`fc-ansi` ports `ansi.ts`, which turns raw program output into the terminal's styled
+runs. It is the first model here that keeps state between calls on *input* rather
+than on a document: a write can end after an ESC, inside a parameter list, between
+the CR and LF of a line break, or inside a UTF-8 character, and the next write must
+pick up where it stopped. The parity test feeds both parsers the same pieces, split at
+every offset of each sample and at random points of 3,000 generated strings and 1,500
+byte strings that include invalid UTF-8, and compares every batch.
+
+A batch of lines cannot cross as objects without js-sys, so `take()` (completed
+lines) or `peek()` (the open line) stages one and returns its line count; `text()` is
+the batch's runs concatenated and `runs()` an `Int32Array` of five numbers per run:
+`[line, start, end, fg, attributes]`. `start` and `end` are UTF-16 offsets into
+`text()`, `fg` is the colour's index in `ANSI_COLORS` or -1 for the default, and
+`attributes` is the bitmask in `ATTRIBUTES`. A blank line has no runs, which is why
+the count is returned separately.
+
+Bytes decode as `TextDecoder` does, one U+FFFD per maximal invalid subpart, so the JS
+twin uses the platform decoder; Rust's `Utf8Error::error_len` follows the same rule,
+and its `None` case is the incomplete tail held for the next write. A string chunk
+that splits a surrogate pair yields two U+FFFD on both sides, because wasm-bindgen
+replaces lone surrogates on the way in and the JS twin does the same. It ships
+**21.7 KB**.
 
 ### Pure Rust consumers: the `bindgen` feature
 

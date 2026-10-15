@@ -784,8 +784,7 @@ describe("fc-highlight and the JS highlighter agree", () => {
 
   type HighlightModule = {
     default: (input?: { module_or_path?: Uint8Array }) => Promise<void>;
-    highlightRoles: (source: string, language: string) => Uint8Array;
-    highlightEnds: (source: string, language: string) => Uint32Array;
+    highlightSpans: (source: string, language: string) => Uint32Array;
     resolveLanguage: (name: string) => string;
   };
 
@@ -805,14 +804,13 @@ describe("fc-highlight and the JS highlighter agree", () => {
 
   /** Rebuilds spans the way a consumer would: slicing its own copy of the source. */
   const fromWasm = (source: string, language: string) => {
-    const roles = mod.highlightRoles(source, language);
-    const ends = mod.highlightEnds(source, language);
-    let start = 0;
-    return Array.from(roles, (role, i) => {
-      const text = source.slice(start, ends[i]);
-      start = ends[i];
-      return { role: ROLES[role], text };
-    });
+    const spans = mod.highlightSpans(source, language);
+    const out: { role: string; text: string }[] = [];
+    for (let i = 0, start = 0; i < spans.length; i += 2) {
+      out.push({ role: ROLES[spans[i + 1]!]!, text: source.slice(start, spans[i]) });
+      start = spans[i]!;
+    }
+    return out;
   };
 
   const SAMPLES: [string, string][] = [
@@ -888,6 +886,8 @@ describe("fc-ansi and the JS parser agree", () => {
     takeLines(): number;
     lineText(index: number): string;
     lineRuns(index: number): Int32Array;
+    lineSeq(index: number): number;
+    pendingSeq(): number;
     pendingText(): string;
     pendingRuns(): Int32Array;
     free(): void;
@@ -905,16 +905,16 @@ describe("fc-ansi and the JS parser agree", () => {
     await mod.default({ module_or_path: await readFile(join(wasmDir, "fc_ansi_bg.wasm")) });
   });
 
-  /** Both sides as [text, wire runs] per line, taken lines then the pending one. */
+  /** Both sides as [seq, text, wire runs] per line, taken lines then the pending one. */
   const snapshotWasm = (p: WasmAnsiParser) => {
-    const out: [string, number[]][] = [];
+    const out: [number, string, number[]][] = [];
     const n = p.takeLines();
-    for (let i = 0; i < n; i++) out.push([p.lineText(i), Array.from(p.lineRuns(i))]);
-    out.push([p.pendingText(), Array.from(p.pendingRuns())]);
+    for (let i = 0; i < n; i++) out.push([p.lineSeq(i), p.lineText(i), Array.from(p.lineRuns(i))]);
+    out.push([p.pendingSeq(), p.pendingText(), Array.from(p.pendingRuns())]);
     return out;
   };
   const snapshotJs = (p: AnsiParser) =>
-    [...p.takeLines(), p.pending].map((line) => [line.runs.map((r) => r.text).join(""), wireRuns(line)] as [string, number[]]);
+    [...p.takeLines(), p.pending].map((line) => [line.seq, line.runs.map((r) => r.text).join(""), wireRuns(line)] as [number, string, number[]]);
 
   const SAMPLES = [
     "\x1b[31mred\x1b[1;92mbold\x1b[0m plain",

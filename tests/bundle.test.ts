@@ -207,7 +207,8 @@ describe("bundle", { skip: hasBundle ? false : "run `npm run build` first" }, ()
 describe("fixture page", () => {
   it("keeps fixture IDs unique so ARIA references are unambiguous", () => {
     const page = readFileSync(join(projectRoot, "demo", "fixtures.html"), "utf8");
-    const ids = [...page.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]);
+    // Double-quoted, single-quoted and unquoted values are all valid HTML.
+    const ids = [...page.matchAll(/\sid\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/g)].map((m) => m[1] ?? m[2] ?? m[3]);
     const seen = new Set<string>();
     const duplicates = ids.filter((id) => {
       if (seen.has(id)) return true;

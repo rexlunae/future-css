@@ -523,7 +523,7 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     `);
     assert.equal(
       html,
-      '<div class="fc-terminal__line"><span class="fc-term-ansi-red fc-terminal__bold">&lt;img src=x onerror=alert(1)&gt;</span> ok</div>',
+      '<div class="fc-terminal__line" data-fc-seq="0"><span class="fc-term-ansi-red fc-terminal__bold">&lt;img src=x onerror=alert(1)&gt;</span> ok</div>',
     );
   });
 

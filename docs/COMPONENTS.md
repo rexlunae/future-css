@@ -512,22 +512,17 @@ inline colour cannot be themed or contrast-checked.
 import { AnsiParser, renderAnsiLine } from "future-css/ansi";
 
 const parser = new AnsiParser();
-let seq = 0;
 socket.onmessage = (event) => {
   parser.pushBytes(new Uint8Array(event.data));
-  for (const line of parser.takeLines()) {
-    // textContent only: nothing a program prints becomes markup.
-    const el = renderAnsiLine(line);
-    el.dataset.fcSeq = String(seq++);
-    output.append(el);
-  }
+  // textContent only: nothing a program prints becomes markup.
+  for (const line of parser.takeLines()) output.append(renderAnsiLine(line));
 };
 ```
 
-`renderAnsiLine` sets no `data-fc-*` attributes. A line has no runtime id of
-its own, and only the host knows where it falls in the stream once scrollback
-is trimmed, so the host numbers lines with `data-fc-seq` as it appends them.
-The terminal's connection state stays on `.fc-terminal` as `data-fc-state`.
+Each line carries `seq`, its position in the stream since the parser was created
+or reset, and `renderAnsiLine` writes it as `data-fc-seq`. A consumer reading
+the DOM can then order lines and see where trimmed scrollback left a gap. The
+terminal's connection state stays on `.fc-terminal` as `data-fc-state`.
 
 ### The ANSI palette
 

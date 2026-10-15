@@ -717,7 +717,7 @@ the claim is that much email support and no more.
 - [x] Semantic versioning, with a documented deprecation policy ([RELEASE.md](RELEASE.md))
 - [x] Release notes policy: checked-in Markdown, divergent from Changesets to preserve zero dependencies ([RELEASE.md](RELEASE.md))
 - [ ] CI publishing to npm
-- [ ] Model crates on crates.io (prepared; `cargo publish --workspace --dry-run` passes, see [RELEASE.md](RELEASE.md))
+- [x] Model crates on crates.io (published 0.1.0 from the revision the Dioxus library pins, on 2026-10-15; see [RELEASE.md](RELEASE.md))
 - [ ] CDN distribution
 - [x] Contribution guidelines and a review process ([CONTRIBUTING.md](../CONTRIBUTING.md))
 - [x] Support policy: which versions get fixes, and for how long ([RELEASE.md](RELEASE.md))

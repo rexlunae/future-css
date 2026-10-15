@@ -30,3 +30,17 @@ accessibility/translation checks in PLAN.md, inspect `npm pack --dry-run`, and v
 version, license and exported artifacts. A successful local gate does not establish
 npm/CDN distribution or cross-browser certification. Follow [CONTRIBUTING.md](CONTRIBUTING.md)
 for review and [MIGRATION.md](MIGRATION.md) for rename tooling.
+
+## Rust crates on crates.io
+
+The nine model crates publish to crates.io so that pure Rust consumers, `fc-dioxus`
+first, can depend on them without a git dependency, which crates.io rejects. Sibling
+path dependencies therefore also carry a `version`: cargo uses the path in this
+workspace and the version in the published manifest. Each crate links the root
+`LICENSE` so the MIT notice travels inside every package.
+
+Publish them together, from the commit the Dioxus library pins, after
+`cargo publish --workspace --dry-run` passes. Cargo orders the upload so `fc-core`
+precedes `fc-model`, `fc-grid` and `fc-rich-text`. A crates.io version can be yanked
+but never replaced, so a fix ships as a new patch version. The crates' versions are
+independent of the npm package's `0.0.0` snapshot.

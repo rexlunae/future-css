@@ -95,7 +95,7 @@ select and menu retain their independent version handshakes.
 One workspace, one published module per *opt-in unit*. Boundaries follow *what a
 consumer opts into*, and the dependency arrow points strictly downward.
 
-Nine crates produce eight importable modules: `fc-core` is emitted into the `fc-model`
+Ten crates produce nine importable modules: `fc-core` is emitted into the `fc-model`
 module directory rather than published on its own.
 
 ```
@@ -109,6 +109,7 @@ crates/
   fc-select/         option list + typeahead      (no deps; primitives only)
   fc-git/            working-tree summary         (no deps; primitives only)
   fc-highlight/      highlight.ts's tokenizer     (no deps; primitives only)
+  fc-ansi/           ansi.ts's SGR parser        (no deps; primitives only)
 ```
 
 Measured release sizes when the workspace was first built (historical; the
@@ -388,6 +389,18 @@ for resolving a language name linked Unicode's case tables, though every name is
 ASCII (only the Kelvin sign folds into ASCII from outside it, and it is mapped by
 hand); and `str::contains` with a `char` builds a substring searcher, for sets that
 are all ASCII bytes. Without both it ships **26.8 KB**.
+
+### A streaming parser across the boundary
+
+`fc-ansi` ports `ansi.ts`, the SGR parser behind the terminal. Its state lives in a
+`#[wasm_bindgen]` struct, because output arrives in writes that split anywhere: inside
+an escape sequence, between `\r` and `\n`, inside a UTF-8 character. Finished lines
+are taken in a batch and read one at a time, each as its text plus a flat `Int32Array`
+of `(end, colour, attributes)` triples, ends in UTF-16 units and `-1` for the default
+colour. Lone surrogates arrive as U+FFFD, because wasm-bindgen encodes them that way,
+so `ansi.ts` replaces them too. Its parity test feeds 1,500 generated strings to both
+parsers in random chunks, as text and as bytes, and compares after every chunk. It ships
+**17.8 KB** against a 25 KB budget.
 
 ### Pure Rust consumers: the `bindgen` feature
 

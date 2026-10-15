@@ -42,6 +42,7 @@ const BUDGET: Record<string, number> = {
   fc_select: 35_000,
   fc_git: 50_000,
   fc_highlight: 35_000,
+  fc_ansi: 25_000,
 };
 
 /**
@@ -50,7 +51,7 @@ const BUDGET: Record<string, number> = {
  * unification is per build: alongside the std crates, wasm-bindgen's `std`
  * comes back on and std's panic handler collides with the crate's own.
  */
-const BARE = ["fc-diff", "fc-select", "fc-git", "fc-context-menu", "fc-highlight"] as const;
+const BARE = ["fc-diff", "fc-select", "fc-git", "fc-context-menu", "fc-highlight", "fc-ansi"] as const;
 
 /** Cargo crate name -> the module name JS imports. */
 const CRATES: ReadonlyArray<readonly [crate: string, module: string]> = [
@@ -70,6 +71,9 @@ const CRATES: ReadonlyArray<readonly [crate: string, module: string]> = [
   // The highlight.ts tokenizer, for Rust consumers that cannot run the JS
   // (the Dioxus library on desktop and SSR). Primitives-only like fc-diff.
   ["fc-highlight", "fc-highlight"],
+  // The ansi.ts parser, for the same Rust consumers: the Dioxus terminal takes
+  // raw program output through it.
+  ["fc-ansi", "fc-ansi"],
 ];
 
 interface SizeReport {

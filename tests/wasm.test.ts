@@ -24,6 +24,7 @@ import { before, describe, it } from "node:test";
 import { JsAccelerator, CORE_ABI_VERSION } from "../src/js/accelerator.ts";
 import { diffLines, diffStats } from "../src/js/diff.ts";
 import { highlight, languageNames, resolveLanguage } from "../src/js/highlight.ts";
+import { AnsiParser, wireRuns } from "../src/js/ansi.ts";
 import { summarizeStatus, orderEntries, diffCounts } from "../src/js/git.ts";
 import { SELECT_WASM_ABI, SelectModel, WasmSelectModel, isCompatibleSelectModule } from "../src/js/select.ts";
 import type { SelectOption, SelectWasmModule } from "../src/js/select.ts";
@@ -862,6 +863,134 @@ describe("fc-highlight and the JS highlighter agree", () => {
     it("agree on language names and aliases", () => {
       for (const name of [...languageNames, "JS", " rs ", "tsx", "svg", "mar\u212adown", "cobol", "", "toString", "constructor", "__proto__"]) {
         assert.equal(mod.resolveLanguage(name), resolveLanguage(name) ?? "", JSON.stringify(name));
+      }
+    });
+  });
+});
+
+/**
+ * fc-ansi parity.
+ *
+ * Both parsers are state machines over the same characters, and the place they
+ * can drift is a boundary: a chunk split inside a sequence, between `\r` and
+ * `\n`, or inside a UTF-8 character. So the generated cases split every input
+ * at random points, as text and as bytes, and compare after every chunk.
+ */
+describe("fc-ansi and the JS parser agree", () => {
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const wasmDir = join(repoRoot, "dist", "wasm", "fc-ansi", "web");
+  const ansiBuilt = existsSync(join(wasmDir, "fc_ansi.js"));
+
+  type WasmAnsiParser = {
+    push(chunk: string): void;
+    pushBytes(chunk: Uint8Array): void;
+    takeLines(): number;
+    lineText(index: number): string;
+    lineRuns(index: number): Int32Array;
+    pendingText(): string;
+    pendingRuns(): Int32Array;
+    free(): void;
+  };
+  type AnsiModule = {
+    default: (input?: { module_or_path?: Uint8Array }) => Promise<void>;
+    AnsiParser: new () => WasmAnsiParser;
+  };
+
+  let mod: AnsiModule;
+
+  before(async () => {
+    if (!ansiBuilt) return;
+    mod = (await import(join(wasmDir, "fc_ansi.js"))) as AnsiModule;
+    await mod.default({ module_or_path: await readFile(join(wasmDir, "fc_ansi_bg.wasm")) });
+  });
+
+  /** Both sides as [text, wire runs] per line, taken lines then the pending one. */
+  const snapshotWasm = (p: WasmAnsiParser) => {
+    const out: [string, number[]][] = [];
+    const n = p.takeLines();
+    for (let i = 0; i < n; i++) out.push([p.lineText(i), Array.from(p.lineRuns(i))]);
+    out.push([p.pendingText(), Array.from(p.pendingRuns())]);
+    return out;
+  };
+  const snapshotJs = (p: AnsiParser) =>
+    [...p.takeLines(), p.pending].map((line) => [line.runs.map((r) => r.text).join(""), wireRuns(line)] as [string, number[]]);
+
+  const SAMPLES = [
+    "\x1b[31mred\x1b[1;92mbold\x1b[0m plain",
+    "\x1b[1;2;3;4;7;9mx\x1b[22my\x1b[23;24mz\x1b[27;29mw\x1b[31m\x1b[39mv",
+    "\x1b[31;38;5;1mA\x1b[31;38;2;1;2;3;4mB\x1b[31;38:5:1mC\x1b[48;5;1;3mD\x1b[4:3mE\x1b[4:0mF",
+    "a\x1b[2Kb\x1b]0;title\x07c\x1b]8;;http://x\x1b\\d\x1b(Be\x1b7f\x1b[?25lg\x1b[>1mh",
+    "a\x07\x08\tb\x7f\u0085c\u009b31md",
+    "10%\r50%\r\ndone\r\n\n\x1b[mE",
+    "😀a\x1b[31mb\ud800c\udc00",
+    "\x1b[4294967327mx\x1b[;1mY\x1b[1;;31mZ",
+    "\ufeffbom",
+    "",
+  ];
+
+  const ALPHABET = [
+    "\x1b", "[", "]", ";", ":", "m", "\x07", "\\", "\r", "\n", "\t", "0", "1", "2", "3", "4", "5", "7", "9",
+    "38", "39", "22", "31", "92", "?", ">", " ", "(", "B", "a", "é", "日", "😀", "\u0085", "\x7f", "P", "K",
+  ];
+
+  const random = (seed: number) => () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  };
+
+  describe("parity", { skip: ansiBuilt ? false : "run `npm run build:wasm` first" }, () => {
+    for (const sample of SAMPLES) {
+      it(`agree on ${JSON.stringify(sample).slice(0, 40)}`, () => {
+        const w = new mod.AnsiParser();
+        const j = new AnsiParser();
+        w.push(sample);
+        j.push(sample);
+        assert.deepEqual(snapshotWasm(w), snapshotJs(j));
+        w.free();
+      });
+    }
+
+    it("agree on generated input split into random chunks, as text and as bytes", () => {
+      const next = random(20261015);
+      const encoder = new TextEncoder();
+      for (let n = 0; n < 1500; n++) {
+        const length = Math.floor(next() * 30);
+        let source = "";
+        for (let i = 0; i < length; i++) source += ALPHABET[Math.floor(next() * ALPHABET.length)];
+        const bytes = next() < 0.5;
+        const data = encoder.encode(source);
+        const w = new mod.AnsiParser();
+        const j = new AnsiParser();
+        let at = 0;
+        const total = bytes ? data.length : source.length;
+        while (at < total) {
+          const end = Math.min(total, at + 1 + Math.floor(next() * 6));
+          if (bytes) {
+            w.pushBytes(data.subarray(at, end));
+            j.pushBytes(data.subarray(at, end));
+          } else {
+            // A cut may split a surrogate pair; both sides must replace the halves.
+            w.push(source.slice(at, end));
+            j.push(source.slice(at, end));
+          }
+          assert.deepEqual(snapshotWasm(w), snapshotJs(j), `${bytes ? "bytes" : "text"}: ${JSON.stringify(source)} at ${end}`);
+          at = end;
+        }
+        w.free();
+      }
+    });
+
+    it("agree on invalid UTF-8, and on text after a split character", () => {
+      const cases = [[0x61, 0xff, 0x62], [0xe6, 0x97, 0x63], [0xf0, 0x9f], [0xc0, 0xaf], [0xed, 0xa0, 0x80], [0xe6]];
+      for (const bytes of cases) {
+        const w = new mod.AnsiParser();
+        const j = new AnsiParser();
+        w.pushBytes(new Uint8Array(bytes));
+        j.pushBytes(new Uint8Array(bytes));
+        w.push("z");
+        j.push("z");
+        assert.deepEqual(snapshotWasm(w), snapshotJs(j), JSON.stringify(bytes));
+        w.free();
       }
     });
   });

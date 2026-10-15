@@ -478,6 +478,20 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     assert.doesNotMatch(undone, /<strong>日本/, "one Undo takes the marked composition back out");
   });
 
+  it("renders parsed terminal output as text, never as markup", async () => {
+    // Program output is untrusted: a `<img onerror>` a build prints must arrive
+    // as characters in a span.
+    const html = await evaluate(`
+      const A = await import('/src/js/ansi.js');
+      const [line] = A.parseAnsi('\\x1b[1;31m<img src=x onerror=alert(1)>\\x1b[0m ok');
+      return A.renderAnsiLine(line).outerHTML;
+    `);
+    assert.equal(
+      html,
+      '<div class="fc-terminal__line"><span class="fc-term-ansi-red fc-terminal__bold">&lt;img src=x onerror=alert(1)&gt;</span> ok</div>',
+    );
+  });
+
   it("does not report a link active when only part of the selection is linked", async () => {
     await loadBindings();
     const active = await evaluate(`

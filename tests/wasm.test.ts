@@ -25,6 +25,7 @@ import { JsAccelerator, CORE_ABI_VERSION } from "../src/js/accelerator.ts";
 import { diffLines, diffStats } from "../src/js/diff.ts";
 import { highlight, languageNames, resolveLanguage } from "../src/js/highlight.ts";
 import { AnsiParser, wireRuns } from "../src/js/ansi.ts";
+import type { ThemeContract } from "../src/js/theme-picker.ts";
 import { summarizeStatus, orderEntries, diffCounts } from "../src/js/git.ts";
 import { SELECT_WASM_ABI, SelectModel, WasmSelectModel, isCompatibleSelectModule } from "../src/js/select.ts";
 import type { SelectOption, SelectWasmModule } from "../src/js/select.ts";
@@ -991,6 +992,211 @@ describe("fc-ansi and the JS parser agree", () => {
         j.push("z");
         assert.deepEqual(snapshotWasm(w), snapshotJs(j), JSON.stringify(bytes));
         w.free();
+      }
+    });
+  });
+});
+
+/**
+ * fc-theme parity.
+ *
+ * The custom-theme editor accepts or refuses what an author wrote, and says
+ * why. Both halves are compared: the resulting theme and the error message,
+ * on hand-picked cases and on generated themes and TOML, against the real
+ * contract the token build writes.
+ */
+describe("fc-theme and the TypeScript theme model agree", () => {
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const wasmDir = join(repoRoot, "dist", "wasm", "fc-theme", "web");
+  const contractPath = join(repoRoot, "dist", "theme-contract.json");
+  const ready = existsSync(join(wasmDir, "fc_theme.js")) && existsSync(contractPath);
+
+  type ThemeModule = {
+    default: (input?: { module_or_path?: Uint8Array }) => Promise<void>;
+    validateCustomTheme(theme: string, contract: string): string;
+    migrateTheme(theme: string, themeVersion: string, contract: string): string;
+    parseThemeToml(source: string): string;
+    serializeThemeToml(theme: string): string;
+    designOverrides(id: string, shape: string, depth: string, surface: string, type: string): string;
+    compareThemeVersions(a: string, b: string): number;
+    themeCatalog(): string;
+    relativeLuminance(hex: string): number;
+  };
+
+  let mod: ThemeModule;
+  let contract: ThemeContract;
+  let contractJson: string;
+  let ts: {
+    validateCustomTheme: typeof import("../src/js/theme-picker.ts").validateCustomTheme;
+    migrateTheme: typeof import("../src/js/theme-migrations.ts").migrateTheme;
+    parseThemeToml: typeof import("../src/js/theme-toml.ts").parseThemeToml;
+    serializeThemeToml: typeof import("../src/js/theme-toml.ts").serializeThemeToml;
+    presets: typeof import("../src/js/theme-presets.ts");
+    schema: typeof import("../src/js/theme-schema.ts");
+  };
+
+  before(async () => {
+    if (!ready) return;
+    mod = (await import(join(wasmDir, "fc_theme.js"))) as ThemeModule;
+    await mod.default({ module_or_path: await readFile(join(wasmDir, "fc_theme_bg.wasm")) });
+    contractJson = await readFile(contractPath, "utf8");
+    contract = JSON.parse(contractJson);
+    const [picker, migrations, toml, presets, schema] = await Promise.all([
+      import("../src/js/theme-picker.ts"), import("../src/js/theme-migrations.ts"), import("../src/js/theme-toml.ts"),
+      import("../src/js/theme-presets.ts"), import("../src/js/theme-schema.ts"),
+    ]);
+    ts = { validateCustomTheme: picker.validateCustomTheme, migrateTheme: migrations.migrateTheme, parseThemeToml: toml.parseThemeToml, serializeThemeToml: toml.serializeThemeToml, presets, schema };
+  });
+
+  /** A thrown error as `{error}`, the way the WASM side reports it. */
+  const outcome = (run: () => unknown) => {
+    try {
+      return { ok: JSON.parse(JSON.stringify(run())) };
+    } catch (error) {
+      return { error: (error as Error).message };
+    }
+  };
+
+  const random = (seed: number) => () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  };
+
+  const base = { schemaVersion: 1, version: "1.0.0", id: "mine", name: "Mine", description: "A theme of my own.", base: "editorial" };
+
+  // Values each field is tried with: valid ones, wrong types, and near misses.
+  const POOLS: Record<string, unknown[]> = {
+    schemaVersion: [1, 1.0, 0, 2, "1", null, true, [1], 1.5, 1e21, -0],
+    version: ["1.0.0", "2.3.4-rc.1+b", "1.0", "01.0.0", "1.0.0-01", 1, "x".repeat(70), "1.0.0-" + "a".repeat(60), null],
+    id: ["mine", "future", "Mine", "a".repeat(48), "a".repeat(49), "9a", "a_b", null, 7, ["mine"]],
+    name: ["Mine", "  ", "", "　", "﻿", "x".repeat(240), "x".repeat(241), "😀".repeat(240), "\u0085", null, 3, "lone \ud800 half"],
+    description: ["Desc", " \t ", "é", null],
+    base: ["editorial", "future", "helix", "nope", null, ""],
+    shape: ["round", "square", "999rem", null, ["round"]],
+    depth: ["flat", "edge", "0 0 99px red", false],
+    surface: ["tinted", "outline", "transparent"],
+    type: ["serif", "system", "url(https://fonts.example)"],
+    palette: ["ink", "violet", "nope", null],
+    padding: ["0"],
+  };
+  const HEXES = ["#000000", "#ffffff", "#FFFFFF", "#767676", "#777777", "#595959", "#5a5a5a", "#0000ee", "#e5e5e5", "#123", "black", "#gggggg", null, 1];
+
+  /** `gentle` draws only each pool's first two values, which are valid. */
+  const generatedTheme = (next: () => number, gentle = false) => {
+    const theme: Record<string, unknown> = { ...base };
+    for (const [key, pool] of Object.entries(POOLS)) {
+      if (gentle && (key === "padding" || key in base)) continue;
+      const roll = next();
+      if (roll < 0.15) delete theme[key];
+      else if (roll < 0.45) theme[key] = pool[Math.floor(next() * (gentle ? 2 : pool.length))];
+    }
+    if (next() < 0.6) {
+      const roles = Object.keys(contract.colors);
+      const colors: Record<string, unknown> = {};
+      for (let n = Math.floor(next() * 4); n > 0; n--) {
+        const role = next() < 0.9 ? roles[Math.floor(next() * roles.length)] : "bogus";
+        const pick = () => HEXES[Math.floor(next() * HEXES.length)];
+        colors[role] = next() < 0.9 ? { light: pick(), dark: pick() } : next() < 0.5 ? { light: pick(), dark: pick(), extra: 1 } : [pick()];
+      }
+      theme.colors = next() < 0.95 ? colors : null;
+    }
+    return theme;
+  };
+
+  describe("parity", { skip: ready ? false : "run `npm run build` first" }, () => {
+    it("share one catalog of presets, palettes and choices", () => {
+      assert.deepEqual(JSON.parse(mod.themeCatalog()), {
+        presets: ts.presets.themePresets, palettes: ts.presets.themePalettes, choices: ts.schema.themeChoices,
+      });
+    });
+
+    it("compute bit-identical luminance", () => {
+      const js = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+        .map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+        .reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i]!, 0);
+      const next = random(54);
+      for (let i = 0; i < 2000; i++) {
+        const hex = "#" + Math.floor(i < 256 ? i * 0x010101 : next() * 0xffffff).toString(16).padStart(6, "0");
+        assert.equal(mod.relativeLuminance(hex), js(hex), hex);
+      }
+      assert.equal(mod.relativeLuminance("#12345"), -1);
+    });
+
+    it("agree on generated themes, results and messages", () => {
+      const next = random(20261015);
+      for (let n = 0; n < 3000; n++) {
+        const theme = generatedTheme(next);
+        const withContract = next() < 0.9;
+        const js = outcome(() => ts.validateCustomTheme(theme, withContract ? contract : undefined));
+        const wasm = JSON.parse(mod.validateCustomTheme(JSON.stringify(theme), withContract ? contractJson : ""));
+        assert.deepEqual(wasm, js, JSON.stringify(theme));
+      }
+    });
+
+    it("agree on migrations", () => {
+      const next = random(7);
+      for (let n = 0; n < 1000; n++) {
+        const theme = generatedTheme(next);
+        if (next() < 0.5) delete theme.schemaVersion;
+        if (next() < 0.5) delete theme.version;
+        const themeVersion = ["", "3.0.0", "bad"][Math.floor(next() * 3)]!;
+        const js = outcome(() => ts.migrateTheme(theme, { themeVersion: themeVersion || undefined, contract }));
+        const wasm = JSON.parse(mod.migrateTheme(JSON.stringify(theme), themeVersion, contractJson));
+        assert.deepEqual(wasm, js, JSON.stringify({ theme, themeVersion }));
+      }
+    });
+
+    it("serialize every valid theme to the same TOML, which both read back", () => {
+      const next = random(99);
+      let valid = 0;
+      for (let n = 0; n < 3000; n++) {
+        const result = outcome(() => ts.validateCustomTheme(generatedTheme(next, true), contract));
+        if (!("ok" in result)) continue;
+        valid++;
+        const text = ts.serializeThemeToml(result.ok);
+        assert.deepEqual(JSON.parse(mod.serializeThemeToml(JSON.stringify(result.ok))), { ok: text });
+        assert.deepEqual(JSON.parse(mod.parseThemeToml(text)), outcome(() => ts.parseThemeToml(text)));
+      }
+      assert.ok(valid > 100, `only ${valid} generated themes were valid`);
+    });
+
+    it("parse generated TOML the same way, errors included", () => {
+      const FRAGMENTS = [
+        "[theme]", "[colors.accent-bg]", '[colors."text-default"]', "[colors.Bad]", "[themes]", "[theme] # c", "[theme]x",
+        "schema-version = 1", "schema-version=0", "schema-version = 01", "schema-version = 99999999999999999999999",
+        'id = "mine"', "id = 'raw \\n'", 'name = "a\\"b"', 'name = "\\\\x"', 'name = "\\x"', 'name = "\\U0001F600"', 'name = "\\uD800"',
+        'name = "\\u12"', 'name = "tab\there"', 'name = "\u0001"', 'light = "#000000"', "dark = '#ffffff' # c\r", "x = [1]",
+        'colors = "x"', "# comment", "", "  　 ", 'k = "v" # ', 'k = "a\\ "', "﻿id = 'x'", 'é = "x"', "k = 'unterminated",
+      ];
+      const next = random(3);
+      for (let n = 0; n < 4000; n++) {
+        const lines: string[] = [];
+        for (let i = Math.floor(next() * 8); i > 0; i--) lines.push(FRAGMENTS[Math.floor(next() * FRAGMENTS.length)]!);
+        const source = lines.join(next() < 0.8 ? "\n" : "\r\n");
+        assert.deepEqual(JSON.parse(mod.parseThemeToml(source)), outcome(() => ts.parseThemeToml(source)), JSON.stringify(source));
+      }
+      const big = "# " + "x".repeat(65535);
+      assert.deepEqual(JSON.parse(mod.parseThemeToml(big)), outcome(() => ts.parseThemeToml(big)));
+    });
+
+    it("produce the same overrides for every design and every combination of choices", () => {
+      const { shape, depth, surface, type } = ts.schema.themeChoices;
+      for (const preset of ts.presets.themePresets) {
+        for (const sh of shape) for (const de of depth) for (const su of surface) for (const ty of type) {
+          const design = { ...preset, shape: sh, depth: de, surface: su, type: ty };
+          assert.deepEqual(JSON.parse(mod.designOverrides(preset.id, sh, de, su, ty)), ts.presets.designOverrides(design), JSON.stringify(design));
+        }
+      }
+      assert.equal(mod.designOverrides("future", "blob", "soft", "neutral", "system"), "null");
+    });
+
+    it("order versions the same way", () => {
+      const VERSIONS = ["1.0.0", "1.0.0-alpha", "1.0.0-alpha.1", "1.0.0-alpha.beta", "1.0.0-beta.11", "1.0.0-beta.2", "1.0.0-rc.1",
+        "1.0.0+build", "2.0.0", "10.0.0", "1.10.0", "1.0.0-0", "1.0.0-a-b", "99999999999999999999.0.0", "1.0", "01.0.0", "x"];
+      for (const a of VERSIONS) for (const b of VERSIONS) {
+        let js: number;
+        try { js = ts.schema.compareThemeVersions(a, b); } catch { js = 2; }
+        assert.equal(mod.compareThemeVersions(a, b), js, `${a} vs ${b}`);
       }
     });
   });

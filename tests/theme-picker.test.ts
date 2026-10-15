@@ -63,3 +63,22 @@ it('gives the experimental designs distinct static treatments with safe semantic
     if(canvas!=='none')assert.ok(![...canvas.matchAll(/--fc-color-([a-z-]+)/g)].some(m=>!['bg-canvas','bg-subtle'].includes(m[1])));
   }
 });
+it('checks types rather than the stringified value a regex test sees',()=>{
+  // `RegExp.prototype.test` stringifies, so a missing id read as "undefined" and a
+  // one-element array read as its element. Both were accepted.
+  const {id:_,...noId}=theme;
+  assert.throws(()=>validateCustomTheme(noId),/unique id/);
+  assert.throws(()=>validateCustomTheme({...theme,id:['custom-reading']}),/unique id/);
+  assert.throws(()=>validateCustomTheme({...theme,colors:{'text-default':{light:['#0e0f13'],dark:'#ffffff'}}},contract),/sRGB/);
+  assert.equal(validateCustomTheme({...theme,name:'half \ud800'}).name,'half \ufffd');
+});
+it('reads TOML escapes left to right and refuses surrogate escapes',()=>{
+  const name=(literal:string)=>(parseThemeToml(`name = ${literal}`) as any).name;
+  // An escaped backslash before x or U was read as the start of `\x` or `\U`.
+  assert.equal(name('"C:\\\\x"'),'C:\\x');
+  assert.equal(name('"\\\\U0001F600"'),'\\U0001F600');
+  assert.equal(name('"a\tb"'),'a\tb');
+  assert.throws(()=>name('"\\uD800"'),/invalid Unicode escape/);
+  assert.throws(()=>name('"\\ud83d\\ude00"'),/invalid Unicode escape/);
+  assert.throws(()=>name('"\\x"'),/unsupported string escape/);
+});

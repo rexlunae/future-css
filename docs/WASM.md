@@ -95,7 +95,7 @@ select and menu retain their independent version handshakes.
 One workspace, one published module per *opt-in unit*. Boundaries follow *what a
 consumer opts into*, and the dependency arrow points strictly downward.
 
-Ten crates produce nine importable modules: `fc-core` is emitted into the `fc-model`
+Eleven crates produce ten importable modules: `fc-core` is emitted into the `fc-model`
 module directory rather than published on its own.
 
 ```
@@ -110,6 +110,7 @@ crates/
   fc-git/            working-tree summary         (no deps; primitives only)
   fc-highlight/      highlight.ts's tokenizer     (no deps; primitives only)
   fc-ansi/           ansi.ts's SGR parser        (no deps; primitives only)
+  fc-theme/          custom-theme model          (no deps; JSON strings)
 ```
 
 Measured release sizes when the workspace was first built (historical; the
@@ -401,6 +402,25 @@ colour. Lone surrogates arrive as U+FFFD, because wasm-bindgen encodes them that
 so `ansi.ts` replaces them too. Its parity test feeds 1,500 generated strings to both
 parsers in random chunks, as text and as bytes, and compares after every chunk. It ships
 **17.8 KB** against a 25 KB budget.
+
+### A twin that must agree on its error messages
+
+`fc-theme` ports the custom-theme model: `validateCustomTheme`, `migrateTheme`, the TOML
+reader and writer, and `designOverrides`. Its input is any value an author supplied, so it
+crosses as a JSON string, and the answer comes back as `{"ok": …}` or `{"error": "…"}`.
+The error is part of the contract: the picker shows it. So the crate judges input with
+JavaScript's semantics where they show (key order, `trim`'s whitespace, numbers printed as
+`Number#toString` prints them) and computes contrast from a table of the exact bits V8's
+`**` produces, since two `pow` implementations can differ in the last bit and a ratio on
+its minimum would then pass on one path only. Porting it found four TypeScript bugs, fixed
+on both sides: a theme with no id passed as the id `"undefined"`, an array passed as a
+colour, an escaped backslash before `x` or `U` in TOML was misread, and `\uD800` produced a
+lone surrogate.
+
+It ships **123.9 KB** against a 130 KB budget, the largest module here. About a third is
+core's float parsing and shortest-digit formatting, which the exact messages need. The
+crate's consumer links it natively, where std already carries that code; the module exists
+for the parity test and JavaScript callers that want one implementation.
 
 ### Pure Rust consumers: the `bindgen` feature
 

@@ -1,0 +1,40 @@
+# fc-theme -- custom themes: validation, TOML, design overrides.
+#
+# The theme picker's custom-theme editor runs on logic that lived only in
+# TypeScript (theme-picker.ts, theme-toml.ts, theme-presets.ts). A Rust consumer
+# that ported it by hand would drift, so this crate is the twin, held to the
+# same output by tests/wasm.test.ts.
+#
+# No serde. The input is any JSON value, judged with JavaScript's semantics
+# (key order, number formatting in messages), which a derive cannot express;
+# a small JSON reader and writer here are cheaper than the dependency and
+# keep the crate `no_std` on wasm.
+
+[package]
+name = "fc-theme"
+description = "Custom theme validation, TOML and design overrides for the future-css theme picker"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = { workspace = true, optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+dlmalloc = { workspace = true, optional = true }
+
+[features]
+# `bindgen` exports the JavaScript boundary and is on by default. A pure Rust
+# consumer (the Dioxus library) turns defaults off and gets the same model
+# with no wasm-bindgen in its dependency tree.
+default = ["bindgen"]
+bindgen = ["dep:wasm-bindgen"]
+# Build without std on wasm; see fc-diff's manifest for why this is never on in
+# a build that includes a std crate.
+bare = ["dep:dlmalloc"]

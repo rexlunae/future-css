@@ -23,6 +23,7 @@ members = [
   "crates/fc-git",
   "crates/fc-highlight",
   "crates/fc-ansi",
+  "crates/fc-theme",
 ]
 
 [workspace.package]

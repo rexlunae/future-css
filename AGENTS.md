@@ -120,10 +120,10 @@ So:
   numbers.
 - **Never add `js-sys` to a crate** without measuring the result first.
 - `npm run build:wasm` prints a size report and the budgets in
-  `src/build/build-wasm.ts`. All ten binaries fit the unchanged budgets on the
+  `src/build/build-wasm.ts`. All eleven binaries fit the unchanged budgets on the
   **shipped** basis (post-bindgen and optional post-opt, see docs/WASM.md), which
   is enforced by the build. Raw descriptor-bearing sizes remain diagnostic.
-- **A primitives-only crate can drop std.** `fc-diff`, `fc-select`, `fc-git`, `fc-context-menu`, `fc-highlight` and `fc-ansi` build
+- **A primitives-only crate can drop std.** `fc-diff`, `fc-select`, `fc-git`, `fc-context-menu`, `fc-highlight`, `fc-ansi` and `fc-theme` build
   `no_std` through a `bare` feature, which build:wasm enables in its own cargo
   invocation; std's panic formatting was most of their bytes. Never enable
   `bare` in a build that includes a std crate: the two panic handlers collide.
@@ -286,7 +286,7 @@ src/css/            Layered CSS. index.css declares layer order
 src/js/             Component bindings (editor, menu, grid, webview) plus the
                     WASM accelerator. WASM is optional; JS always works.
 src/build/          Token compiler, CSS bundler, WASM orchestrator
-crates/            Rust crates; ten produce ten .wasm files in nine modules
+crates/            Rust crates; eleven produce eleven .wasm files in ten modules
 tools/lint-css.mjs  Architecture linter
 tests/              Contract, linter, accelerator, and WASM/JS parity tests
 tests/browser/      Binding tests in headless Chrome. Skipped if no browser.
@@ -331,13 +331,14 @@ one provider selected under another. That is a request nobody can fulfil.
 
 The fixture-driven git surface
 (branch, status counts, file list, per-file line stats) is complete and reuses
-`fc-diff`. The Rust/WASM layer has ten crates and a working JS-only fallback. All ten binaries meet their unchanged shipped budgets;
+`fc-diff`. The Rust/WASM layer has eleven crates and a working JS-only fallback. All eleven binaries meet their unchanged shipped budgets;
 raw sizes remain diagnostic. Core ABI 2 uses flat typed arrays and JSON strings
 rather than JavaScript object serialization; see docs/MIGRATION.md. The select and context menu bindings
 opt into their Rust models with `useWasm`, and both fold case in JavaScript so the
 modules link no Unicode tables. The rich text and grid models exist in Rust but
 are not wired; `fc-model`, `fc-diff`, `fc-select`, `fc-context-menu`, `fc-git`,
-`fc-highlight` and `fc-ansi` have JS parity tests. `fc-ansi`'s also splits generated
+`fc-highlight`, `fc-ansi` and `fc-theme` have JS parity tests. `fc-theme`'s compares
+error messages too, because the theme picker shows them. `fc-ansi`'s also splits generated
 input into random chunks, since a chunk boundary is where two streaming parsers drift. `fc-highlight` has no regex engine, so its parity
 test also runs generated input through both tokenizers.
 

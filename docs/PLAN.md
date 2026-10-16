@@ -811,3 +811,6 @@ Exceeding a target requires a written justification here, not a raised number.
 6. **A class-less mode.** `base.css` already renders legibly with zero classes. Pico goes
    further and styles buttons and form controls from bare elements. Worth offering as an
    opt-in entry point, if it can reuse component CSS rather than duplicating it.
+
+Select popups flipped above bottom-edge triggers use a viewport-relative end offset;
+placement regression checks cover above/below placement and stale-edge clearing.

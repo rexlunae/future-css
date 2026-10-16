@@ -1847,9 +1847,17 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
       sel.closeList();
       sel.openList();
       const flipped = document.querySelector('#select-list').getBoundingClientRect();
+      const fixedAnchor = invoker.getBoundingClientRect();
+      // Bounding only the bottom passed when the flipped list was anchored to the
+      // wrong edge: it sat inside the viewport's bottom while its top, and the
+      // first options, were above the window. The top and the gap to the trigger
+      // are what show it opened directly above the invoker.
+      const gap = fixedAnchor.top - flipped.bottom;
       const out = [
         Math.abs(placed.left - anchor.left) < 2,
         flipped.bottom <= window.innerHeight + 2,
+        flipped.top >= -1,
+        gap >= 0 && gap <= 4,
       ];
       invoker.style.position = '';
       invoker.style.insetBlockEnd = '';
@@ -1858,6 +1866,8 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     `);
     assert.equal(result[0], true, "must align to the invoker's inline edge");
     assert.equal(result[1], true, "must stay inside the viewport when flipped");
+    assert.equal(result[2], true, "the flipped list's top must stay inside the viewport");
+    assert.equal(result[3], true, "the flipped list must sit just above the invoker");
   });
 
   it("commits the option the user clicked, not the previously highlighted one", async () => {

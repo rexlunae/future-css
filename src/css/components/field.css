@@ -83,7 +83,6 @@
   /* ---- Text controls --------------------------------------------------- */
 
   .fc-input {
-    text-shadow: none;
     display: block;
     inline-size: 100%;
     min-block-size: var(--fc-size-target-comfortable);

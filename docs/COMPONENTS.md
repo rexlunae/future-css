@@ -924,6 +924,19 @@ The optional `fc-card--feature` modifier uses the selected theme's feature fill,
 gradient and matching foreground for a prominent content panel. It ships in
 `card.css` and remains readable in forced colors.
 
+Feature cards scope `--fc-content-fg`, `--fc-content-muted`,
+`--fc-content-danger`, and `--fc-content-link` to the theme's contrast-checked feature foreground. Body
+copy, subtitles, field labels/hints/errors, description lists, plain disclosures
+and transparent actions consume this context instead of the surrounding
+scheme's text colors. Typography and icons preserve hierarchy and error meaning;
+muting a foreground on a vivid feature fill must not lower its contrast.
+Inputs retain their own semantic foreground/background pair. Nested cards,
+boxed disclosures, alerts and raised overlays establish their own text context,
+so the outer feature's foreground cannot leak onto their different painted fill.
+Transparent action hover/active states use a paired neutral surface within a
+feature card. A checked-input selection replaces the feature fill, image and
+text context together. No app-specific colors or descendant selector overrides are needed.
+
 
 ## Badge, tag, and kbd (implemented)
 

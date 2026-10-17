@@ -26,6 +26,10 @@
 
 @layer fc.components {
   .fc-popover {
+    --fc-content-fg: var(--fc-color-text-default);
+    --fc-content-muted: var(--fc-color-text-muted);
+    --fc-content-danger: var(--fc-color-danger-text);
+    --fc-content-link: var(--fc-color-accent-text);
     inline-size: max-content;
     max-inline-size: min(22rem, 100vi - 2 * var(--fc-space-4));
     padding: var(--fc-space-4);

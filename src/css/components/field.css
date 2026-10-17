@@ -30,7 +30,7 @@
   .fc-field__label {
     font-size: var(--fc-font-size-sm);
     font-weight: var(--fc-font-weight-medium);
-    color: var(--fc-color-text-default);
+    color: var(--fc-content-fg, var(--fc-color-text-default));
   }
 
   /*
@@ -39,12 +39,12 @@
    * the markup keeps it from being read as "star".
    */
   .fc-field__required {
-    color: var(--fc-color-danger-text);
+    color: var(--fc-content-danger, var(--fc-color-danger-text));
     margin-inline-start: var(--fc-space-0-5);
   }
 
   .fc-field__optional {
-    color: var(--fc-color-text-muted);
+    color: var(--fc-content-muted, var(--fc-color-text-muted));
     font-weight: var(--fc-font-weight-regular);
     margin-inline-start: var(--fc-space-1);
   }
@@ -52,7 +52,7 @@
   .fc-field__hint {
     margin: 0;
     font-size: var(--fc-font-size-sm);
-    color: var(--fc-color-text-muted);
+    color: var(--fc-content-muted, var(--fc-color-text-muted));
   }
 
   /*
@@ -67,7 +67,7 @@
     align-items: baseline;
     font-size: var(--fc-font-size-sm);
     font-weight: var(--fc-font-weight-medium);
-    color: var(--fc-color-danger-text);
+    color: var(--fc-content-danger, var(--fc-color-danger-text));
   }
 
   .fc-field__error::before {

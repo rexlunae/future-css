@@ -142,14 +142,14 @@
   .fc-btn--ghost,
   .fc-btn--tertiary {
     background-color: transparent;
-    color: var(--fc-color-text-default);
+    color: var(--fc-content-fg, var(--fc-color-text-default));
     border-color: transparent;
   }
 
   /* Subtle: a tinted fill for the least important of several actions. */
   .fc-btn--subtle {
-    background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-hover-overlay) * 100%), transparent);
-    color: var(--fc-color-text-default);
+    background-color: var(--fc-btn-subtle-bg, color-mix(in oklab, currentColor calc(var(--fc-opacity-hover-overlay) * 100%), transparent));
+    color: var(--fc-btn-subtle-fg, var(--fc-content-fg, var(--fc-color-text-default)));
     border-color: transparent;
   }
 
@@ -183,7 +183,12 @@
     }
 
     .fc-btn--subtle:hover {
-      background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 100%), transparent);
+      background-color: var(--fc-btn-subtle-bg, color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 100%), transparent));
+    }
+    .fc-btn--ghost:hover,
+    .fc-btn--tertiary:hover {
+      background-color: var(--fc-btn-ghost-bg-hover, color-mix(in oklab, currentColor calc(var(--fc-opacity-hover-overlay) * 100%), transparent));
+      color: var(--fc-btn-ghost-fg-hover, var(--fc-content-fg, var(--fc-color-text-default)));
     }
 
     .fc-btn--danger:hover {
@@ -208,7 +213,12 @@
   }
 
   .fc-btn--subtle:active {
-    background-color: color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 150%), transparent);
+    background-color: var(--fc-btn-subtle-bg, color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 150%), transparent));
+  }
+  .fc-btn--ghost:active,
+  .fc-btn--tertiary:active {
+    background-color: var(--fc-btn-ghost-bg-active, color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 100%), transparent));
+    color: var(--fc-btn-ghost-fg-hover, var(--fc-content-fg, var(--fc-color-text-default)));
   }
 
   .fc-btn--danger:active {

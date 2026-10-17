@@ -142,7 +142,7 @@
    * body text: colour alone is not a sufficient affordance.
    */
   :where(a) {
-    color: var(--fc-color-accent-text);
+    color: var(--fc-content-link, var(--fc-color-accent-text));
     text-decoration: underline;
     text-underline-offset: 0.2em;
     text-decoration-thickness: from-font;

@@ -31,6 +31,10 @@
 
 @layer fc.components {
   .fc-dialog {
+    --fc-content-fg: var(--fc-color-text-default);
+    --fc-content-muted: var(--fc-color-text-muted);
+    --fc-content-danger: var(--fc-color-danger-text);
+    --fc-content-link: var(--fc-color-accent-text);
     --fc-dialog-size: 32rem;
 
     flex-direction: column;

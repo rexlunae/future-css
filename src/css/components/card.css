@@ -15,6 +15,11 @@
 
 @layer fc.components {
   .fc-card {
+    /* A painted surface resets contextual text inherited from an outer feature. */
+    --fc-content-fg: var(--fc-color-text-default);
+    --fc-content-muted: var(--fc-color-text-muted);
+    --fc-content-danger: var(--fc-color-danger-text);
+    --fc-content-link: var(--fc-color-accent-text);
     container: fc-card / inline-size;
 
     position: relative;
@@ -38,6 +43,18 @@
   }
 
   .fc-card--feature {
+    /* Feature fills can have the opposite luminance from the surrounding UI.
+       Text-only children must use this fill's contrast-checked foreground,
+       while inputs and nested painted surfaces keep their own palette. */
+    --fc-content-fg: var(--fc-theme-feature-fg, var(--fc-color-text-default));
+    --fc-content-muted: var(--fc-theme-feature-fg, var(--fc-color-text-muted));
+    --fc-content-danger: var(--fc-theme-feature-fg, var(--fc-color-danger-text));
+    --fc-content-link: var(--fc-theme-feature-fg, var(--fc-color-accent-text));
+    --fc-btn-ghost-bg-hover: var(--fc-color-bg-muted);
+    --fc-btn-ghost-fg-hover: var(--fc-color-text-default);
+    --fc-btn-ghost-bg-active: var(--fc-color-bg-subtle);
+    --fc-btn-subtle-bg: var(--fc-color-bg-muted);
+    --fc-btn-subtle-fg: var(--fc-color-text-default);
     background-color: var(--fc-theme-feature-bg, var(--fc-color-bg-surface));
     background-image: var(--fc-theme-feature-image, none);
     text-shadow: var(--fc-theme-feature-text-shadow, none);
@@ -45,7 +62,7 @@
     padding: var(--fc-space-6);
   }
   @media (forced-colors: active) {
-    .fc-card--feature { text-shadow: none; background-image: none; background-color: Canvas; color: CanvasText; }
+    .fc-card--feature { --fc-content-fg: CanvasText; --fc-content-muted: CanvasText; text-shadow: none; background-image: none; background-color: Canvas; color: CanvasText; }
   }
 
   .fc-card--elevated {
@@ -99,7 +116,7 @@
   .fc-card__subtitle {
     margin: 0;
     font-size: var(--fc-font-size-sm);
-    color: var(--fc-color-text-muted);
+    color: var(--fc-content-muted, var(--fc-color-text-muted));
   }
 
   .fc-card__body {
@@ -109,7 +126,7 @@
     flex: 1;
     padding-block: var(--fc-space-5);
     font-size: var(--fc-font-size-sm);
-    color: var(--fc-color-text-muted);
+    color: var(--fc-content-muted, var(--fc-color-text-muted));
   }
 
   /* Base prose rhythm would double the gap the body already sets. */
@@ -222,6 +239,15 @@
    * must name the input: an ordinary card containing a select is not selected.
    */
   .fc-card:has(input:checked) {
+    /* Selection paints a different surface, even on a feature card. Its
+       foreground must change with that fill rather than retain feature ink. */
+    --fc-content-fg: var(--fc-color-text-default);
+    --fc-content-muted: var(--fc-color-text-muted);
+    --fc-content-danger: var(--fc-color-danger-text);
+    --fc-content-link: var(--fc-color-accent-text);
+    color: var(--fc-content-fg);
+    background-image: none;
+    text-shadow: none;
     border-color: var(--fc-color-accent-border);
     background-color: var(--fc-color-accent-bg-subtle);
   }

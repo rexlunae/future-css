@@ -21,6 +21,10 @@
 
 @layer fc.components {
   .fc-alert {
+    --fc-content-fg: var(--fc-alert-fg);
+    --fc-content-muted: var(--fc-alert-fg);
+    --fc-content-danger: var(--fc-alert-fg);
+    --fc-content-link: var(--fc-alert-fg);
     /*
      * The tone is carried in two custom properties, so each variant is two
      * declarations and the layout below is written once.

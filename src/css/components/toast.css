@@ -58,6 +58,10 @@
   }
 
   .fc-toast {
+    --fc-content-fg: var(--fc-color-text-default);
+    --fc-content-muted: var(--fc-color-text-muted);
+    --fc-content-danger: var(--fc-color-danger-text);
+    --fc-content-link: var(--fc-color-accent-text);
     --fc-toast-edge: var(--fc-color-border-strong);
 
     display: grid;

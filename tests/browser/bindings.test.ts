@@ -167,6 +167,100 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
     return res.result?.result?.value;
   }
 
+  // This needs a real CSS cascade: token-pair unit tests cannot observe a
+  // feature card's children accidentally retaining the surrounding scheme.
+  it("keeps feature content and nested surfaces readable across every design and scheme", async () => {
+    await evaluate(`
+      const link=document.createElement('link');link.id='feature-contrast-css';link.rel='stylesheet';link.href='/dist/themes.css';document.head.append(link);await new Promise((resolve,reject)=>{link.onload=resolve;link.onerror=reject;});
+      const {themePresets}=await import('/src/js/theme-picker.js');
+      const region=document.createElement('section');region.id='feature-contrast';region.style.cssText='--fc-duration-fast:0s;--fc-duration-normal:0s;background:var(--fc-color-bg-canvas)';
+      region.innerHTML='<article class="fc-card fc-card--feature"><header class="fc-card__header"><div><h2 class="fc-card__title">Security setup</h2><p class="fc-card__subtitle" data-audit>Verified connection</p></div></header><div class="fc-card__body"><p data-audit>Scan the authenticator code</p><h6 data-audit>Recovery information</h6><blockquote data-audit>Protect this account</blockquote><table><caption data-audit>Account details</caption><thead><tr><th data-audit>Status</th></tr></thead><tbody><tr><td data-audit>Encrypted</td></tr></tbody></table><code data-audit>local-only</code><input aria-label="Native code" value="123456" data-audit><label class="fc-check" data-audit><input type="checkbox" class="fc-check__input"><span class="fc-check__label" data-audit>Remember preference</span><span class="fc-check__hint" data-audit>Local setting</span></label><div class="fc-switch-row"><span class="fc-switch-row__hint" data-audit>Switch hint</span></div><div class="fc-input-group"><input class="fc-input" aria-label="Grouped code" value="123456" data-audit><button class="fc-btn fc-btn--ghost" data-audit>Search</button></div><a href="#manual" data-audit>Manual instructions</a><dl class="fc-dl"><div class="fc-dl__item"><dt data-audit>Encryption</dt><dd data-audit>Enabled</dd></div></dl><div class="fc-field"><label class="fc-field__label" for="feature-code" data-audit>Code <span class="fc-field__optional" data-audit>optional</span></label><p class="fc-field__hint" data-audit>From your authenticator</p><input class="fc-input" id="feature-code" value="123456" data-audit><p class="fc-field__error" data-audit>Try another code</p></div><button id="feature-ghost" class="fc-btn fc-btn--ghost" data-audit>Cancel</button><button id="feature-subtle" class="fc-btn fc-btn--subtle" data-audit>Later</button><details class="fc-disclosure" open><summary class="fc-disclosure__summary" id="feature-summary" data-audit>Manual setup</summary><div class="fc-disclosure__content" data-audit>Readable instructions</div></details><details class="fc-disclosure fc-disclosure--boxed" open><summary class="fc-disclosure__summary" data-audit>Own painted surface</summary><div class="fc-disclosure__content"><dl class="fc-dl"><div class="fc-dl__item"><dt data-audit>Key</dt><dd data-audit>Manual entry</dd></div></dl></div></details><article class="fc-card"><div class="fc-card__body"><p data-audit>Nested neutral card</p><button id="nested-subtle" class="fc-btn fc-btn--subtle" data-audit>Nested action</button><label class="fc-field__label" data-audit>Neutral label</label></div></article><aside class="fc-alert fc-alert--info"><div class="fc-alert__body"><label class="fc-field__label" data-audit>Alert label</label><p id="alert-error-cue" class="fc-field__error" data-audit>Code rejected</p><a id="alert-link-cue" href="#help" data-audit>Help with this code</a><dl class="fc-dl"><div class="fc-dl__item"><dt data-audit>Connection</dt><dd data-audit>Protected</dd></div></dl></div></aside></div></article>';
+      document.body.append(region);
+      const canvas=document.createElement('canvas');canvas.width=canvas.height=1;const ctx=canvas.getContext('2d');
+      const rgba=color=>{if(!CSS.supports('color',color))throw new Error('Unsupported audit color: '+color);ctx.clearRect(0,0,1,1);ctx.fillStyle=color;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data].map(v=>v/255);};
+      const over=(a,b)=>{const alpha=a[3]+b[3]*(1-a[3]);return [0,1,2].map(i=>(a[i]*a[3]+b[i]*b[3]*(1-a[3]))/alpha).concat(alpha);};
+      const luminance=c=>c.slice(0,3).map(v=>v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4).reduce((sum,v,i)=>sum+v*[0.2126,0.7152,0.0722][i],0);
+      const gradientLayers=image=>{let depth=0,start=0;const layers=[];for(let i=0;i<image.length;i++){if(image[i]==='(')depth++;if(image[i]===')')depth--;if(image[i]===','&&depth===0){layers.push(image.slice(start,i));start=i+1;}}layers.push(image.slice(start));return layers;};
+      globalThis.featureStateFills=()=>{const fills=[];for(const preset of themePresets)for(const scheme of ['light','dark']){region.dataset.fcDesign=preset.id;region.dataset.fcPalette=preset.palette;region.dataset.fcTheme=scheme;fills.push({id:preset.id,scheme,color:getComputedStyle(region.querySelector('#feature-subtle')).backgroundColor,card:getComputedStyle(region.querySelector(':scope > article')).backgroundColor,image:getComputedStyle(region.querySelector(':scope > article')).backgroundImage});}return fills;};
+      globalThis.auditFeatureContrast=()=>{
+        const failures=[];
+        for(const preset of themePresets)for(const scheme of ['light','dark'])for(const dir of ['ltr','rtl']){
+          region.dataset.fcDesign=preset.id;region.dataset.fcPalette=preset.palette;region.dataset.fcTheme=scheme;region.dir=dir;
+          for(const node of region.querySelectorAll('[data-audit]')){
+            const layers=[];for(let parent=node;parent;parent=parent.parentElement){const style=getComputedStyle(parent);layers.push({color:rgba(style.backgroundColor),image:style.backgroundImage});}
+            let backgrounds=[[1,1,1,1]];
+            for(const layer of layers.reverse()){
+              backgrounds=layer.color[3]===1?[layer.color]:backgrounds.map(bg=>over(layer.color,bg));
+              if(layer.image!=='none'){
+                // Stock gradients interpolate in linear sRGB. For black/white
+                // feature ink, checking every composited stop bounds luminance
+                // throughout the gradient, including transparent overlays.
+                for(const gradient of gradientLayers(layer.image).reverse()){
+                  if(!gradient.includes('in srgb-linear'))throw new Error('Audit needs a sampler for '+gradient);
+                  const stops=gradient.match(/(?:rgba?|color|oklch|oklab)[(][^()]*[)]/g);
+                  if(!stops?.length)throw new Error('No gradient colors parsed: '+gradient);
+                  backgrounds=backgrounds.flatMap(bg=>stops.map(stop=>over(rgba(stop),bg)));
+                }
+              }
+            }
+            for(const bg of backgrounds){
+              const fg=over(rgba(getComputedStyle(node).color),bg),a=luminance(fg),b=luminance(bg),ratio=(Math.max(a,b)+0.05)/(Math.min(a,b)+0.05);
+              if(ratio+0.01<4.5)failures.push({design:preset.id,scheme,dir,element:node.className||node.tagName,ratio});
+            }
+          }
+        }
+        return failures;
+      };
+    `);
+    try {
+      assert.deepEqual(await evaluate(`return auditFeatureContrast();`), []);
+      const nestedFill=await evaluate(`const nested=document.getElementById('nested-subtle');return {override:getComputedStyle(nested).getPropertyValue('--fc-btn-subtle-bg').trim(),fill:getComputedStyle(nested).backgroundColor,card:getComputedStyle(nested.closest('.fc-card')).backgroundColor};`);
+      assert.equal(nestedFill.override,'');assert.notEqual(nestedFill.fill,nestedFill.card);
+      // This is deliberately a whole-surface bound, not a spatial pixel sampler:
+      // stock feature ink must remain safe wherever responsive content moves.
+      // The checker must notice a bad gradient even when its base fill passes.
+      const badGradient=await evaluate(`const card=document.querySelector('#feature-contrast > article');card.style.backgroundImage='linear-gradient(90deg in srgb-linear,var(--fc-theme-feature-fg),var(--fc-theme-feature-bg))';const failures=auditFeatureContrast();const debug={failures,inline:card.style.backgroundImage,image:getComputedStyle(card).backgroundImage,fg:getComputedStyle(card.querySelector('.fc-card__body')).color};card.style.removeProperty('background-image');return debug;`);assert.ok(badGradient.failures.length > 0,JSON.stringify(badGradient));
+      const cues=await evaluate(`return {link:getComputedStyle(document.getElementById('alert-link-cue')).textDecorationLine,error:getComputedStyle(document.getElementById('alert-error-cue'),'::before').content};`);
+      assert.match(cues.link,/underline/);assert.notEqual(cues.error,'none');
+      await send('DOM.enable'); await send('CSS.enable');
+      const document = await send('DOM.getDocument');
+      const node = await send('DOM.querySelector', {nodeId:document.result.root.nodeId,selector:'#feature-ghost'});
+      for (const forcedPseudoClasses of [['hover'],['hover','active']]) {
+        await send('CSS.forcePseudoState',{nodeId:node.result.nodeId,forcedPseudoClasses});
+        assert.deepEqual(await evaluate(`return auditFeatureContrast();`), [], forcedPseudoClasses.join(' '));
+      }
+      const subtle = await send('DOM.querySelector', {nodeId:document.result.root.nodeId,selector:'#feature-subtle'});
+      const supportsHover=await evaluate(`return matchMedia('(hover: hover)').matches;`);
+      const fills=[await evaluate(`return featureStateFills();`)];
+      for(const forcedPseudoClasses of [['hover'],['hover','active']]){
+        await send('CSS.forcePseudoState',{nodeId:subtle.result.nodeId,forcedPseudoClasses});
+        fills.push(await evaluate(`return featureStateFills();`));
+        assert.deepEqual(await evaluate(`return auditFeatureContrast();`), [], 'subtle '+forcedPseudoClasses.join(' '));
+      }
+      // A forced pseudo-class does not override the device's hover media query.
+      // Headless Linux advertises hover:none; verify its touch behavior too.
+      for(let i=0;i<fills[0].length;i++){
+        assert.equal(new Set(fills.map(state=>state[i].color)).size,supportsHover?3:2,JSON.stringify({supportsHover,states:fills.map(state=>state[i])})+' needs device-appropriate feedback');
+        if(!supportsHover)assert.equal(fills[0][i].color,fills[1][i].color,'hover:none must not activate hover styling');
+      }
+      for(const state of fills)for(const fill of state)if(fill.image==='none')assert.notEqual(fill.color,fill.card,JSON.stringify(fill)+' needs a visible action surface');
+      await send('CSS.forcePseudoState',{nodeId:subtle.result.nodeId,forcedPseudoClasses:[]});
+      const summary = await send('DOM.querySelector', {nodeId:document.result.root.nodeId,selector:'#feature-summary'});
+      await send('CSS.forcePseudoState',{nodeId:summary.result.nodeId,forcedPseudoClasses:['hover']});
+      assert.deepEqual(await evaluate(`return auditFeatureContrast();`), [], 'disclosure hover');
+      for(const features of [[{name:'prefers-contrast',value:'more'}],[{name:'forced-colors',value:'active'}]]) {
+        await send('Emulation.setEmulatedMedia',{features});
+        assert.deepEqual(await evaluate(`return auditFeatureContrast();`), [], JSON.stringify(features));
+      }
+      await send('Emulation.setEmulatedMedia',{features:[]});
+      await evaluate(`const card=document.querySelector('#feature-contrast > article'),nested=card.querySelector('.fc-check__input');const before=getComputedStyle(card).backgroundColor;nested.checked=true;if(getComputedStyle(card).backgroundColor!==before)throw new Error('Nested checkbox selected its content card');nested.checked=false;const option=document.createElement('label');option.className=card.className;option.innerHTML=card.innerHTML;card.replaceWith(option);const selected=document.createElement('input');selected.type='checkbox';selected.checked=true;selected.setAttribute('aria-label','Selected feature');option.append(selected);`);
+      assert.deepEqual(await evaluate(`return auditFeatureContrast();`), [], 'selected feature surface');
+    } finally {
+      await send('Emulation.setEmulatedMedia',{features:[]});
+      await evaluate(`document.getElementById('feature-contrast').remove();document.getElementById('feature-contrast-css').remove();delete globalThis.auditFeatureContrast;delete globalThis.featureStateFills;`);
+    }
+  });
+
   /** Loads the binding modules into the page. */
   async function loadBindings(): Promise<void> {
     const result = await evaluate(`

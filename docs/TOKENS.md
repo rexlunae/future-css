@@ -107,7 +107,7 @@ the display's white point.
 ```
 Surfaces      bg-canvas  bg-surface  bg-raised  bg-overlay
               bg-sunken  bg-subtle   bg-muted   bg-inverse
-              bg-thumb
+              bg-thumb  subtle-hover-bg
 
 Foreground    text-default  text-muted  text-subtle
               text-inverse  text-inverse-muted
@@ -123,6 +123,10 @@ Status        <status>-bg  <status>-text  <status>-bg-subtle  <status>-border
 
 Focus         focus-ring  focus-ring-offset
 ```
+
+`subtle-hover-bg` supplies the visible hover fill for subtle actions on feature
+surfaces. It pairs with `text-default` at a declared minimum of 4.5:1 in both
+schemes; it remains distinct from the neutral feature-card surface.
 
 **`border-interactive` exists separately from `border-default`.** Decorative borders
 (between table rows) need no contrast guarantee. Interactive control boundaries do: WCAG

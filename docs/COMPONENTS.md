@@ -917,12 +917,33 @@ stacks it below that; tight cards (< 18rem) reduce their padding. Variants
 `--elevated`, `--subtle`.
 
 A whole-card link stretches the title link's `::after` over the card, so the hit area is
-large while the accessible name is just the title. A card containing a radio or checkbox
+large while the accessible name is just the title. A label card containing a radio or checkbox
 reflects `:checked` and `:disabled` through `:has()`, so it works as a large option.
 
 The optional `fc-card--feature` modifier uses the selected theme's feature fill,
 gradient and matching foreground for a prominent content panel. It ships in
 `card.css` and remains readable in forced colors.
+
+Feature cards scope `--fc-content-fg`, `--fc-content-muted`,
+`--fc-content-danger`, and `--fc-content-link` to the theme's contrast-checked feature foreground. Body
+copy, subtitles, field labels/hints/errors, description lists, plain disclosures
+and transparent actions consume this context instead of the surrounding
+scheme's text colors. Typography and icons preserve hierarchy and error meaning;
+muting a foreground on a vivid feature fill must not lower its contrast.
+Inputs retain their own semantic foreground/background pair. Nested cards,
+boxed disclosures, alerts and raised overlays establish their own text context,
+so the outer feature's foreground cannot leak onto their different painted fill.
+Transparent action hover/active states use a paired neutral surface within a
+feature card. A checked-input selection replaces the feature fill, image and
+text context together. No app-specific colors or descendant selector overrides are needed.
+
+Base muted typography (small headings, quotations, captions and table headers)
+also consumes this context. Inline code and native inputs instead pair their ink
+with their own painted fill. Nested painted surfaces clear inherited decorative
+text shadows. Subtle actions retain distinct resting, hover and active fills.
+Alerts use one contrast-safe foreground; underlined links and error glyphs retain
+meaning without depending on a second color. Browser regressions cover every
+stock design in both schemes and directions, including composited gradient stops.
 
 
 ## Badge, tag, and kbd (implemented)
@@ -2197,3 +2218,8 @@ See [RustyClaw semantic coverage](RUSTYCLAW-COVERAGE.md) and [all states](../dem
 <h3 class="fc-device-auth__title">Connect your device</h3><p>Open the provider’s verification page and enter this example code.</p><a class="fc-btn fc-btn--secondary" href="https://example.com/activate">Verification page</a><code class="fc-device-auth__code">ABCD-1234</code><p class="fc-device-auth__meta">Expires in 5 minutes. Codes are sensitive; never put them in data attributes.</p>
 </section>
 ```
+
+Feature composition also includes checkbox/radio labels, check hints and switch
+hints. Painted input groups reset their text and action context. Subtle feature
+actions use `subtle-hover-bg`, whose `text-default` pairing is declared in the
+semantic contrast contract, to keep a visible hover fill on neutral feature cards.

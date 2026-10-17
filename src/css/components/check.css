@@ -32,7 +32,7 @@
     min-block-size: var(--fc-size-target-min);
     padding-block: var(--fc-space-1);
     cursor: pointer;
-    color: var(--fc-color-text-default);
+    color: var(--fc-content-fg, var(--fc-color-text-default));
   }
 
   .fc-check__input {
@@ -53,7 +53,7 @@
   .fc-check__hint {
     grid-column: 2;
     font-size: var(--fc-font-size-xs);
-    color: var(--fc-color-text-muted);
+    color: var(--fc-content-muted, var(--fc-color-text-muted));
   }
 
   .fc-check:has(:disabled) {
@@ -62,7 +62,7 @@
   }
 
   .fc-check:has([aria-invalid="true"], :user-invalid) .fc-check__label {
-    color: var(--fc-color-danger-text);
+    color: var(--fc-content-danger, var(--fc-color-danger-text));
   }
 
   /* A group of checks: a fieldset whose legend is the question being asked. */
@@ -222,7 +222,7 @@
 
   .fc-switch-row__hint {
     font-size: var(--fc-font-size-xs);
-    color: var(--fc-color-text-muted);
+    color: var(--fc-content-muted, var(--fc-color-text-muted));
   }
 
   .fc-switch-row:has(:disabled) {

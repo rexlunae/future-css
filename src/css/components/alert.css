@@ -21,6 +21,18 @@
 
 @layer fc.components {
   .fc-alert {
+    text-shadow: none;
+    --fc-btn-ghost-bg-hover: initial;
+    --fc-btn-ghost-fg-hover: initial;
+    --fc-btn-ghost-bg-active: initial;
+    --fc-btn-subtle-bg: initial;
+    --fc-btn-subtle-bg-hover: initial;
+    --fc-btn-subtle-bg-active: initial;
+    --fc-btn-subtle-fg: initial;
+    --fc-content-fg: var(--fc-alert-fg);
+    --fc-content-muted: var(--fc-alert-fg);
+    --fc-content-danger: var(--fc-alert-fg);
+    --fc-content-link: var(--fc-alert-fg);
     /*
      * The tone is carried in two custom properties, so each variant is two
      * declarations and the layout below is written once.

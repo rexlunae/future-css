@@ -53,6 +53,7 @@ export const semanticColors = {
   "bg-sunken": { light: neutral["100"]!, dark: black },
   "bg-subtle": { light: neutral["100"]!, dark: neutral["900"]! },
   "bg-muted": { light: neutral["200"]!, dark: neutral["800"]! },
+  "subtle-hover-bg": { light: neutral["300"]!, dark: neutral["700"]! },
   /*
    * The movable part of a control -- a switch thumb, a slider handle. Light in
    * both schemes: a thumb in the dark surface colour read as a hole punched in
@@ -184,6 +185,7 @@ const darkSet: Record<string, Oklch> = Object.fromEntries(
  * legality fails CI instead of shipping.
  */
 export const contrastPairs: readonly ContrastPair[] = [
+  { usage: "Subtle action hover label", fg: "text-default", bg: "subtle-hover-bg", min: 4.5 },
   ...Object.keys(prideStripes).map(name=>({usage:`Pride label on ${name} stripe`,fg:'text-on-accent',bg:`pride-${name}`,min:4.5})),
   { usage: "Theme masthead focus ring", fg: "focus-ring", bg: "selected-bg", min: 3 },
   { usage: "Default text inside selected rows", fg: "text-default", bg: "selected-bg", min: 4.5 },

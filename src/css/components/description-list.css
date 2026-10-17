@@ -52,7 +52,7 @@
     /* A long term wraps inside its column rather than pushing the value off. */
     min-inline-size: 0;
     overflow-wrap: anywhere;
-    color: var(--fc-color-text-muted);
+    color: var(--fc-content-muted, var(--fc-color-text-muted));
     font-weight: var(--fc-font-weight-medium);
   }
 
@@ -61,7 +61,7 @@
     flex: 1 1 var(--fc-dl-value-min, 12rem);
     min-inline-size: 0;
     margin: 0;
-    color: var(--fc-color-text-default);
+    color: var(--fc-content-fg, var(--fc-color-text-default));
     /* Ids, hashes and URLs have no break opportunities and would overflow. */
     overflow-wrap: anywhere;
   }

@@ -917,7 +917,7 @@ stacks it below that; tight cards (< 18rem) reduce their padding. Variants
 `--elevated`, `--subtle`.
 
 A whole-card link stretches the title link's `::after` over the card, so the hit area is
-large while the accessible name is just the title. A card containing a radio or checkbox
+large while the accessible name is just the title. A label card containing a radio or checkbox
 reflects `:checked` and `:disabled` through `:has()`, so it works as a large option.
 
 The optional `fc-card--feature` modifier uses the selected theme's feature fill,

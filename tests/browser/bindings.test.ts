@@ -230,13 +230,19 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         assert.deepEqual(await evaluate(`return auditFeatureContrast();`), [], forcedPseudoClasses.join(' '));
       }
       const subtle = await send('DOM.querySelector', {nodeId:document.result.root.nodeId,selector:'#feature-subtle'});
+      const supportsHover=await evaluate(`return matchMedia('(hover: hover)').matches;`);
       const fills=[await evaluate(`return featureStateFills();`)];
       for(const forcedPseudoClasses of [['hover'],['hover','active']]){
         await send('CSS.forcePseudoState',{nodeId:subtle.result.nodeId,forcedPseudoClasses});
         fills.push(await evaluate(`return featureStateFills();`));
         assert.deepEqual(await evaluate(`return auditFeatureContrast();`), [], 'subtle '+forcedPseudoClasses.join(' '));
       }
-      for(let i=0;i<fills[0].length;i++)assert.equal(new Set(fills.map(state=>state[i].color)).size,3,JSON.stringify(fills[0][i])+' needs distinct rest/hover/active feedback');
+      // A forced pseudo-class does not override the device's hover media query.
+      // Headless Linux advertises hover:none; verify its touch behavior too.
+      for(let i=0;i<fills[0].length;i++){
+        assert.equal(new Set(fills.map(state=>state[i].color)).size,supportsHover?3:2,JSON.stringify({supportsHover,states:fills.map(state=>state[i])})+' needs device-appropriate feedback');
+        if(!supportsHover)assert.equal(fills[0][i].color,fills[1][i].color,'hover:none must not activate hover styling');
+      }
       for(const state of fills)for(const fill of state)if(fill.image==='none')assert.notEqual(fill.color,fill.card,JSON.stringify(fill)+' needs a visible action surface');
       await send('CSS.forcePseudoState',{nodeId:subtle.result.nodeId,forcedPseudoClasses:[]});
       const summary = await send('DOM.querySelector', {nodeId:document.result.root.nodeId,selector:'#feature-summary'});
@@ -247,7 +253,7 @@ describe("bindings in a real browser", { skip: chromePath ? false : "no Chrome f
         assert.deepEqual(await evaluate(`return auditFeatureContrast();`), [], JSON.stringify(features));
       }
       await send('Emulation.setEmulatedMedia',{features:[]});
-      await evaluate(`const selected=document.createElement('input');selected.type='checkbox';selected.checked=true;selected.setAttribute('aria-label','Selected feature');document.querySelector('#feature-contrast > article').append(selected);`);
+      await evaluate(`const card=document.querySelector('#feature-contrast > article'),nested=card.querySelector('.fc-check__input');const before=getComputedStyle(card).backgroundColor;nested.checked=true;if(getComputedStyle(card).backgroundColor!==before)throw new Error('Nested checkbox selected its content card');nested.checked=false;const option=document.createElement('label');option.className=card.className;option.innerHTML=card.innerHTML;card.replaceWith(option);const selected=document.createElement('input');selected.type='checkbox';selected.checked=true;selected.setAttribute('aria-label','Selected feature');option.append(selected);`);
       assert.deepEqual(await evaluate(`return auditFeatureContrast();`), [], 'selected feature surface');
     } finally {
       await send('Emulation.setEmulatedMedia',{features:[]});

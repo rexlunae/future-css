@@ -244,11 +244,12 @@
 
   /*
    * Selected, for cards used as large radio or checkbox options. Driven by the
-   * state of a real input inside the card, so the visual and the form value
+   * state of a real input inside a label card, so the visual and form value
    * cannot disagree. A selected option also matches :checked, so the selector
-   * must name the input: an ordinary card containing a select is not selected.
+   * must name the input and option structure: ordinary content cards do not
+   * become selected when a nested form control changes.
    */
-  .fc-card:has(input:checked) {
+  .fc-card:where(label):has(input:checked) {
     /* Selection paints a different surface, even on a feature card. Its
        foreground must change with that fill rather than retain feature ink. */
     --fc-content-fg: var(--fc-color-text-default);
@@ -262,7 +263,7 @@
     background-color: var(--fc-color-accent-bg-subtle);
   }
 
-  .fc-card:has(:disabled) {
+  .fc-card:where(label):has(input:disabled) {
     opacity: 1;
     cursor: not-allowed;
   }
@@ -274,7 +275,7 @@
       border-color: CanvasText;
     }
 
-    .fc-card:has(input:checked) {
+    .fc-card:where(label):has(input:checked) {
       border-color: Highlight;
       border-width: var(--fc-border-width-thick);
     }

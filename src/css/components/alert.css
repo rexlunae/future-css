@@ -21,6 +21,7 @@
 
 @layer fc.components {
   .fc-alert {
+    text-shadow: none;
     --fc-content-fg: var(--fc-alert-fg);
     --fc-content-muted: var(--fc-alert-fg);
     --fc-content-danger: var(--fc-alert-fg);

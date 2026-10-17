@@ -15,6 +15,7 @@
 
 @layer fc.components {
   .fc-btn {
+    text-shadow: none;
     /*
      * inline-flex + gap rather than padding alone: it keeps the label centred
      * when an icon is present, and lets the label wrap instead of forcing the
@@ -183,7 +184,7 @@
     }
 
     .fc-btn--subtle:hover {
-      background-color: var(--fc-btn-subtle-bg, color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 100%), transparent));
+      background-color: var(--fc-btn-subtle-bg-hover, color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 100%), transparent));
     }
     .fc-btn--ghost:hover,
     .fc-btn--tertiary:hover {
@@ -213,7 +214,7 @@
   }
 
   .fc-btn--subtle:active {
-    background-color: var(--fc-btn-subtle-bg, color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 150%), transparent));
+    background-color: var(--fc-btn-subtle-bg-active, color-mix(in oklab, currentColor calc(var(--fc-opacity-pressed-overlay) * 150%), transparent));
   }
   .fc-btn--ghost:active,
   .fc-btn--tertiary:active {

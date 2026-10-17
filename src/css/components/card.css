@@ -15,6 +15,7 @@
 
 @layer fc.components {
   .fc-card {
+    text-shadow: none;
     /* A painted surface resets contextual text inherited from an outer feature. */
     --fc-content-fg: var(--fc-color-text-default);
     --fc-content-muted: var(--fc-color-text-muted);
@@ -53,7 +54,9 @@
     --fc-btn-ghost-bg-hover: var(--fc-color-bg-muted);
     --fc-btn-ghost-fg-hover: var(--fc-color-text-default);
     --fc-btn-ghost-bg-active: var(--fc-color-bg-subtle);
-    --fc-btn-subtle-bg: var(--fc-color-bg-muted);
+    --fc-btn-subtle-bg: var(--fc-color-bg-surface);
+    --fc-btn-subtle-bg-hover: var(--fc-color-bg-muted);
+    --fc-btn-subtle-bg-active: var(--fc-color-bg-sunken);
     --fc-btn-subtle-fg: var(--fc-color-text-default);
     background-color: var(--fc-theme-feature-bg, var(--fc-color-bg-surface));
     background-image: var(--fc-theme-feature-image, none);

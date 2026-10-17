@@ -117,7 +117,7 @@
      */
     font: var(--fc-type-heading-6);
     letter-spacing: var(--fc-type-heading-6-tracking);
-    color: var(--fc-color-text-muted);
+    color: var(--fc-content-muted, var(--fc-color-text-muted));
   }
 
   /*
@@ -189,6 +189,8 @@
   }
 
   :where(code):not(pre code) {
+    text-shadow: none;
+    color: var(--fc-color-text-default);
     background-color: var(--fc-color-bg-subtle);
     padding-inline: 0.25em;
     border-radius: var(--fc-radius-sm);
@@ -201,7 +203,7 @@
   :where(blockquote) {
     border-inline-start: var(--fc-border-width-thick) solid var(--fc-color-border-default);
     padding-inline-start: var(--fc-space-4);
-    color: var(--fc-color-text-muted);
+    color: var(--fc-content-muted, var(--fc-color-text-muted));
     font-style: italic;
   }
 
@@ -224,7 +226,7 @@
   }
 
   :where(caption) {
-    color: var(--fc-color-text-muted);
+    color: var(--fc-content-muted, var(--fc-color-text-muted));
     text-align: start;
     padding-block-end: var(--fc-space-2);
   }
@@ -238,7 +240,7 @@
 
   :where(thead th) {
     font-weight: var(--fc-font-weight-semibold);
-    color: var(--fc-color-text-muted);
+    color: var(--fc-content-muted, var(--fc-color-text-muted));
     border-block-end-color: var(--fc-color-border-default);
   }
 
@@ -251,6 +253,8 @@
    * browser default, which is frequently far too faint to read.
    */
   :where(input, textarea, select) {
+    text-shadow: none;
+    color: var(--fc-color-text-default);
     background-color: var(--fc-color-bg-surface);
     border: var(--fc-border-width-thin) solid var(--fc-color-border-interactive);
     border-radius: var(--fc-radius-md);

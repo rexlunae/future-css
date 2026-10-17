@@ -937,6 +937,14 @@ Transparent action hover/active states use a paired neutral surface within a
 feature card. A checked-input selection replaces the feature fill, image and
 text context together. No app-specific colors or descendant selector overrides are needed.
 
+Base muted typography (small headings, quotations, captions and table headers)
+also consumes this context. Inline code and native inputs instead pair their ink
+with their own painted fill. Nested painted surfaces clear inherited decorative
+text shadows. Subtle actions retain distinct resting, hover and active fills.
+Alerts use one contrast-safe foreground; underlined links and error glyphs retain
+meaning without depending on a second color. Browser regressions cover every
+stock design in both schemes and directions, including composited gradient stops.
+
 
 ## Badge, tag, and kbd (implemented)
 

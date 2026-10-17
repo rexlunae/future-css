@@ -58,6 +58,7 @@
   }
 
   .fc-toast {
+    text-shadow: none;
     --fc-content-fg: var(--fc-color-text-default);
     --fc-content-muted: var(--fc-color-text-muted);
     --fc-content-danger: var(--fc-color-danger-text);

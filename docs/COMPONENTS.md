@@ -2218,3 +2218,8 @@ See [RustyClaw semantic coverage](RUSTYCLAW-COVERAGE.md) and [all states](../dem
 <h3 class="fc-device-auth__title">Connect your device</h3><p>Open the provider’s verification page and enter this example code.</p><a class="fc-btn fc-btn--secondary" href="https://example.com/activate">Verification page</a><code class="fc-device-auth__code">ABCD-1234</code><p class="fc-device-auth__meta">Expires in 5 minutes. Codes are sensitive; never put them in data attributes.</p>
 </section>
 ```
+
+Feature composition also includes checkbox/radio labels, check hints and switch
+hints. Painted input groups reset their text and action context. Subtle feature
+actions use `subtle-hover-bg`, whose `text-default` pairing is declared in the
+semantic contrast contract, to keep a visible hover fill on neutral feature cards.

@@ -95,8 +95,9 @@ select and menu retain their independent version handshakes.
 One workspace, one published module per *opt-in unit*. Boundaries follow *what a
 consumer opts into*, and the dependency arrow points strictly downward.
 
-Eleven crates produce ten importable modules: `fc-core` is emitted into the `fc-model`
-module directory rather than published on its own.
+Eleven script-facing crates produce ten importable modules: `fc-core` is emitted
+into the `fc-model` module directory rather than published on its own. The twelfth
+crate, `fc-dialog`, is a Rust-only host model with no standalone WASM binary.
 
 ```
 crates/
@@ -111,7 +112,13 @@ crates/
   fc-highlight/      highlight.ts's tokenizer     (no deps; primitives only)
   fc-ansi/           ansi.ts's SGR parser        (no deps; primitives only)
   fc-theme/          custom-theme model          (no deps; JSON strings)
+  fc-dialog/         fallback dismissal decision (no deps; Rust-only rlib)
 ```
+
+`fc-dialog` supplies a pure decision to Rust hosts that cannot open a native modal.
+It has no JavaScript boundary, allocation or normal dependency. Hosts own event
+consumption, close requests, focus and inertness; the crate performs no DOM work.
+It adds no script download and does not change any existing WASM size budget.
 
 Measured release sizes when the workspace was first built (historical; the
 current figures are in [What actually ships](#what-actually-ships)):

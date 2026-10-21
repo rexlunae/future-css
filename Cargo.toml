@@ -1,11 +1,13 @@
 # The Rust workspace for future-css.
 #
-# One workspace, many crates, one published WASM module per crate. The reason is
-# load cost, not tidiness: a WASM module is a single indivisible download, so
+# One workspace, many crates, one WASM module per script-facing crate. The reason
+# is load cost, not tidiness: a WASM module is a single indivisible download, so
 # anything compiled together is paid for together. Measured floor cost for an
 # empty wasm-bindgen module is ~17 KB before any real code, which means a
 # monolithic "future-css.wasm" would make every consumer pay for every feature.
 #
+# Rust-only host models ship an rlib without a standalone WASM module; they add
+# no script download or bindgen boundary.
 # Crate boundaries are therefore drawn along *what a consumer opts into*, and
 # the dependency direction is strictly downward: nothing in this workspace may
 # depend on a consumer crate.
@@ -24,6 +26,7 @@ members = [
   "crates/fc-highlight",
   "crates/fc-ansi",
   "crates/fc-theme",
+  "crates/fc-dialog",
 ]
 
 [workspace.package]

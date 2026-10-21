@@ -1,0 +1,13 @@
+[package]
+name = "fc-dialog"
+description = "Pure keyboard-dismissal decisions for future-css Dialog host bindings"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+# A Rust-only host model: there is no script boundary or standalone WASM download.
+[lib]
+crate-type = ["rlib"]

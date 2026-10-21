@@ -8,6 +8,8 @@ import { describe, it } from 'node:test';
 // consumer's own wasm-bindgen fails to resolve: an outage for them that no
 // test here would otherwise notice, because every build here keeps defaults on.
 const CRATES = ['fc-core', 'fc-model', 'fc-rich-text', 'fc-select', 'fc-context-menu', 'fc-grid', 'fc-diff', 'fc-git', 'fc-highlight', 'fc-ansi', 'fc-theme'];
+// These host-side data models have no JavaScript boundary to opt out of.
+const RUST_ONLY_CRATES = ['fc-dialog'];
 const SIBLINGS = /^(fc-[a-z-]+)\s*=\s*\{([^}]*)\}/gm;
 const cargo = process.env.CARGO ?? 'cargo';
 
@@ -35,7 +37,7 @@ describe('pure Rust consumers', () => {
     // becomes a file holding the text `../../LICENSE`, and cargo publish would
     // ship that instead of the notice.
     const root = readFileSync(new URL('../LICENSE', import.meta.url), 'utf8');
-    for (const crate of CRATES) {
+    for (const crate of [...CRATES, ...RUST_ONLY_CRATES]) {
       const copy = new URL(`../crates/${crate}/LICENSE`, import.meta.url);
       assert.ok(!lstatSync(copy).isSymbolicLink(), `${crate}: LICENSE is a symlink`);
       assert.equal(readFileSync(copy, 'utf8'), root, crate);
@@ -43,11 +45,20 @@ describe('pure Rust consumers', () => {
   });
 
   it('links no wasm-bindgen with defaults off, natively or on wasm32', { skip: hasCargo() ? false : 'no cargo found' }, () => {
-    for (const crate of CRATES) {
+    for (const crate of [...CRATES, ...RUST_ONLY_CRATES]) {
       for (const target of ['all', 'wasm32-unknown-unknown']) {
         const tree = execFileSync(cargo, ['tree', '-q', '-p', crate, '--no-default-features', '-e', 'normal', '--target', target, '--prefix', 'none'], { encoding: 'utf8' });
         assert.doesNotMatch(tree, /^wasm-bindgen /m, `${crate} (${target})`);
       }
+    }
+  });
+
+  it('Rust-only host models have no standalone script module or normal dependencies', { skip: hasCargo() ? false : 'no cargo found' }, () => {
+    for (const crate of RUST_ONLY_CRATES) {
+      const manifest = readFileSync(new URL(`../crates/${crate}/Cargo.toml`, import.meta.url), 'utf8');
+      assert.match(manifest, /^crate-type = \["rlib"\]$/m, crate);
+      const tree = execFileSync(cargo, ['tree', '-q', '-p', crate, '-e', 'normal', '--prefix', 'none'], { encoding: 'utf8' }).trim().split('\n');
+      assert.equal(tree.length, 1, `${crate}: unexpected normal dependency`);
     }
   });
 });

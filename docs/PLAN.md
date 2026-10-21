@@ -39,6 +39,10 @@ cancellation and saved-preference behavior, and browser/axe coverage at 320px.
 
 ### Working now
 
+The Rust workspace also includes `fc-dialog`, a dependency-free, Rust-only model
+for requested-modal fallback dismissal decisions. It adds no WASM binary; native
+focus, inertness and cancellation remain host capabilities (issue #65).
+
 Audited on 2026-10-10 with Chrome and the WASM toolchain present:
 
 - 218 foundation tokens (116 theme-aware), plus 6 optional Pride theme tokens, 60 component files, 66-file readable CSS bundle

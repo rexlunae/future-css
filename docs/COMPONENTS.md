@@ -967,6 +967,20 @@ at load, `status` for one inserted after an action, `alert` only for an interrup
 top layer, inert background, Escape, and focus in and back. `closedby="any"` adds light
 dismiss.
 
+For Rust hosts without native modal support, `fc-dialog` supplies the pure
+keyboard-dismissal decision (`on_key`, `Presentation`, `KeyEvent`, `Dismissal`).
+An open requested-modal inline fallback can return `RequestClose` on a bubbling
+Escape after child controls, unless it is default-prevented or composing. The
+host then prevents the default action, stops propagation and notifies the owner;
+only the owner changes the controlled open state. Native modal hosts keep their
+cancel-event path, and explicitly nonmodal dialogs are not promoted to modal
+behavior. Closed dialogs and other keys produce no dismissal request.
+
+The model does not provide focus acquisition/restoration, inertness, top-layer
+painting or host events. Those remain native host capabilities. It is a
+dependency-free `no_std` Rust rlib, with no JavaScript/WASM boundary or extra
+standalone download; browser-native dialogs retain the platform behavior above.
+
 - Parts: `__header`, `__title`, `__description`, `__close`, `__body` (the only part
   that scrolls), `__footer`.
 - Sizes `--sm`, `--lg`, `--fullscreen`. `--sheet` docks to the inline-end edge and
